@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

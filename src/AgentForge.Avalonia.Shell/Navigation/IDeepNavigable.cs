@@ -55,7 +55,7 @@ public enum DeepRestoreMode
 /// </para>
 /// <para>
 /// App-local on purpose: only app editors implement it. Promoting it into
-/// <c>LayeredEditors.Abstractions</c> would be speculative layering until an
+/// <c>ScopedEditors.Abstractions</c> would be speculative layering until an
 /// out-of-tree consumer exists.
 /// </para>
 /// </summary>

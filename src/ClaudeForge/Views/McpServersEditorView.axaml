@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels.Editors"
-             xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
+             xmlns:ctrl="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Controls"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:behaviors="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.McpServersEditorView"
              x:DataType="vm:McpServersEditorViewModel">

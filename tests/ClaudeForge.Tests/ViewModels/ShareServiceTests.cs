@@ -4,7 +4,8 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -35,20 +36,20 @@ file sealed class RecordingShareService : IShareService
     /// <summary>Set to throw from both methods, for the caller's catch path.</summary>
     public Exception? ThrowOnShare { get; set; }
 
-    public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
+    public ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
     {
         TextCalls.Add(new ShareTextCall(title, text, uri));
         return ThrowOnShare is not null
-            ? Task.FromException<ShareOutcome>(ThrowOnShare)
-            : Task.FromResult(NextOutcome);
+            ? ValueTask.FromException<ShareOutcome>(ThrowOnShare)
+            : ValueTask.FromResult(NextOutcome);
     }
 
-    public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
+    public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
     {
         FileCalls.Add(new ShareFileCall(title, filePath));
         return ThrowOnShare is not null
-            ? Task.FromException<ShareOutcome>(ThrowOnShare)
-            : Task.FromResult(NextOutcome);
+            ? ValueTask.FromException<ShareOutcome>(ThrowOnShare)
+            : ValueTask.FromResult(NextOutcome);
     }
 }
 
@@ -325,14 +326,10 @@ public class DefaultShareServiceTests
     /// <summary>No-op process launcher — prevents any real process from starting.</summary>
     private static readonly Func<ProcessStartInfo, Process?> NoOpLauncher = _ => null;
 
-    [TestMethod]
-    public async Task ShareTextAsync_DoesNotThrow()
-    {
-        // On any platform, calling ShareTextAsync on a service with no HWND
-        // and a non-Windows TFM should complete without throwing.
-        DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareTextAsync("Test Title", "Test body text");
-    }
+    // ⛔ No test shares TEXT WITHOUT A URI here. On Windows and macOS that path pipes into
+    // clip.exe / pbcopy directly — not through the injected launcher — so a test of it overwrites
+    // the developer's clipboard on every run. One did, until 2026-09-23. The package's own suite
+    // (AppServices.Tests) owns DefaultShareService's outcomes.
 
     [TestMethod]
     public async Task ShareFileAsync_DoesNotThrow_WhenFileDoesNotExist()
@@ -340,14 +337,14 @@ public class DefaultShareServiceTests
         // Even with a non-existent path, the service must not throw —
         // it silently skips the Process.Start on macOS/Linux when the file is absent.
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareFileAsync("Test Title", @"C:/does/not/exist/file.zip");
+        await svc.ShareFileAsync("Test Title", @"C:/does/not/exist/file.zip", CancellationToken.None);
     }
 
     [TestMethod]
     public async Task ShareTextAsync_DoesNotThrow_WithUri()
     {
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
-        await svc.ShareTextAsync("Test", "body", "https://example.com");
+        await svc.ShareTextAsync("Test", "body", "https://example.com", CancellationToken.None);
     }
 
     /// <summary>
@@ -392,7 +389,7 @@ public class DefaultShareServiceTests
             return null;
         });
 
-        await svc.ShareTextAsync("T", "body", "https://example.com");
+        await svc.ShareTextAsync("T", "body", "https://example.com", CancellationToken.None);
 
         // Exactly 0 or 1 launches depending on OS — the important thing is no exception.
         Assert.IsTrue(launchCount is 0 or 1,

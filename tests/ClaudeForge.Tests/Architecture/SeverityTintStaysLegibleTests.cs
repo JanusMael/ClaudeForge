@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 

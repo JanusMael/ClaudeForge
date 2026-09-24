@@ -6,7 +6,8 @@
         <LangVersion>preview</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <!-- ⛔ THE SINGULAR FORM IS LOAD-BEARING, and two projects once believed otherwise.
-             src/ClaudeForge and src/LayeredEditors.Avalonia.Services each declared a plural
+             src/ClaudeForge and LayeredEditors.Avalonia.Services (since plans/00005 the AppServices
+             packages) each declared a plural
              <TargetFrameworks> adding net10.0-windows10.0.19041.0, with comments saying it took
              precedence over this property. It does not: MSBuild cross-targets only when
              TargetFramework is EMPTY, so both projects built net10.0 alone for the whole life of
@@ -31,7 +32,7 @@
           The DEFAULT product, which is now the shared library family rather than either app.
 
           ⚠ This used to be `ClaudeForge`, which stamped that name into every assembly in the
-          repository — including AgentForge.* and LayeredEditors.*, which are product-neutral by
+          repository — including AgentForge.* and JsonC, which are product-neutral by
           design and are consumed by both apps. A shared library reporting itself as one of its
           two consumers is wrong in a file properties dialog, in a crash dump, and in any
           support bundle that lists loaded modules.
@@ -50,7 +51,7 @@
     </PropertyGroup>
 
     <!--
-      ══ THE VERSION OF THE ELEVEN SHARED PACKAGES THE RELEASE CONSUMES ══════════════════════
+      ══ THE VERSION OF THE SIX SHARED PACKAGES THE RELEASE CONSUMES ═════════════════════════
 
       plans/00003, Phase D. This is a COMMITTED PIN, deliberately, and it belongs in the ROOT
       props rather than src/'s: the test projects consume the packages too, and only the root
@@ -74,6 +75,30 @@
     -->
     <PropertyGroup>
         <SharedPackageVersion Condition="'$(SharedPackageVersion)' == ''">2026.3.922</SharedPackageVersion>
+    </PropertyGroup>
+
+    <!--
+      ══ THE SEVEN nuget.org PACKAGES THAT REPLACE LayeredEditors ════════════════════════════
+
+      plans/00005. TWO properties because the seven ids come from two repositories with
+      independent release cadences: Bennewitz.Ninja.AppServices (four ids) and
+      Bennewitz.Ninja.ScopedEditors (three). One version per repository, from one source, so
+      moving a pin is a one-line diff a human approves.
+
+      ⛔ UNLIKE SharedPackageVersion ABOVE, THESE ARE NEVER INERT. The seven are PackageReferences
+      in every mode; there is no project to fall back to, so every restore reads them.
+
+      ⛔ THE PIN MUST CARRY THE IsTrimmable MARK. ClaudeForge publishes with TrimMode=partial,
+      which trims and analyses only marked assemblies. 2026.3.923 shipped without it, so there
+      the seven were kept whole and a clean trim result said nothing about them; 2026.3.924
+      carries it on all seven (read from the DLLs). Check before moving the pin. See plans/00005.
+
+      No Condition, deliberately: the value in this file must beat a same-named environment
+      variable, and a global property on the command line still outranks it.
+    -->
+    <PropertyGroup>
+        <AppServicesVersion>2026.3.924</AppServicesVersion>
+        <ScopedEditorsVersion>2026.3.924</ScopedEditorsVersion>
     </PropertyGroup>
 
     <!--

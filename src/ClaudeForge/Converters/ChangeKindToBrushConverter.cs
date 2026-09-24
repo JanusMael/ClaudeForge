@@ -71,7 +71,7 @@ public sealed class ChangeKindToBrushConverter : IValueConverter
         ChangeKind kind = value is ChangeKind k ? k : ChangeKind.Modified;
 
         // Inline rather than via the library's BrushHelper: that helper is `internal` to
-        // LayeredEditors.Avalonia, and widening a library's surface for one caller is the wrong
+        // ScopedEditors.AvaloniaUI, and widening a library's surface for one caller is the wrong
         // trade. ActualThemeVariant is the themed lookup — passing no variant finds nothing,
         // because these keys live under ThemeDictionaries.
         if (Application.Current is { } app

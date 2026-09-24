@@ -6,9 +6,9 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
-using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel;
+using PropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel;
 // App-bridge StringPropertyEditorViewModel deleted; alias library leaf.
-using StringPropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.ViewModels.StringPropertyEditorViewModel;
+using StringPropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.StringPropertyEditorViewModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

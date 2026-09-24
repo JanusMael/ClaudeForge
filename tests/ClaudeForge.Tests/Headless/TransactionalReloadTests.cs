@@ -4,7 +4,7 @@ using Avalonia.Headless;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 

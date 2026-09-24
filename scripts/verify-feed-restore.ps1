@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Prove the app restores the eleven shared packages FROM THE PUBLISHED FEED.
+    Prove the app restores the six shared packages FROM THE PUBLISHED FEED.
 
 .DESCRIPTION
     plans/00003, Phase D. D1 asks for evidence that the release consumes the packages on
@@ -43,8 +43,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# The eleven. Listed rather than discovered, deliberately: discovery that finds ten and reports
-# ten green is the failure this file is guarding against.
+# The six. Listed rather than discovered, deliberately: discovery that finds five and reports
+# five green is the failure this file is guarding against.
+# LIBRARY GUARD NARROWED -- plans/00005. The five bennewitz.ninja.layerededitors.* ids were here;
+# the app now takes that code from the ScopedEditors and AppServices packages on nuget.org,
+# which this feed does not serve.
 $expectedIds = @(
     'bennewitz.ninja.agentforge.abstractions'
     'bennewitz.ninja.agentforge.artifacts'
@@ -52,11 +55,6 @@ $expectedIds = @(
     'bennewitz.ninja.agentforge.core'
     'bennewitz.ninja.agentforge.sdk'
     'bennewitz.ninja.jsonc'
-    'bennewitz.ninja.layerededitors.abstractions'
-    'bennewitz.ninja.layerededitors.avalonia'
-    'bennewitz.ninja.layerededitors.avalonia.diagnostics'
-    'bennewitz.ninja.layerededitors.avalonia.services'
-    'bennewitz.ninja.layerededitors.viewmodels'
 )
 
 function Get-PinnedVersion {
@@ -74,7 +72,7 @@ Write-Host ('Pinned SharedPackageVersion : ' + $version)
 Write-Host ('Expecting source to contain : ' + $ExpectedSource)
 
 # ⛔ A CONFIGURED LOCAL SOURCE THAT DOES NOT EXIST IS A HARD ERROR, NOT A SKIPPED ONE.
-# nuget.config maps these eleven ids to both `localfeed` and `github`. On a fresh checkout
+# nuget.config maps these six ids to both `localfeed` and `github`. On a fresh checkout
 # artifacts/ is gitignored, so the folder is absent and the restore dies with
 #   NU1301: The local source '.../artifacts/localfeed' doesn't exist.
 # before it ever reaches the feed. ⓘ Other jobs never see this: in development mode the source

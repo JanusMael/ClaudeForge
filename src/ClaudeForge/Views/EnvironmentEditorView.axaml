@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
              xmlns:conv="using:Bennewitz.Ninja.ClaudeForge.Converters"
-             xmlns:leconv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
-             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:leconv="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters"
+             xmlns:behaviors="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.EnvironmentEditorView"
              x:DataType="vm:EnvironmentEditorViewModel">

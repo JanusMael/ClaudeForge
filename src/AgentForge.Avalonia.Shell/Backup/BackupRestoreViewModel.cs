@@ -10,9 +10,10 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Converters;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -278,6 +279,13 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
 
     [ObservableProperty] private double _progressPercent;
     [ObservableProperty] private string? _progressMessage;
+
+    /// <summary>
+    /// False once <see cref="IShellLauncher.RevealInFileManagerAsync"/> has reported
+    /// <see cref="LaunchStatus.Unsupported"/>. Bound to the menu item's visibility, so an
+    /// affordance the platform cannot honour disappears instead of failing on every click.
+    /// </summary>
+    [ObservableProperty] private bool _isRevealInFileManagerSupported = true;
     [ObservableProperty] private string? _statusMessage;
 
     // Which tab (Backup / Restore / MSIX Fix) is shown. VM-driven so the change is
@@ -1072,7 +1080,7 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// </para>
     /// </remarks>
     [RelayCommand]
-    private async Task ShareBackupAsync(BackupRowViewModel? row)
+    private async Task ShareBackupAsync(BackupRowViewModel? row, CancellationToken cancellationToken)
     {
         if (row?.Entry is null)
         {
@@ -1090,10 +1098,18 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         try
         {
             Log.Information("[Backup] Share requested for {Archive}", row.Entry.FileName);
-            ShareOutcome outcome = await _shareService.ShareFileAsync(row.DisplayName, row.Entry.ArchivePath);
+            ShareOutcome outcome = await _shareService.ShareFileAsync(
+                row.DisplayName, row.Entry.ArchivePath, cancellationToken);
             Log.Information("[Backup] Share outcome for {Archive}: {Outcome}",
                 row.Entry.FileName, outcome);
             ReportShareOutcome(outcome);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The token is the command's own: cancelling it is the user's decision, not a fault.
+            // An implementation may throw rather than return Cancelled; both mean the same thing.
+            Log.Information("[Backup] Share cancelled for {Archive}", row.Entry.FileName);
+            ReportShareOutcome(ShareOutcome.Cancelled);
         }
         catch (Exception ex)
         {
@@ -1112,13 +1128,16 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// </remarks>
     private void ReportShareOutcome(ShareOutcome outcome)
     {
-        (string text, bool isFailure) = FileShareStatus.Describe(
+        (string? text, bool isFailure) = FileShareStatus.Describe(
             outcome,
             _text.StatusShareArchiveRevealed,
             _text.StatusShareArchiveUnavailable,
             _text.StatusShareArchiveFailed);
 
-        OnTerminalStatus?.Invoke(text, isFailure);
+        if (text is not null)
+        {
+            OnTerminalStatus?.Invoke(text, isFailure);
+        }
     }
 
     /// <summary>
@@ -1127,14 +1146,37 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
     /// Bound to the Restore tab's DataGrid right-click context menu.
     /// </summary>
     [RelayCommand]
-    private void OpenFileLocation(BackupRowViewModel? row)
+    private async Task OpenFileLocationAsync(BackupRowViewModel? row, CancellationToken cancellationToken)
     {
         if (row?.Entry is null)
         {
             return;
         }
 
-        ShellLauncher.Instance.RevealInFileManager(row.Entry.ArchivePath);
+        LaunchResult result = await ShellLauncher.Instance.RevealInFileManagerAsync(
+            row.Entry.ArchivePath, cancellationToken);
+
+        switch (result.Status)
+        {
+            case LaunchStatus.Succeeded:
+            case LaunchStatus.Cancelled:
+                break;
+
+            // ⭐ Unsupported is a property of the PLATFORM, not a failure of this click: hide the
+            // menu item rather than report an error the user can do nothing about. The previous
+            // API returned void, so this case was indistinguishable from success.
+            case LaunchStatus.Unsupported:
+                Log.Information("[Backup] Reveal in file manager is unsupported here: {Detail}", result.Detail);
+                IsRevealInFileManagerSupported = false;
+                break;
+
+            // NotFound (the archive was deleted underneath the list), Denied and Failed: logged,
+            // as before the reshape surfaced them. The old void call reported nothing at all.
+            default:
+                Log.Warning("[Backup] Reveal in file manager for {Archive}: {Status} {Detail}",
+                    row.Entry.FileName, result.Status, result.Detail);
+                break;
+        }
     }
 
     [RelayCommand]

@@ -5,7 +5,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 
@@ -17,7 +17,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// <para>
 /// ⭐⭐ <b>The load-bearing case is the one where this DISAGREES with the settings row.</b> The
 /// obvious implementation — delegate to
-/// <see cref="LayeredEditors.ViewModels.IDangerAnnotatedEditor.AssessDanger"/> the way a
+/// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.IDangerAnnotatedEditor.AssessDanger"/> the way a
 /// search hit does — reports the assessment at the scope the user happens to be EDITING, which is
 /// not the scope the runtime value came from. Every test here would still pass with that
 /// implementation except <see cref="EffectiveRow_IsAssessedAtTheWinningScope_NotTheEditingScope"/>,

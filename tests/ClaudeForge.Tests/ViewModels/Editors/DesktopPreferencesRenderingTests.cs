@@ -1,7 +1,7 @@
 using System.Reflection;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Json.Schema;
-using PropertyEditorViewModel = Bennewitz.Ninja.LayeredEditors.ViewModels.PropertyEditorViewModel;
+using PropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel;
 using ResourceHelper = Bennewitz.Ninja.AgentForge.Core.ResourceHelper;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 using SchemaValueType = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValueType;

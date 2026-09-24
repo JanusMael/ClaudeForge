@@ -3,7 +3,7 @@ using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -23,7 +23,7 @@ public sealed class FileShareStatusTests
     private const string Unavailable = "unavailable-sentence";
     private const string Failed = "failed-sentence";
 
-    private static (string Text, bool IsFailure) Describe(ShareOutcome outcome)
+    private static (string? Text, bool IsFailure) Describe(ShareOutcome outcome)
         => FileShareStatus.Describe(outcome, Revealed, Unavailable, Failed);
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ public sealed class FileShareStatusTests
     [TestMethod]
     public void RevealedInFileManager_IsTheSuccessAndDoesNotStick()
     {
-        (string text, bool isFailure) = Describe(ShareOutcome.RevealedInFileManager);
+        (string? text, bool isFailure) = Describe(ShareOutcome.RevealedInFileManager);
 
         Assert.AreEqual(Revealed, text, "The revealed sentence is the one success a file share has.");
         Assert.IsFalse(isFailure, "A success pill auto-clears; it must not wait to be dismissed.");
@@ -42,7 +42,7 @@ public sealed class FileShareStatusTests
     [TestMethod]
     public void Unavailable_IsNotAFailure()
     {
-        (string text, bool isFailure) = Describe(ShareOutcome.Unavailable);
+        (string? text, bool isFailure) = Describe(ShareOutcome.Unavailable);
 
         Assert.AreEqual(Unavailable, text);
         Assert.IsFalse(isFailure,
@@ -53,7 +53,7 @@ public sealed class FileShareStatusTests
     [TestMethod]
     public void Failed_Sticks()
     {
-        (string text, bool isFailure) = Describe(ShareOutcome.Failed);
+        (string? text, bool isFailure) = Describe(ShareOutcome.Failed);
 
         Assert.AreEqual(Failed, text);
         Assert.IsTrue(isFailure, "A failure pill stays until the user dismisses it.");
@@ -65,7 +65,7 @@ public sealed class FileShareStatusTests
     [DataRow(ShareOutcome.OpenedMailClient)]
     public void AnOutcomeAFileShareCannotProduce_IsReportedAsFailure(ShareOutcome impossible)
     {
-        (string text, bool isFailure) = Describe(impossible);
+        (string? text, bool isFailure) = Describe(impossible);
 
         // ⛔ Deliberate, and the opposite of what "it's a success member" would suggest.
         // ShareFileAsync reveals a file on all three platforms; it cannot write a clipboard, open
@@ -83,13 +83,36 @@ public sealed class FileShareStatusTests
     {
         // Premise before claim: if ShareOutcome ever gains a member, this loop reaches it and the
         // mapper still has to return something non-empty for it.
+        //
+        // ⚠ ONE named exemption, asserted rather than skipped: Cancelled deliberately has no
+        // sentence (see Cancelled_SaysNothing_AndIsNotAFailure). Every other member — including
+        // any added later — still has to produce one, so a new member that returns null fails here.
         foreach (ShareOutcome outcome in Enum.GetValues<ShareOutcome>())
         {
-            (string text, _) = Describe(outcome);
+            (string? text, bool isFailure) = Describe(outcome);
+
+            if (outcome == ShareOutcome.Cancelled)
+            {
+                Assert.IsNull(text, "Cancelled must say nothing.");
+                Assert.IsFalse(isFailure, "A cancel is not a failure.");
+                continue;
+            }
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(text),
                 $"{outcome} produced no sentence; an empty pill says as little as no pill.");
         }
+    }
+
+    [TestMethod]
+    public void Cancelled_SaysNothing_AndIsNotAFailure()
+    {
+        // ⛔ Not the catch-all. Cancelled arrived with the required CancellationToken; left to the
+        // `_ =>` arm it would be reported as a sticky FAILURE the moment a user cancelled a share,
+        // and it would compile cleanly doing so.
+        (string? text, bool isFailure) = Describe(ShareOutcome.Cancelled);
+
+        Assert.IsNull(text, "The user cancelled and knows it; there is nothing to say.");
+        Assert.IsFalse(isFailure, "A cancel is not a failure, so nothing should stick until dismissed.");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -100,13 +123,13 @@ public sealed class FileShareStatusTests
     {
         public int FileCalls { get; private set; }
 
-        public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
-            => Task.FromResult(outcome);
+        public ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
+            => ValueTask.FromResult(outcome);
 
-        public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
+        public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
         {
             FileCalls++;
-            return Task.FromResult(outcome);
+            return ValueTask.FromResult(outcome);
         }
     }
 

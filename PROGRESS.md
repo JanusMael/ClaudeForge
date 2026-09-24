@@ -186,9 +186,183 @@ The UI also reported `v2026.3.922.0`.
 | Packages | ✅ **All ELEVEN on the feed at `2026.3.922`**, verified id by id against the flat container — **not** by reading a green workflow. ⛔ **Discover the flat-container URL from the service index** (`PackageBaseAddress/3.0.0` → `.../download`); `<base>/<id>/index.json` 404s, and that 404 is indistinguishable from *"never published"*. A verification script guessing the path reported **0 of 11** against a feed that held all eleven |
 | Pin | ✅ **`SharedPackageVersion` = `2026.3.922`** in the root `Directory.Build.props` (PR #70) |
 | CI | ✅ green on `main`, **including `Published Version`** |
-| Suite | ✅ **3,586 passed · 0 failed · 14 skipped — TOTAL 3,600**, Debug, across all **nine** test projects |
+| Suite | ✅ **3,595 passed · 0 failed · 14 skipped — TOTAL 3,609**, Debug, across all **nine** test projects, measured 2026-09-23. ⓘ It read 3,600 until PR #74 linked `HeadlessSessionBootstrapTests.cs` (3 tests) into three projects |
 | Release | ✅ **`v2026.3.922`, six assets**, run `35770630333`. ⭐ **The mode was READ, not assumed**: all six provenance logs carry `PACKAGE MODE … at 2026.3.922`, **zero** `ESCAPE HATCH` lines and **zero** IL warnings. Notes came from PR #72's body — `release.yml` resolves them from the PR whose merge commit is the tagged SHA, so the release PR must be the LAST thing merged before the tag |
 | ⚠ Remaining | **Signing, then the winget submission — the maintainer's, always.** `packaging/sign-release.ps1` needs a PIN; it signs, re-uploads **and submits**. ⓘ winget users are on **`2026.3.916`** because `.920` was deliberately skipped, so this submission jumps them across both. Fallback is `Resubmit-Winget.ps1`, which needs `-Force` |
+
+
+**Where `00005` stands:**
+
+| Step | State |
+|---|---|
+| 1 · package references + `nuget.config` | ✅ Done — proven from an EMPTY cache with no credential |
+| 2 · namespace map | ✅ Done — 134 files, derived map, 0 unresolved, plus 1 base class and 15 `cref`s in the partially-qualified form |
+| 3 · service APIs | ✅ Done in code — every ignored `void`/`bool` now takes the command's token and a result; `Cancelled` answered explicitly |
+| 4 · `avares://` | ✅ Done — the runtime font check is a test now, with a control (drift 13) |
+| 5 · F12 windows | ✅ Done in code, on the `.924` hook — ⏳ "windows that FILL" in a real run is still owed |
+| 6 · delete the family | ✅ Done — `75d8961`: 5 `src` + 2 test projects, their baselines, slnx entries, friend grants and the selector line |
+| 7 · guards that named the family | ✅ Done — every narrowed guard canaried BOTH ways (drift 12); prose swept eleven → six |
+| 8 · `PublicSurface` baselines | ✅ Done — remapped through the derived 81-type map, the diff leaves exactly three lines, all step 3's: `OpenFileLocationCommand` becomes `IAsyncRelayCommand`, `IsRevealInFileManagerSupported` is new. `AgentForge.Sdk` is the namespace move and nothing else |
+| 9 · real `.924` | ✅ Done 2026-09-24 — all seven ids verified on nuget.org's flat container **here**, not taken from the relay; tags `v2026.3.924` = AppServices `d1c5c9c`, ScopedEditors `4e44d8b`, the commits the local packs came from. Pins → `2026.3.924`; the `prerelease924` source, its mapping and `artifacts/prerelease-924` removed; every `-local.*` and both never-published `.avaloniaui` ids purged from the cache. Each restored package's `.nupkg.metadata` names `api.nuget.org` as its source |
+| 10 · full gate | ⏳ Local half done — 7 of 7 test assemblies (= 7 test csproj), 1,760 / 1,757 / 3 in `ClaudeForge.Tests`, build 0/0. ✅ **The trim gate is real now:** all seven `.924` DLLs carry `IsTrimmable` (all seven `.923` controls do not), a trimmed win-x64 Release publish reports 0 IL warnings, and every one of the seven is SMALLER in `obj/…/linked/` than in its package (e.g. `ScopedEditors.ViewModels` 66,048 → 54,784) — trimmed, not kept whole. ✅ **CI, `7ba127c`:** Build & Test green on Windows, Ubuntu and macOS; Trim Check and Package Canary green. `Feed Restore` and `Published Version` red **by construction only** — every error in both is NU1101 for the four `LayeredEditors.*` ids the published `.922` AgentForge depends on (drift 16) |
+
+⚠ **Drift from the frozen plan** — recorded here, because `00005` is never edited:
+
+1. ⛔ **AQ1004 renames two package IDS in `.924`, not just namespaces.** `ScopedEditors.Avalonia` →
+   `ScopedEditors.AvaloniaUI` and `AppServices.Avalonia` → `AppServices.AvaloniaUI` — id, assembly,
+   namespace **and** `avares://` path all change. So the plan's namespace map and `avares://` targets
+   name the `.923` spellings; **step 9 is a rename, not a one-line pin bump**; and decision 9's "build
+   on `.923`" is moot, because steps 2 onward target the `.924` names directly — which also means the
+   trim gate is claimed on the marked version from the start. Two of step 1's references change when
+   `.924` lands; the other five, and both `nuget.config` patterns, already cover the new names.
+   ⓘ The two `.Avalonia` ids are deprecated on nuget.org, not removed: installable at `.923`, never
+   published to again.
+2. **`nuget.config` removals move to step 6.** Step 1 only **adds** the nuget.org patterns. While the
+   `LayeredEditors` projects exist, package mode still resolves them from `github` / `localfeed`, and
+   dropping that mapping early would route them to nuget.org, which has none.
+3. **The namespace map is DERIVED, not relayed.** All 87 old types were matched by name against the
+   published packages' own XML documentation: 81 matched, 0 ambiguous, and the 6 unmatched are the F12
+   cluster plus two internal JSON tokeniser types. The relayed map **missed** `LayeredEditors.Messages`
+   (→ `ScopedEditors.Messages`, shipped in the **ViewModels** package), `…Diagnostics.Binding`, and one
+   side each of the `…Diagnostics.Logging` and `…Diagnostics.Dialogs` splits. ⚠ **Re-derive it against
+   `.924`** rather than assume the rename is uniform.
+4. **Neither package repository carries tests for the moved code** — the move carried source only.
+   Maintainer, 2026-09-23: **port first; step 6 waits.** About 33 files, including a fourth category
+   the plan's list missed: `ShellLauncherWindowsTerminalTests.cs` (ported to `AppServices.Tests/Shell/`, deleted here),
+   which exercises `ShellLauncher` internals whose `InternalsVisibleTo` grant did not travel.
+5. **The baseline is 3,609, not 3,600.** PR #74 links `HeadlessSessionBootstrapTests.cs` (3 tests) into
+   three test projects. ⚠ Two of those are the `LayeredEditors` test projects step 6 deletes, so the
+   total falls by **6 there with no loss of coverage** — the same three tests still run in
+   `ClaudeForge.Tests`. Account for them by name when the totals are reconciled.
+
+
+6. ⏳ **Building against LOCAL builds of `.924` until it is published** (maintainer, 2026-09-23: "work
+   around it"). Both families are packed from their committed source — ScopedEditors `56ff954`,
+   AppServices `4815c74` — at **prerelease** versions (`2026.3.924-local.1` / `-local.2`), because
+   the NuGet cache never re-extracts a version, so a local pack under the real `2026.3.924` would
+   silently shadow the published bits on this machine. They live in their **own** gitignored feed,
+   `artifacts/prerelease-924`, with its own temporary source — ⛔ NOT `artifacts/localfeed`, which is
+   the package canary's and which `EveryPackageInTheLocalFeedNamesOneVersion` holds to one version.
+   **The swap, once `.924` is indexed:** both versions → `2026.3.924`; delete the `prerelease924`
+   source and mapping; purge `~/.nuget/packages/bennewitz.ninja.{appservices,scopededitors}*`.
+7. **Decision 8 is implemented through the package's hook, not the local wrap** (maintainer,
+   2026-09-23). The hook shipped in the same `.924` —
+   `AvaloniaDiagnosticsOptions.ConfigureLogger` / `.EventListener` (AppServices `4815c74`) — so the
+   wait that made the wrap preferable no longer exists. Gone with it: flushing a pipeline Serilog
+   did not own, early `Log.Logger` captures bypassing F12, and a "call ours, not
+   `AvaloniaDiagnostics.EnqueueEvent`" trap. `ClaudeForgeDiagnostics` now only builds the windows.
+8. **Step 2's proof — "the solution compiles" — is only reachable together with step 3**, because
+   the service API is breaking. Step 2 landed as a non-compiling checkpoint on the branch.
+9. **Step 4: one of the four `avares://` sites fails LOUDLY, not silently.** A `StyleInclude` is
+   resolved by the XAML compiler (AVLN2000). The plan's "no build error" is true of the three
+   **font** sites only.
+10. **A fifth test category the plan's list missed:** `ClaudeForge.Tests` files that test package
+    code through its **public** API — `ShareOutcomeTests` / `ShareServiceTests` exercise
+    `DefaultShareService`, and two of `AccessibilityCoverageTests`' four tests guard
+    `FatalErrorDialog` / `NonFatalNoticeDialog`. They need no internals, so the internals scan could
+    not find them. They STAY: neither package repository has equivalents, so they are the only
+    coverage that code has.
+11. **`NoLiteralMonospaceFontStackTests` was misclassified** in the plan's measured table as "named
+    only in comments". It resolves `avares://<assembly>/Assets/Fonts` to `src/<assembly>/`, so it is
+    coupled to the family through the URI's **data**, which a grep for the literal cannot see. It is
+    step 7's work, and the one guard that validates step 4's font URIs statically.
+12. **Step 7 — what each guard became, and the coverage that left with the library.** Rule 1 held:
+    nothing was deleted without naming where its subject is now checked.
+
+    | Guard | Now | Canary |
+    |---|---|---|
+    | `DangerSurfaceMarkupTests` | app wrapper only; file floor 5 | ✅ floor and `IsDangerNow` banner both redden |
+    | `SeverityGlyphFontSizeMarkupTests` | 6 sites (was 8), 5 files | ✅ |
+    | `AxamlAccessibilityCoverageTests` | library project dropped, 6 directories | ✅ ratchet reddens on ONE removed attribute (a line drop that broke the XML "passed" the first time for the wrong reason) |
+    | `ThemeResourceIntegrityTests` | the two `LE.*` tests left; NEW guard reads the package's user-string heap for the `App*` tokens it asks the app for | ✅ both ways; found 2 keys + the `AppSeverity` fragment |
+    | `NoDeadBrushTokensTests` | severity family re-earned by calling the package's `KeyFor`; the `LE.Danger*` exemption retired — its named exit (the tokens leaving) was reached | ✅ both tests redden, and the exemption is shown load-bearing |
+    | `NoLiteralMonospaceFontStackTests` | a packaged URI is resolved by Avalonia's `AssetLoader` on the headless session | ✅ old assembly name and wrong folder each redden with the URI named |
+    | `PackageMetadataTests`, `AssemblyLayeringTests` | `LayeredEditors.` prefix / globs removed — a stale DLL in a test `bin/` would otherwise be scanned as shared code | — |
+    | `scripts/verify-feed-restore.ps1` | 11 ids → 6 — it would have failed CI's `feed-restore` | — |
+
+    ⛔ **GAPS — no test anywhere covers these now; restore them IN the ScopedEditors repo:** the
+    shared `PropertyEditorWrapper`'s danger banner and glyph sizing, the `LE.*` token
+    reference/declaration consistency, and the AXAML accessibility scan of the package's own
+    controls. (`TemplatePartAutomationNameTests` and `ThemedBrushTrackingTests` DID move — they are in
+    `ScopedEditors.Tests`.) ⓘ The F12 windows kept their English literals when they moved into the
+    app, so they sit outside the resx rule; that is inherited, not new.
+13. ⛔ **Drift 9's word "silent" is WRONG for the font sites — measured here, 2026-09-23.** A
+    single-family `FontFamily` whose name does not resolve THROWS at first layout (*"Could not create
+    glyphTypeface"*); only a fallback list degrades silently. Step 4's runtime check is now a test,
+    `EveryBundledFontUri_LaysOutText`: it lays out text in every full `avares://…#Family` URI in
+    `src/` on the headless session, behind a nonexistent-family control that must fail. All three
+    sites resolve; canaried with `#JetBrains Mona`, which reddens with Avalonia's own message. The
+    remark that said "does not throw" is corrected. ✅ **Weight is asserted too** (maintainer,
+    2026-09-23): a missing weight throws nothing and borrows the nearest face (the peer measured
+    600 → 700), so `EveryWeightTheMarkupAsksOfAMonospaceToken_HasItsOwnFace` takes every token/weight
+    pair the markup binds (Normal, Bold and SemiBold today) and asserts the shaping face's weight,
+    behind a control that must substitute. Canaried: the SemiBold site set to Light reddens with
+    *"drawn with a weight-400 face"*.
+14. ⛔ **Drift 1 is half-REVERSED: at `.924` the two package IDS are `.Avalonia` again** (developer's
+    decision, 2026-09-23, before anything was published — AppServices `a853070`, ScopedEditors
+    `6525d87`). AQ1004 governs namespaces and a package id is not one. So
+    `Bennewitz.Ninja.{AppServices,ScopedEditors}.Avalonia` ship `…AvaloniaUI.dll`; assemblies,
+    namespaces and `avares://ScopedEditors.AvaloniaUI/…` URIs stay `.AvaloniaUI`. ⚠ **Package and
+    assembly are now named differently** — an `avares://` URI written from the package name points at
+    nothing. The `.AvaloniaUI` ids will never exist on nuget.org, nothing is deprecated, and the real
+    `.924` is a new version of the ids pinned at `.923`. Here: three `PackageReference`s and the
+    comments naming the package changed; the local prerelease moved to **`-local.3`**, packed from
+    those two commits, with both `.nupkg`s checked to carry the `.AvaloniaUI` DLL.
+15. ⛔ **Avalonia 12.1.3 is the family floor** (developer's decision, 2026-09-23, relayed by the
+    ScopedEditors session and checked here: AppServices `d1c5c9c` and ScopedEditors `64769ae` both
+    set it, and every id exists on nuget.org). At `.924` both Avalonia packages depend on
+    `Avalonia >= 12.1.3`, so this repo's direct `12.1.0` pins would fail restore with NU1605 (the
+    peer measured that; not re-measured here). Moved to 12.1.3: `Avalonia` ×3 projects,
+    `Avalonia.Desktop`, `Avalonia.Themes.Fluent`, `Avalonia.Fonts.Inter`, and `Avalonia.Headless`
+    (from 12.1.2, kept at the framework's version). ⛔ **`Avalonia.Controls.DataGrid` is a floor too,
+    at 12.1.2** — its newest; it has no 12.1.3. This first read "stays 12.1.0, as ScopedEditors
+    keeps it", which was true of `64769ae` and stopped being true the same night: ScopedEditors
+    `4e44d8b` (merged, CI green) makes 12.1.2 a floor of `ScopedEditors.Avalonia`. MEASURED here
+    against a pack of `4e44d8b`: a direct 12.1.0 reference fails restore with *"Detected package
+    downgrade: Avalonia.Controls.DataGrid from 12.1.2 to 12.1.0"*; 12.1.2 restores clean. The local
+    prereleases are now AppServices **`-local.4`** (`d1c5c9c`) and ScopedEditors **`-local.5`**
+    (`4e44d8b`). Build 0/0; suite green at the usual totals; a trimmed win-x64 Release publish
+    reports 0 IL warnings.
+    ⚠ **One unexplained run:** the first full-suite run after the bump reported `ClaudeForge.Tests`
+    at **1,606 tests, 0 skipped** — 154 short of 1,760, with the 3 skips missing too, and nothing
+    failed. Four runs since (one isolated, three full-suite) each report 1,760. It left no TRX, so
+    the cause is unknown. If a total ever reads short again, capture the TRX before rerunning.
+    ✅ **Explained 2026-09-24: a short `Passed!` total is a CRASHED TEST HOST.** Reproduced by
+    accident — a timer callback that threw on a pool thread aborted the run, and the summary still
+    printed `Passed!` at **1,587**. CI then caught the real instance (PR #77, Windows push run):
+    `StatusController`'s auto-clear timer, left armed by an undisposed `MainWindowViewModel`, fired
+    after its test and posted into a dispatcher the `PerTest` teardown had reset — a
+    `NullReferenceException` inside `Dispatcher.Post`, unhandled, taking the host down. ⛔ So a
+    `Passed!` line proves nothing about completeness; compare the TOTAL against the known count.
+    The fix — disposing every `MainWindowViewModel` a test creates — is on `fix/headless-leaked-timers`,
+    judged by repeated CI before it becomes a PR.
+16. **Step 10's first CI run (`859cf41`) — two jobs red by construction, one real guard defect.**
+    - ⛔ **`Feed Restore` is red by construction too**, not only `Published Version` as the plan
+      named: both restore the PUBLISHED AgentForge packages at `SharedPackageVersion` `2026.3.922`,
+      which depend on `LayeredEditors.*` ids this branch no longer maps (step 6), so NU1101. Re-adding
+      the mapping would not help — `.922`'s AgentForge is built against the old types. Both clear only
+      with the post-merge, BREAKING `packages-v*` release plus the pin bump.
+    - ✅ **`PackageVersionLockstepTests` treated the prefix as the family.** It called every
+      `Bennewitz.Ninja.*` dependency a sibling that must share the pack's version, so AgentForge's
+      dependencies on ScopedEditors/AppServices `2026.3.924` read as six drifts and failed the package
+      canary. A sibling is now a package IN the packed feed; a premise asserts at least one sibling
+      dependency was checked; canaried by pointing AgentForge.Sdk's AgentForge.Core dependency at
+      `9.9.9` inside the feed. ⓘ Locally it had only ever been **Inconclusive** (no feed) — one of
+      the "3 skipped". The full canary now passes locally, with that test measuring.
+
+### ⏭ QUEUED — [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md), approved 2026-09-23: MSTest → xUnit v3
+
+Starts **after `00005` merges**, on its own branch and PR. The converter is
+`Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs`, on that repository's `main` at **`17e6bd8`**
+— the commit to pin and name in each conversion commit. Already piloted on a scratch clone:
+`JsonC.Tests` converted with nothing unmapped, 0 warnings, 73 of 73. ⚠ Step 1 selects the MTP runner
+explicitly: an `xunit.v3` executable otherwise runs xUnit's native runner.
+
+⭐ **Decided, 2026-09-23 — `[assembly: Parallelize(Scope = MethodLevel)]` becomes xUnit's DEFAULT.**
+Six projects set it and xUnit has no method-level mode; the converter reports it UNMAPPED on purpose.
+Each conversion commit deletes the attribute: xUnit then runs classes in parallel and a class's
+methods serially — strictly less parallel than today, so no new interleaving can appear. Assemblies
+serial today (`DoNotParallelize`) stay serial under decision 6 of the plan.
 
 ### ⛔⛔ A DATA EDIT UNDER `src/` DOES NOT REACH A RELEASE ON ITS OWN
 
@@ -926,6 +1100,25 @@ tests with two different exceptions in one class, green in isolation, is not a p
 test.
 
 ✅✅ **ROOT-CAUSED AND FIXED 2026-09-22 — it was lazy application set-up, not "contamination".**
+
+⛔⛔ **CORRECTED 2026-09-24 — the heading above is FALSE. Not root-caused, not fixed.** Everything
+below it is kept as the record of what was believed. Avalonia 12.1.3's own source
+(`Headless/Avalonia.Headless/HeadlessUnitTestSession.cs` in the AvaloniaUI/Avalonia repository, read here): with no
+`[AvaloniaTestIsolation]` on the assembly — this repository sets none — isolation defaults to
+`PerTest`, and under `PerTest` EVERY `Dispatch` runs `EnsureIsolatedApplication()`:
+`Dispatcher.ResetBeforeUnitTests()` then `AppBuilder.SetupUnsafe()`. The app is rebuilt for every
+test; there is no first build to move, so the warm-up does nothing on the failing path, and the
+stack below — `SetupUnsafe` inside a test's dispatch — is what EVERY test does, not evidence that
+set-up was skipped. The guard reads `Application.Current` inside a dispatch, so it is true by
+construction; the "canary" compared a read outside a dispatch. It passed on CI for PR #76
+(Windows), the run in which the failure recurred. Handed over by the ClaudeForge session
+(2026-09-24), which wrote PR #74; the Avalonia source was re-read here before correcting.
+▶ **OPEN.** Candidate: `[assembly: AvaloniaTestIsolation(PerAssembly)]` (builds the app once; all
+headless tests then share one `Application`), unverified, tried on its own branch and judged only by
+repeated CI on Windows and Ubuntu. If it does not hold, delete the bootstrap rather than keep a
+linked file that exists for a wrong reason. ⚠ `plans/00006` step 5 carries this bootstrap and its
+guard into xUnit as proof of set-up ordering; that premise is false (drift, never edited into the
+frozen plan), and ScopedEditors' xUnit port carries the same claims.
 
 ⛔ **The 2026-09-22 entry that stood here was wrong and is corrected rather than deleted.** It read
 this as a third class of the same process-global contamination, on the strength of a matching
@@ -1872,7 +2065,7 @@ then the packaging plan's three unblocked items.
 
 ### ⛔⛔ The Windows TFM, and why nothing ever failed
 
-`src/ClaudeForge`, `OpenCodeForge` and `src/LayeredEditors.Avalonia.Services` each declared
+`src/ClaudeForge`, `OpenCodeForge` and `LayeredEditors.Avalonia.Services` each declared
 `net10.0-windows10.0.19041.0` so `DefaultShareService` could compile against MAUI Essentials — each
 with a comment asserting the plural `<TargetFrameworks>` took precedence over the root's singular
 `<TargetFramework>`. **It does not.** MSBuild cross-targets only when `TargetFramework` is EMPTY,

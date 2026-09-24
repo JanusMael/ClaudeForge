@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 

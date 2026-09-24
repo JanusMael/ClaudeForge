@@ -1,10 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup"
-             xmlns:conv="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Converters"
+             xmlns:conv="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters"
              xmlns:core="using:Bennewitz.Ninja.AgentForge.Core.Backup"
-             xmlns:ctrl="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Controls"
-             xmlns:behaviors="using:Bennewitz.Ninja.LayeredEditors.Avalonia.Behaviors"
+             xmlns:ctrl="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Controls"
+             xmlns:behaviors="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Behaviors"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              x:Class="Bennewitz.Ninja.ClaudeForge.Views.BackupRestoreView"
              x:DataType="vm:BackupRestoreViewModel">
@@ -285,7 +285,7 @@
         AutomationProperties.Name="{x:Static loc:Strings.TabRestore}">
                 <!-- W8 2026-05-15 — drag a backup-*.zip from Explorer onto this tab.
                      FileDrop is a reusable attached-property behaviour in
-                     LayeredEditors.Avalonia.Behaviors that hides the Avalonia 12
+                     ScopedEditors.AvaloniaUI.Behaviors that hides the Avalonia 12
                      IDataTransfer / DataFormat.File surface and filters payloads by
                      extension before invoking the command.  Routes to
                      RestoreFromDroppedArchiveCommand with the local file path as
@@ -359,7 +359,8 @@
                                 <MenuItem Header="{x:Static loc:Strings.MenuOpenFileLocation}"
                                           AutomationProperties.Name="{x:Static loc:Strings.MenuOpenFileLocation}"
                                           Command="{Binding OpenFileLocationCommand}"
-                                          CommandParameter="{Binding SelectedBackup}"/>
+                                          CommandParameter="{Binding SelectedBackup}"
+                                          IsVisible="{Binding IsRevealInFileManagerSupported}"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
                         <!-- 2026-05-19 — column widths tuned for default ~950 px window.

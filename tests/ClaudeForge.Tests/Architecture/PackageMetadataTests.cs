@@ -200,7 +200,7 @@ public sealed class PackageMetadataTests
     /// <para>
     /// ⭐ <b>This is the premise of the whole switch.</b> The root <c>Directory.Build.targets</c>
     /// rewrites a <c>ProjectReference</c> into a <c>PackageReference</c> when the referenced
-    /// project's file name begins <c>AgentForge.</c> or <c>LayeredEditors.</c>. It matches on a
+    /// project's file name begins <c>AgentForge.</c>, or is <c>JsonC</c>. It matches on a
     /// name because MSBuild cannot read the referenced project's <c>IsPackable</c> from there —
     /// so the name and the packability have to agree, and this is what makes them.
     /// </para>
@@ -219,14 +219,16 @@ public sealed class PackageMetadataTests
         string repoRoot = FindRepoRoot();
 
         // The same selectors the switch in Directory.Build.targets uses. Kept in sync by this
-        // test failing, which is the point: there is no third place that lists the eleven.
+        // test failing, which is the point: there is no third place that lists the six.
         //
         // ⚠ JsonC is named outright rather than matched by a family prefix, because it IS a
         // family of one — a general-purpose JSONC reader, renamed out of AgentForge before
         // first publish so the id would not claim agent knowledge it does not have. An
         // exception in a rule-based selector is a smell; it earns its place only because the
         // assertion below is two-directional, so the exception cannot rot unnoticed.
-        string[] prefixes = ["AgentForge.", "LayeredEditors."];
+        // LIBRARY GUARD NARROWED -- plans/00005. "LayeredEditors." was a second prefix; that family
+        // left this tree, and the switch in Directory.Build.targets no longer selects it.
+        string[] prefixes = ["AgentForge."];
         string[] exactNames = ["JsonC"];
 
         List<string> byName = [];
@@ -275,7 +277,7 @@ public sealed class PackageMetadataTests
             "These projects carry a shared-library name prefix but are not packaged, so in "
             + "package mode the switch rewrites references to them into PackageReferences for "
             + "packages that are never published, and restore fails. Either mark them packable "
-            + "or move them out of the AgentForge.*/LayeredEditors.* namespace. Offenders: "
+            + "or move them out of the AgentForge.* namespace. Offenders: "
             + string.Join(", ", prefixedButNotPackable));
     }
 

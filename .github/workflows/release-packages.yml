@@ -2,7 +2,7 @@ name: Release packages
 
 # Triggered by a PACKAGE version tag: packages-v2026.3.914 (plans/00001, work item 6).
 #
-# ⚠ THE PREFIX IS NOT DECORATION, AND IT IS NOT EITHER APP'S. The eleven shared libraries serve
+# ⚠ THE PREFIX IS NOT DECORATION, AND IT IS NOT EITHER APP'S. The six shared libraries serve
 # BOTH ClaudeForge and OpenCodeForge, so riding on one app's release tag would make the other
 # app's releases unable to publish shared code — and would tie a library fix to cutting a full
 # app release. This prefix is also what keeps the three release workflows disjoint: 'v*.*.*' and
@@ -57,7 +57,7 @@ jobs:
   # treats as recoverable — a bad build, a wrong version — is permanent past the push step, so
   # the gate is not optional here the way a re-runnable job's would be.
   #
-  # ⓘ One OS, unlike the app workflows' three. These eleven are RID-neutral libraries; the
+  # ⓘ One OS, unlike the app workflows' three. These six are RID-neutral libraries; the
   # cross-platform surface belongs to the apps, and ci.yml's package-canary job already proves
   # the whole repo builds and tests against these packages rather than the projects.
   test:

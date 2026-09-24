@@ -1,9 +1,24 @@
+using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 
 /// <summary>
-/// Every <c>LE.*</c> theme resource an AXAML file asks for MUST actually be declared.
+/// Every theme resource a view asks for MUST actually be declared by the app that renders it.
+///
+/// <para>
+/// ⚠ <b>plans/00005 moved the editor library — and its <c>LE.*</c> tokens — into the
+/// <c>Bennewitz.Ninja.ScopedEditors</c> package.</b> The two tests that held <c>LE.*</c> references
+/// and declarations to each other checked that library's INTERNAL consistency, so they left with
+/// it; no test in that repository replaces them yet (see PROGRESS.md). What stays here is the
+/// contract that crosses the boundary: the <c>App*</c> tokens the package asks the app for. The
+/// history below is why both kinds of check exist.
+/// </para>
 ///
 /// <para>
 /// ⛔⛔ <b>Why this guard exists: two tokens were referenced nine times and defined zero times, and
@@ -73,20 +88,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 public sealed class ThemeResourceIntegrityTests
 {
     /// <summary>
-    /// <c>{DynamicResource LE.Foo}</c> / <c>{StaticResource LE.Foo}</c>, in markup-extension form
-    /// or as a property-element <c>ResourceKey</c>. Captures the key without the <c>LE.</c> prefix
-    /// left off, so failure text names exactly what to add to <c>EditorColors.axaml</c>.
-    /// </summary>
-    private static readonly Regex ReferencePattern = new(
-        @"\{\s*(?:Dynamic|Static)Resource\s+(LE\.[A-Za-z0-9_]+)\s*\}",
-        RegexOptions.Compiled);
-
-    /// <summary>A resource declaration: <c>x:Key="LE.Foo"</c>.</summary>
-    private static readonly Regex DefinitionPattern = new(
-        @"x:Key\s*=\s*""(LE\.[A-Za-z0-9_]+)""",
-        RegexOptions.Compiled);
-
-    /// <summary>
     /// <c>{DynamicResource AppFoo}</c> — the host-supplied token namespace, declared per app in
     /// each <c>App.axaml</c>.
     /// </summary>
@@ -99,198 +100,111 @@ public sealed class ThemeResourceIntegrityTests
         @"x:Key\s*=\s*""(App[A-Za-z0-9_]+)""",
         RegexOptions.Compiled);
 
+    /// <summary>Any <c>App*</c> string literal — a complete key or the fixed half of a built one.</summary>
+    private static readonly Regex AppLiteralPattern = new(
+        @"^App[A-Z][A-Za-z0-9]*$",
+        RegexOptions.Compiled);
+
     /// <summary>A <c>&lt;ProjectReference Include="..\Foo\Foo.csproj" /&gt;</c> entry.</summary>
     private static readonly Regex ProjectReferencePattern = new(
         @"ProjectReference\s+Include\s*=\s*""([^""]+)""",
         RegexOptions.Compiled);
 
     /// <summary>
-    /// A <c>"LE.Foo"</c> string literal in C#, which is how a control or converter looks a brush
-    /// up at runtime.
+    /// Every <c>App*</c> token the consumed <c>ScopedEditors.AvaloniaUI</c> package asks for is
+    /// declared by ClaudeForge — learned from the package's own metadata, not from a list.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>Scanning C# is what makes the unused-token direction honest.</b> Six of the eight
-    /// tokens are referenced from code and never from markup —
-    /// <c>BoolToStatusBrushConverter</c> resolves the tri-state trio and
-    /// <c>LinkifiedTextBlock</c> the three link colours — so an AXAML-only scan reports all six as
-    /// dead. The first draft of this class handled that with a hardcoded allowlist of "used from
-    /// code" keys, which is a list that silently goes stale the moment a control stops using one:
-    /// the token would then be genuinely dead and the allowlist would keep vouching for it.
-    /// Reading the actual literals costs one more directory walk and cannot go stale.
+    /// <para>
+    /// ⛔ <b>This is the contract that crosses the package boundary, and nothing else checks it.</b>
+    /// The shared <c>PropertyEditorWrapper</c> asks for <c>AppPropertyHeadingBackgroundBrush</c> and
+    /// <c>AppPropertyHeadingBrush</c>, and the app must declare both — the defect this class was
+    /// widened for. Since plans/00005 that wrapper ships in a PACKAGE: there is no source to scan and
+    /// no project reference to walk, so <see cref="EveryAppTokenAsharedLibraryNeeds_IsDeclaredByEveryApp"/>
+    /// cannot see what it needs. A token the package starts asking for would render as styling that
+    /// is silently absent — no build error, no exception, no log line.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>Read from the compiled package.</b> Compiled AXAML keeps every resource key as a string
+    /// literal, so the assembly's user-string heap names exactly the keys it looks up. Measured at
+    /// <c>2026.3.924</c>: the two heading brushes, and the fragment <c>AppSeverity</c>.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>A fragment is the literal half of a key built at runtime</b> —
+    /// <c>AppSeverityToBrushConverter.KeyFor</c> interpolates <c>$"AppSeverity{severity}Brush"</c>.
+    /// It is accepted only when the package's own key builder completes it; those keys are
+    /// <c>AppSeverityTokenCoverageTests</c>'. Any other <c>App*</c> literal must be declared, so a new
+    /// computed family fails here until something covers it, rather than passing unnoticed.
+    /// </para>
     /// </remarks>
-    private static readonly Regex CodeReferencePattern = new(
-        @"""(LE\.[A-Za-z0-9_]+)""",
-        RegexOptions.Compiled);
-
     [TestMethod]
-    public void EveryReferencedThemeResource_IsActuallyDeclared()
+    public void EveryAppTokenTheEditorPackageRequests_IsDeclaredByClaudeForge()
     {
         string repoRoot = FindRepoRoot();
-        IReadOnlyList<string> axamlFiles = ScanAxamlFiles(repoRoot);
+        IReadOnlyList<string> literals = AppLiteralsIn(typeof(AppSeverityToBrushConverter).Assembly);
 
-        HashSet<string> declared = [];
-        // key -> the files that ask for it, so a failure says where to look.
-        Dictionary<string, SortedSet<string>> referencedBy = new(StringComparer.Ordinal);
-
-        foreach (string file in axamlFiles)
+        HashSet<string> declared = new(StringComparer.Ordinal);
+        foreach (string file in Directory.GetFiles(Path.Combine(repoRoot, "src", "ClaudeForge"), "*.axaml",
+                                                   SearchOption.AllDirectories)
+                                        .Where(p => !IsUnderBuildOutput(repoRoot, p)))
         {
-            string text = File.ReadAllText(file);
-            string relative = RepoRelative(repoRoot, file);
-
-            foreach (Match m in DefinitionPattern.Matches(text))
+            foreach (Match m in AppDefinitionPattern.Matches(File.ReadAllText(file)))
             {
                 declared.Add(m.Groups[1].Value);
             }
-
-            foreach (Match m in ReferencePattern.Matches(text))
-            {
-                string key = m.Groups[1].Value;
-                if (!referencedBy.TryGetValue(key, out SortedSet<string>? files))
-                {
-                    files = new SortedSet<string>(StringComparer.Ordinal);
-                    referencedBy[key] = files;
-                }
-
-                files.Add(relative);
-            }
         }
 
-        // A scan that finds nothing proves nothing. Both floors are far below the real counts so
-        // ordinary churn does not trip them, while a broken regex or a collapsed scan root does.
-        Assert.IsTrue(declared.Count >= 6,
-            $"Expected at least 6 LE.* declarations across {axamlFiles.Count} AXAML files, found " +
-            $"{declared.Count}. The scan or the declaration pattern is broken, not the repo.");
-        // TWO-APP GUARD NARROWED — plans/00003 Phase 0. The floor was 5; OpenCodeForge's views
-        // referenced most of the LE.* tokens, so 2 is what remains. Still a real assertion: a
-        // broken reference pattern yields 0. Restore 5 when OpenCodeForge rejoins.
-        Assert.IsTrue(referencedBy.Count >= 2,
-            $"Expected at least 2 distinct LE.* references across {axamlFiles.Count} AXAML files, " +
-            $"found {referencedBy.Count}. The scan or the reference pattern is broken.");
+        string[] built = [.. Enum.GetValues<AppSeverity>().Select(AppSeverityToBrushConverter.KeyFor)];
 
-        List<string> undeclared = referencedBy.Keys
-                                              .Where(k => !declared.Contains(k))
-                                              .OrderBy(k => k, StringComparer.Ordinal)
-                                              .ToList();
+        List<string> satisfied = [.. literals.Where(declared.Contains)];
+        List<string> unexplained = [.. literals
+            .Where(l => !declared.Contains(l))
+            .Where(l => !built.Any(k => k.StartsWith(l, StringComparison.Ordinal)))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)];
 
-        if (undeclared.Count > 0)
-        {
-            IEnumerable<string> lines = undeclared.Select(k =>
-                $"  {k}  ({referencedBy[k].Count} reference(s) in " +
-                $"{string.Join(", ", referencedBy[k])})");
+        // Premise before claim: a reader that found nothing, or found only fragments, proves nothing.
+        Assert.IsTrue(satisfied.Count > 0,
+            $"Found {literals.Count} App* literal(s) in {typeof(AppSeverityToBrushConverter).Assembly.GetName().Name}, "
+            + "none of them a key ClaudeForge declares. The metadata read or the declaration scan is "
+            + "broken, so this guard would pass without checking anything.");
 
-            Assert.Fail(
-                $"{undeclared.Count} LE.* theme resource(s) are referenced but never declared:\n" +
-                string.Join('\n', lines) +
-                "\n\nAn unresolvable DynamicResource does not fail the build, does not throw, and " +
-                "logs nothing — Avalonia leaves the property at its default, so the control just " +
-                "renders unstyled. Declare each key in " +
-                "src/LayeredEditors.Avalonia/Themes/EditorColors.axaml, or correct the reference. " +
-                $"Declared keys are: {string.Join(", ", declared.OrderBy(k => k, StringComparer.Ordinal))}.");
-        }
+        Assert.AreEqual(0, unexplained.Count,
+            "The editor package asks for App* token(s) ClaudeForge does not declare:\n  "
+            + string.Join("\n  ", unexplained)
+            + "\n\nDeclare each in src/ClaudeForge/App.axaml (both theme variants). An unresolvable "
+            + "DynamicResource is silently absent styling. If one is the literal half of a key the "
+            + "package builds at runtime, cover that family the way AppSeverityTokenCoverageTests does.");
     }
 
     /// <summary>
-    /// The inverse direction: a declared token nobody uses is dead theme surface.
+    /// Every <c>App*</c> string literal in <paramref name="assembly"/>, read from its user-string
+    /// heap — where compiled AXAML keeps resource keys and C# keeps its literals.
     /// </summary>
-    /// <remarks>
-    /// ⚠ Reported as a failure rather than tolerated, matching how this repo already treats an
-    /// unreferenced resx key (a build error via <c>Directory.Build.targets</c>). The reasoning is
-    /// the same: a palette entry that no view asks for is either a leftover from a removed control
-    /// or a typo'd counterpart to one of the undeclared keys above — and the second case is a live
-    /// defect wearing the first case's clothes.
-    /// </remarks>
-    [TestMethod]
-    public void EveryDeclaredThemeResource_IsActuallyUsed()
+    private static IReadOnlyList<string> AppLiteralsIn(Assembly assembly)
     {
-        string repoRoot = FindRepoRoot();
-        IReadOnlyList<string> axamlFiles = ScanAxamlFiles(repoRoot);
+        using FileStream stream = File.OpenRead(assembly.Location);
+        using PEReader pe = new(stream);
+        MetadataReader metadata = pe.GetMetadataReader();
 
-        HashSet<string> declared = [];
-        HashSet<string> referenced = [];
-
-        foreach (string file in axamlFiles)
+        List<string> result = [];
+        if (metadata.GetHeapSize(HeapIndex.UserString) <= 1)
         {
-            string text = File.ReadAllText(file);
-
-            foreach (Match m in DefinitionPattern.Matches(text))
-            {
-                declared.Add(m.Groups[1].Value);
-            }
-
-            foreach (Match m in ReferencePattern.Matches(text))
-            {
-                referenced.Add(m.Groups[1].Value);
-            }
+            return result;
         }
 
-        int fromCode = 0;
-        foreach (string file in ScanCSharpFiles(repoRoot))
+        for (UserStringHandle handle = MetadataTokens.UserStringHandle(1);
+             !handle.IsNil;
+             handle = metadata.GetNextHandle(handle))
         {
-            foreach (Match m in CodeReferencePattern.Matches(File.ReadAllText(file)))
+            string value = metadata.GetUserString(handle);
+            if (AppLiteralPattern.IsMatch(value))
             {
-                if (referenced.Add(m.Groups[1].Value))
-                {
-                    fromCode++;
-                }
+                result.Add(value);
             }
         }
 
-        Assert.IsTrue(declared.Count >= 6,
-            $"Expected at least 6 LE.* declarations, found {declared.Count}. The scan is broken.");
-        Assert.IsTrue(fromCode >= 1,
-            "Expected at least one LE.* brush to be resolved from C# (BoolToStatusBrushConverter "
-            + "and LinkifiedTextBlock both do). Finding none means the C# scan or its pattern is "
-            + "broken, which would make every code-only token look dead.");
-
-        // TWO-APP GUARD NARROWED — plans/00003 Phase 0, and this is the SECOND guard carrying the
-        // same exemption: NoDeadBrushTokensTests.DeadWithOpenCodeForge is the other. Two guards
-        // asking one question from different angles is why the exemption has to be written twice —
-        // fixing one and believing the job done is how the pair silently disagree.
-        //
-        // ⛔ Both tokens' only consumer was OpenCodeKeybindEditorView.axaml. They are exempted
-        // rather than deleted because deleting them is a SHARED-LIBRARY change, and 00003 Phase A
-        // requires the shared surface be unchanged before the immutable packages-v* tag.
-        // Delete the tokens and BOTH lists in Phase E, alongside 00002.
-        string[] deadWithOpenCodeForge = ["LE.DangerBorder", "LE.DangerText"];
-
-        List<string> unused = declared
-                              .Where(k => !referenced.Contains(k))
-                              .Where(k => !deadWithOpenCodeForge.Contains(k, StringComparer.Ordinal))
-                              .OrderBy(k => k, StringComparer.Ordinal)
-                              .ToList();
-
-        Assert.AreEqual(0, unused.Count,
-            $"{unused.Count} LE.* theme resource(s) are declared but referenced from neither AXAML " +
-            $"nor C#: {string.Join(", ", unused)}. Either wire them up or delete them — and check " +
-            "first whether one is a misspelling of a key some view references and cannot resolve, " +
-            $"which {nameof(EveryReferencedThemeResource_IsActuallyDeclared)} would also be " +
-            "reporting.");
-    }
-
-    /// <summary>
-    /// Every <c>*.axaml</c> under <c>src/</c>, recursively, excluding build output.
-    /// </summary>
-    /// <remarks>
-    /// Deliberately the same repo-wide shape as
-    /// <c>AxamlAccessibilityCoverageTests.ScanAxamlFiles</c> rather than a path to one project —
-    /// that test's own history is a hardcoded <c>src/ClaudeForge/Views</c> that left every other
-    /// UI project unguarded, and the undeclared tokens this class exists for live in
-    /// <c>src/OpenCode.Avalonia/</c>.
-    /// </remarks>
-    private static IReadOnlyList<string> ScanAxamlFiles(string repoRoot)
-    {
-        string srcDir = Path.Combine(repoRoot, "src");
-        if (!Directory.Exists(srcDir))
-        {
-            throw new InvalidOperationException(
-                $"Expected a src/ directory at '{srcDir}' (repo root resolved from " +
-                $"AppContext.BaseDirectory = '{AppContext.BaseDirectory}').");
-        }
-
-        return Directory.GetFiles(srcDir, "*.axaml", SearchOption.AllDirectories)
-                        .Where(p => !IsUnderBuildOutput(repoRoot, p))
-                        .OrderBy(p => RepoRelative(repoRoot, p), StringComparer.Ordinal)
-                        .ToList();
+        return result;
     }
 
     /// <summary>
@@ -438,16 +352,6 @@ public sealed class ThemeResourceIntegrityTests
 
         return seen;
     }
-
-    /// <summary>
-    /// Every <c>*.cs</c> under <c>src/</c>, so a brush resolved by a control or converter counts as
-    /// used.
-    /// </summary>
-    private static IReadOnlyList<string> ScanCSharpFiles(string repoRoot)
-        => Directory.GetFiles(Path.Combine(repoRoot, "src"), "*.cs", SearchOption.AllDirectories)
-                    .Where(p => !IsUnderBuildOutput(repoRoot, p))
-                    .OrderBy(p => RepoRelative(repoRoot, p), StringComparer.Ordinal)
-                    .ToList();
 
     /// <summary>
     /// True when any path segment below the repo root is <c>bin</c> or <c>obj</c>. Checked

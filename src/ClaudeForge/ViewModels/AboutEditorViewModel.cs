@@ -7,9 +7,11 @@ using System.Runtime.Versioning;
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.LayeredEditors.Abstractions.Dialogs;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ClaudeForge.Services;
+using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
+using Bennewitz.Ninja.AppServices.AvaloniaUI;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -267,23 +269,26 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
     }
 
     [RelayCommand(CanExecute = nameof(CanOpenConfig))]
-    private void OpenConfig()
+    private async Task OpenConfigAsync(CancellationToken cancellationToken)
     {
-        _shellLauncher.OpenInDefaultEditor(PrimaryConfigPath);
+        LaunchResultLog.Report("[About] Open config",
+            await _shellLauncher.OpenInDefaultEditorAsync(PrimaryConfigPath, cancellationToken));
     }
 
     [RelayCommand(CanExecute = nameof(CanRevealConfig))]
-    private void RevealConfig()
+    private async Task RevealConfigAsync(CancellationToken cancellationToken)
     {
         // Reveal the file when it exists; otherwise open the containing folder so the
         // user can still get to where the config lives (or will live).
         if (File.Exists(PrimaryConfigPath))
         {
-            _shellLauncher.RevealInFileManager(PrimaryConfigPath);
+            LaunchResultLog.Report("[About] Reveal config",
+                await _shellLauncher.RevealInFileManagerAsync(PrimaryConfigPath, cancellationToken));
         }
         else if (Path.GetDirectoryName(PrimaryConfigPath) is { } dir)
         {
-            _shellLauncher.RevealInFileManager(dir);
+            LaunchResultLog.Report("[About] Reveal config folder",
+                await _shellLauncher.RevealInFileManagerAsync(dir, cancellationToken));
         }
     }
 
@@ -298,7 +303,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
     /// Useful for attaching logs to bug reports without manual file navigation.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanShareLog))]
-    private async Task ShareLogAsync()
+    private async Task ShareLogAsync(CancellationToken cancellationToken)
     {
         string? logPath = _logPathProvider();
         if (logPath is null || _shareService is null)
@@ -313,9 +318,15 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         try
         {
             Log.Information("[About] Share log requested: {LogPath}", logPath);
-            ShareOutcome outcome = await _shareService.ShareFileAsync("ClaudeForge Log", logPath);
+            ShareOutcome outcome = await _shareService.ShareFileAsync("ClaudeForge Log", logPath, cancellationToken);
             Log.Information("[About] Share log outcome: {Outcome}", outcome);
             ReportShareOutcome(outcome);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The command's own token: a cancel is the user's decision, not a fault.
+            Log.Information("[About] Share log cancelled");
+            ReportShareOutcome(ShareOutcome.Cancelled);
         }
         catch (Exception ex)
         {
@@ -339,13 +350,16 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
 
     private void ReportShareOutcome(ShareOutcome outcome)
     {
-        (string text, bool isFailure) = FileShareStatus.Describe(
+        (string? text, bool isFailure) = FileShareStatus.Describe(
             outcome,
             Strings.StatusShareLogRevealed,
             Strings.StatusShareLogUnavailable,
             Strings.StatusShareLogFailed);
 
-        OnTerminalStatus?.Invoke(text, isFailure);
+        if (text is not null)
+        {
+            OnTerminalStatus?.Invoke(text, isFailure);
+        }
     }
 
     /// <summary>

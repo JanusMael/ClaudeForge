@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
 

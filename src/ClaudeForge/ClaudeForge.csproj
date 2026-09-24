@@ -313,12 +313,23 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.3" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <!-- Serilog (core + File + Trace sinks) flows transitively from the
-             LayeredEditors.Avalonia.Diagnostics project reference below, which
+             Bennewitz.Ninja.AppServices.Avalonia package reference below, which
              publishes those packages with PrivateAssets="". No direct Serilog
              package references are required here. -->
         <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
              GHSA-xrw6-gwf8-vvr9. Pin explicitly so NU1605 (downgrade-as-error) is satisfied. -->
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
+    </ItemGroup>
+
+    <!-- plans/00005: the nuget.org packages that replaced the LayeredEditors projects. -->
+    <ItemGroup>
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Abstractions" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.ViewModels" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.ScopedEditors.Avalonia" Version="$(ScopedEditorsVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Abstractions" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Avalonia" Version="$(AppServicesVersion)" />
+        <PackageReference Include="Bennewitz.Ninja.AppServices.Logging" Version="$(AppServicesVersion)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -327,10 +338,6 @@
         <ProjectReference Include="..\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj"/>
         <ProjectReference Include="..\AgentForge.Avalonia.Shell\AgentForge.Avalonia.Shell.csproj"/>
         <ProjectReference Include="..\ClaudeForge.Avalonia\ClaudeForge.Avalonia.csproj"/>
-        <ProjectReference Include="..\LayeredEditors.Abstractions\LayeredEditors.Abstractions.csproj"/>
-        <ProjectReference Include="..\LayeredEditors.Avalonia\LayeredEditors.Avalonia.csproj"/>
-        <ProjectReference Include="..\LayeredEditors.Avalonia.Services\LayeredEditors.Avalonia.Services.csproj"/>
-        <ProjectReference Include="..\LayeredEditors.Avalonia.Diagnostics\LayeredEditors.Avalonia.Diagnostics.csproj"/>
     </ItemGroup>
 
 </Project>

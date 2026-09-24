@@ -145,9 +145,11 @@ public sealed class AxamlAccessibilityCoverageTests
     {
         "ClaudeForge",
         "ClaudeForge.Avalonia",
-        "LayeredEditors.Avalonia",
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "OpenCode.Avalonia" and "OpenCodeForge"
         // were here; restore both when OpenCodeForge rejoins this tree.
+        // LIBRARY GUARD NARROWED — plans/00005. "LayeredEditors.Avalonia" was here; it left as the
+        // Bennewitz.Ninja.ScopedEditors.Avalonia package, and no markup scan there names its controls
+        // yet. Restore that coverage IN THAT REPOSITORY. See PROGRESS.md.
     };
 
     /// <summary>
@@ -161,8 +163,8 @@ public sealed class AxamlAccessibilityCoverageTests
     /// names.  Bare names cannot work repo-wide: <c>MainWindow.axaml</c>
     /// exists in both <c>src/ClaudeForge/Views/</c> and
     /// <c>src/OpenCodeForge/Views/</c>, and <c>PropertyEditorWrapper.axaml</c>
-    /// in both <c>src/ClaudeForge/Controls/</c> and
-    /// <c>src/LayeredEditors.Avalonia/Controls/</c>.  Keying by bare name
+    /// in both <c>src/ClaudeForge/Controls/</c> and the shared library's <c>Controls/</c>
+    /// (a separate package since plans/00005).  Keying by bare name
     /// would silently let one file's debt authorise the other's.
     /// </para>
     ///
@@ -216,14 +218,13 @@ public sealed class AxamlAccessibilityCoverageTests
             // fresh unnamed controls back in without failing anything.
             ["src/ClaudeForge/Controls/ModelPicker.axaml"] = 0,
             ["src/ClaudeForge/Controls/PropertyEditorWrapper.axaml"] = 0,
-            ["src/LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml"] = 0,
 
             // Everything else the widened scan newly reached already scores 0
             // and so needs no entry — including all of src/OpenCodeForge/,
             // src/OpenCode.Avalonia/Permissions/OpenCodePermissionEditorView.axaml
             // (verified 0, not assumed), src/ClaudeForge.Avalonia/Permissions/,
-            // the remaining src/ClaudeForge/Controls|Resources|Views files, and
-            // src/LayeredEditors.Avalonia/Themes/.  They are held at the strict
+            // and the remaining src/ClaudeForge/Controls|Resources|Views files.
+            // They are held at the strict
             // zero default by the missing-entry rule.
         };
 
@@ -415,8 +416,10 @@ public sealed class AxamlAccessibilityCoverageTests
             "the scan root was once hardcoded to src/ClaudeForge/Views; a single-directory result " +
             "means that regression is back.");
 
-        Assert.IsTrue(directories >= 8,
-            $"Expected AXAML across at least 8 directories under src/, found {directories}. " +
+        // LIBRARY GUARD NARROWED — plans/00005. Was 8; LayeredEditors.Avalonia's Controls/ and
+        // Themes/ left with the library. 6 is the measured count of distinct AXAML directories.
+        Assert.IsTrue(directories >= 6,
+            $"Expected AXAML across at least 6 directories under src/, found {directories}. " +
             "The scan has narrowed — it must cover src/**/*.axaml.");
     }
 
@@ -458,7 +461,7 @@ public sealed class AxamlAccessibilityCoverageTests
             // `AutomationProperties.Name=""` satisfies a presence test and announces nothing, so
             // a presence-only scan reports coverage it does not have — and this is a RATCHETING
             // baseline, so the over-count becomes the number future work is measured against.
-            // ⚠ The sibling runtime guard in LayeredEditors.Avalonia.Diagnostics.Tests already
+            // ⚠ The sibling runtime guard, now ClaudeForge.Tests' Diagnostics/AccessibilityCoverageTests, already
             // asked `IsNullOrWhiteSpace`; this markup scan did not. One property, two guards,
             // and only one of them could see an empty name.
             bool hasName = el.Attributes()

@@ -3,11 +3,12 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Localization;
+using Bennewitz.Ninja.AppServices.AvaloniaUI;
+using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Localization;
 using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge;
@@ -69,7 +70,7 @@ internal sealed class Program
         //     ClaudeForge: every PropertyEditorWrapper instantiated in this app
         //     resolves to Controls/PropertyEditorWrapper.axaml, including the
         //     recursive ones inside it.  The wiring matters anyway, because
-        //     LayeredEditors.Avalonia ships as a package and its wrapper is the
+        //     ScopedEditors.AvaloniaUI ships as a package and its wrapper is the
         //     default surface an external consumer gets — and because the
         //     deferred LEAF-EDITORS-4.2 consolidation would make it render here.
         //     Must run before any wrapper XAML is parsed (the {x:Static} markup
@@ -116,14 +117,12 @@ internal sealed class Program
         {
             AppName = "ClaudeForge",
             LogsDirectory = PlatformPaths.AppLogsDirectory,
-            // Second live-tail window (opt-in): streams debounced ConfigFileWatcher
-            // hits so the user can watch external edits (Claude CLI, other editors)
-            // to the settings files in real time. Fed by MainWindowViewModel via
-            // AvaloniaDiagnostics.EnqueueEvent; launched from the F12 window header
-            // link or Shift+F12.
-            EnableEventTailWindow = true,
-            EventTailWindowTitle = "Live Config-File Events — Shift+F12 to hide",
-            EventTailLaunchLabel = "Config-file events ▸",
+            // The F12 and Shift+F12 windows stayed in ClaudeForge when the library moved
+            // (plans/00005). The package ships no viewer; these two hooks feed ours: the
+            // live-log sink joins the pipeline, and every EnqueueEvent line reaches the
+            // event window as well as the event file.
+            ConfigureLogger = ClaudeForgeDiagnostics.ConfigureLogger,
+            EventListener = ClaudeForgeDiagnostics.OnEventLine,
             // ⭐ The same stream, persisted. The tail window above is live-only, so "did the
             // watcher fire while I was editing?" was unanswerable once the window closed — and
             // impossible to hand to anyone else. This writes events-*.txt beside app-*.txt in the

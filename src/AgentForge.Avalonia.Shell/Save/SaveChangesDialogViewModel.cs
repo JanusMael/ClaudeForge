@@ -1,7 +1,7 @@
 ﻿using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
 
@@ -195,7 +195,7 @@ public sealed class SaveChangeEntryViewModel
 
     /// <summary>
     /// Whether to render a severity dot. Named to match
-    /// <see cref="LayeredEditors.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel.HasDangerSeverity"/>
     /// so the markup is the same shape on every danger surface.
     /// </summary>
     public bool HasDangerSeverity => Danger.Explanation is not null;

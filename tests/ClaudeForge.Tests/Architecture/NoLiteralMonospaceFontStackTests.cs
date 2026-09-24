@@ -1,4 +1,9 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
+using Avalonia.Headless;
+using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
+using Avalonia.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 
@@ -16,7 +21,8 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// </para>
 /// <para>
 /// ⭐ <b>The font is BUNDLED, which is what makes the rule enforceable.</b> JetBrains Mono NL
-/// ships inside <c>LayeredEditors.Avalonia</c>, so there is no platform stack left to argue
+/// ships inside the <c>Bennewitz.Ninja.ScopedEditors.Avalonia</c> package (it was
+/// <c>LayeredEditors.Avalonia</c> until plans/00005), so there is no platform stack left to argue
 /// about — a literal stack is now always wrong, not merely inconsistent.
 /// </para>
 /// <para>
@@ -108,20 +114,29 @@ public sealed class NoLiteralMonospaceFontStackTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// ⛔⛔ <b>A dangling font URI does not throw — Avalonia falls back to the default face and
-    /// says nothing.</b> So a typo, a moved folder, or a build where the font never got embedded
-    /// all present as "the monospace surfaces look a bit off", on every platform, with a green
-    /// suite. That is strictly worse than the literal stacks this class replaced, because at
-    /// least those named a real font.
+    /// ⛔⛔ <b>Nothing checks a dangling font URI until text is drawn in it.</b> This said "it does
+    /// not throw — Avalonia falls back and says nothing". ⓘ <b>Corrected 2026-09-23, measured:</b>
+    /// naming ONE family, Avalonia 12.1 throws <c>InvalidOperationException</c> ("Could not create
+    /// glyphTypeface") at first layout — see <see cref="EveryBundledFontUri_LaysOutText"/>, whose
+    /// canary reproduced it. Only a fallback LIST degrades silently, drawing the next face. Either
+    /// way the failure lands on a user's screen rather than in a build, which is why both halves
+    /// are checked here.
     /// </para>
     /// <para>
     /// ⚠ <b>This is the half the compiler cannot cover.</b> The glyph font is reached through
     /// <c>x:Static</c>, so a missing member is a build error — loud, and it duly failed a
     /// package-mode build. The font URI is a STRING; nothing checks it at all.
     /// </para>
+    /// <para>
+    /// ⚠ <b>Since plans/00005 the fonts ship in a PACKAGE, so there is no folder to look in.</b> A URI
+    /// naming an assembly built in this tree is still checked on disk; any other is resolved the way
+    /// the running app resolves it — Avalonia's <c>AssetLoader</c> over the consumed assembly's
+    /// embedded resources — so a renamed package assembly or a moved folder fails here rather than
+    /// at first layout.
+    /// </para>
     /// </remarks>
     [TestMethod]
-    public void EveryBundledFontUriPointsAtRealFontFiles()
+    public async Task EveryBundledFontUriPointsAtRealFontFiles()
     {
         Regex fontUri = new(
             @"avares://(?<asm>[^/]+)/(?<path>[^#""<]+)#",
@@ -144,12 +159,24 @@ public sealed class NoLiteralMonospaceFontStackTests
 
                 string assembly = m.Groups["asm"].Value;
                 string folder = m.Groups["path"].Value.Trim('/');
-                string onDisk = Path.Combine(RepoRoot(), "src", assembly, folder.Replace('/', Path.DirectorySeparatorChar));
 
-                if (!Directory.Exists(onDisk) ||
-                    Directory.GetFiles(onDisk, "*.ttf").Length == 0)
+                if (Directory.Exists(Path.Combine(RepoRoot(), "src", assembly)))
                 {
-                    offenders.Add($"{RepoRelative(path)}: avares://{assembly}/{folder}# -> no .ttf at {onDisk}");
+                    string onDisk = Path.Combine(RepoRoot(), "src", assembly, folder.Replace('/', Path.DirectorySeparatorChar));
+
+                    if (!Directory.Exists(onDisk) ||
+                        Directory.GetFiles(onDisk, "*.ttf").Length == 0)
+                    {
+                        offenders.Add($"{RepoRelative(path)}: avares://{assembly}/{folder}# -> no .ttf at {onDisk}");
+                    }
+
+                    continue;
+                }
+
+                int packaged = await PackagedFontCountAsync(assembly, folder);
+                if (packaged == 0)
+                {
+                    offenders.Add($"{RepoRelative(path)}: avares://{assembly}/{folder}# -> no .ttf embedded in the consumed {assembly} assembly");
                 }
             }
         }
@@ -167,6 +194,195 @@ public sealed class NoLiteralMonospaceFontStackTests
             "these silently, so this would ship as a wrong typeface rather than as an error.\n  " +
             string.Join("\n  ", offenders));
     }
+
+    /// <summary>
+    /// Every full <c>avares://…#Family</c> URI in the source lays out text — the family NAME
+    /// resolves, not only the folder.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⚠ <b>The folder check above cannot see the half after the <c>#</c>.</b> A folder full of
+    /// fonts with a misspelt family name passes it. Since plans/00005 both the folder and the
+    /// names live in a package, so neither can be read off disk here.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>Laid out, because that is where it fails.</b> Measured by the ScopedEditors repository
+    /// on Avalonia 12.1: naming ONE family that cannot be resolved throws
+    /// <see cref="InvalidOperationException"/> ("Could not create glyphTypeface") the first time
+    /// text in it is laid out. A control URI that must fail proves the probe can fail at all.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public async Task EveryBundledFontUri_LaysOutText()
+    {
+        Regex fullUri = new(
+            @"avares://[^/""<]+/[^#""<]+#[^""<]+",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        SortedSet<string> uris = new(StringComparer.Ordinal);
+        foreach (string path in EnumerateAxaml().Concat(EnumerateCSharp()))
+        {
+            foreach (Match m in fullUri.Matches(File.ReadAllText(path)))
+            {
+                uris.Add(m.Value.Trim());
+            }
+        }
+
+        Assert.IsTrue(uris.Count >= 2,
+            $"Found {uris.Count} full font URI(s); ClaudeForge names at least two families "
+            + "(AppMonoFontFamily and AppMonoLigaturesFontFamily). The scan stopped matching.");
+
+        string control = uris.First()[..(uris.First().IndexOf('#') + 1)] + "No Such Face Anywhere";
+        Assert.IsNotNull(await LayoutFailureAsync(control),
+            $"The control '{control}' laid out without error, so this probe cannot tell a "
+            + "resolvable family from a missing one — the check below would be vacuous.");
+
+        List<string> failures = [];
+        foreach (string uri in uris)
+        {
+            if (await LayoutFailureAsync(uri) is { } error)
+            {
+                failures.Add($"{uri} -> {error}");
+            }
+        }
+
+        Assert.AreEqual(0, failures.Count,
+            $"{failures.Count} font URI(s) do not resolve to a family the app can lay out:\n  "
+            + string.Join("\n  ", failures));
+    }
+
+    /// <summary>
+    /// Every weight the markup asks of a monospace token is drawn by a face of THAT weight.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⛔ <b>A missing weight does not fail — it borrows.</b> Measured by the ScopedEditors repository:
+    /// SemiBold (600) asked of a family with no SemiBold file is drawn with the Bold face and reports
+    /// 700. Nothing throws, so <see cref="EveryBundledFontUri_LaysOutText"/> cannot see it.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>The pairs come from the markup</b>: every element that binds an <c>AppMono*</c> token,
+    /// with the <c>FontWeight</c> it sets (Normal when it sets none), resolved through the token's own
+    /// definition in <c>App.axaml</c>. A new weight in a view is checked the day it is written. The
+    /// control — SemiBold asked of the ligatures family, which ships no such face — must come back as
+    /// another weight, or this probe cannot see a substitution at all.
+    /// </para>
+    /// </remarks>
+    [TestMethod]
+    public async Task EveryWeightTheMarkupAsksOfAMonospaceToken_HasItsOwnFace()
+    {
+        Dictionary<string, string> tokenUris = TokenUris();
+        Assert.IsTrue(tokenUris.ContainsKey(Token), $"App.axaml no longer defines {Token} as a FontFamily element.");
+
+        SortedSet<(string Token, string Weight)> pairs = [];
+        Regex element = new(@"<[A-Za-z][^<>]*?>", RegexOptions.Singleline);
+        foreach (string path in EnumerateAxaml())
+        {
+            string text = Regex.Replace(File.ReadAllText(path), "<!--.*?-->", " ", RegexOptions.Singleline);
+            foreach (Match m in element.Matches(text))
+            {
+                if (Regex.Match(m.Value, @"\{DynamicResource (AppMono\w*FontFamily)\}") is { Success: true } token)
+                {
+                    Match weight = Regex.Match(m.Value, @"FontWeight=""(\w+)""");
+                    pairs.Add((token.Groups[1].Value, weight.Success ? weight.Groups[1].Value : "Normal"));
+                }
+            }
+        }
+
+        // Premise: the scan found the weights it exists for. Without a non-Normal pair it would
+        // pass by checking only the regular face.
+        Assert.IsTrue(pairs.Any(p => p.Weight != "Normal"),
+            $"Found {pairs.Count} token/weight pair(s) and none asks for a weight other than Normal: "
+            + string.Join(", ", pairs) + ". The markup scan stopped matching.");
+
+        string ligatures = tokenUris.GetValueOrDefault("AppMonoLigaturesFontFamily")
+            ?? throw new InvalidOperationException("App.axaml no longer defines AppMonoLigaturesFontFamily; the control needs a family without a SemiBold face.");
+        int control = await ShapedWeightAsync(ligatures, FontWeight.SemiBold);
+        Assert.AreNotEqual((int)FontWeight.SemiBold, control,
+            "SemiBold asked of the ligatures family came back as SemiBold. Either that family now ships a "
+            + "SemiBold face — pick another control weight — or the probe no longer sees substitution.");
+
+        List<string> wrong = [];
+        foreach ((string token, string weightName) in pairs)
+        {
+            if (!tokenUris.TryGetValue(token, out string? uri))
+            {
+                wrong.Add($"{token}: bound by markup but not defined as a FontFamily in App.axaml");
+                continue;
+            }
+            FontWeight asked = Enum.Parse<FontWeight>(weightName);
+            int got = await ShapedWeightAsync(uri, asked);
+            if (got != (int)asked)
+            {
+                wrong.Add($"{token} ({uri}) at {weightName} ({(int)asked}) is drawn with a weight-{got} face");
+            }
+        }
+
+        Assert.AreEqual(0, wrong.Count,
+            "A weight the markup asks for has no face of its own, so another face silently stands in:\n  "
+            + string.Join("\n  ", wrong)
+            + "\n\nShip the missing file in the font package, or stop asking for that weight.");
+    }
+
+    /// <summary><c>&lt;FontFamily x:Key="AppMono…"&gt;uri&lt;/FontFamily&gt;</c> in App.axaml, by key.</summary>
+    private static Dictionary<string, string> TokenUris()
+    {
+        string app = File.ReadAllText(Path.Combine(RepoRoot(), "src", "ClaudeForge", "App.axaml"));
+        return Regex.Matches(app, @"<FontFamily\s+x:Key=""(AppMono\w*)"">\s*([^<]+?)\s*</FontFamily>")
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value, StringComparer.Ordinal);
+    }
+
+    /// <summary>The weight of the face that actually shapes text for <paramref name="uri"/> at <paramref name="weight"/>.</summary>
+    private static Task<int> ShapedWeightAsync(string uri, FontWeight weight) =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly()).Dispatch(() =>
+        {
+            using TextLayout layout = new("abc", new Typeface(new FontFamily(uri), FontStyle.Normal, weight), 12, Brushes.Black);
+            return (int)layout.TextLines[0].TextRuns.OfType<ShapedTextRun>().First().GlyphRun.GlyphTypeface.Weight;
+        }, CancellationToken.None);
+
+    /// <summary>
+    /// Lays out a line in <paramref name="uri"/>'s family on the headless session; the error
+    /// message if that fails, otherwise <see langword="null"/>.
+    /// </summary>
+    private static Task<string?> LayoutFailureAsync(string uri) =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly()).Dispatch(() =>
+        {
+            try
+            {
+                using TextLayout layout = new("The quick brown fox 0O1lI", new Typeface(new FontFamily(uri)), 12, Brushes.Black);
+                return layout.Width > 0 ? null : "laid out with zero width";
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ex.Message;
+            }
+        }, CancellationToken.None);
+
+    private static IEnumerable<string> EnumerateCSharp() =>
+        Directory.EnumerateFiles(Path.Combine(RepoRoot(), "src"), "*.cs", SearchOption.AllDirectories)
+            .Where(p =>
+                !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&
+                !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
+    /// <summary>
+    /// How many <c>.ttf</c> assets the consumed <paramref name="assembly"/> embeds under
+    /// <paramref name="folder"/>, asked of Avalonia's own loader. 0 when the assembly cannot be
+    /// loaded, because that is exactly the state in which the app would draw the fallback face.
+    /// Runs on the headless session: <c>AssetLoader</c> needs a platform to resolve through.
+    /// </summary>
+    private static Task<int> PackagedFontCountAsync(string assembly, string folder) =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly()).Dispatch(() =>
+        {
+            try
+            {
+                return AssetLoader.GetAssets(new Uri($"avares://{assembly}/{folder}/"), null)
+                    .Count(a => a.AbsolutePath.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase));
+            }
+            catch (FileNotFoundException)
+            {
+                return 0;
+            }
+        }, CancellationToken.None);
 
     /// <summary>
     /// Matches a font stack that is asking for a fixed-pitch face. Deliberately broad: the point

@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
+using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Controls;
 
@@ -54,7 +54,7 @@ public partial class PropertyEditorWrapper : UserControl
         // than the substring-filtered subset.  Pre-fix: after the user picked
         // "claude-3-5-sonnet" the chevron showed only entries containing that
         // string — usually just the one already selected.  Mirror of the
-        // library-side fix in LayeredEditors.Avalonia/Controls/PropertyEditorWrapper.axaml.cs.
+        // library-side fix in the ScopedEditors.Avalonia package's Controls/PropertyEditorWrapper.axaml.cs.
         AutoCompleteFilterMode originalMode = autoComplete.FilterMode;
         autoComplete.FilterMode = AutoCompleteFilterMode.None;
 

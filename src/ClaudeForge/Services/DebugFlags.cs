@@ -225,7 +225,7 @@ public static class DebugFlags
     /// because culture parsing has to run BEFORE
     /// <see cref="LocalizationService.ApplyCulture"/> (Step 1 of
     /// <c>Program.Main</c>), which is BEFORE
-    /// <see cref="LayeredEditors.Avalonia.Diagnostics.AvaloniaDiagnostics.ConfigureLogging"/>
+    /// <see cref="Bennewitz.Ninja.AppServices.AvaloniaUI.AvaloniaDiagnostics.ConfigureLogging"/>
     /// (Step 3).  Logging at parse time would silently drop into the
     /// no-op default Serilog sink.
     /// </summary>
@@ -441,7 +441,7 @@ public static class DebugFlags
     /// Emit Serilog log lines for any deferred warnings recorded during
     /// <see cref="Initialize"/> + the standard "active flags" summary.
     /// Call this AFTER
-    /// <see cref="LayeredEditors.Avalonia.Diagnostics.AvaloniaDiagnostics.ConfigureLogging"/>
+    /// <see cref="Bennewitz.Ninja.AppServices.AvaloniaUI.AvaloniaDiagnostics.ConfigureLogging"/>
     /// has run; calling it before is safe but the log lines route to the
     /// no-op default sink and are dropped.
     /// </summary>

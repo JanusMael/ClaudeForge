@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
 
@@ -23,7 +23,8 @@ public static class FileShareStatus
 {
     /// <summary>
     /// Selects the sentence for <paramref name="outcome"/> and says whether it is a failure —
-    /// which is what decides whether the pill auto-clears or sticks until dismissed.
+    /// which is what decides whether the pill auto-clears or sticks until dismissed. A
+    /// <see langword="null"/> sentence means say nothing: the user cancelled, and knows it.
     /// </summary>
     /// <param name="outcome">What <see cref="IShareService.ShareFileAsync"/> reported.</param>
     /// <param name="revealed">Said when the file was revealed in the platform's file manager.</param>
@@ -32,7 +33,7 @@ public static class FileShareStatus
     /// failure: nothing went wrong, so this clears itself rather than waiting to be dismissed.
     /// </param>
     /// <param name="failed">Said when a file manager was attempted and would not start.</param>
-    public static (string Text, bool IsFailure) Describe(
+    public static (string? Text, bool IsFailure) Describe(
         ShareOutcome outcome,
         string revealed,
         string unavailable,
@@ -42,6 +43,12 @@ public static class FileShareStatus
         {
             ShareOutcome.RevealedInFileManager => (revealed, false),
             ShareOutcome.Unavailable => (unavailable, false),
+
+            // ⛔ Answered EXPLICITLY, above the catch-all. Cancelled arrived with the required
+            // CancellationToken, and it is not a contract violation: the caller asked to stop.
+            // Left to the arm below it would report a cancel as a sticky FAILURE — compiling
+            // cleanly, because that arm catches everything, which is precisely why it is spelled out.
+            ShareOutcome.Cancelled => (null, false),
 
             // ⛔ Everything else is a CONTRACT VIOLATION, reported as a failure on purpose.
             // ShareFileAsync reveals a file on all three platforms; it cannot write a clipboard,

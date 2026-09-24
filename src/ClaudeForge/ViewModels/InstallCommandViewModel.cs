@@ -4,9 +4,11 @@ using System.Runtime.InteropServices;
 using Avalonia.Threading;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -43,7 +45,7 @@ public sealed partial class InstallCommandViewModel : ObservableObject
     /// <summary>AutomationProperties.Name for the Copy button.</summary>
     public string CopyButtonAutomationName { get; }
 
-    private readonly Func<bool> _runAction;
+    private readonly Func<CancellationToken, ValueTask<LaunchResult>> _runAction;
 
     /// <summary>
     /// Non-null for up to 3 seconds after a terminal launch fails.
@@ -58,7 +60,7 @@ public sealed partial class InstallCommandViewModel : ObservableObject
         string runButtonAutomationName,
         string copyButtonTooltip,
         string copyButtonAutomationName,
-        Func<bool> runAction)
+        Func<CancellationToken, ValueTask<LaunchResult>> runAction)
     {
         CommandText = commandText;
         RunButtonLabel = runButtonLabel;
@@ -77,12 +79,23 @@ public sealed partial class InstallCommandViewModel : ObservableObject
     /// a "use Copy instead" hint to the user.
     /// </summary>
     [RelayCommand]
-    private void Run()
+    private async Task RunAsync(CancellationToken cancellationToken)
     {
         bool launched;
         try
         {
-            launched = _runAction();
+            LaunchResult result = await _runAction(cancellationToken);
+
+            // ⭐ Every status except a cancel shows the hint, exactly as the old bool did: the hint
+            // is guidance ("use Copy instead"), not an error, so it is the right answer to
+            // Unsupported too. Unsupported is REAL here, unlike the reveal/open sites — the
+            // launcher returns it when no known terminal emulator is installed, which a Linux
+            // desktop can be.
+            launched = result.Status is LaunchStatus.Succeeded or LaunchStatus.Cancelled;
+            if (!launched)
+            {
+                Log.Information("[Install] Run did not launch: {Status} ({Detail})", result.Status, result.Detail);
+            }
         }
         catch (Exception ex) when (ex is Win32Exception
                                        or InvalidOperationException
@@ -129,7 +142,7 @@ public sealed partial class InstallCommandViewModel : ObservableObject
             runButtonAutomationName: Strings.AutoNameButtonRunInstall,
             copyButtonTooltip: Strings.TipButtonCopyInstall,
             copyButtonAutomationName: Strings.AutoNameButtonCopyInstall,
-            runAction: () => shell.LaunchTerminalWithCommand(commandText));
+            runAction: ct => shell.LaunchTerminalWithCommandAsync(commandText, ct));
     }
 
     /// <summary>
@@ -148,10 +161,12 @@ public sealed partial class InstallCommandViewModel : ObservableObject
             runButtonAutomationName: Strings.AutoNameButtonOpenDownload,
             copyButtonTooltip: Strings.TipButtonCopyUrl,
             copyButtonAutomationName: Strings.AutoNameButtonCopyUrl,
-            runAction: () =>
+            runAction: _ =>
             {
+                // Synchronous and exception-reporting, unlike the launcher: a throw here is caught
+                // by RunAsync's filter below and shown as the hint, as it always was.
                 OpenUrl(downloadUrl);
-                return true;
+                return ValueTask.FromResult(LaunchResult.Ok());
             });
     }
 

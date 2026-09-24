@@ -34,7 +34,7 @@ public static class CodeInline
     /// ⚠ Keep the two in step: if the resource moves to another font, this moves with it.
     /// </remarks>
     private static readonly FontFamily MonoFont =
-        new("avares://LayeredEditors.Avalonia/Assets/Fonts#JetBrains Mono NL");
+        new("avares://ScopedEditors.AvaloniaUI/Assets/Fonts#JetBrains Mono NL");
 
     /// <summary>The backtick-markup source string for the target TextBlock.</summary>
     public static readonly AttachedProperty<string?> MarkupProperty =

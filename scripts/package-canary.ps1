@@ -2,7 +2,7 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# Eleven projects under src/ are published as NuGet packages on GitHub Packages (plans/00001).
+# Six projects under src/ are published as NuGet packages on GitHub Packages (plans/00001).
 # ⚠ They are PUBLIC — they inherit this repository's visibility, measured after the first publish
 # rather than assumed — though the feed still demands a token for every read. Requiring auth and
 # being private are independent properties and only the first is true here; this header said
@@ -51,7 +51,7 @@
 #    sufficient: the version guards CI, the isolated directory guards a developer running this
 #    twice inside one minute.
 #
-# 2. ⚠ PACKING HAPPENS IN DEVELOPMENT MODE, DELIBERATELY. The eleven reference each other by
+# 2. ⚠ PACKING HAPPENS IN DEVELOPMENT MODE, DELIBERATELY. The six reference each other by
 #    project in both modes, so `dotnet pack` must NOT be given -p:UseSharedPackages=true — that
 #    would ask them to consume packages of themselves that do not exist yet. Only the CONSUMING
 #    half switches.

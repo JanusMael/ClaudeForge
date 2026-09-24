@@ -3,7 +3,8 @@ using System.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -51,7 +52,7 @@ public sealed class ShareOutcomeTests
     {
         DefaultShareService svc = new(NotLaunched);
 
-        ShareOutcome outcome = await svc.ShareTextAsync("title", string.Empty);
+        ShareOutcome outcome = await svc.ShareTextAsync("title", string.Empty, uri: null, CancellationToken.None);
 
         Assert.AreEqual(ShareOutcome.Unavailable, outcome,
             "An empty payload reaches no platform branch. Reporting anything else would be the " +
@@ -63,7 +64,7 @@ public sealed class ShareOutcomeTests
     {
         DefaultShareService svc = new(Launched);
 
-        ShareOutcome outcome = await svc.ShareTextAsync("title", "body", "https://example.invalid/");
+        ShareOutcome outcome = await svc.ShareTextAsync("title", "body", "https://example.invalid/", CancellationToken.None);
 
         Assert.AreEqual(ShareOutcome.OpenedInBrowser, outcome,
             "Every platform hands a caller-supplied URI to the default browser.");
@@ -74,7 +75,7 @@ public sealed class ShareOutcomeTests
     {
         DefaultShareService svc = new(NotLaunched);
 
-        ShareOutcome outcome = await svc.ShareTextAsync("title", "body", "https://example.invalid/");
+        ShareOutcome outcome = await svc.ShareTextAsync("title", "body", "https://example.invalid/", CancellationToken.None);
 
         Assert.AreEqual(ShareOutcome.Failed, outcome,
             "TryStart returned false, so Failed must be what reaches the caller. ⛔ This is the " +
@@ -88,7 +89,7 @@ public sealed class ShareOutcomeTests
         DefaultShareService svc = new(Launched);
         string missing = Path.Combine(Path.GetTempPath(), $"share-outcome-{Guid.NewGuid():N}.txt");
 
-        ShareOutcome outcome = await svc.ShareFileAsync("title", missing);
+        ShareOutcome outcome = await svc.ShareFileAsync("title", missing, CancellationToken.None);
 
         Assert.AreEqual(ShareOutcome.Unavailable, outcome,
             "Nothing was attempted, so this is not a failure. The two stay distinct because the " +
@@ -104,7 +105,7 @@ public sealed class ShareOutcomeTests
         {
             DefaultShareService svc = new(NotLaunched);
 
-            ShareOutcome outcome = await svc.ShareFileAsync("title", path);
+            ShareOutcome outcome = await svc.ShareFileAsync("title", path, CancellationToken.None);
 
             // Premise first: the file really is on disk, so this exercises the launch arm and
             // not the missing-path arm above, which returns Unavailable for a different reason.
@@ -127,7 +128,7 @@ public sealed class ShareOutcomeTests
         {
             DefaultShareService svc = new(Launched);
 
-            ShareOutcome outcome = await svc.ShareFileAsync("title", path);
+            ShareOutcome outcome = await svc.ShareFileAsync("title", path, CancellationToken.None);
 
             Assert.AreEqual(ShareOutcome.RevealedInFileManager, outcome,
                 "All three platforms reveal the file rather than opening a share sheet, and the " +
@@ -168,11 +169,11 @@ public sealed class ShareOutcomeTests
 
     private sealed class OutcomeShareService(ShareOutcome outcome) : IShareService
     {
-        public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
-            => Task.FromResult(outcome);
+        public ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
+            => ValueTask.FromResult(outcome);
 
-        public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
-            => Task.FromResult(outcome);
+        public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
+            => ValueTask.FromResult(outcome);
     }
 
     private static async Task<(string Text, bool IsFailure)> ShareAndCapture(ShareOutcome outcome)
@@ -217,7 +218,9 @@ public sealed class ShareOutcomeTests
         // configuration went to the clipboard when it went to their mail client.
         Dictionary<string, ShareOutcome> seen = new(StringComparer.Ordinal);
 
-        foreach (ShareOutcome outcome in Enum.GetValues<ShareOutcome>())
+        // ⚠ Cancelled is excluded by NAME: it emits no sentence, so it has none to collide.
+        //    ACancelledShare_EmitsNoStatusAtAll asserts that positively.
+        foreach (ShareOutcome outcome in Enum.GetValues<ShareOutcome>().Where(o => o != ShareOutcome.Cancelled))
         {
             (string text, _) = await ShareAndCapture(outcome);
 
@@ -227,8 +230,52 @@ public sealed class ShareOutcomeTests
             seen[text] = outcome;
         }
 
-        Assert.AreEqual(Enum.GetValues<ShareOutcome>().Length, seen.Count,
-            "Every declared outcome must have been reached and reported.");
+        Assert.AreEqual(Enum.GetValues<ShareOutcome>().Length - 1, seen.Count,
+            "Every declared outcome except Cancelled must have been reached and reported.");
+    }
+
+    [TestMethod]
+    public async Task ACancelledShare_EmitsNoStatusAtAll()
+    {
+        // ⚠ The one outcome that must emit NOTHING — the reverse of F3, deliberately. F3 was a
+        // share that did nothing yet completed silently; a cancel is the user's own act.
+        EffectiveSettingsViewModel vm = new(MakeClient(), shareService: new OutcomeShareService(ShareOutcome.Cancelled));
+        (string Text, bool IsFailure)? captured = null;
+        vm.OnTerminalStatus = (text, isFailure) => captured = (text, isFailure);
+
+        await vm.ShareConfigCommand.ExecuteAsync(null);
+
+        Assert.IsNull(captured, "A cancelled share must not raise a status pill.");
+    }
+
+    [TestMethod]
+    public async Task CancellingTheCommand_WhileTheShareIsRunning_EmitsNoStatus()
+    {
+        // The realistic path: the service is still working when the user cancels, so the cancel
+        // arrives as an OperationCanceledException on the command's own token, not as a returned
+        // outcome. It must end the same way — silently — not in the catch-all failure branch.
+        EffectiveSettingsViewModel vm = new(MakeClient(), shareService: new BlockingShareService());
+        (string Text, bool IsFailure)? captured = null;
+        vm.OnTerminalStatus = (text, isFailure) => captured = (text, isFailure);
+
+        Task running = vm.ShareConfigCommand.ExecuteAsync(null);
+        vm.ShareConfigCommand.Cancel();
+        await running;
+
+        Assert.IsNull(captured, "Cancelling the command must not be reported as a failure.");
+    }
+
+    /// <summary>Waits on the caller's token and nothing else, so the only way out is a cancel.</summary>
+    private sealed class BlockingShareService : IShareService
+    {
+        public async ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return ShareOutcome.Failed;
+        }
+
+        public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
+            => throw new NotSupportedException("Effective settings shares text, not a file.");
     }
 
     [TestMethod]
@@ -269,10 +316,10 @@ public sealed class ShareOutcomeTests
 
     private sealed class ThrowingShareService : IShareService
     {
-        public Task<ShareOutcome> ShareTextAsync(string title, string text, string? uri = null)
+        public ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
             => throw new IOException("fake share failure");
 
-        public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
+        public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
             => throw new IOException("fake share failure");
     }
 }

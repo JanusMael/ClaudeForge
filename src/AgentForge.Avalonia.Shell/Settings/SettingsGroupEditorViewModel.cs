@@ -13,11 +13,11 @@ using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using LibVm = Bennewitz.Ninja.LayeredEditors.ViewModels;
+using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 
 namespace Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
 
@@ -1231,7 +1231,7 @@ public partial class SettingsGroupEditorViewModel
     /// (<see cref="ISchemaEditorFactory.Danger"/>), so the Effective tab and the Properties tab
     /// of the same page cannot be driven by different tables. Accepting a separately-injected
     /// classifier here would let one page contradict itself, which is the failure
-    /// <see cref="LayeredEditors.ViewModels.IDangerAnnotatedEditor"/> was introduced to
+    /// <see cref="Bennewitz.Ninja.ScopedEditors.ViewModels.IDangerAnnotatedEditor"/> was introduced to
     /// rule out on the search surface.
     /// </para>
     /// <para>

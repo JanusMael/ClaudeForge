@@ -6,7 +6,8 @@ using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.LayeredEditors.Avalonia.Services;
+using Bennewitz.Ninja.AppServices;
+using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
@@ -1090,7 +1091,7 @@ public sealed class BackupRestoreViewModelTests
         /// default, because a stub that records a payload has genuinely shared nothing.</summary>
         public ShareOutcome NextOutcome { get; set; } = ShareOutcome.Unavailable;
 
-        public Task<ShareOutcome> ShareFileAsync(string title, string filePath)
+        public ValueTask<ShareOutcome> ShareFileAsync(string title, string filePath, CancellationToken cancellationToken)
         {
             ShareFileCalls++;
             LastTitle = title;
@@ -1100,12 +1101,12 @@ public sealed class BackupRestoreViewModelTests
                 throw new IOException("fake share failure");
             }
 
-            return Task.FromResult(NextOutcome);
+            return ValueTask.FromResult(NextOutcome);
         }
 
-        public Task<ShareOutcome> ShareTextAsync(string title, string text, string? subject = null)
+        public ValueTask<ShareOutcome> ShareTextAsync(string title, string text, string? uri, CancellationToken cancellationToken)
         {
-            return Task.FromResult(NextOutcome);
+            return ValueTask.FromResult(NextOutcome);
         }
     }
 

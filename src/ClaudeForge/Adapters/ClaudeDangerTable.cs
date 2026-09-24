@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
-using Bennewitz.Ninja.LayeredEditors.Abstractions;
+using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Adapters;
 

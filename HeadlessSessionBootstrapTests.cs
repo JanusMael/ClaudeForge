@@ -35,6 +35,17 @@ namespace Bennewitz.Ninja.TestSupport.Headless;
 /// nothing. ⚠ Canaried on 2026-09-22: with the warm-up removed the flag is <c>false</c> and this
 /// fails; with it, true.
 /// </para>
+/// <para>
+/// ⛔⛔ <b>CORRECTED 2026-09-24 — this guard is VACUOUS, and the canary above measured nothing
+/// about the failure.</b> The flag is read INSIDE a <c>Dispatch</c>, and under <c>PerTest</c> isolation
+/// (the default; this repository sets none) every dispatch builds an application first — so
+/// <c>Application.Current is not null</c> there is true by construction. The canary's "removed" case
+/// read <c>Application.Current</c> OUTSIDE any dispatch, which says nothing about what a test's
+/// dispatch does. It passed on CI in the very run (PR #76, Windows) where the failure it claims to
+/// prevent recurred. <c>TheSessionThreadOwnsTheDispatcher</c> is true by construction for the same
+/// reason. Kept as the record until the <c>PerAssembly</c> trial resolves; see
+/// <c>HeadlessSessionBootstrap</c>.
+/// </para>
 /// </remarks>
 [TestClass]
 public sealed class HeadlessSessionBootstrapTests
