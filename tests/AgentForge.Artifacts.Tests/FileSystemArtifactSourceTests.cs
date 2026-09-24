@@ -10,22 +10,21 @@ namespace Bennewitz.Ninja.AgentForge.Artifacts.Tests;
 /// tools' <c>AGENTS.md</c>, becoming "one artifact declared twice". Each naming test below exists
 /// because getting it wrong produces a confident false statement rather than a visible failure.
 /// </remarks>
-[TestClass]
-public sealed class FileSystemArtifactSourceTests
+public sealed class FileSystemArtifactSourceTests : IDisposable
 {
     private static readonly ArtifactScope Scope = new("test", "Test", 10);
 
     private string _root = null!;
 
-    [TestInitialize]
-    public void Setup()
+    public FileSystemArtifactSourceTests() => Setup();
+
+    private void Setup()
     {
         _root = Path.Combine(Path.GetTempPath(), "agentforge-artifacts-" + Path.GetRandomFileName());
         Directory.CreateDirectory(_root);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         if (!Directory.Exists(_root))
         {
@@ -40,6 +39,12 @@ public sealed class FileSystemArtifactSourceTests
         {
             // Leave the temp directory if something still holds a handle.
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private string Write(string relativePath, string content = "x")
@@ -63,7 +68,7 @@ public sealed class FileSystemArtifactSourceTests
 
     // ── FileProbeArtifactSource ──────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Probe_OnlyExistingPathsBecomeEntries()
     {
         string present = Write("CLAUDE.md");
@@ -76,14 +81,14 @@ public sealed class FileSystemArtifactSourceTests
 
         ArtifactRef[] entries = [.. source.Enumerate()];
 
-        Assert.AreEqual(1, entries.Length);
-        Assert.AreEqual("CLAUDE", entries[0].Name);
-        Assert.AreEqual(present, entries[0].Location);
-        Assert.AreEqual(ArtifactForm.File, entries[0].Form);
-        Assert.AreEqual("src", entries[0].SourceId);
+        Assert.Single(entries);
+        Assert.Equal("CLAUDE", entries[0].Name);
+        Assert.Equal(present, entries[0].Location);
+        Assert.Equal(ArtifactForm.File, entries[0].Form);
+        Assert.Equal("src", entries[0].SourceId);
     }
 
-    [TestMethod]
+    [Fact]
     public void Probe_NameIsTheCallersNotTheFilesystems()
     {
         // The caller names a probe because the file name alone often does not say what the file
@@ -93,28 +98,28 @@ public sealed class FileSystemArtifactSourceTests
         var source = new FileProbeArtifactSource(
             Identity(ArtifactKind.Memory), [new ArtifactProbe(".codex/AGENTS", path)]);
 
-        Assert.AreEqual(".codex/AGENTS", source.Enumerate().Single().Name);
+        Assert.Equal(".codex/AGENTS", source.Enumerate().Single().Name);
     }
 
-    [TestMethod]
+    [Fact]
     public void Probe_MissingDirectoryIsNotAnError()
     {
         var source = new FileProbeArtifactSource(
             Identity(),
             [new ArtifactProbe("gone", Path.Combine(_root, "no-such-dir", "file.md"))]);
 
-        Assert.AreEqual(0, source.Enumerate().Count());
+        Assert.Empty(source.Enumerate());
     }
 
     // ── DirectoryArtifactSource ──────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Directory_MissingRootYieldsNothing_AndDoesNotThrow()
     {
-        Assert.AreEqual(0, Walk(Path.Combine(_root, "absent")).Enumerate().Count());
+        Assert.Empty(Walk(Path.Combine(_root, "absent")).Enumerate());
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_NonRecursive_IgnoresSubdirectories()
     {
         Write("top.md");
@@ -122,10 +127,10 @@ public sealed class FileSystemArtifactSourceTests
 
         string[] names = [.. Walk(_root).Enumerate().Select(e => e.Name)];
 
-        CollectionAssert.AreEquivalent(new[] { "top" }, names);
+        MessageAssert.SameElements(new[] { "top" }, names);
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_Recursive_NamesCarryTheRelativePath()
     {
         // ⚠ The whole point: rules/common/security.md and rules/csharp/security.md are two
@@ -136,10 +141,10 @@ public sealed class FileSystemArtifactSourceTests
 
         string[] names = [.. Walk(_root, recursive: true).Enumerate().Select(e => e.Name)];
 
-        CollectionAssert.AreEquivalent(new[] { "common/security", "csharp/security" }, names);
+        MessageAssert.SameElements(new[] { "common/security", "csharp/security" }, names);
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_RelativeNamesUseForwardSlashes_OnEveryPlatform()
     {
         // The name is an identity that travels into UI, comparisons and eventually config; a
@@ -149,11 +154,11 @@ public sealed class FileSystemArtifactSourceTests
 
         string name = Walk(_root, recursive: true).Enumerate().Single().Name;
 
-        Assert.AreEqual("nested/inner/file", name);
-        Assert.IsFalse(name.Contains('\\', StringComparison.Ordinal));
+        Assert.Equal("nested/inner/file", name);
+        Assert.False(name.Contains('\\', StringComparison.Ordinal));
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_StripExtensionFalse_KeepsIt()
     {
         // Configuration files are identified WITH their extension: "settings" alone is meaningless
@@ -162,10 +167,10 @@ public sealed class FileSystemArtifactSourceTests
 
         string name = Walk(_root, pattern: "*.json", stripExtension: false).Enumerate().Single().Name;
 
-        Assert.AreEqual("10-policy.json", name);
+        Assert.Equal("10-policy.json", name);
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_StarPattern_TakesEveryExtension()
     {
         // Hook scripts have no agreed extension — .sh, .py, or none at all.
@@ -175,10 +180,10 @@ public sealed class FileSystemArtifactSourceTests
 
         string[] names = [.. Walk(_root, pattern: "*").Enumerate().Select(e => e.Name)];
 
-        CollectionAssert.AreEquivalent(new[] { "precommit", "format", "runner" }, names);
+        MessageAssert.SameElements(new[] { "precommit", "format", "runner" }, names);
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_ExcludedSuffixes_AreSkipped_CaseInsensitively()
     {
         Write("real.md");
@@ -190,20 +195,20 @@ public sealed class FileSystemArtifactSourceTests
             ExcludedSuffixes = [".bak"],
         };
 
-        CollectionAssert.AreEquivalent(new[] { "real" }, source.Enumerate().Select(e => e.Name).ToArray());
+        MessageAssert.SameElements(new[] { "real" }, source.Enumerate().Select(e => e.Name).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_ExcludedSuffixes_DefaultToNone()
     {
         // Which sidecars count as noise is the caller's policy. A default here would silently
         // apply one product's judgement to every source.
         Write("real.md.bak");
 
-        Assert.AreEqual(1, Walk(_root, pattern: "*").Enumerate().Count());
+        Assert.Single(Walk(_root, pattern: "*").Enumerate());
     }
 
-    [TestMethod]
+    [Fact]
     public void Directory_NamePrefix_QualifiesTheIdentity()
     {
         Write("notes.md");
@@ -214,12 +219,12 @@ public sealed class FileSystemArtifactSourceTests
             NamePrefix = ".opencode/",
         };
 
-        Assert.AreEqual(".opencode/notes", source.Enumerate().Single().Name);
+        Assert.Equal(".opencode/notes", source.Enumerate().Single().Name);
     }
 
     // ── SkillDirectoryArtifactSource ─────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Skills_NameIsTheDirectory_NotTheManifestFile()
     {
         // Every skill's file is called SKILL.md. Naming entries after the file would make every
@@ -230,22 +235,22 @@ public sealed class FileSystemArtifactSourceTests
         var source = new SkillDirectoryArtifactSource(
             Identity(ArtifactKind.Skill), _root, "SKILL.md");
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "python-patterns", "git-flow" },
             source.Enumerate().Select(e => e.Name).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Skills_LocationIsTheManifest_NotTheDirectory()
     {
         Write(Path.Combine("python-patterns", "SKILL.md"));
 
         var source = new SkillDirectoryArtifactSource(Identity(ArtifactKind.Skill), _root, "SKILL.md");
 
-        StringAssert.EndsWith(source.Enumerate().Single().Location, "SKILL.md");
+        Assert.EndsWith("SKILL.md", source.Enumerate().Single().Location);
     }
 
-    [TestMethod]
+    [Fact]
     public void Skills_DirectoryWithoutTheManifest_IsNotASkill()
     {
         Write(Path.Combine("real-skill", "SKILL.md"));
@@ -253,21 +258,21 @@ public sealed class FileSystemArtifactSourceTests
 
         var source = new SkillDirectoryArtifactSource(Identity(ArtifactKind.Skill), _root, "SKILL.md");
 
-        Assert.AreEqual("real-skill", source.Enumerate().Single().Name);
+        Assert.Equal("real-skill", source.Enumerate().Single().Name);
     }
 
-    [TestMethod]
+    [Fact]
     public void Skills_MissingRootYieldsNothing_AndDoesNotThrow()
     {
         var source = new SkillDirectoryArtifactSource(
             Identity(ArtifactKind.Skill), Path.Combine(_root, "absent"), "SKILL.md");
 
-        Assert.AreEqual(0, source.Enumerate().Count());
+        Assert.Empty(source.Enumerate());
     }
 
     // ── The contract the resolver depends on ─────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EveryEntryCarriesTheSourcesIdentity()
     {
         // SourceId is how a consumer recovers what an entry cannot say for itself — the memory
@@ -286,10 +291,10 @@ public sealed class FileSystemArtifactSourceTests
                 .Enumerate(),
         ];
 
-        Assert.AreEqual(2, entries.Count);
-        Assert.IsTrue(entries.All(e => e.Scope == Scope));
-        CollectionAssert.AreEquivalent(new[] { "walker", "skiller" }, entries.Select(e => e.SourceId).ToArray());
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, entries.Count);
+        Assert.True(entries.All(e => e.Scope == Scope));
+        MessageAssert.SameElements(new[] { "walker", "skiller" }, entries.Select(e => e.SourceId).ToArray());
+        MessageAssert.SameElements(
             new[] { ArtifactKind.Rule, ArtifactKind.Skill }, entries.Select(e => e.Kind).ToArray());
     }
 }
