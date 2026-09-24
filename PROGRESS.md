@@ -153,8 +153,8 @@ the defect.
    and `AgentForge.Sdk` baselines). Releasing is the maintainer's, always. Then the `SharedPackageVersion`
    bump to that version, in its own change — publish and pin are ONE release, and only both clear the
    two red jobs.
-2. ▶ **`plans/00006` — MSTest → xUnit v3**, IN PROGRESS on `feat/tests-xunit-v3` (see *Where `00006`
-   stands* below). Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`.
+2. ✅ **`plans/00006` — MSTest → xUnit v3**, DONE on `feat/tests-xunit-v3`, draft PR #79, gate passed
+   (see *Where `00006` stands* below); merge Templates PR #1 first. Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`.
    ⚠ Its step 5 carries the headless bootstrap as proof of set-up ordering — that premise is FALSE (see
    the headless section), so the bootstrap is not ported; record that as 00006 drift, never in the plan.
 3. ⏳ **Headless flakes still open:** the cross-thread `VerifyAccess` failure (cause unknown; `PerAssembly`
