@@ -39,7 +39,7 @@
 
     <ItemGroup>
         <!-- Core Avalonia runtime. -->
-        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="Avalonia" Version="12.1.3" />
 
         <!-- Serilog pipeline. PrivateAssets="" lets these flow transitively to
              consuming apps, so a consumer that only references this project still

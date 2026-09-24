@@ -24,7 +24,7 @@
 
     <ItemGroup>
         <!-- Headless Avalonia for the window tests (LiveLogWindowKeyTests); same version as ClaudeForge.Tests. -->
-        <PackageReference Include="Avalonia.Headless" Version="12.1.2" />
+        <PackageReference Include="Avalonia.Headless" Version="12.1.3" />
     </ItemGroup>
 
     <ItemGroup>
