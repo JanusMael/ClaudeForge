@@ -36,7 +36,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// parser and 3 of the branch's failed against main's, so neither side was a superset and the
 /// implementation here is the union. See <c>YamlFrontMatterBlockScalarTests</c> for the sibling.
 /// </remarks>
-[TestClass]
 public sealed class YamlFrontMatterFlowScalarTests
 {
     /// <summary>The math-olympiad shape: quoted value entirely on the following lines.</summary>
@@ -69,18 +68,18 @@ public sealed class YamlFrontMatterFlowScalarTests
 
     // ── Multi-line flow scalars ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void QuotedScalar_StartingOnTheNextLine_YieldsTheWholeProse()
     {
         FrontMatter fm = YamlFrontMatter.Parse(ValueOnNextLines);
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             ExpectedProse,
             fm.FindScalar("description"),
             "Nothing follows the colon, so the value lives entirely on the indented lines below it.");
     }
 
-    [TestMethod]
+    [Fact]
     public void QuotedScalar_OpeningOnTheKeyLine_YieldsTheWholeProse()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -91,23 +90,23 @@ public sealed class YamlFrontMatterFlowScalarTests
             "\n" +
             "Body.\n");
 
-        Assert.AreEqual(ExpectedProse, fm.FindScalar("description"));
+        Assert.Equal(ExpectedProse, fm.FindScalar("description"));
     }
 
     /// <summary>
     /// The surrounding quotes sit on different lines, so they can only be
     /// stripped from the joined value — never from either line alone.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void MultiLineQuotedScalar_DoesNotKeepAStrayQuote()
     {
         string? value = YamlFrontMatter.Parse(ValueOnNextLines).FindScalar("description");
 
-        Assert.IsFalse(value!.StartsWith('"'), "A stray opening quote means the value was cut at line one.");
-        Assert.IsFalse(value.EndsWith('"'));
+        Assert.False(value!.StartsWith('"'), "A stray opening quote means the value was cut at line one.");
+        Assert.False(value.EndsWith('"'));
     }
 
-    [TestMethod]
+    [Fact]
     public void PlainMultiLineScalar_FoldsWithSpaces()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -118,22 +117,22 @@ public sealed class YamlFrontMatterFlowScalarTests
             "\n" +
             "Body.\n");
 
-        Assert.AreEqual("this value has no quotes at all", fm.FindScalar("description"));
+        Assert.Equal("this value has no quotes at all", fm.FindScalar("description"));
     }
 
-    [TestMethod]
+    [Fact]
     public void FlowScalar_DoesNotSwallowTheNextTopLevelKey()
     {
         FrontMatter fm = YamlFrontMatter.Parse(ValueOnNextLines);
 
-        Assert.AreEqual("0.1.0", fm.FindScalar("version"));
-        Assert.AreEqual("math-olympiad", fm.FindScalar("name"));
+        Assert.Equal("0.1.0", fm.FindScalar("version"));
+        Assert.Equal("math-olympiad", fm.FindScalar("name"));
     }
 
-    [TestMethod]
+    [Fact]
     public void UnmodifiedFlowScalar_RoundTripsByteForByte()
     {
-        Assert.AreEqual(
+        Assert.Equal(
             ValueOnNextLines,
             YamlFrontMatter.Compose(YamlFrontMatter.Parse(ValueOnNextLines)));
     }
@@ -143,36 +142,36 @@ public sealed class YamlFrontMatterFlowScalarTests
     /// — as a folded block, the shape every other skill uses. Collapsing it into
     /// one very long plain line would churn the file on first edit.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EditedFlowScalar_ReRendersAsAFoldedBlock()
     {
         FrontMatter edited = YamlFrontMatter.Parse(ValueOnNextLines)
                                             .WithScalar("description", "Short now.");
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "description: >-");
-        Assert.IsFalse(
+        OrdinalAssert.Contains("description: >-", composed);
+        Assert.False(
             composed.Contains("Putnam", StringComparison.Ordinal),
             "The superseded continuation lines must not be left stranded in the file.");
-        Assert.AreEqual("Short now.", YamlFrontMatter.Parse(composed).FindScalar("description"));
+        Assert.Equal("Short now.", YamlFrontMatter.Parse(composed).FindScalar("description"));
     }
 
     // ── Nested mappings ──────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void NestedMapping_KeysAreNotSurfacedAsTopLevelFields()
     {
         FrontMatter fm = YamlFrontMatter.Parse(NestedMapping);
 
-        Assert.IsNull(fm.FindScalar("node_type"), "A nested key must not read as a top-level field.");
-        Assert.IsNull(fm.FindScalar("type"));
-        Assert.AreEqual("A one-liner.", fm.FindScalar("description"), "Real top-level fields still work.");
+        MessageAssert.Null(fm.FindScalar("node_type"), "A nested key must not read as a top-level field.");
+        Assert.Null(fm.FindScalar("type"));
+        MessageAssert.Equal("A one-liner.", fm.FindScalar("description"), "Real top-level fields still work.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedMapping_RoundTripsByteForByte()
     {
-        Assert.AreEqual(
+        Assert.Equal(
             NestedMapping,
             YamlFrontMatter.Compose(YamlFrontMatter.Parse(NestedMapping)));
     }
@@ -182,26 +181,26 @@ public sealed class YamlFrontMatterFlowScalarTests
     /// never re-render that nested line at column 0, which would lift it out of
     /// its parent and silently change the file's meaning.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EditingAKeyThatOnlyExistsNested_LeavesTheMappingIntact()
     {
         FrontMatter edited = YamlFrontMatter.Parse(NestedMapping).WithScalar("type", "EDITED");
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "metadata:\n  node_type: memory\n  type: project");
-        Assert.IsFalse(
+        OrdinalAssert.Contains("metadata:\n  node_type: memory\n  type: project", composed);
+        Assert.False(
             composed.Contains("\ntype: project", StringComparison.Ordinal),
             "The nested 'type' must not be de-indented out of 'metadata'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingARealTopLevelField_LeavesTheMappingIntact()
     {
         string composed = YamlFrontMatter.Compose(
             YamlFrontMatter.Parse(NestedMapping).WithScalar("description", "Changed."));
 
-        StringAssert.Contains(composed, "metadata:\n  node_type: memory\n  type: project");
-        StringAssert.Contains(composed, "description: Changed.");
+        OrdinalAssert.Contains("metadata:\n  node_type: memory\n  type: project", composed);
+        OrdinalAssert.Contains("description: Changed.", composed);
     }
 
     /// <summary>
@@ -209,7 +208,7 @@ public sealed class YamlFrontMatterFlowScalarTests
     /// of the mapping as far as the parser models it, but they still have to
     /// survive a round-trip rather than being dropped.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void MappingInterruptedByABlankLine_StillRoundTrips()
     {
         const string text =
@@ -222,7 +221,7 @@ public sealed class YamlFrontMatterFlowScalarTests
             "\n" +
             "Body.\n";
 
-        Assert.AreEqual(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
-        Assert.IsNull(YamlFrontMatter.Parse(text).FindScalar("type"));
+        Assert.Equal(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
+        Assert.Null(YamlFrontMatter.Parse(text).FindScalar("type"));
     }
 }

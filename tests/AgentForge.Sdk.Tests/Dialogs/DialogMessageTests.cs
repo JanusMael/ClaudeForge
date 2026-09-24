@@ -3,29 +3,28 @@ using Bennewitz.Ninja.AgentForge.Sdk.Dialogs;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Dialogs;
 
-[TestClass]
 public sealed class DialogMessageTests
 {
-    [TestMethod]
+    [Fact]
     public void Plain_WrapsStringAsSingleTextSegment()
     {
         DialogMessage msg = DialogMessage.Plain("hello world");
 
-        Assert.AreEqual(1, msg.Segments.Count);
-        Assert.AreEqual(DialogSegmentKind.Text, msg.Segments[0].Kind);
-        Assert.AreEqual("hello world", msg.Segments[0].Value);
+        Assert.Single(msg.Segments);
+        Assert.Equal(DialogSegmentKind.Text, msg.Segments[0].Kind);
+        Assert.Equal("hello world", msg.Segments[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Plain_NullInput_IsTreatedAsEmpty()
     {
         DialogMessage msg = DialogMessage.Plain(null!);
 
-        Assert.AreEqual(1, msg.Segments.Count);
-        Assert.AreEqual(string.Empty, msg.Segments[0].Value);
+        Assert.Single(msg.Segments);
+        Assert.Equal(string.Empty, msg.Segments[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Builder_AppendsSegmentsInOrder()
     {
         DialogMessage msg = DialogMessage.Builder()
@@ -38,30 +37,30 @@ public sealed class DialogMessageTests
                                          .Text(".")
                                          .Build();
 
-        Assert.AreEqual(7, msg.Segments.Count);
-        Assert.AreEqual(DialogSegmentKind.Text, msg.Segments[0].Kind);
-        Assert.AreEqual(DialogSegmentKind.Bold, msg.Segments[1].Kind);
-        Assert.AreEqual(DialogSegmentKind.Text, msg.Segments[2].Kind);
-        Assert.AreEqual(DialogSegmentKind.Path, msg.Segments[3].Kind);
-        Assert.AreEqual(DialogSegmentKind.Text, msg.Segments[4].Kind);
-        Assert.AreEqual(DialogSegmentKind.Hyperlink, msg.Segments[5].Kind);
-        Assert.AreEqual(DialogSegmentKind.Text, msg.Segments[6].Kind);
+        Assert.Equal(7, msg.Segments.Count);
+        Assert.Equal(DialogSegmentKind.Text, msg.Segments[0].Kind);
+        Assert.Equal(DialogSegmentKind.Bold, msg.Segments[1].Kind);
+        Assert.Equal(DialogSegmentKind.Text, msg.Segments[2].Kind);
+        Assert.Equal(DialogSegmentKind.Path, msg.Segments[3].Kind);
+        Assert.Equal(DialogSegmentKind.Text, msg.Segments[4].Kind);
+        Assert.Equal(DialogSegmentKind.Hyperlink, msg.Segments[5].Kind);
+        Assert.Equal(DialogSegmentKind.Text, msg.Segments[6].Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Builder_HyperlinkSegment_CarriesUrl()
     {
         DialogMessage msg = DialogMessage.Builder()
                                          .Hyperlink("click here", "https://example.com")
                                          .Build();
 
-        Assert.AreEqual(1, msg.Segments.Count);
-        Assert.AreEqual(DialogSegmentKind.Hyperlink, msg.Segments[0].Kind);
-        Assert.AreEqual("click here", msg.Segments[0].Value);
-        Assert.AreEqual("https://example.com", msg.Segments[0].Url);
+        Assert.Single(msg.Segments);
+        Assert.Equal(DialogSegmentKind.Hyperlink, msg.Segments[0].Kind);
+        Assert.Equal("click here", msg.Segments[0].Value);
+        Assert.Equal("https://example.com", msg.Segments[0].Url);
     }
 
-    [TestMethod]
+    [Fact]
     public void Builder_PathSegment_HasNullUrl()
     {
         // Path segments don't carry a Url — the Value IS the path.
@@ -69,10 +68,10 @@ public sealed class DialogMessageTests
                                          .Path("/etc/hosts")
                                          .Build();
 
-        Assert.IsNull(msg.Segments[0].Url);
+        Assert.Null(msg.Segments[0].Url);
     }
 
-    [TestMethod]
+    [Fact]
     public void Builder_NullSegmentValue_IsTreatedAsEmpty()
     {
         // Null inputs to any builder method must not throw — they shouldn't
@@ -85,31 +84,31 @@ public sealed class DialogMessageTests
                                          .Hyperlink(null!, null!)
                                          .Build();
 
-        Assert.AreEqual(4, msg.Segments.Count);
-        Assert.IsTrue(msg.Segments.All(s => s.Value == string.Empty));
+        Assert.Equal(4, msg.Segments.Count);
+        Assert.True(msg.Segments.All(s => s.Value == string.Empty));
     }
 
     // ── SdkDialogs factory tests ─────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SaveSucceeded_NoPaths_ReturnsNoChangesMessage()
     {
         DialogMessage msg = SdkDialogs.SaveSucceeded([]);
 
-        Assert.AreEqual(1, msg.Segments.Count);
-        Assert.AreEqual("No changes to save.", msg.Segments[0].Value);
+        Assert.Single(msg.Segments);
+        Assert.Equal("No changes to save.", msg.Segments[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void SaveSucceeded_SinglePath_RendersPathSegment()
     {
         DialogMessage msg = SdkDialogs.SaveSucceeded(["~/.claude/settings.json"]);
 
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Path
-                                            && s.Value == "~/.claude/settings.json"));
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Path
+                                            && s.Value == "~/.claude/settings.json");
     }
 
-    [TestMethod]
+    [Fact]
     public void SaveSucceeded_MultiplePaths_RendersOnePathSegmentPerFile()
     {
         DialogMessage msg = SdkDialogs.SaveSucceeded([
@@ -119,24 +118,24 @@ public sealed class DialogMessageTests
         ]);
 
         List<DialogSegment> pathSegments = msg.Segments.Where(s => s.Kind == DialogSegmentKind.Path).ToList();
-        Assert.AreEqual(3, pathSegments.Count);
-        Assert.AreEqual("~/.claude/settings.json", pathSegments[0].Value);
-        Assert.AreEqual("~/.claude/mcp.json", pathSegments[1].Value);
-        Assert.AreEqual("~/.claude/CLAUDE.md", pathSegments[2].Value);
+        Assert.Equal(3, pathSegments.Count);
+        Assert.Equal("~/.claude/settings.json", pathSegments[0].Value);
+        Assert.Equal("~/.claude/mcp.json", pathSegments[1].Value);
+        Assert.Equal("~/.claude/CLAUDE.md", pathSegments[2].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void SaveFailed_RendersTargetAsPath_AndErrorAsText()
     {
         DialogMessage msg = SdkDialogs.SaveFailed("/etc/locked.json", "Access denied");
 
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Path
-                                            && s.Value == "/etc/locked.json"));
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Text
-                                            && s.Value.Contains("Access denied")));
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Path
+                                            && s.Value == "/etc/locked.json");
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Text
+                                            && s.Value.Contains("Access denied"));
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaValidationFailed_WithDocsUrl_AppendsHyperlink()
     {
         DialogMessage msg = SdkDialogs.SchemaValidationFailed(
@@ -144,28 +143,28 @@ public sealed class DialogMessageTests
             "must be one of: sonnet, opus, haiku",
             docsUrl: "https://docs.claude.com/schema");
 
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Bold
-                                            && s.Value == "model"));
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Hyperlink
-                                            && s.Url == "https://docs.claude.com/schema"));
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Bold
+                                            && s.Value == "model");
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Hyperlink
+                                            && s.Url == "https://docs.claude.com/schema");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaValidationFailed_WithoutDocsUrl_OmitsHyperlink()
     {
         DialogMessage msg = SdkDialogs.SchemaValidationFailed("model", "must be one of: …");
 
-        Assert.IsFalse(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Hyperlink));
+        Assert.DoesNotContain(msg.Segments, s => s.Kind == DialogSegmentKind.Hyperlink);
     }
 
-    [TestMethod]
+    [Fact]
     public void NotInstalled_RendersProductBoldAndDocsHyperlink()
     {
         DialogMessage msg = SdkDialogs.NotInstalled("Claude Desktop", "https://example.com/install");
 
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Bold
-                                            && s.Value == "Claude Desktop"));
-        Assert.IsTrue(msg.Segments.Any(s => s.Kind == DialogSegmentKind.Hyperlink
-                                            && s.Url == "https://example.com/install"));
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Bold
+                                            && s.Value == "Claude Desktop");
+        Assert.Contains(msg.Segments, s => s.Kind == DialogSegmentKind.Hyperlink
+                                            && s.Url == "https://example.com/install");
     }
 }

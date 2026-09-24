@@ -11,14 +11,14 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Env;
 /// DisableAutoUpdater, AnthropicModel), null = remove semantics, lenient
 /// parsing for legacy / hand-edited values.
 /// </summary>
-[TestClass]
-public sealed class EnvAccessorTests
+public sealed class EnvAccessorTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public EnvAccessorTests() => Setup();
+
+    private void Setup()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-env-acc-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
@@ -26,8 +26,7 @@ public sealed class EnvAccessorTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -43,6 +42,12 @@ public sealed class EnvAccessorTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private async Task<TestConfigClient> OpenAsync()
     {
         TestConfigClient client = new();
@@ -52,29 +57,29 @@ public sealed class EnvAccessorTests
 
     // ── Generic dictionary surface ────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Set_AndGet_RoundTripsArbitraryKey()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.Set("CUSTOM_KEY", "custom-value");
 
-        Assert.AreEqual("custom-value", client.Env.Get("CUSTOM_KEY"));
+        Assert.Equal("custom-value", client.Env.Get("CUSTOM_KEY"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Set_NullValue_RemovesKey()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.Set("CUSTOM_KEY", "first");
-        Assert.AreEqual("first", client.Env.Get("CUSTOM_KEY"));
+        Assert.Equal("first", client.Env.Get("CUSTOM_KEY"));
 
         client.Env.Set("CUSTOM_KEY", null);
 
-        Assert.IsNull(client.Env.Get("CUSTOM_KEY"),
+        MessageAssert.Null(client.Env.Get("CUSTOM_KEY"),
             "Setting null must remove the key from the env map.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Set_EmptyString_RemovesKey()
     {
         // Empty string == "remove" mirrors the IPermissionsAccessor null
@@ -85,17 +90,17 @@ public sealed class EnvAccessorTests
         client.Env.Set("CUSTOM_KEY", "first");
         client.Env.Set("CUSTOM_KEY", string.Empty);
 
-        Assert.IsNull(client.Env.Get("CUSTOM_KEY"));
+        Assert.Null(client.Env.Get("CUSTOM_KEY"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Get_UnsetKey_ReturnsNull()
     {
         using TestConfigClient client = await OpenAsync();
-        Assert.IsNull(client.Env.Get("NEVER_SET"));
+        Assert.Null(client.Env.Get("NEVER_SET"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task All_ReflectsEverySetKey()
     {
         using TestConfigClient client = await OpenAsync();
@@ -105,24 +110,24 @@ public sealed class EnvAccessorTests
 
         IReadOnlyDictionary<string, string> snapshot = client.Env.All;
 
-        Assert.AreEqual(3, snapshot.Count);
-        Assert.AreEqual("a", snapshot["KEY_A"]);
-        Assert.AreEqual("b", snapshot["KEY_B"]);
-        Assert.AreEqual("c", snapshot["KEY_C"]);
+        Assert.Equal(3, snapshot.Count);
+        Assert.Equal("a", snapshot["KEY_A"]);
+        Assert.Equal("b", snapshot["KEY_B"]);
+        Assert.Equal("c", snapshot["KEY_C"]);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task All_EmptyEnv_ReturnsEmptyDictionary()
     {
         using TestConfigClient client = await OpenAsync();
 
         IReadOnlyDictionary<string, string> snapshot = client.Env.All;
 
-        Assert.IsNotNull(snapshot);
-        Assert.AreEqual(0, snapshot.Count);
+        Assert.NotNull(snapshot);
+        Assert.Empty(snapshot);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task GetAt_AndAllAt_ReadFromSpecificScope()
     {
         // Locks the per-scope read path: GetAt(scope) reads only the
@@ -130,15 +135,15 @@ public sealed class EnvAccessorTests
         using TestConfigClient client = await OpenAsync();
         client.Env.SetAt("SCOPED_KEY", "user-scope-value", ConfigScope.User);
 
-        Assert.AreEqual("user-scope-value", client.Env.GetAt("SCOPED_KEY", ConfigScope.User));
+        Assert.Equal("user-scope-value", client.Env.GetAt("SCOPED_KEY", ConfigScope.User));
         IReadOnlyDictionary<string, string> snapshot = client.Env.AllAt(ConfigScope.User);
-        Assert.AreEqual(1, snapshot.Count);
-        Assert.AreEqual("user-scope-value", snapshot["SCOPED_KEY"]);
+        Assert.Single(snapshot);
+        Assert.Equal("user-scope-value", snapshot["SCOPED_KEY"]);
     }
 
     // ── On-disk shape ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Set_PersistsToSettingsJsonEnvObject()
     {
         // Verify the on-disk representation matches what the runtime
@@ -148,35 +153,35 @@ public sealed class EnvAccessorTests
         await client.SaveAsync(force: true, CancellationToken.None);
 
         string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
-        StringAssert.Contains(json, "\"env\":");
-        StringAssert.Contains(json, "\"MY_VAR\": \"42\"");
+        OrdinalAssert.Contains("\"env\":", json);
+        OrdinalAssert.Contains("\"MY_VAR\": \"42\"", json);
     }
 
     // ── Typed: MaxThinkingTokens ──────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task MaxThinkingTokens_RoundTripsAsInt()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.MaxThinkingTokens = 32000;
 
-        Assert.AreEqual(32000, client.Env.MaxThinkingTokens);
-        Assert.AreEqual("32000", client.Env.Get(EnvVarKey.MaxThinkingTokens),
+        Assert.Equal(32000, client.Env.MaxThinkingTokens);
+        MessageAssert.Equal("32000", client.Env.Get(EnvVarKey.MaxThinkingTokens),
             "Must write as a base-10 string under the canonical env key.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task MaxThinkingTokens_NullClearsKey()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.MaxThinkingTokens = 8000;
         client.Env.MaxThinkingTokens = null;
 
-        Assert.IsNull(client.Env.MaxThinkingTokens);
-        Assert.IsNull(client.Env.Get(EnvVarKey.MaxThinkingTokens));
+        Assert.Null(client.Env.MaxThinkingTokens);
+        Assert.Null(client.Env.Get(EnvVarKey.MaxThinkingTokens));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task MaxThinkingTokens_InvalidStoredValue_ReturnsNullNotThrows()
     {
         // Lenient read: a hand-edited settings.json with
@@ -186,24 +191,24 @@ public sealed class EnvAccessorTests
         using TestConfigClient client = await OpenAsync();
         client.Env.Set(EnvVarKey.MaxThinkingTokens, "not-a-number");
 
-        Assert.IsNull(client.Env.MaxThinkingTokens);
+        Assert.Null(client.Env.MaxThinkingTokens);
         // The raw string is still readable via the generic surface.
-        Assert.AreEqual("not-a-number", client.Env.Get(EnvVarKey.MaxThinkingTokens));
+        Assert.Equal("not-a-number", client.Env.Get(EnvVarKey.MaxThinkingTokens));
     }
 
     // ── Typed: MaxOutputTokens ────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task MaxOutputTokens_RoundTripsAsInt()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.MaxOutputTokens = 8192;
 
-        Assert.AreEqual(8192, client.Env.MaxOutputTokens);
-        Assert.AreEqual("8192", client.Env.Get(EnvVarKey.MaxOutputTokens));
+        Assert.Equal(8192, client.Env.MaxOutputTokens);
+        Assert.Equal("8192", client.Env.Get(EnvVarKey.MaxOutputTokens));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task MaxOutputTokens_UsesCorrectEnvKeyOnDisk()
     {
         // CLAUDE_CODE_MAX_OUTPUT_TOKENS — note the prefix.  Distinct
@@ -213,45 +218,45 @@ public sealed class EnvAccessorTests
         await client.SaveAsync(force: true, CancellationToken.None);
 
         string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
-        StringAssert.Contains(json, "\"CLAUDE_CODE_MAX_OUTPUT_TOKENS\": \"4096\"",
+        MessageAssert.Contains("\"CLAUDE_CODE_MAX_OUTPUT_TOKENS\": \"4096\"", json,
             "MaxOutputTokens must write under CLAUDE_CODE_MAX_OUTPUT_TOKENS, not MAX_OUTPUT_TOKENS.");
     }
 
     // ── Typed: DisableAutoMemory + DisableAutoUpdater (1/0 convention) ─
 
-    [TestMethod]
+    [Fact]
     public async Task DisableAutoMemory_True_StoresAsOne()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoMemory = true;
 
-        Assert.IsTrue(client.Env.DisableAutoMemory);
-        Assert.AreEqual("1", client.Env.Get(EnvVarKey.DisableAutoMemory),
+        Assert.True(client.Env.DisableAutoMemory);
+        MessageAssert.Equal("1", client.Env.Get(EnvVarKey.DisableAutoMemory),
             "Claude Code uses the \"1\" / \"0\" convention for env-var booleans.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisableAutoMemory_False_StoresAsZero()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoMemory = false;
 
-        Assert.IsFalse(client.Env.DisableAutoMemory);
-        Assert.AreEqual("0", client.Env.Get(EnvVarKey.DisableAutoMemory));
+        Assert.False(client.Env.DisableAutoMemory);
+        Assert.Equal("0", client.Env.Get(EnvVarKey.DisableAutoMemory));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisableAutoMemory_NullClearsKey()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoMemory = true;
         client.Env.DisableAutoMemory = null;
 
-        Assert.IsNull(client.Env.DisableAutoMemory);
-        Assert.IsNull(client.Env.Get(EnvVarKey.DisableAutoMemory));
+        Assert.Null(client.Env.DisableAutoMemory);
+        Assert.Null(client.Env.Get(EnvVarKey.DisableAutoMemory));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisableAutoMemory_LegacyTrueLiteral_ParsedAsNull()
     {
         // Strict parsing: only "1" / "0" are recognised.  "true" /
@@ -261,47 +266,47 @@ public sealed class EnvAccessorTests
         using TestConfigClient client = await OpenAsync();
         client.Env.Set(EnvVarKey.DisableAutoMemory, "true");
 
-        Assert.IsNull(client.Env.DisableAutoMemory,
+        MessageAssert.Null(client.Env.DisableAutoMemory,
             "Strict 1/0 parsing — \"true\" must NOT be coerced.");
-        Assert.AreEqual("true", client.Env.Get(EnvVarKey.DisableAutoMemory));
+        Assert.Equal("true", client.Env.Get(EnvVarKey.DisableAutoMemory));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DisableAutoUpdater_RoundTripsAsOneZero()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.DisableAutoUpdater = true;
-        Assert.AreEqual("1", client.Env.Get(EnvVarKey.DisableAutoUpdater));
+        Assert.Equal("1", client.Env.Get(EnvVarKey.DisableAutoUpdater));
 
         client.Env.DisableAutoUpdater = false;
-        Assert.AreEqual("0", client.Env.Get(EnvVarKey.DisableAutoUpdater));
+        Assert.Equal("0", client.Env.Get(EnvVarKey.DisableAutoUpdater));
     }
 
     // ── Typed: AnthropicModel (free-form string) ──────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task AnthropicModel_RoundTripsAsString()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.AnthropicModel = "claude-opus-4-5";
 
-        Assert.AreEqual("claude-opus-4-5", client.Env.AnthropicModel);
-        Assert.AreEqual("claude-opus-4-5", client.Env.Get(EnvVarKey.AnthropicModel));
+        Assert.Equal("claude-opus-4-5", client.Env.AnthropicModel);
+        Assert.Equal("claude-opus-4-5", client.Env.Get(EnvVarKey.AnthropicModel));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AnthropicModel_NullClearsKey()
     {
         using TestConfigClient client = await OpenAsync();
         client.Env.AnthropicModel = "claude-haiku";
         client.Env.AnthropicModel = null;
 
-        Assert.IsNull(client.Env.AnthropicModel);
+        Assert.Null(client.Env.AnthropicModel);
     }
 
     // ── Reload round-trip ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task TypedSetters_SurviveSaveAndReload()
     {
         // End-to-end: write via typed setters → save → reload → verify
@@ -316,31 +321,31 @@ public sealed class EnvAccessorTests
         }
 
         using TestConfigClient reader = await OpenAsync();
-        Assert.AreEqual(32000, reader.Env.MaxThinkingTokens);
-        Assert.AreEqual(8192, reader.Env.MaxOutputTokens);
-        Assert.IsTrue(reader.Env.DisableAutoMemory);
-        Assert.AreEqual("sonnet", reader.Env.AnthropicModel);
+        Assert.Equal(32000, reader.Env.MaxThinkingTokens);
+        Assert.Equal(8192, reader.Env.MaxOutputTokens);
+        Assert.True(reader.Env.DisableAutoMemory);
+        Assert.Equal("sonnet", reader.Env.AnthropicModel);
     }
 
     // ── Argument validation ───────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Get_NullVarName_Throws()
     {
         // ArgumentException.ThrowIfNullOrWhiteSpace throws ArgumentNullException
         // for null inputs (a subclass of ArgumentException) — catch the
         // base type so either is accepted.
         using TestConfigClient client = await OpenAsync();
-        Assert.ThrowsExactly<ArgumentNullException>(() => client.Env.Get(null!));
+        Assert.Throws<ArgumentNullException>(() => client.Env.Get(null!));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Set_WhitespaceVarName_Throws()
     {
         // Whitespace-only takes the ThrowIfNullOrWhiteSpace branch that
         // throws plain ArgumentException (NOT ArgumentNullException, since
         // the input is non-null).
         using TestConfigClient client = await OpenAsync();
-        Assert.ThrowsExactly<ArgumentException>(() => client.Env.Set("   ", "v"));
+        Assert.Throws<ArgumentException>(() => client.Env.Set("   ", "v"));
     }
 }

@@ -11,15 +11,15 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 /// <see cref="PlatformPaths.TestUserProfileOverride"/> — no mocks, no fakes
 /// at the engine layer.
 /// </summary>
-[TestClass]
-public class BackupClientTests
+public class BackupClientTests : IDisposable
 {
     private string _profileDir = null!;
     private string _backupDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public BackupClientTests() => Setup();
+
+    private void Setup()
     {
         string root = Path.Combine(Path.GetTempPath(), "claudeforge-sdk-bk-" + Guid.NewGuid().ToString("N"));
         _profileDir = Path.Combine(root, "profile");
@@ -31,8 +31,7 @@ public class BackupClientTests
         PlatformPaths.TestUserProfileOverride = _profileDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -48,6 +47,12 @@ public class BackupClientTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private async Task<TestConfigClient> OpenClientWithSettingsAsync()
     {
         TestConfigClient client = new();
@@ -60,7 +65,7 @@ public class BackupClientTests
 
     // ── Create ────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_WritesArchiveToDestinationDirectory()
     {
         using TestConfigClient client = await OpenClientWithSettingsAsync();
@@ -74,16 +79,16 @@ public class BackupClientTests
             onProgress: null,
             ct: CancellationToken.None);
 
-        Assert.IsNotNull(archive);
-        Assert.IsTrue(File.Exists(archive.FilePath),
+        Assert.NotNull(archive);
+        Assert.True(File.Exists(archive.FilePath),
             $"Backup archive should exist on disk: {archive.FilePath}");
-        Assert.IsTrue(Path.GetFileName(archive.FilePath).StartsWith("backup-", StringComparison.Ordinal));
-        StringAssert.EndsWith(archive.FilePath, ".zip");
-        Assert.AreEqual("backup", archive.Manifest.Kind);
-        Assert.AreEqual(BackupMode.SettingsOnly, archive.Manifest.Mode);
+        Assert.StartsWith("backup-", Path.GetFileName(archive.FilePath), StringComparison.Ordinal);
+        OrdinalAssert.EndsWith(".zip", archive.FilePath);
+        Assert.Equal("backup", archive.Manifest.Kind);
+        Assert.Equal(BackupMode.SettingsOnly, archive.Manifest.Mode);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_SanitizedMode_RoundTripsThroughTheSdk()
     {
         // Consolidating BackupMode onto Core's enum exposed Sanitized on the SDK
@@ -101,12 +106,12 @@ public class BackupClientTests
             onProgress: null,
             ct: CancellationToken.None);
 
-        Assert.IsNotNull(archive);
-        Assert.IsTrue(File.Exists(archive.FilePath), $"Sanitized archive should exist: {archive.FilePath}");
-        Assert.AreEqual(BackupMode.Sanitized, archive.Manifest.Mode);
+        Assert.NotNull(archive);
+        Assert.True(File.Exists(archive.FilePath), $"Sanitized archive should exist: {archive.FilePath}");
+        Assert.Equal(BackupMode.Sanitized, archive.Manifest.Mode);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_WithCredentialsFlag_ProducesPrefixedFilename()
     {
         using TestConfigClient client = await OpenClientWithSettingsAsync();
@@ -120,11 +125,11 @@ public class BackupClientTests
             onProgress: null,
             ct: CancellationToken.None);
 
-        Assert.IsTrue(Path.GetFileName(archive.FilePath).StartsWith("backup-with-creds-", StringComparison.Ordinal),
+        Assert.True(Path.GetFileName(archive.FilePath).StartsWith("backup-with-creds-", StringComparison.Ordinal),
             $"Filename should encode the IncludeCredentials flag: {archive.FilePath}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_OnProgressHandler_FiresMultipleTimes()
     {
         using TestConfigClient client = await OpenClientWithSettingsAsync();
@@ -163,7 +168,7 @@ public class BackupClientTests
         // "at least one", not an exact number.
         int eventCount = await WaitForProgressAsync(progressEvents, minCount: 1, timeout: TimeSpan.FromSeconds(5));
 
-        Assert.IsTrue(eventCount > 0,
+        Assert.True(eventCount > 0,
             "Progress handler must be invoked at least once during a backup.");
     }
 
@@ -200,7 +205,7 @@ public class BackupClientTests
 
     // ── List ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ListAsync_ReturnsCreatedArchives()
     {
         using TestConfigClient client = await OpenClientWithSettingsAsync();
@@ -218,14 +223,14 @@ public class BackupClientTests
 
         IReadOnlyList<BackupArchive> listed = await client.Backup.ListAsync(_backupDir, CancellationToken.None);
 
-        Assert.AreEqual(2, listed.Count);
-        Assert.IsTrue(listed.Any(a => a.FilePath == first.FilePath),
+        Assert.Equal(2, listed.Count);
+        Assert.True(listed.Any(a => a.FilePath == first.FilePath),
             "ListAsync must return the first archive.");
-        Assert.IsTrue(listed.Any(a => a.FilePath == second.FilePath),
+        Assert.True(listed.Any(a => a.FilePath == second.FilePath),
             "ListAsync must return the second archive.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ListAsync_OnEmptyOrMissingDirectory_ReturnsEmptyList()
     {
         using TestConfigClient client = await OpenClientWithSettingsAsync();
@@ -233,19 +238,19 @@ public class BackupClientTests
         Directory.CreateDirectory(emptyDir);
 
         IReadOnlyList<BackupArchive> listed = await client.Backup.ListAsync(emptyDir, CancellationToken.None);
-        Assert.AreEqual(0, listed.Count);
+        Assert.Empty(listed);
     }
 
     // ── Restore ───────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_RoundTripsSettingsViaArchive()
     {
         using TestConfigClient client = await OpenClientWithSettingsAsync();
 
         // Capture the value we'll re-instate after a destructive change.
         string? originalModel = client.GetEffective<string>("model");
-        Assert.AreEqual("claude-sonnet-4", originalModel);
+        Assert.Equal("claude-sonnet-4", originalModel);
 
         BackupArchive archive = await client.Backup.CreateAsync(
             new BackupRequest(BackupMode.SettingsOnly, _backupDir, IncludeCredentials: false),
@@ -254,15 +259,15 @@ public class BackupClientTests
         // Mutate live state — this is what we want Restore to undo.
         client.SetValue("model", "tampered");
         await client.SaveAsync(force: true, CancellationToken.None);
-        Assert.AreEqual("tampered", client.GetEffective<string>("model"));
+        Assert.Equal("tampered", client.GetEffective<string>("model"));
 
         RestoreResult result = await client.Backup.RestoreAsync(archive, onProgress: null, ct: CancellationToken.None);
-        Assert.IsTrue(result.Success, $"Restore should succeed. Message: {result.Message}");
-        Assert.IsTrue(result.FilesRestored > 0, "Restore must report at least one file.");
+        Assert.True(result.Success, $"Restore should succeed. Message: {result.Message}");
+        Assert.True(result.FilesRestored > 0, "Restore must report at least one file.");
 
         // Reload from disk to confirm the restored content is what we backed up.
         await client.ReloadAsync(CancellationToken.None);
-        Assert.AreEqual(originalModel, client.GetEffective<string>("model"),
+        MessageAssert.Equal(originalModel, client.GetEffective<string>("model"),
             "After Restore + Reload, the model value must match the pre-tamper backup.");
     }
 }

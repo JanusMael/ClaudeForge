@@ -20,8 +20,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// sidecars staying out, and the sibling <c>.opencode</c> directory being walked.
 /// </para>
 /// </remarks>
-[TestClass]
-public sealed class ClaudeArtifactSourcesTests
+public sealed class ClaudeArtifactSourcesTests : IDisposable
 {
     private string _fakeHome = null!;
 
@@ -30,16 +29,16 @@ public sealed class ClaudeArtifactSourcesTests
     /// <summary>The sandbox, addressed the way production addresses a real profile.</summary>
     private ClaudeArtifactPaths Paths => new(_fakeHome, ClaudeEnvironment.Empty);
 
-    [TestInitialize]
-    public void Setup()
+    public ClaudeArtifactSourcesTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(), "claudeforge-sources-" + Path.GetRandomFileName());
         Directory.CreateDirectory(ClaudeHome);
         PlatformPaths.TestUserProfileOverride = _fakeHome;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (!Directory.Exists(_fakeHome))
@@ -57,6 +56,12 @@ public sealed class ClaudeArtifactSourcesTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private void Write(string relativePath, string content = "x")
     {
         string full = Path.Combine(ClaudeHome, relativePath);
@@ -72,7 +77,7 @@ public sealed class ClaudeArtifactSourcesTests
 
     // ── The source list itself ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EverySourceIdIsUnique()
     {
         // ⛔ Not cosmetic. The inventory maps SourceId back to a category through a dictionary, so
@@ -83,12 +88,12 @@ public sealed class ClaudeArtifactSourcesTests
             string[] ids = [.. ClaudeArtifactSources.ForInventory(Paths, projectRoot)
                                                     .Select(s => s.Source.Id)];
 
-            CollectionAssert.AllItemsAreUnique(
+            MessageAssert.Distinct(
                 ids, $"Duplicate source id with projectRoot={projectRoot ?? "(none)"}.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryCategoryHasAtLeastOneSource()
     {
         // UserMemoryCategory's own remarks say "adding a new category requires extending both the
@@ -103,11 +108,11 @@ public sealed class ClaudeArtifactSourcesTests
 
         UserMemoryCategory[] missing = [.. Enum.GetValues<UserMemoryCategory>().Except(covered)];
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, missing.Length, $"No source supplies: {string.Join(", ", missing)}.");
     }
 
-    [TestMethod]
+    [Fact]
     public void WithoutAProjectRoot_NothingResolvesAtProjectScope()
     {
         // Seeded on BOTH sides deliberately: the project file exists on disk and must stay
@@ -119,15 +124,15 @@ public sealed class ClaudeArtifactSourcesTests
 
         ArtifactRef[] entries = [.. Resolve(projectRoot: null).SelectMany(a => a.Entries)];
 
-        Assert.IsTrue(entries.Any(e => e.Scope == ClaudeScopes.User));
-        Assert.IsFalse(
+        Assert.Contains(entries, e => e.Scope == ClaudeScopes.User);
+        Assert.False(
             entries.Any(e => e.Scope == ClaudeScopes.Project),
             "A project file must stay invisible while no project is open.");
     }
 
     // ── Identity: what is, and is not, one artifact ──────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ASiblingToolsAgentsFile_DoesNotShadowClaudesOwn()
     {
         // ⚠ Both are ArtifactKind.Memory and both files are literally named AGENTS.md. Taking the
@@ -140,13 +145,13 @@ public sealed class ClaudeArtifactSourcesTests
         List<ResolvedArtifact> memory =
             [.. Resolve().Where(a => a.Kind == ArtifactKind.Memory)];
 
-        Assert.AreEqual(2, memory.Count, "Two unrelated tools' files must not resolve as one artifact.");
-        Assert.IsFalse(memory.Any(a => a.IsShadowed));
-        CollectionAssert.AreEquivalent(
+        MessageAssert.Equal(2, memory.Count, "Two unrelated tools' files must not resolve as one artifact.");
+        Assert.DoesNotContain(memory, a => a.IsShadowed);
+        MessageAssert.SameElements(
             new[] { "AGENTS", ".codex/AGENTS" }, memory.Select(a => a.Name).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void RulesInDifferentSubdirectories_AreDistinctArtifacts()
     {
         // The rules walk is recursive, so a shared base name across subdirectories is ordinary —
@@ -156,11 +161,11 @@ public sealed class ClaudeArtifactSourcesTests
 
         List<ResolvedArtifact> rules = [.. Resolve().Where(a => a.Kind == ArtifactKind.Rule)];
 
-        Assert.AreEqual(2, rules.Count);
-        Assert.IsFalse(rules.Any(a => a.IsShadowed));
+        Assert.Equal(2, rules.Count);
+        Assert.DoesNotContain(rules, a => a.IsShadowed);
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectMemoryAndUserMemory_ResolveAsOneChain_ProjectFirst()
     {
         // ⭐ The relationship the old walk could not express: these are two declarations of one
@@ -173,13 +178,13 @@ public sealed class ClaudeArtifactSourcesTests
         ResolvedArtifact claudeMd = Resolve(projectRoot)
             .Single(a => a.Kind == ArtifactKind.Memory && a.Name == "CLAUDE");
 
-        Assert.IsTrue(claudeMd.IsShadowed);
-        Assert.AreEqual(2, claudeMd.Entries.Count);
-        Assert.AreEqual(ClaudeScopes.Project, claudeMd.Effective.Scope);
-        Assert.AreEqual(ClaudeScopes.User, claudeMd.Shadowed.Single().Scope);
+        Assert.True(claudeMd.IsShadowed);
+        Assert.Equal(2, claudeMd.Entries.Count);
+        Assert.Equal(ClaudeScopes.Project, claudeMd.Effective.Scope);
+        Assert.Equal(ClaudeScopes.User, claudeMd.Shadowed.Single().Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void UserAndProjectSettings_ResolveAsOneChain_ProjectFirst()
     {
         Write("settings.json", "{}");
@@ -190,25 +195,25 @@ public sealed class ClaudeArtifactSourcesTests
         ResolvedArtifact settings = Resolve(projectRoot)
             .Single(a => a.Kind == ArtifactKind.Configuration && a.Name == "settings.json");
 
-        Assert.AreEqual(2, settings.Entries.Count);
-        Assert.AreEqual(ClaudeScopes.Project, settings.Effective.Scope);
+        Assert.Equal(2, settings.Entries.Count);
+        Assert.Equal(ClaudeScopes.Project, settings.Effective.Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void ManagedSettings_OutranksTheUsersOwn()
     {
         // Administrator policy is the highest layer Claude reads. The two files have different
         // names so they never actually collide — but the precedence is what a chain would be
         // ordered by the day anything does, and stating it wrongly would misreport whose value is
         // live.
-        Assert.IsTrue(ClaudeScopes.Managed.Precedence > ClaudeScopes.Project.Precedence);
-        Assert.IsTrue(ClaudeScopes.Project.Precedence > ClaudeScopes.User.Precedence);
-        Assert.IsTrue(ClaudeScopes.User.Precedence > ClaudeScopes.CrossTool.Precedence);
+        Assert.True(ClaudeScopes.Managed.Precedence > ClaudeScopes.Project.Precedence);
+        Assert.True(ClaudeScopes.Project.Precedence > ClaudeScopes.User.Precedence);
+        Assert.True(ClaudeScopes.User.Precedence > ClaudeScopes.CrossTool.Precedence);
     }
 
     // ── Grouping must not become filtering ───────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void BothCLAUDEmdFiles_AreListed_EvenThoughTheyResolveAsOneArtifact()
     {
         // ⛔ The failure mode this exists for: listing `Effective` instead of `Entries` would drop
@@ -223,13 +228,13 @@ public sealed class ClaudeArtifactSourcesTests
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
 
-        Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.PrimaryMemory));
-        Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.ProjectMemory));
+        Assert.Single(files, f => f.Category == UserMemoryCategory.PrimaryMemory);
+        Assert.Single(files, f => f.Category == UserMemoryCategory.ProjectMemory);
     }
 
     // ── Behaviour the inventory always had and never tested ──────────────────
 
-    [TestMethod]
+    [Fact]
     public void BackupSidecars_AreNotArtifacts_InTheOneWalkWhereItMatters()
     {
         // *.bak files are left by RestoreEngine and by editors (vim, `sed -i.bak`). Surfacing them
@@ -246,11 +251,11 @@ public sealed class ClaudeArtifactSourcesTests
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
 
-        Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.Hook));
-        Assert.IsFalse(files.Any(f => f.AbsolutePath.EndsWith(".bak", StringComparison.Ordinal)));
+        Assert.Single(files, f => f.Category == UserMemoryCategory.Hook);
+        Assert.DoesNotContain(files, f => f.AbsolutePath.EndsWith(".bak", StringComparison.Ordinal));
     }
 
-    [TestMethod]
+    [Fact]
     public void SiblingOpenCodeDirectory_IsWalked_NotJustProbed()
     {
         // .opencode holds a directory of markdown rather than one known file, so it is the one
@@ -266,7 +271,7 @@ public sealed class ClaudeArtifactSourcesTests
                                 .Where(f => f.Category == UserMemoryCategory.CrossToolMemory),
         ];
 
-        Assert.AreEqual(2, cross.Count);
-        CollectionAssert.AreEquivalent(new[] { "rules", "notes" }, cross.Select(f => f.DisplayName).ToArray());
+        Assert.Equal(2, cross.Count);
+        MessageAssert.SameElements(new[] { "rules", "notes" }, cross.Select(f => f.DisplayName).ToArray());
     }
 }

@@ -9,10 +9,9 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Diagnostics;
 /// dialog and audit log depend on.  Migrated from the App test project
 /// when the diff core moved into <see cref="Bennewitz.Ninja.AgentForge.Sdk"/>.
 /// </summary>
-[TestClass]
 public sealed class JsonDiffTests
 {
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_DetectsAddedKey()
     {
         JsonObject baseline = new() { ["model"] = "sonnet" };
@@ -20,14 +19,14 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("verbose", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Added, diffs[0].Kind);
-        Assert.IsNull(diffs[0].OldValue);
-        Assert.AreEqual("true", diffs[0].NewValue);
+        Assert.Single(diffs);
+        Assert.Equal("verbose", diffs[0].Key);
+        Assert.Equal(ChangeKind.Added, diffs[0].Kind);
+        Assert.Null(diffs[0].OldValue);
+        Assert.Equal("true", diffs[0].NewValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_DetectsRemovedKey()
     {
         JsonObject baseline = new() { ["model"] = "sonnet", ["verbose"] = true };
@@ -35,14 +34,14 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("verbose", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Removed, diffs[0].Kind);
-        Assert.AreEqual("true", diffs[0].OldValue);
-        Assert.IsNull(diffs[0].NewValue);
+        Assert.Single(diffs);
+        Assert.Equal("verbose", diffs[0].Key);
+        Assert.Equal(ChangeKind.Removed, diffs[0].Kind);
+        Assert.Equal("true", diffs[0].OldValue);
+        Assert.Null(diffs[0].NewValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_DetectsModifiedKey()
     {
         JsonObject baseline = new() { ["model"] = "sonnet" };
@@ -50,25 +49,25 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("model", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Modified, diffs[0].Kind);
-        Assert.AreEqual("\"sonnet\"", diffs[0].OldValue);
-        Assert.AreEqual("\"opus\"", diffs[0].NewValue);
+        Assert.Single(diffs);
+        Assert.Equal("model", diffs[0].Key);
+        Assert.Equal(ChangeKind.Modified, diffs[0].Kind);
+        Assert.Equal("\"sonnet\"", diffs[0].OldValue);
+        Assert.Equal("\"opus\"", diffs[0].NewValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_NullBaseline_TreatsAllKeysAsAdded()
     {
         JsonObject current = new() { ["model"] = "sonnet", ["verbose"] = true };
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(null, current);
 
-        Assert.AreEqual(2, diffs.Count);
-        Assert.IsTrue(diffs.All(d => d.Kind == ChangeKind.Added));
+        Assert.Equal(2, diffs.Count);
+        Assert.True(diffs.All(d => d.Kind == ChangeKind.Added));
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_DropsToolMetadataKey()
     {
         // The "//" key is the tool-written metadata marker; it always
@@ -79,11 +78,11 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("model", diffs[0].Key);
+        Assert.Single(diffs);
+        Assert.Equal("model", diffs[0].Key);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_NoDifferences_ReturnsEmpty()
     {
         JsonObject baseline = new() { ["model"] = "sonnet" };
@@ -91,10 +90,10 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(0, diffs.Count);
+        Assert.Empty(diffs);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_WithinSameKind_IsAlphabeticalByKey()
     {
         // All three keys are Added (baseline is empty), so the kind-rank tier
@@ -110,12 +109,12 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "alpha", "mid", "zeta" },
             diffs.Select(d => d.Key).ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_AcrossKinds_OrdersModifiedThenAddedThenRemoved()
     {
         // Save-confirmation dialog ordering contract:
@@ -154,14 +153,14 @@ public sealed class JsonDiffTests
             ("zRemoved", ChangeKind.Removed),
         ];
         (string Key, ChangeKind Kind)[] actual = diffs.Select(d => (d.Key, d.Kind)).ToArray();
-        CollectionAssert.AreEqual(expected, actual,
+        MessageAssert.SequenceEqual(expected, actual,
             "Save-dialog row order must be Modified → Added → Removed, alphabetical " +
             "within each kind. See JsonDiff.Compute remarks.");
     }
 
     // ── Recursion into nested objects ─────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_NewlyAddedObjectKey_RecursesInsteadOfBlobbing()
     {
         // Root cause of the MAX_OUTPUT_TOKENS disappearance bug (2026-05-13):
@@ -176,16 +175,16 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count,
+        MessageAssert.Equal(1, diffs.Count,
             "One env-var add must produce exactly one diff row.");
-        Assert.AreEqual("env.MAX_OUTPUT_TOKENS", diffs[0].Key,
+        MessageAssert.Equal("env.MAX_OUTPUT_TOKENS", diffs[0].Key,
             "Key must be the dotted leaf path, not the bare object key.");
-        Assert.AreEqual(ChangeKind.Added, diffs[0].Kind);
-        Assert.AreEqual("\"60000\"", diffs[0].NewValue);
-        Assert.IsNull(diffs[0].OldValue);
+        Assert.Equal(ChangeKind.Added, diffs[0].Kind);
+        Assert.Equal("\"60000\"", diffs[0].NewValue);
+        Assert.Null(diffs[0].OldValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_RemovedObjectKey_RecursesInsteadOfBlobbing()
     {
         // Symmetric to the Added case — removing the env section entirely
@@ -198,14 +197,14 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("env.MAX_OUTPUT_TOKENS", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Removed, diffs[0].Kind);
-        Assert.AreEqual("\"60000\"", diffs[0].OldValue);
-        Assert.IsNull(diffs[0].NewValue);
+        Assert.Single(diffs);
+        Assert.Equal("env.MAX_OUTPUT_TOKENS", diffs[0].Key);
+        Assert.Equal(ChangeKind.Removed, diffs[0].Kind);
+        Assert.Equal("\"60000\"", diffs[0].OldValue);
+        Assert.Null(diffs[0].NewValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_NewlyAddedObjectWithMultipleKeys_EmitsOneRowPerLeaf()
     {
         // Multiple env-vars written at once → one row per var, all Added.
@@ -221,13 +220,13 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(2, diffs.Count);
-        Assert.IsTrue(diffs.All(d => d.Kind == ChangeKind.Added));
-        Assert.IsTrue(diffs.Any(d => d.Key == "env.MAX_OUTPUT_TOKENS"));
-        Assert.IsTrue(diffs.Any(d => d.Key == "env.MAX_THINKING_TOKENS"));
+        Assert.Equal(2, diffs.Count);
+        Assert.True(diffs.All(d => d.Kind == ChangeKind.Added));
+        Assert.Contains(diffs, d => d.Key == "env.MAX_OUTPUT_TOKENS");
+        Assert.Contains(diffs, d => d.Key == "env.MAX_THINKING_TOKENS");
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_NestedObjectChange_ReportsLeafPathOnly()
     {
         // The user's bug: changing one element inside `hooks.Stop` used to emit
@@ -252,16 +251,16 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count,
+        MessageAssert.Equal(1, diffs.Count,
             "Removing one entry from hooks.Stop must produce exactly one diff row.");
-        Assert.AreEqual("hooks.Stop", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Removed, diffs[0].Kind);
-        Assert.AreEqual("\"entry2\"", diffs[0].OldValue);
-        Assert.IsFalse(diffs.Any(d => d.Key == "hooks"),
+        Assert.Equal("hooks.Stop", diffs[0].Key);
+        Assert.Equal(ChangeKind.Removed, diffs[0].Kind);
+        Assert.Equal("\"entry2\"", diffs[0].OldValue);
+        Assert.False(diffs.Any(d => d.Key == "hooks"),
             "Top-level 'hooks' must NOT appear — recursion drilled in.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_DeeplyNestedObject_PathReflectsFullJsonPath()
     {
         JsonObject baseline = new()
@@ -287,14 +286,14 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("a.b.c", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Modified, diffs[0].Kind);
+        Assert.Single(diffs);
+        Assert.Equal("a.b.c", diffs[0].Key);
+        Assert.Equal(ChangeKind.Modified, diffs[0].Kind);
     }
 
     // ── Array set-diff ────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_ArrayElementRemoved_ReportsOneRemovedRowAtArrayPath()
     {
         JsonObject baseline = new() { ["allow"] = new JsonArray("Bash", "Edit", "Read") };
@@ -302,14 +301,14 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("allow", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Removed, diffs[0].Kind);
-        Assert.AreEqual("\"Edit\"", diffs[0].OldValue);
-        Assert.IsNull(diffs[0].NewValue);
+        Assert.Single(diffs);
+        Assert.Equal("allow", diffs[0].Key);
+        Assert.Equal(ChangeKind.Removed, diffs[0].Kind);
+        Assert.Equal("\"Edit\"", diffs[0].OldValue);
+        Assert.Null(diffs[0].NewValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_ArrayElementAdded_ReportsOneAddedRowAtArrayPath()
     {
         JsonObject baseline = new() { ["allow"] = new JsonArray("Bash") };
@@ -317,12 +316,12 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual(ChangeKind.Added, diffs[0].Kind);
-        Assert.AreEqual("\"Edit\"", diffs[0].NewValue);
+        Assert.Single(diffs);
+        Assert.Equal(ChangeKind.Added, diffs[0].Kind);
+        Assert.Equal("\"Edit\"", diffs[0].NewValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_ArrayMixedAddRemove_ReportsBothRowsSeparately()
     {
         JsonObject baseline = new() { ["allow"] = new JsonArray("Bash", "Edit") };
@@ -330,12 +329,12 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(2, diffs.Count);
-        Assert.IsTrue(diffs.Any(d => d.Kind == ChangeKind.Added && d.NewValue == "\"Read\""));
-        Assert.IsTrue(diffs.Any(d => d.Kind == ChangeKind.Removed && d.OldValue == "\"Edit\""));
+        Assert.Equal(2, diffs.Count);
+        Assert.Contains(diffs, d => d.Kind == ChangeKind.Added && d.NewValue == "\"Read\"");
+        Assert.Contains(diffs, d => d.Kind == ChangeKind.Removed && d.OldValue == "\"Edit\"");
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_ArrayReorderOnly_FallsThroughToModifiedRow()
     {
         // Same multiset, different sequence — element-set diff is empty but
@@ -346,12 +345,12 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual(ChangeKind.Modified, diffs[0].Kind);
-        Assert.AreEqual("allow", diffs[0].Key);
+        Assert.Single(diffs);
+        Assert.Equal(ChangeKind.Modified, diffs[0].Kind);
+        Assert.Equal("allow", diffs[0].Key);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_ArrayOfObjects_DiffsByJsonStringIdentity()
     {
         // Realistic case: Permissions array of rule objects.  Removing
@@ -377,16 +376,16 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual("permissions.allow", diffs[0].Key);
-        Assert.AreEqual(ChangeKind.Removed, diffs[0].Kind);
-        StringAssert.Contains(diffs[0].OldValue, "\"Edit\"");
-        StringAssert.Contains(diffs[0].OldValue, "\"*.cs\"");
+        Assert.Single(diffs);
+        Assert.Equal("permissions.allow", diffs[0].Key);
+        Assert.Equal(ChangeKind.Removed, diffs[0].Kind);
+        OrdinalAssert.Contains("\"Edit\"", diffs[0].OldValue);
+        OrdinalAssert.Contains("\"*.cs\"", diffs[0].OldValue);
     }
 
     // ── Type mismatch and metadata key ────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_TypeMismatch_FallsThroughToModified()
     {
         // String → array at the same key: can't recurse, can't set-diff.
@@ -396,11 +395,11 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(1, diffs.Count);
-        Assert.AreEqual(ChangeKind.Modified, diffs[0].Kind);
+        Assert.Single(diffs);
+        Assert.Equal(ChangeKind.Modified, diffs[0].Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiffJsonObjects_NestedMetadataKey_IsAlsoStripped()
     {
         // The "//" tool-metadata stripper must apply at every recursion
@@ -425,7 +424,7 @@ public sealed class JsonDiffTests
 
         IReadOnlyList<PropertyDiff> diffs = JsonDiff.Compute(baseline, current);
 
-        Assert.AreEqual(0, diffs.Count,
+        MessageAssert.Equal(0, diffs.Count,
             "A nested '//' metadata-only change must not produce any diffs.");
     }
 }

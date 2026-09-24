@@ -14,8 +14,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// whether they are or not. Every claim here is about identity and traversal — the parts that are
 /// invisible once the chain is flattened, and therefore the parts that can be quietly wrong.
 /// </remarks>
-[TestClass]
-public sealed class ClaudeEditableArtifactSourcesTests
+public sealed class ClaudeEditableArtifactSourcesTests : IDisposable
 {
     private string _sandbox = null!;
 
@@ -24,16 +23,16 @@ public sealed class ClaudeEditableArtifactSourcesTests
     /// <summary>The sandbox, addressed the way production addresses a real profile.</summary>
     private ClaudeArtifactPaths Paths => new(_sandbox, ClaudeEnvironment.Empty);
 
-    [TestInitialize]
-    public void Setup()
+    public ClaudeEditableArtifactSourcesTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudeforge-editable-" + Path.GetRandomFileName());
         Directory.CreateDirectory(Home);
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (!Directory.Exists(_sandbox))
@@ -51,6 +50,12 @@ public sealed class ClaudeEditableArtifactSourcesTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static void Write(string path, string content = "x")
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -65,7 +70,7 @@ public sealed class ClaudeEditableArtifactSourcesTests
 
     // ── The source list itself ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EverySourceIdIsUnique()
     {
         // The editor maps SourceId back to an editing scope through a dictionary — a duplicated id
@@ -75,12 +80,12 @@ public sealed class ClaudeEditableArtifactSourcesTests
             string[] ids = [.. ClaudeEditableArtifactSources.ForEditor(Paths, projectRoot)
                                                             .Select(s => s.Source.Id)];
 
-            CollectionAssert.AllItemsAreUnique(
+            MessageAssert.Distinct(
                 ids, $"Duplicate source id with projectRoot={projectRoot ?? "(none)"}.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void OnlyTheThreeEditableKindsAreProduced()
     {
         // EditableMemoryService maps kind → category with a switch that throws on anything else,
@@ -95,13 +100,13 @@ public sealed class ClaudeEditableArtifactSourcesTests
 
         ArtifactKind[] kinds = [.. Resolve().SelectMany(a => a.Entries).Select(e => e.Kind).Distinct()];
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { ArtifactKind.Agent, ArtifactKind.Command, ArtifactKind.Skill }, kinds);
     }
 
     // ── Identity across scopes ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void AUserAgentAndAPluginAgentOfTheSameName_ResolveAsOneChain_UserFirst()
     {
         // ⭐ The relationship the old walk could not express. Both rows still appear on the page —
@@ -112,12 +117,12 @@ public sealed class ClaudeEditableArtifactSourcesTests
         ResolvedArtifact reviewer = Resolve()
             .Single(a => a.Kind == ArtifactKind.Agent && a.Name == "reviewer");
 
-        Assert.IsTrue(reviewer.IsShadowed);
-        Assert.AreEqual(ClaudeScopes.User, reviewer.Effective.Scope);
-        Assert.AreEqual("some-plugin", reviewer.Shadowed.Single().Scope.DisplayName);
+        Assert.True(reviewer.IsShadowed);
+        Assert.Equal(ClaudeScopes.User, reviewer.Effective.Scope);
+        Assert.Equal("some-plugin", reviewer.Shadowed.Single().Scope.DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void BothCopiesAreStillListed_GroupingIsNotFiltering()
     {
         // ⛔ The failure mode: listing `Effective` instead of `Entries` would hide the plugin's
@@ -129,12 +134,12 @@ public sealed class ClaudeEditableArtifactSourcesTests
         List<EditableMemoryEntry> rows =
             [.. EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Where(e => e.DisplayName == "reviewer")];
 
-        Assert.AreEqual(2, rows.Count);
-        Assert.IsTrue(rows.Any(r => r is { Scope: EditableMemoryScope.User, IsWritable: true }));
-        Assert.IsTrue(rows.Any(r => r is { Scope: EditableMemoryScope.Plugin, IsWritable: false }));
+        Assert.Equal(2, rows.Count);
+        Assert.Contains(rows, r => r is { Scope: EditableMemoryScope.User, IsWritable: true });
+        Assert.Contains(rows, r => r is { Scope: EditableMemoryScope.Plugin, IsWritable: false });
     }
 
-    [TestMethod]
+    [Fact]
     public void TwoPluginsWithTheSameSkillName_StayDistinguishableByScope()
     {
         // A plugin is a scope, and its display name is what the row shows. Collapsing all plugins
@@ -144,14 +149,14 @@ public sealed class ClaudeEditableArtifactSourcesTests
 
         ResolvedArtifact widget = Resolve().Single(a => a.Kind == ArtifactKind.Skill && a.Name == "widget");
 
-        Assert.AreEqual(2, widget.Entries.Count);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, widget.Entries.Count);
+        MessageAssert.SameElements(
             new[] { "alpha", "beta" }, widget.Entries.Select(e => e.Scope.DisplayName).ToArray());
     }
 
     // ── Traversal bounds ─────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void PluginWalk_StopsAtItsDepthBound()
     {
         // Plugins are git repositories, so an unbounded walk crawls their dependency trees. The
@@ -162,11 +167,11 @@ public sealed class ClaudeEditableArtifactSourcesTests
 
         string[] names = [.. Resolve().Where(a => a.Kind == ArtifactKind.Skill).Select(a => a.Name)];
 
-        CollectionAssert.Contains(names, "f", "Depth 6 is inside the bound.");
-        CollectionAssert.DoesNotContain(names, "g", "Depth 7 is past the bound and must not be walked.");
+        MessageAssert.Contains("f", names, "Depth 6 is inside the bound.");
+        MessageAssert.DoesNotContain("g", names, "Depth 7 is past the bound and must not be walked.");
     }
 
-    [TestMethod]
+    [Fact]
     public void PluginWalk_SkipsDotDirectories()
     {
         // A plugin is a git repo, so .git is always there — and any other dot-directory is
@@ -176,15 +181,15 @@ public sealed class ClaudeEditableArtifactSourcesTests
 
         string[] names = [.. Resolve().Where(a => a.Kind == ArtifactKind.Skill).Select(a => a.Name)];
 
-        CollectionAssert.Contains(names, "real");
-        CollectionAssert.DoesNotContain(names, "x");
+        Assert.Contains("real", names);
+        Assert.DoesNotContain("x", names);
     }
 
-    [TestMethod]
+    [Fact]
     public void PluginsDirectoryAbsent_YieldsNothing_AndDoesNotThrow()
     {
         Write(Path.Combine(Home, "agents", "only-user.md"));
 
-        Assert.AreEqual(1, Resolve().Count);
+        Assert.Single(Resolve());
     }
 }

@@ -13,12 +13,11 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 ///  CI enforces this with a Roslyn analyzer rule (or a unit test that reflects
 ///  over the public surface)."  This is the unit-test option.
 /// </remarks>
-[TestClass]
 public class PublicSurfaceContractTests
 {
     private static Assembly SdkAssembly => typeof(IAgentConfigClient).Assembly;
 
-    [TestMethod]
+    [Fact]
     public void EveryAsyncMethod_HasRequiredCancellationToken()
     {
         // Walk every public method on every public type in the SDK assembly.
@@ -54,12 +53,12 @@ public class PublicSurfaceContractTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, offenders.Count,
             $"Defaulted CancellationToken parameter(s) found — required CTs only:\n  {string.Join("\n  ", offenders)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void NoPublicApi_LeaksSystemTextJsonNodes()
     {
         // The SDK contract is "no JsonNode in any public API". Walk public
@@ -99,7 +98,7 @@ public class PublicSurfaceContractTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, offenders.Count,
             $"System.Text.Json.Nodes types leaked into public Sdk API:\n  {string.Join("\n  ", offenders)}");
         return;
@@ -110,7 +109,7 @@ public class PublicSurfaceContractTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Sdk_HasNoAvaloniaReference()
     {
         // The Sdk powers headless consumers (MCP servers, CLIs) — pulling in
@@ -123,12 +122,12 @@ public class PublicSurfaceContractTests
                                  .Select(a => a.Name!)
                                  .ToList();
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0, offenders.Count,
             $"Sdk references Avalonia: {string.Join(", ", offenders)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void IAgentConfigClient_DocumentsThreadingContract()
     {
         // Acceptance criterion: "Threading contract (§7) is documented on
@@ -143,16 +142,16 @@ public class PublicSurfaceContractTests
         string asmPath = SdkAssembly.Location;
         string xmlPath = Path.ChangeExtension(asmPath, ".xml");
 
-        Assert.IsTrue(File.Exists(xmlPath),
+        Assert.True(File.Exists(xmlPath),
             $"Expected XML doc file alongside the Sdk assembly: {xmlPath}. " +
             "Confirm <GenerateDocumentationFile>true</GenerateDocumentationFile> in the csproj.");
 
         string xml = File.ReadAllText(xmlPath);
-        Assert.IsTrue(xml.Contains("Thread-safe"),
+        Assert.True(xml.Contains("Thread-safe"),
             "IAgentConfigClient XML doc must mention 'Thread-safe' (threading contract section).");
-        Assert.IsTrue(xml.Contains("Cancellation"),
+        Assert.True(xml.Contains("Cancellation"),
             "IAgentConfigClient XML doc must mention the Cancellation contract.");
-        Assert.IsTrue(xml.Contains("Disposal"),
+        Assert.True(xml.Contains("Disposal"),
             "IAgentConfigClient XML doc must mention the Disposal contract.");
     }
 }

@@ -21,7 +21,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// contains a <c>//</c> inside a string literal.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class InjectedPathSeamTests
 {
     /// <summary>
@@ -61,11 +60,11 @@ public sealed class InjectedPathSeamTests
     private static readonly Regex StaticRead =
         new(@"PlatformPaths\.(?<member>[A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled);
 
-    [TestMethod]
+    [Fact]
     public void TheArtifactSurfaceReadsNoUnexpectedProcessGlobalPath()
     {
         string memoryDir = Path.Combine(FindRepoRoot(), "src", "AgentForge.Sdk", "Memory");
-        Assert.IsTrue(Directory.Exists(memoryDir), $"Expected the Memory folder at '{memoryDir}'.");
+        Assert.True(Directory.Exists(memoryDir), $"Expected the Memory folder at '{memoryDir}'.");
 
         List<string> violations = [];
         int allowedSeen = 0;
@@ -98,14 +97,14 @@ public sealed class InjectedPathSeamTests
             }
         }
 
-        Assert.IsTrue(filesScanned > 5, $"Only {filesScanned} files scanned — the folder moved.");
-        Assert.IsTrue(
+        Assert.True(filesScanned > 5, $"Only {filesScanned} files scanned — the folder moved.");
+        Assert.True(
             allowedSeen > 0,
             "No allowed PlatformPaths reads were found at all. Either the surface stopped using "
             + "them entirely (delete the allow-list and this assertion) or the comment-stripping "
             + "now eats real code — in which case this test guards nothing.");
 
-        Assert.IsTrue(
+        Assert.True(
             violations.Count == 0,
             $"{violations.Count} static path read(s) reintroduced into the artifact surface. These "
             + "make the injected ClaudeArtifactPaths silently ineffective — the service compiles, "

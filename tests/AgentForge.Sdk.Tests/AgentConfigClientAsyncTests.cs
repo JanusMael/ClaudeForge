@@ -2,6 +2,12 @@
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
 
+// ⓘ xUnit1031 ("do not block on a task") is suppressed for the one test that blocks on
+// purpose: it Wait()s under a NON-PUMPING SynchronizationContext to prove every await carries
+// ConfigureAwait(false) — awaiting instead would delete what is tested. Suppressed in this file
+// only (plans/00006, converted from MSTest, which has no such analyzer).
+#pragma warning disable xUnit1031
+
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
 /// <summary>
@@ -17,7 +23,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 ///   <item>Changed fires once on a real write and never on a no-op.</item>
 /// </list>
 /// </summary>
-[TestClass]
 public sealed class AgentConfigClientAsyncTests
 {
     private static AgentConfigClientCore MakeClient(string userJson = "{}")
@@ -45,19 +50,19 @@ public sealed class AgentConfigClientAsyncTests
 
     // ── Functional parity ────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetGetRemoveAsync_RoundTrips_AndIsVisibleToSync()
     {
         using AgentConfigClientCore c = MakeClient();
         await c.SetValueAsync("model", "claude-opus-4-8", CancellationToken.None);
-        Assert.AreEqual("claude-opus-4-8", await c.GetEffectiveAsync<string>("model", CancellationToken.None));
-        Assert.AreEqual("claude-opus-4-8", c.GetEffective<string>("model"), "Async write is visible to a sync read.");
+        Assert.Equal("claude-opus-4-8", await c.GetEffectiveAsync<string>("model", CancellationToken.None));
+        MessageAssert.Equal("claude-opus-4-8", c.GetEffective<string>("model"), "Async write is visible to a sync read.");
 
         await c.RemoveValueAsync("model", c.DefaultScope, CancellationToken.None);
-        Assert.IsTrue(string.IsNullOrEmpty(await c.GetEffectiveAsync<string>("model", CancellationToken.None)));
+        Assert.True(string.IsNullOrEmpty(await c.GetEffectiveAsync<string>("model", CancellationToken.None)));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueIfChangedAsync_WritesOnlyWhenScopeValueChanges()
     {
         // Single-scope client, so the target-scope value and the effective value
@@ -65,31 +70,31 @@ public sealed class AgentConfigClientAsyncTests
         // tests below.
         using AgentConfigClientCore c = MakeClient("""{"model":"a"}""");
 
-        Assert.IsFalse(await c.SetValueIfChangedAsync("model", "a", c.DefaultScope, CancellationToken.None),
+        Assert.False(await c.SetValueIfChangedAsync("model", "a", c.DefaultScope, CancellationToken.None),
             "Equal to the value already at this scope → no write.");
-        Assert.IsFalse(c.HasUnsavedChanges, "A no-op conditional write must not dirty the document.");
+        Assert.False(c.HasUnsavedChanges, "A no-op conditional write must not dirty the document.");
 
-        Assert.IsTrue(await c.SetValueIfChangedAsync("model", "b", c.DefaultScope, CancellationToken.None),
+        Assert.True(await c.SetValueIfChangedAsync("model", "b", c.DefaultScope, CancellationToken.None),
             "Different from the value at this scope → writes.");
-        Assert.AreEqual("b", c.GetEffective<string>("model"));
+        Assert.Equal("b", c.GetEffective<string>("model"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueIfChangedAsync_SkipsValueAlreadyAtScope_NoGhost()
     {
         // effortLevel is already 'high' at the User (default) scope; re-writing 'high'
         // changes nothing at that scope → must skip (the ghost-change class the atomic
         // conditional write exists to prevent). Single-scope here, so scope == effective.
         using AgentConfigClientCore c = MakeClient("""{"effortLevel":"high"}""");
-        Assert.IsFalse(await c.SetValueIfChangedAsync("effortLevel", "high", c.DefaultScope, CancellationToken.None));
-        Assert.IsFalse(c.HasUnsavedChanges);
+        Assert.False(await c.SetValueIfChangedAsync("effortLevel", "high", c.DefaultScope, CancellationToken.None));
+        Assert.False(c.HasUnsavedChanges);
     }
 
     // ── Scope-specific (not cross-scope effective) compare basis ───────────────
     // A higher-priority Managed scope shadows the written User scope. The compare
     // basis MUST be the target scope, not the merged effective value.
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueIfChangedAsync_ShadowedScope_ReassertingSameScopeValue_IsNoOp()
     {
         // User explicitly has model="b"; Managed shadows it with "a" (effective="a").
@@ -100,14 +105,14 @@ public sealed class AgentConfigClientAsyncTests
         int changed = 0;
         c.Changed += (_, _) => Interlocked.Increment(ref changed);
 
-        Assert.IsFalse(await c.SetValueIfChangedAsync("model", "b", ConfigScope.User, CancellationToken.None),
+        Assert.False(await c.SetValueIfChangedAsync("model", "b", ConfigScope.User, CancellationToken.None),
             "Value already present at the target scope → no write.");
-        Assert.AreEqual(0, Volatile.Read(ref changed), "A scope no-op must not raise Changed.");
-        Assert.IsFalse(c.HasUnsavedChanges, "A scope no-op must not dirty the document.");
-        Assert.AreEqual("a", c.GetEffective<string>("model"), "Managed still shadows User.");
+        MessageAssert.Equal(0, Volatile.Read(ref changed), "A scope no-op must not raise Changed.");
+        Assert.False(c.HasUnsavedChanges, "A scope no-op must not dirty the document.");
+        MessageAssert.Equal("a", c.GetEffective<string>("model"), "Managed still shadows User.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueIfChangedAsync_ShadowedScope_WritesGenuineExplicitPin()
     {
         // User has no model; Managed shadows with "a". Pinning "b" at User genuinely
@@ -118,16 +123,16 @@ public sealed class AgentConfigClientAsyncTests
         int changed = 0;
         c.Changed += (_, _) => Interlocked.Increment(ref changed);
 
-        Assert.IsTrue(await c.SetValueIfChangedAsync("model", "b", ConfigScope.User, CancellationToken.None),
+        Assert.True(await c.SetValueIfChangedAsync("model", "b", ConfigScope.User, CancellationToken.None),
             "A new explicit value at the target scope → writes.");
-        Assert.AreEqual(1, Volatile.Read(ref changed), "The genuine scope change raises Changed once.");
-        Assert.AreEqual("b", c.GetScopeValue("model", ConfigScope.User)?.GetValue<string>(), "The pin landed at User.");
-        Assert.AreEqual("a", c.GetEffective<string>("model"), "Managed still shadows the User pin in the effective view.");
+        MessageAssert.Equal(1, Volatile.Read(ref changed), "The genuine scope change raises Changed once.");
+        MessageAssert.Equal("b", c.GetScopeValue("model", ConfigScope.User)?.GetValue<string>(), "The pin landed at User.");
+        MessageAssert.Equal("a", c.GetEffective<string>("model"), "Managed still shadows the User pin in the effective view.");
     }
 
     // ── RemoveValueAsync: nested-absent is a clean no-op; emptying a parent drops it ──
 
-    [TestMethod]
+    [Fact]
     public async Task RemoveValueAsync_NestedAbsentKey_RaisesNoChanged_AndStaysClean()
     {
         using AgentConfigClientCore c = MakeClient();
@@ -136,26 +141,26 @@ public sealed class AgentConfigClientAsyncTests
 
         await c.RemoveValueAsync("sandbox.network.allowedDomains", ConfigScope.User, CancellationToken.None);
 
-        Assert.AreEqual(0, Volatile.Read(ref changed), "Removing an absent nested key raises no Changed.");
-        Assert.IsFalse(c.HasUnsavedChanges, "Removing an absent nested key does not dirty the document.");
+        MessageAssert.Equal(0, Volatile.Read(ref changed), "Removing an absent nested key raises no Changed.");
+        Assert.False(c.HasUnsavedChanges, "Removing an absent nested key does not dirty the document.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RemoveValueAsync_NestedRemoveEmptyingParent_RemovesTopKey()
     {
         using AgentConfigClientCore c = MakeClient();
         await c.SetValueAsync("sandbox.allowUnix", true, ConfigScope.User, CancellationToken.None);
-        Assert.IsNotNull(c.GetScopeValue("sandbox", ConfigScope.User), "Precondition: the sandbox object exists at User.");
+        MessageAssert.NotNull(c.GetScopeValue("sandbox", ConfigScope.User), "Precondition: the sandbox object exists at User.");
 
         await c.RemoveValueAsync("sandbox.allowUnix", ConfigScope.User, CancellationToken.None);
 
-        Assert.IsNull(c.GetScopeValue("sandbox", ConfigScope.User),
+        MessageAssert.Null(c.GetScopeValue("sandbox", ConfigScope.User),
             "Removing the only nested key drops the now-empty top-level object.");
     }
 
     // ── Cancellation ───────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueAsync_PreCancelledToken_Throws_AndDoesNotMutate()
     {
         using AgentConfigClientCore c = MakeClient("""{"model":"a"}""");
@@ -165,25 +170,25 @@ public sealed class AgentConfigClientAsyncTests
         // SemaphoreSlim.WaitAsync surfaces TaskCanceledException (a subclass of
         // OperationCanceledException); assert by assignability, not exact type.
         Exception ex = await CaptureAsync(() => c.SetValueAsync("model", "b", cts.Token));
-        Assert.IsInstanceOfType(ex, typeof(OperationCanceledException), "Cancellation should surface an OperationCanceledException.");
+        MessageAssert.IsAssignableFrom<OperationCanceledException>(ex, "Cancellation should surface an OperationCanceledException.");
 
-        Assert.AreEqual("a", c.GetEffective<string>("model"), "A cancelled write must commit no mutation.");
-        Assert.IsFalse(c.HasUnsavedChanges);
+        MessageAssert.Equal("a", c.GetEffective<string>("model"), "A cancelled write must commit no mutation.");
+        Assert.False(c.HasUnsavedChanges);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task GetEffectiveAsync_PreCancelledToken_Throws()
     {
         using AgentConfigClientCore c = MakeClient("""{"model":"a"}""");
         using var cts = new CancellationTokenSource();
         cts.Cancel();
         Exception ex = await CaptureAsync(() => c.GetEffectiveAsync<string>("model", cts.Token));
-        Assert.IsInstanceOfType(ex, typeof(OperationCanceledException), "Cancellation should surface an OperationCanceledException.");
+        MessageAssert.IsAssignableFrom<OperationCanceledException>(ex, "Cancellation should surface an OperationCanceledException.");
     }
 
     // ── Lock is released when the in-lock body throws (no leak → no deadlock) ──
 
-    [TestMethod]
+    [Fact]
     public async Task AsyncWrite_ReleasesLock_WhenInLockBodyThrows()
     {
         // A not-opened client throws EnsureOpen INSIDE the lock (after acquiring it).
@@ -194,13 +199,13 @@ public sealed class AgentConfigClientAsyncTests
 
         Task second = notOpen.SetValueAsync("model", "y", CancellationToken.None);
         Task finished = await Task.WhenAny(second, Task.Delay(TimeSpan.FromSeconds(2)));
-        Assert.AreSame(second, finished, "Second async write hung → the state lock was leaked on the first exception.");
+        MessageAssert.Same(second, finished, "Second async write hung → the state lock was leaked on the first exception.");
         await AssertThrowsAsync(() => second);
     }
 
     // ── No deadlock when a SynchronizationContext is captured ──────────────────
 
-    [TestMethod]
+    [Fact]
     public void ConcurrentAsyncWrites_NoDeadlock_UnderCapturedContext()
     {
         using AgentConfigClientCore c = MakeClient("""{"model":"a"}""");
@@ -219,8 +224,8 @@ public sealed class AgentConfigClientAsyncTests
                 .ToArray();
 
             bool all = Task.WhenAll(tasks).Wait(TimeSpan.FromSeconds(10));
-            Assert.IsTrue(all, "Concurrent async writes deadlocked under a non-pumping SynchronizationContext.");
-            Assert.AreEqual(0, ctx.Posts, "A continuation marshaled back to the captured context — an await is missing ConfigureAwait(false).");
+            Assert.True(all, "Concurrent async writes deadlocked under a non-pumping SynchronizationContext.");
+            MessageAssert.Equal(0, ctx.Posts, "A continuation marshaled back to the captured context — an await is missing ConfigureAwait(false).");
         }
         finally
         {
@@ -230,7 +235,7 @@ public sealed class AgentConfigClientAsyncTests
 
     // ── Atomic compare-and-set under contention (the TOCTOU killer) ────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueIfChangedAsync_IsAtomic_UnderConcurrency()
     {
         using AgentConfigClientCore c = MakeClient("""{"model":"old"}""");
@@ -244,13 +249,13 @@ public sealed class AgentConfigClientAsyncTests
             .ToArray();
         bool[] results = await Task.WhenAll(tasks);
 
-        Assert.AreEqual(1, results.Count(wrote => wrote), "Exactly one concurrent conditional write must have committed.");
-        Assert.AreEqual("new", c.GetEffective<string>("model"));
+        MessageAssert.Equal(1, results.Count(wrote => wrote), "Exactly one concurrent conditional write must have committed.");
+        Assert.Equal("new", c.GetEffective<string>("model"));
     }
 
     // ── Changed: once per real write, never on a no-op ─────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task SetValueIfChangedAsync_RaisesChangedOnce_NotOnNoOp()
     {
         using AgentConfigClientCore c = MakeClient("""{"model":"a"}""");
@@ -260,7 +265,7 @@ public sealed class AgentConfigClientAsyncTests
         await c.SetValueIfChangedAsync("model", "b", c.DefaultScope, CancellationToken.None); // real write
         await c.SetValueIfChangedAsync("model", "b", c.DefaultScope, CancellationToken.None); // no-op
 
-        Assert.AreEqual(1, Volatile.Read(ref changed), "Changed fires once for the write, never for the no-op skip.");
+        MessageAssert.Equal(1, Volatile.Read(ref changed), "Changed fires once for the write, never for the no-op skip.");
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
