@@ -11,6 +11,9 @@
         <!-- Test projects never get packed as NuGets; suppress the per-project
              redundant declarations. -->
         <IsPackable>false</IsPackable>
+        <!-- Microsoft.Testing.Platform, selected for `dotnet test` by global.json. Each test
+             project is an executable that hosts its own runner (plans/00006 step 1). -->
+        <EnableMSTestRunner>true</EnableMSTestRunner>
     </PropertyGroup>
 
     <ItemGroup>

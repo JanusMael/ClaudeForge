@@ -76,7 +76,7 @@ jobs:
 
       - run: dotnet build ClaudeForge.slnx --no-restore -c Debug
 
-      - run: dotnet test ClaudeForge.slnx --no-build -c Debug
+      - run: dotnet test --solution ClaudeForge.slnx --no-build -c Debug
 
   publish:
     name: Publish packages

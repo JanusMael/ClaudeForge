@@ -153,16 +153,40 @@ the defect.
    and `AgentForge.Sdk` baselines). Releasing is the maintainer's, always. Then the `SharedPackageVersion`
    bump to that version, in its own change — publish and pin are ONE release, and only both clear the
    two red jobs.
-2. ▶ **`plans/00006` — MSTest → xUnit v3**, now unblocked (it waited on 00005). Its own branch and PR.
-   Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`. ⚠ Its step 5 carries
-   the headless bootstrap as proof of set-up ordering — that premise is FALSE (see the headless section),
-   so the bootstrap is not ported; record that as 00006 drift, never in the plan.
+2. ▶ **`plans/00006` — MSTest → xUnit v3**, IN PROGRESS on `feat/tests-xunit-v3` (see *Where `00006`
+   stands* below). Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`.
+   ⚠ Its step 5 carries the headless bootstrap as proof of set-up ordering — that premise is FALSE (see
+   the headless section), so the bootstrap is not ported; record that as 00006 drift, never in the plan.
 3. ⏳ **Headless flakes still open:** the cross-thread `VerifyAccess` failure (cause unknown; `PerAssembly`
    tried and parked on local-only branch `fix/headless-perassembly` `d5c660a` — it breaks
    `MainWindowViewModel`'s `Application.Current is null` seam); the 2026-09-19 `IOException` on a temp
    `settings.json`; and one `GuiSave_WritesEveryProductsChanges…` failure seen once locally, message not
    captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
 4. ⓘ Coverage that left with the library and is not yet restored in the ScopedEditors repo: drift 12.
+
+### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
+
+| Step | State |
+|---|---|
+| 0 · baseline | ✅ `artifacts/xunit-move/baseline/` (gitignored): **7 assemblies, 3,068 methods, 3,298 results, 11 skipped**. Compared by `scripts/Compare-TestNames.ps1` — identity is assembly + class + method from each TRX's definitions, data rows by COUNT. Canaried: one test and one `[DataRow]` removed from a copy → it named exactly those two (`REMOVED …`, `ROWS … 21 -> 20`) |
+| 1 · MSTest onto MTP | ✅ `global.json` runner, `EnableMSTestRunner`, test projects `Exe`; every `dotnet test` in workflows and the canary uses `--solution`, CI uses `--report-trx`. Name set vs step 0: **0 differences**. Package canary green in package mode. ⏳ CI on three OSes |
+| 2 – 7 | ⏳ Not started. Rewriter dry-run over all seven: `ClaudeForge.Avalonia.Tests` maps cleanly; the other six list **40 UNMAPPED** sites — 5× assembly `[Parallelize]`, 1 sync `[Timeout]`, 5× `[Description]`, 16× 3-argument `AreEqual` in `ClaudeArtifactPathsTests`, 2× `AllItemsAreUnique(msg)`, 2× `CollectionAssert.AreNotEqual(msg)`, 2× named-argument `AreEqual`, 7× 4-argument `StartsWith`/`Contains`/`AreNotEqual`. Each is a rule for the TOOL first, never a hand patch |
+
+⚠ **Drift from the frozen plan** — recorded here, because `00006` is never edited:
+
+1. **The baseline is 3,298, not 3,297** — one test landed in `ClaudeForge.Tests` after the plan measured at `3447783`.
+2. ⛔ **`--nologo` on `dotnet test` breaks every test app under MTP**: it is forwarded to each executable,
+   which rejects it with exit 5, "Zero tests ran", and **nothing names the option**. The package canary
+   passed it; removed there.
+3. ⛔ **An assembly whose `--filter` selects nothing exits 8 under MTP** — VSTest never cared. The one
+   filtered workflow (`model-catalog-refresh.yml`) now runs per project: 22 + 4 + 4 = the 30 the old
+   solution-wide filter selected, measured against the baseline. ⏳ Re-expressed again when those three
+   projects move to xUnit, whose filter options differ.
+4. ⛔ **NETSDK1151 in Release only**: `ClaudeForge.Tests` references the app, which is `SelfContained`
+   in Release, and an `Exe` may not reference a self-contained `Exe`. Debug never sees it, so only the
+   package canary caught it. `ValidateExecutableReferencesMatchSelfContained=false` on that one project.
+5. **The converter's commit is now on Templates `main`** (the plan says `feat/mstest-to-xunit`); the file
+   is unchanged from `17e6bd8` through `6d83523`.
 
 ### ✅ DONE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23, merged 2026-09-24 as #77
 

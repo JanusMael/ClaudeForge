@@ -63,5 +63,14 @@ jobs:
       # The runtime contract: catalog parses + loads, relationship queries
       # behave, and the catalog stays in parity with the bundled JSON schema's
       # effortLevel / permissions.defaultMode enums.
+      #
+      # ⚠ One run per project that holds catalog tests (22 + 4 + 4 = the 30 the old
+      # solution-wide filter selected). Under Microsoft.Testing.Platform an assembly
+      # whose filter selects nothing exits 8, "zero tests ran", so a filtered run over
+      # the whole solution is red by construction. Per project, selecting nothing is
+      # a real finding — the tests moved — and it stays red.
       - name: Catalog unit tests
-        run: dotnet test ClaudeForge.slnx -c Debug --filter "FullyQualifiedName~ModelCatalog"
+        run: |
+          for p in AgentForge.Core.Tests ClaudeForge.Sdk.Claude.Tests ClaudeForge.Tests; do
+            dotnet test --project "tests/$p" -c Debug --filter "FullyQualifiedName~ModelCatalog"
+          done
