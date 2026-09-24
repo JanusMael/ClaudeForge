@@ -297,7 +297,7 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.3" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
         <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
         <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.0-a3"/>
         <!-- SVG support. Svg.Skia provides the standalone SKSvg API (used by AppIcon

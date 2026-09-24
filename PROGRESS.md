@@ -314,10 +314,15 @@ The UI also reported `v2026.3.922.0`.
     `Avalonia >= 12.1.3`, so this repo's direct `12.1.0` pins would fail restore with NU1605 (the
     peer measured that; not re-measured here). Moved to 12.1.3: `Avalonia` ×3 projects,
     `Avalonia.Desktop`, `Avalonia.Themes.Fluent`, `Avalonia.Fonts.Inter`, and `Avalonia.Headless`
-    (from 12.1.2, kept at the framework's version). ⚠ **`Avalonia.Controls.DataGrid` stays 12.1.0**:
-    it has no 12.1.3, and ScopedEditors keeps it there too. The local prerelease moved to
-    **`-local.4`**, packed from those two commits; its nuspec carries `Avalonia 12.1.3` and
-    `DataGrid 12.1.0`. Build 0/0; suite green at the usual totals.
+    (from 12.1.2, kept at the framework's version). ⛔ **`Avalonia.Controls.DataGrid` is a floor too,
+    at 12.1.2** — its newest; it has no 12.1.3. This first read "stays 12.1.0, as ScopedEditors
+    keeps it", which was true of `64769ae` and stopped being true the same night: ScopedEditors
+    `4e44d8b` (merged, CI green) makes 12.1.2 a floor of `ScopedEditors.Avalonia`. MEASURED here
+    against a pack of `4e44d8b`: a direct 12.1.0 reference fails restore with *"Detected package
+    downgrade: Avalonia.Controls.DataGrid from 12.1.2 to 12.1.0"*; 12.1.2 restores clean. The local
+    prereleases are now AppServices **`-local.4`** (`d1c5c9c`) and ScopedEditors **`-local.5`**
+    (`4e44d8b`). Build 0/0; suite green at the usual totals; a trimmed win-x64 Release publish
+    reports 0 IL warnings.
     ⚠ **One unexplained run:** the first full-suite run after the bump reported `ClaudeForge.Tests`
     at **1,606 tests, 0 skipped** — 154 short of 1,760, with the 3 skips missing too, and nothing
     failed. Four runs since (one isolated, three full-suite) each report 1,760. It left no TRX, so

@@ -98,7 +98,7 @@
     -->
     <PropertyGroup>
         <AppServicesVersion>2026.3.924-local.4</AppServicesVersion> <!-- TEMPORARY: local build of the committed .924 source, packed into artifacts/prerelease-924. Becomes 2026.3.924 once that is on nuget.org. A prerelease suffix so it can never occupy the real version in the NuGet cache. -->
-        <ScopedEditorsVersion>2026.3.924-local.4</ScopedEditorsVersion> <!-- TEMPORARY: see AppServicesVersion. -->
+        <ScopedEditorsVersion>2026.3.924-local.5</ScopedEditorsVersion> <!-- TEMPORARY: see AppServicesVersion. -->
     </PropertyGroup>
 
     <!--
