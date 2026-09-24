@@ -8,7 +8,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Avalonia.Tests.Permissions;
 /// The guided builder emits valid syntax per tool, glosses it, gates Add on
 /// validity, and routes built rules to the sink.
 /// </summary>
-[TestClass]
 public sealed class GuidedRuleBuilderViewModelTests
 {
     private static GuidedRuleBuilderViewModel New(
@@ -18,7 +17,7 @@ public sealed class GuidedRuleBuilderViewModelTests
         return new GuidedRuleBuilderViewModel(sink, picker, servers);
     }
 
-    [TestMethod]
+    [Fact]
     public void Bash_Prefix_EmitsColonStar()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
@@ -26,11 +25,11 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.MatchPrefix = true;
         vm.CommandText = "git commit";
         // Canonical colon form (Bash(npm run test:*) per Claude's docs).
-        Assert.AreEqual("Bash(git commit:*)", vm.PreviewRule);
-        Assert.IsTrue(vm.IsValid);
+        Assert.Equal("Bash(git commit:*)", vm.PreviewRule);
+        Assert.True(vm.IsValid);
     }
 
-    [TestMethod]
+    [Fact]
     public void Bash_CollapsesInternalWhitespace()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
@@ -38,140 +37,140 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.MatchPrefix = true;
         vm.CommandText = "npm run  build"; // accidental double space
         // Collapsed to a single space so the rule matches the real command.
-        Assert.AreEqual("Bash(npm run build:*)", vm.PreviewRule);
+        Assert.Equal("Bash(npm run build:*)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultTool_IsFirstInOrder_Read()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         // Dropdown is file→shell→web→mcp→agent, so the default selection is the
         // first entry (Read), not Bash.
-        Assert.AreEqual(PermissionBuilderTool.Read, vm.SelectedTool);
-        Assert.AreEqual(PermissionBuilderTool.Read, vm.AvailableTools[0]);
+        Assert.Equal(PermissionBuilderTool.Read, vm.SelectedTool);
+        Assert.Equal(PermissionBuilderTool.Read, vm.AvailableTools[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void PathHints_DefaultWildcards_ToggleAnchors_ResetOnToolChange()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Read;
-        Assert.IsTrue(vm.ShowHintToggle);
-        Assert.IsTrue(vm.ShowPathGlobHints, "Path tools default to the Wildcards group.");
-        Assert.IsFalse(vm.ShowPathAnchorHints);
+        Assert.True(vm.ShowHintToggle);
+        Assert.True(vm.ShowPathGlobHints, "Path tools default to the Wildcards group.");
+        Assert.False(vm.ShowPathAnchorHints);
 
         vm.SelectAnchorHintsCommand.Execute(null);
-        Assert.IsFalse(vm.ShowPathGlobHints);
-        Assert.IsTrue(vm.ShowPathAnchorHints, "Anchors segment switches to the Anchors group.");
+        Assert.False(vm.ShowPathGlobHints);
+        Assert.True(vm.ShowPathAnchorHints, "Anchors segment switches to the Anchors group.");
         // Both groups are laid out (opacity-toggled), so the box keeps a stable size.
-        Assert.AreEqual(0.0, vm.GlobGroupOpacity);
-        Assert.AreEqual(1.0, vm.AnchorGroupOpacity);
+        Assert.Equal(0.0, vm.GlobGroupOpacity);
+        Assert.Equal(1.0, vm.AnchorGroupOpacity);
 
         vm.SelectWildcardHintsCommand.Execute(null);
-        Assert.IsTrue(vm.ShowPathGlobHints, "Wildcards segment switches back.");
+        Assert.True(vm.ShowPathGlobHints, "Wildcards segment switches back.");
 
         // Changing tool resets the hint box to the default Wildcards group.
         vm.SelectAnchorHintsCommand.Execute(null);
         vm.SelectedTool = PermissionBuilderTool.Edit;
-        Assert.IsTrue(vm.ShowPathGlobHints);
-        Assert.IsFalse(vm.ShowPathAnchorHints);
+        Assert.True(vm.ShowPathGlobHints);
+        Assert.False(vm.ShowPathAnchorHints);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShellTool_ShowsHintBox_WithoutToggle()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
-        Assert.IsTrue(vm.ShowAnyHint);
-        Assert.IsTrue(vm.ShowShellWildcardHint);
-        Assert.IsFalse(vm.ShowHintToggle, "Shell has a single hint group — no toggle.");
+        Assert.True(vm.ShowAnyHint);
+        Assert.True(vm.ShowShellWildcardHint);
+        Assert.False(vm.ShowHintToggle, "Shell has a single hint group — no toggle.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_HidesHintBox()
     {
         // Agent is the only tool with no special-token hint.
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Agent;
-        Assert.IsFalse(vm.ShowAnyHint);
+        Assert.False(vm.ShowAnyHint);
     }
 
-    [TestMethod]
+    [Fact]
     public void WebFetchAndMcp_ShowSingleHint_NoToggle()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
 
         vm.SelectedTool = PermissionBuilderTool.WebFetch;
-        Assert.IsTrue(vm.ShowAnyHint);
-        Assert.IsTrue(vm.ShowWebHint);
-        Assert.IsFalse(vm.ShowHintToggle, "WebFetch has a single hint — no toggle.");
+        Assert.True(vm.ShowAnyHint);
+        Assert.True(vm.ShowWebHint);
+        Assert.False(vm.ShowHintToggle, "WebFetch has a single hint — no toggle.");
 
         vm.SelectedTool = PermissionBuilderTool.Mcp;
-        Assert.IsTrue(vm.ShowAnyHint);
-        Assert.IsTrue(vm.ShowMcpHint);
-        Assert.IsFalse(vm.ShowHintToggle, "MCP has a single hint — no toggle.");
+        Assert.True(vm.ShowAnyHint);
+        Assert.True(vm.ShowMcpHint);
+        Assert.False(vm.ShowHintToggle, "MCP has a single hint — no toggle.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Bash_Exact_EmitsNoWildcard()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
         vm.MatchPrefix = false;
         vm.CommandText = "npm run build";
-        Assert.AreEqual("Bash(npm run build)", vm.PreviewRule);
+        Assert.Equal("Bash(npm run build)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Bash_EmptyCommand_EmitsBareTool()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
         vm.CommandText = "";
-        Assert.AreEqual("Bash", vm.PreviewRule);
-        Assert.IsTrue(vm.IsValid);
+        Assert.Equal("Bash", vm.PreviewRule);
+        Assert.True(vm.IsValid);
     }
 
-    [TestMethod]
+    [Fact]
     public void Read_Recursive_AppendsDoubleStar()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Read;
         vm.PathText = "src";
         vm.Recursive = true;
-        Assert.AreEqual("Read(src/**)", vm.PreviewRule);
+        Assert.Equal("Read(src/**)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Read_Exact_KeepsPath()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Read;
         vm.PathText = "./.env";
         vm.Recursive = false;
-        Assert.AreEqual("Read(./.env)", vm.PreviewRule);
+        Assert.Equal("Read(./.env)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void WebFetch_EmitsDomainSpecifier()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.WebFetch;
         vm.Domain = "example.com";
-        Assert.AreEqual("WebFetch(domain:example.com)", vm.PreviewRule);
+        Assert.Equal("WebFetch(domain:example.com)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_AllTools_EmitsServerOnly()
     {
         GuidedRuleBuilderViewModel vm = New(out _, servers: ["github"]);
         vm.SelectedTool = PermissionBuilderTool.Mcp;
         vm.SelectedMcpServer = "github";
         vm.McpAllTools = true;
-        Assert.AreEqual("mcp__github", vm.PreviewRule);
+        Assert.Equal("mcp__github", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_SpecificTool_EmitsServerAndTool()
     {
         GuidedRuleBuilderViewModel vm = New(out _, servers: ["github"]);
@@ -179,41 +178,41 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.SelectedMcpServer = "github";
         vm.McpAllTools = false;
         vm.McpTool = "create_issue";
-        Assert.AreEqual("mcp__github__create_issue", vm.PreviewRule);
+        Assert.Equal("mcp__github__create_issue", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Mcp_NoServer_IsInvalid_AndAddDisabled()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Mcp;
         vm.SelectedMcpServer = null;
-        Assert.AreEqual(string.Empty, vm.PreviewRule);
-        Assert.IsFalse(vm.IsValid);
-        Assert.IsFalse(vm.AddAllowCommand.CanExecute(null));
+        Assert.Equal(string.Empty, vm.PreviewRule);
+        Assert.False(vm.IsValid);
+        Assert.False(vm.AddAllowCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_EmitsNamedRule()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Agent;
         vm.AgentName = "Explore";
-        Assert.AreEqual("Agent(Explore)", vm.PreviewRule);
+        Assert.Equal("Agent(Explore)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Gloss_ReflectsPrefixVsExact()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
         vm.CommandText = "git commit";
         vm.MatchPrefix = true;
-        StringAssert.Contains(vm.PlainEnglishGloss, "git commit");
-        Assert.AreNotEqual(string.Empty, vm.PlainEnglishGloss);
+        Assert.Contains("git commit", vm.PlainEnglishGloss);
+        Assert.NotEqual(string.Empty, vm.PlainEnglishGloss);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddAllow_RoutesRuleToSink()
     {
         GuidedRuleBuilderViewModel vm = New(out FakeSink sink);
@@ -221,25 +220,25 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.CommandText = "npm test";
         vm.MatchPrefix = false;
         vm.AddAllowCommand.Execute(null);
-        Assert.AreEqual(1, sink.Allow.Count);
-        Assert.AreEqual("Bash(npm test)", sink.Allow[0].Value);
-        Assert.AreEqual(0, sink.Deny.Count);
+        Assert.Single(sink.Allow);
+        Assert.Equal("Bash(npm test)", sink.Allow[0].Value);
+        Assert.Empty(sink.Deny);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddAllow_SetsTransientConfirmation()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
         vm.CommandText = "npm test";
         vm.MatchPrefix = false;
-        Assert.AreEqual(string.Empty, vm.LastAddMessage);
+        Assert.Equal(string.Empty, vm.LastAddMessage);
         vm.AddAllowCommand.Execute(null);
         // Confirmation mentions the rule that was added (auto-clears later).
-        StringAssert.Contains(vm.LastAddMessage, "Bash(npm test)");
+        Assert.Contains("Bash(npm test)", vm.LastAddMessage);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddAllow_SurfacesSinkCollision()
     {
         GuidedRuleBuilderViewModel vm = New(out FakeSink sink);
@@ -251,39 +250,39 @@ public sealed class GuidedRuleBuilderViewModelTests
         vm.CommandText = "npm test";
         vm.MatchPrefix = false;
         vm.AddAllowCommand.Execute(null);
-        Assert.AreNotEqual(string.Empty, vm.CollisionWarning);
-        StringAssert.Contains(vm.CollisionWarning, "Bash(npm test)");
+        Assert.NotEqual(string.Empty, vm.CollisionWarning);
+        Assert.Contains("Bash(npm test)", vm.CollisionWarning);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BrowseFile_SetsPathFromPicker()
     {
         var picker = new FakePathPicker(file: "/picked/file.txt");
         GuidedRuleBuilderViewModel vm = New(out _, picker);
         vm.SelectedTool = PermissionBuilderTool.Read;
         await vm.BrowseFileCommand.ExecuteAsync(null);
-        Assert.AreEqual("/picked/file.txt", vm.PathText);
+        Assert.Equal("/picked/file.txt", vm.PathText);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowFlags_TrackSelectedTool()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
-        Assert.IsTrue(vm.ShowCommandInput);
-        Assert.IsFalse(vm.ShowPathInput);
+        Assert.True(vm.ShowCommandInput);
+        Assert.False(vm.ShowPathInput);
 
         vm.SelectedTool = PermissionBuilderTool.Read;
-        Assert.IsTrue(vm.ShowPathInput);
-        Assert.IsFalse(vm.ShowCommandInput);
+        Assert.True(vm.ShowPathInput);
+        Assert.False(vm.ShowCommandInput);
 
         vm.SelectedTool = PermissionBuilderTool.WebFetch;
-        Assert.IsTrue(vm.ShowDomainInput);
+        Assert.True(vm.ShowDomainInput);
     }
 
     // ── AF8: whitespace inside quotes is preserved (only unquoted runs collapse) ─
 
-    [TestMethod]
+    [Fact]
     public void Bash_PreservesWhitespaceInsideQuotes()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
@@ -292,30 +291,30 @@ public sealed class GuidedRuleBuilderViewModelTests
         // The double space is INSIDE quotes — part of the argument — so it must be
         // preserved, while the accidental double space between tokens collapses.
         vm.CommandText = "grep  \"foo   bar\"  .";
-        Assert.AreEqual("Bash(grep \"foo   bar\" .)", vm.PreviewRule);
+        Assert.Equal("Bash(grep \"foo   bar\" .)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void Bash_PreservesWhitespaceInsideSingleQuotes()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Bash;
         vm.MatchPrefix = false;
         vm.CommandText = "echo 'a   b'";
-        Assert.AreEqual("Bash(echo 'a   b')", vm.PreviewRule);
+        Assert.Equal("Bash(echo 'a   b')", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void CollapseUnquotedWhitespace_Cases()
     {
-        Assert.AreEqual("a b c", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("a   b\t\tc"));
-        Assert.AreEqual("a \"b   c\" d", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("a   \"b   c\"   d"));
-        Assert.AreEqual("", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("   "));
+        Assert.Equal("a b c", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("a   b\t\tc"));
+        Assert.Equal("a \"b   c\" d", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("a   \"b   c\"   d"));
+        Assert.Equal("", GuidedRuleBuilderViewModel.CollapseUnquotedWhitespace("   "));
     }
 
     // ── AF8: a path of only wildcards is flagged, not silently over-broad ───────
 
-    [TestMethod]
+    [Fact]
     public void Read_BareWildcardPath_IsInvalidWithSpecificMessage()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
@@ -325,57 +324,57 @@ public sealed class GuidedRuleBuilderViewModelTests
         {
             vm.PathText = bare;
             vm.Recursive = false;
-            Assert.IsFalse(vm.IsValid, $"'{bare}' should be flagged as a bare-wildcard path");
-            Assert.AreEqual(
+            Assert.False(vm.IsValid, $"'{bare}' should be flagged as a bare-wildcard path");
+            Assert.Equal(
                 Bennewitz.Ninja.ClaudeForge.Avalonia.Localization.Strings.PermBuilderBareWildcardPath,
                 vm.ValidationMessage);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Read_RecursiveTurningPathBare_IsFlagged()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Read;
         vm.PathText = "*";
         vm.Recursive = true; // → "*/**", still all-wildcards
-        Assert.IsFalse(vm.IsValid);
+        Assert.False(vm.IsValid);
     }
 
-    [TestMethod]
+    [Fact]
     public void Read_RealPattern_StaysValid()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Read;
         vm.PathText = "*.env"; // has a literal segment
-        Assert.IsTrue(vm.IsValid);
-        Assert.AreEqual("Read(*.env)", vm.PreviewRule);
+        Assert.True(vm.IsValid);
+        Assert.Equal("Read(*.env)", vm.PreviewRule);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsBareWildcardPath_Cases()
     {
-        Assert.IsTrue(GuidedRuleBuilderViewModel.IsBareWildcardPath("*"));
-        Assert.IsTrue(GuidedRuleBuilderViewModel.IsBareWildcardPath("**"));
-        Assert.IsTrue(GuidedRuleBuilderViewModel.IsBareWildcardPath("*/**"));
-        Assert.IsFalse(GuidedRuleBuilderViewModel.IsBareWildcardPath("*.ts"));
-        Assert.IsFalse(GuidedRuleBuilderViewModel.IsBareWildcardPath("src/**"));
-        Assert.IsFalse(GuidedRuleBuilderViewModel.IsBareWildcardPath(""));
+        Assert.True(GuidedRuleBuilderViewModel.IsBareWildcardPath("*"));
+        Assert.True(GuidedRuleBuilderViewModel.IsBareWildcardPath("**"));
+        Assert.True(GuidedRuleBuilderViewModel.IsBareWildcardPath("*/**"));
+        Assert.False(GuidedRuleBuilderViewModel.IsBareWildcardPath("*.ts"));
+        Assert.False(GuidedRuleBuilderViewModel.IsBareWildcardPath("src/**"));
+        Assert.False(GuidedRuleBuilderViewModel.IsBareWildcardPath(""));
     }
 
     // ── AF8: gloss agrees with the previewed rule (not just the toggle) ─────────
 
-    [TestMethod]
+    [Fact]
     public void Gloss_PathEndingInDoubleStar_ReadsRecursive_EvenWithToggleOff()
     {
         GuidedRuleBuilderViewModel vm = New(out _);
         vm.SelectedTool = PermissionBuilderTool.Read;
         vm.Recursive = false;
         vm.PathText = "src/**"; // recursive by the pattern, not the toggle
-        Assert.AreEqual("Read(src/**)", vm.PreviewRule);
+        Assert.Equal("Read(src/**)", vm.PreviewRule);
         // The gloss describes recursion and names the base directory, not "exact".
-        StringAssert.Contains(vm.PlainEnglishGloss, "src");
-        Assert.AreEqual(
+        Assert.Contains("src", vm.PlainEnglishGloss);
+        Assert.Equal(
             string.Format(
                 Bennewitz.Ninja.ClaudeForge.Avalonia.Localization.Strings.PermBuilderGlossPathRecursive,
                 "src"),
