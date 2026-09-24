@@ -75,7 +75,7 @@ public sealed class NavigationTreeWelcomeNodeTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
             Assert.IsTrue(vm.NavigationTree.Count > 0,
@@ -101,7 +101,7 @@ public sealed class NavigationTreeWelcomeNodeTests
             // The sandbox has no ~/.claude/cache/ClaudeForge-gui-state.json,
             // so _lastNodeTitle is null at construction time — the fresh-
             // install path through RestoreSelectedNode.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
             Assert.IsNotNull(vm.SelectedNode,
@@ -128,7 +128,7 @@ public sealed class NavigationTreeWelcomeNodeTests
         bool ran = await Session.Dispatch(async () =>
         {
             // Fresh sandbox → no persisted preference → defaults to true.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
             Assert.IsTrue(vm.ShowWelcomeOnLaunch,
@@ -147,7 +147,7 @@ public sealed class NavigationTreeWelcomeNodeTests
             // User unchecks the "Show on launch" checkbox on the Welcome
             // page.  The node must disappear from the tree immediately
             // (without requiring a relaunch).
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             Assert.IsTrue(vm.NavigationTree.Any(n => n.Title == "Welcome"),
                 "Pre-toggle baseline: Welcome node is in the tree.");
@@ -172,7 +172,7 @@ public sealed class NavigationTreeWelcomeNodeTests
             // Selection must move to a different node (Essentials is the
             // natural top-of-tree successor) so the editor area doesn't
             // briefly bind to a stale removed node.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             Assert.AreEqual("Welcome", vm.SelectedNode!.Title, "Baseline: selected Welcome.");
 
@@ -196,7 +196,7 @@ public sealed class NavigationTreeWelcomeNodeTests
         {
             // Round-trip: toggle off, then toggle back on.  The Welcome
             // node must reappear at the top of the tree.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
             vm.ShowWelcomeOnLaunch = false;
@@ -226,7 +226,7 @@ public sealed class NavigationTreeWelcomeNodeTests
             // init round-trips.  If this fails, something is firing the
             // partial OnShowWelcomeOnLaunchChanged handler during
             // construction with value=false.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
 
             // Force a SaveWindowState so any pending state is on disk
@@ -255,7 +255,7 @@ public sealed class NavigationTreeWelcomeNodeTests
                 + $"Actual JSON: {json}");
 
             // And on reload, ShowWelcomeOnLaunch must still be true.
-            MainWindowViewModel vm2 = BuildViewModel();
+            using MainWindowViewModel vm2 = BuildViewModel();
             await vm2.LoadAllWorkspacesAsync();
             Assert.IsTrue(vm2.ShowWelcomeOnLaunch,
                 "Round-trip: reloading after no-toggle construction must keep ShowWelcomeOnLaunch=true.");
@@ -273,7 +273,7 @@ public sealed class NavigationTreeWelcomeNodeTests
         bool ran = await Session.Dispatch(async () =>
         {
             // First session: opt out + this persists via WindowState.
-            MainWindowViewModel vm1 = BuildViewModel();
+            using MainWindowViewModel vm1 = BuildViewModel();
             await vm1.LoadAllWorkspacesAsync();
             vm1.ShowWelcomeOnLaunch = false;
 
@@ -281,7 +281,7 @@ public sealed class NavigationTreeWelcomeNodeTests
             // same sandbox): the persisted preference must carry through —
             // the Welcome node must NOT appear, and the default selection
             // must fall through to Essentials.
-            MainWindowViewModel vm2 = BuildViewModel();
+            using MainWindowViewModel vm2 = BuildViewModel();
             await vm2.LoadAllWorkspacesAsync();
 
             Assert.IsFalse(vm2.ShowWelcomeOnLaunch,
@@ -308,7 +308,7 @@ public sealed class NavigationTreeWelcomeNodeTests
             // relaunch, RestoreSelectedNode must NOT try to restore Welcome
             // (it's no longer in the tree) and must fall through to
             // Essentials.
-            MainWindowViewModel vm1 = BuildViewModel();
+            using MainWindowViewModel vm1 = BuildViewModel();
             await vm1.LoadAllWorkspacesAsync();
             // vm1 starts on Welcome (default).  Opt out, which moves
             // selection to Essentials, then move back to Welcome by direct
@@ -329,7 +329,7 @@ public sealed class NavigationTreeWelcomeNodeTests
                 """{"lastNode":"Welcome","showWelcomeNode":false}""");
 
             // Second session reads that crafted state file.
-            MainWindowViewModel vm2 = BuildViewModel();
+            using MainWindowViewModel vm2 = BuildViewModel();
             await vm2.LoadAllWorkspacesAsync();
 
             Assert.IsFalse(vm2.ShowWelcomeOnLaunch);

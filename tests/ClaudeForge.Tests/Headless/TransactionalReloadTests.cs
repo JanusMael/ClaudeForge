@@ -116,7 +116,7 @@ public sealed class TransactionalReloadTests
             // SDK clients.  Without this we can't tell whether subsequent
             // failure cases are revealing a regression vs an unrelated
             // construction issue.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
 
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? firstCc = vm.ClaudeCodeSdk;
@@ -146,7 +146,7 @@ public sealed class TransactionalReloadTests
         bool ran = await Session.Dispatch(async () =>
         {
             // Initial load succeeds with valid JSON.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? origCc = vm.ClaudeCodeSdk;
             AgentConfigClientCore? origDt = vm.ClaudeDesktopSdk;
@@ -187,7 +187,7 @@ public sealed class TransactionalReloadTests
         bool ran = await Session.Dispatch(async () =>
         {
             // Setup: both products initially valid; load succeeds.
-            MainWindowViewModel vm = BuildViewModel();
+            using MainWindowViewModel vm = BuildViewModel();
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? origCc = vm.ClaudeCodeSdk;
             AgentConfigClientCore? origDt = vm.ClaudeDesktopSdk;
