@@ -1092,6 +1092,25 @@ test.
 
 ✅✅ **ROOT-CAUSED AND FIXED 2026-09-22 — it was lazy application set-up, not "contamination".**
 
+⛔⛔ **CORRECTED 2026-09-24 — the heading above is FALSE. Not root-caused, not fixed.** Everything
+below it is kept as the record of what was believed. Avalonia 12.1.3's own source
+(`Headless/Avalonia.Headless/HeadlessUnitTestSession.cs` in the AvaloniaUI/Avalonia repository, read here): with no
+`[AvaloniaTestIsolation]` on the assembly — this repository sets none — isolation defaults to
+`PerTest`, and under `PerTest` EVERY `Dispatch` runs `EnsureIsolatedApplication()`:
+`Dispatcher.ResetBeforeUnitTests()` then `AppBuilder.SetupUnsafe()`. The app is rebuilt for every
+test; there is no first build to move, so the warm-up does nothing on the failing path, and the
+stack below — `SetupUnsafe` inside a test's dispatch — is what EVERY test does, not evidence that
+set-up was skipped. The guard reads `Application.Current` inside a dispatch, so it is true by
+construction; the "canary" compared a read outside a dispatch. It passed on CI for PR #76
+(Windows), the run in which the failure recurred. Handed over by the ClaudeForge session
+(2026-09-24), which wrote PR #74; the Avalonia source was re-read here before correcting.
+▶ **OPEN.** Candidate: `[assembly: AvaloniaTestIsolation(PerAssembly)]` (builds the app once; all
+headless tests then share one `Application`), unverified, tried on its own branch and judged only by
+repeated CI on Windows and Ubuntu. If it does not hold, delete the bootstrap rather than keep a
+linked file that exists for a wrong reason. ⚠ `plans/00006` step 5 carries this bootstrap and its
+guard into xUnit as proof of set-up ordering; that premise is false (drift, never edited into the
+frozen plan), and ScopedEditors' xUnit port carries the same claims.
+
 ⛔ **The 2026-09-22 entry that stood here was wrong and is corrected rather than deleted.** It read
 this as a third class of the same process-global contamination, on the strength of a matching
 exception message. The message matched; the cause is more specific, and naming it "contamination"

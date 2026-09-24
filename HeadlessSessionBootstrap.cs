@@ -36,6 +36,16 @@ namespace Bennewitz.Ninja.TestSupport.Headless;
 /// arbitrary unrelated assertion is close to undiagnosable from a CI log.
 /// </para>
 /// <para>
+/// ⛔⛔ <b>CORRECTED 2026-09-24 — the causal model below was FALSE when written (PR #74), and this
+/// type does not do what its summary says.</b> Per Avalonia 12.1.3's own source (<c>Headless/Avalonia.Headless/HeadlessUnitTestSession.cs</c> in the AvaloniaUI/Avalonia repository): with no <c>[AvaloniaTestIsolation]</c> on the assembly — and this repository sets none — the isolation level defaults to <c>PerTest</c>, and under <c>PerTest</c> EVERY <c>Dispatch</c> runs <c>EnsureIsolatedApplication()</c>: <c>Dispatcher.ResetBeforeUnitTests()</c>, then <c>AppBuilder.SetupUnsafe()</c>.
+/// The application is rebuilt for every test, so there is no single first build for a warm-up to
+/// move, and the warm-up changes nothing on the failing path. Proof beyond the source: the same
+/// exception recurred on CI for PR #76 (Windows) after this merged, and
+/// <c>HeadlessSessionBootstrapTests</c> passed in that run. The failure is still OPEN; the
+/// candidate fix — <c>[assembly: AvaloniaTestIsolation(PerAssembly)]</c> — is unverified and
+/// being tried on its own branch. The paragraphs below are kept as the record of what was believed.
+/// </para>
+/// <para>
 /// ⛔⛔ <b><c>GetOrStartForAssembly</c> ALONE DOES NOT PREVENT THAT, and the original per-project
 /// version of this file claimed it did for three weeks.</b> It starts the session object and its
 /// dispatcher <em>thread</em>; it does not build the Avalonia application.
@@ -45,7 +55,9 @@ namespace Bennewitz.Ninja.TestSupport.Headless;
 /// first-scheduled test's responsibility, which is the exact ordering this type exists to remove.
 /// </para>
 /// <para>
-/// ⭐ <b>Measured, not reasoned.</b> On 2026-09-22 CI caught the exception again, reported against
+/// ⭐ <b>Measured, not reasoned.</b> ⛔ <i>(False as a conclusion — see the correction above: the
+/// stack was real, but <c>SetupUnsafe</c> runs inside EVERY test's dispatch under <c>PerTest</c>, so
+/// it shows nothing about set-up having been skipped.)</i> On 2026-09-22 CI caught the exception again, reported against
 /// <c>SchemaProvenanceBadgeTests.ClaudeCode_FallenBackToBundled_SaysTheFetchWasTried</c>, on a pull
 /// request whose whole diff was a Markdown file. Its stack has <c>EnsureIsolatedApplication</c> →
 /// <c>SetupUnsafe</c> → <c>Compositor..ctor</c> running <b>inside that test's <c>Dispatch</c></b> —
@@ -62,6 +74,7 @@ namespace Bennewitz.Ninja.TestSupport.Headless;
 /// nothing gets there first, which is why affected classes are green alone and flaky together.
 /// </para>
 /// <para>
+/// ⛔ <i>(False — under <c>PerTest</c> it is not load-bearing; see the correction above.)</i>
 /// So the warm-up <c>Dispatch</c> below is the load-bearing line, not the
 /// <c>GetOrStartForAssembly</c> above it: it makes the session thread the first toucher,
 /// deterministically, on the one code path MSTest guarantees runs before every test.
@@ -99,7 +112,10 @@ public static class HeadlessSessionBootstrap
         HeadlessUnitTestSession session =
             HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
-        // ⛔ DO NOT DELETE. This dispatch is what builds the application — see the type remarks.
+        // ⛔ CORRECTED 2026-09-24: under PerTest isolation (the default; this repository sets none)
+        // every Dispatch rebuilds the application, so this one is not load-bearing. Kept until the
+        // PerAssembly trial decides between making it real and deleting the bootstrap.
+        // Was: DO NOT DELETE. This dispatch is what builds the application — see the type remarks.
         // Without it the session exists but Avalonia does not, and the first test to dispatch
         // pays for SetupUnsafe() while a wrongly-bound Dispatcher.UIThread makes it throw.
         // The result is captured rather than discarded so the guard test can assert it.
