@@ -69,8 +69,12 @@ jobs:
       # whose filter selects nothing exits 8, "zero tests ran", so a filtered run over
       # the whole solution is red by construction. Per project, selecting nothing is
       # a real finding — the tests moved — and it stays red.
+      #
+      # ⚠ xUnit v3 has no VSTest-style `--filter` ("Unknown option", exit 5). Every test the old
+      # `FullyQualifiedName~ModelCatalog` selected is in a `*ModelCatalog*` class, and the class
+      # filter selects the same 22 + 4 + 4, so the two sets are equal (measured, plans/00006).
       - name: Catalog unit tests
         run: |
           for p in AgentForge.Core.Tests ClaudeForge.Sdk.Claude.Tests ClaudeForge.Tests; do
-            dotnet test --project "tests/$p" -c Debug --filter "FullyQualifiedName~ModelCatalog"
+            dotnet test --project "tests/$p" -c Debug --filter-class "*ModelCatalog*"
           done

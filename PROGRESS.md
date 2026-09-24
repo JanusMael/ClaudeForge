@@ -191,8 +191,9 @@ the defect.
    passed it; removed there.
 3. ⛔ **An assembly whose `--filter` selects nothing exits 8 under MTP** — VSTest never cared. The one
    filtered workflow (`model-catalog-refresh.yml`) now runs per project: 22 + 4 + 4 = the 30 the old
-   solution-wide filter selected, measured against the baseline. ⏳ Re-expressed again when those three
-   projects move to xUnit, whose filter options differ.
+   solution-wide filter selected, measured against the baseline. ✅ Re-expressed for xUnit, which rejects
+   `--filter` ("Unknown option", exit 5 — CI caught it on `da33de6`): `--filter-class "*ModelCatalog*"`
+   selects the same 22 + 4 + 4, and every test it selects was in the old set, so the sets are equal.
 4. ⛔ **NETSDK1151 in Release only**: `ClaudeForge.Tests` references the app, which is `SelfContained`
    in Release, and an `Exe` may not reference a self-contained `Exe`. Debug never sees it, so only the
    package canary caught it. `ValidateExecutableReferencesMatchSelfContained=false` on that one project.
