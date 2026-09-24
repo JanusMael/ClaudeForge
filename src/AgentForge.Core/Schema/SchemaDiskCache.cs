@@ -92,13 +92,28 @@ internal sealed class SchemaDiskCache
     /// One semaphore per artifact path, shared process-wide.
     /// </summary>
     /// <remarks>
-    /// ⛔ <b>Two registries in one process CAN target the same file.</b> OpenCodeForge builds
-    /// three registries at launch — its own plus one inside each client it constructs without
-    /// passing one — so three of them resolve the same schemas concurrently. Without this, two
-    /// interleaved writes produce an artifact whose digest matches neither sidecar, which reads as
-    /// corruption on the next launch. ⚠ This is the same hazard <c>cafe89c</c> fixed on main for
-    /// the previous disk cache; it returns with the disk cache, so it is guarded from the start
-    /// rather than rediscovered.
+    /// ⛔ <b>Two registries in one process CAN target the same file.</b> Nothing stops a host
+    /// building more than one — its own, plus one inside each client it constructs without passing
+    /// one — and they then resolve the same schemas concurrently. Without this, two interleaved
+    /// writes produce an artifact whose digest matches neither sidecar, which reads as corruption
+    /// on the next launch. ⚠ This is the same hazard <c>cafe89c</c> fixed on main for the previous
+    /// disk cache; it returns with the disk cache, so it is guarded from the start rather than
+    /// rediscovered.
+    /// <para>
+    /// ⓘ <b>Corrected 2026-09-23.</b> This said <i>"OpenCodeForge builds three registries at
+    /// launch"</i>, present tense. That was true when written and is not now —
+    /// <c>CLAUDE.md</c> carries the dated correction, and <c>SharedSchemaRegistryTests</c> pins
+    /// both clients sharing one instance. ⛔ <b>That test is NOT on this branch</b>, and neither is
+    /// the shell it covers: both live on <c>feat/agentforge-opencodeforge</c>, parked by
+    /// <c>plans/00003</c> Phase 0. Naming a guard without saying where it is readable is the
+    /// second half of the same defect — see <c>AGENTS.md</c> §6, which this comment failed on its
+    /// first attempt. The specific host is removed rather than re-counted,
+    /// because <b>this is a packaged neutral library</b>: the hazard belongs to any consumer that
+    /// builds more than one registry, and a count of one host's registries is a fact this file can
+    /// never see change. ⛔ The guard is unaffected and was never wrong — per-artifact-path
+    /// locking is still correct. Only the rationale had gone stale, which is why it is reworded
+    /// rather than deleted: deleting it would take the reason with it.
+    /// </para>
     /// </remarks>
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Writers = new(StringComparer.OrdinalIgnoreCase);
 
