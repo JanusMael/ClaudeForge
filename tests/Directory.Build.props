@@ -36,6 +36,12 @@
              and the failure reads as an unrelated loader error (measured by the peers). -->
         <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
         <Using Include="Xunit" />
+        <!-- MessageAssert (a converted assertion keeps its message) and the DoNotParallelize
+             collection. ONE emitted file, linked into every converted project, so the helpers and
+             the rules that call them always come from one converter commit. Regenerate it with
+             the converter's `emit-helpers`; never edit it by hand. -->
+        <Compile Include="$(MSBuildThisFileDirectory)Shared/MessageAssert.cs" Link="Shared/MessageAssert.cs" />
+        <Using Include="Bennewitz.Ninja.Testing" />
     </ItemGroup>
 
     <ItemGroup>
