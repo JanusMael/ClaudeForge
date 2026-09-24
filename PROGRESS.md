@@ -137,9 +137,34 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — stage two is ACTIVE (`plans/00005`); `v2026.3.922` is released, signing and winget are the maintainer's
+## ▶ RESUME HERE — `plans/00005` is MERGED (#77, 2026-09-24); next: the AgentForge package release, then `plans/00006`
 
-### ▶ ACTIVE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23
+| | |
+|---|---|
+| `main` | `e719f3e` — #77 (stage two) and #78 (leaked-timer test fix) both merged 2026-09-24, admin, on the maintainer's instruction. ⓘ `git log -1` is the answer for HEAD |
+| Suite | **3,287 passed · 0 failed · 11 skipped — TOTAL 3,298**, across **seven** test assemblies (= seven test csproj), Debug. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
+| ⛔ CI on `main` | `Feed Restore` and `Published Version` are **RED by construction** and stay red until step 1 below: they restore the published AgentForge `2026.3.922`, whose `LayeredEditors.*` dependencies no longer exist here (NU1101 only). Every other job is green |
+| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.924`** |
+
+**Next, in order:**
+
+1. ⛔ **The maintainer cuts a `packages-v*` release of the six AgentForge/JsonC packages — BREAKING**
+   (their public surface now speaks ScopedEditors/AppServices types; see the `AgentForge.Avalonia.Shell`
+   and `AgentForge.Sdk` baselines). Releasing is the maintainer's, always. Then the `SharedPackageVersion`
+   bump to that version, in its own change — publish and pin are ONE release, and only both clear the
+   two red jobs.
+2. ▶ **`plans/00006` — MSTest → xUnit v3**, now unblocked (it waited on 00005). Its own branch and PR.
+   Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`. ⚠ Its step 5 carries
+   the headless bootstrap as proof of set-up ordering — that premise is FALSE (see the headless section),
+   so the bootstrap is not ported; record that as 00006 drift, never in the plan.
+3. ⏳ **Headless flakes still open:** the cross-thread `VerifyAccess` failure (cause unknown; `PerAssembly`
+   tried and parked on local-only branch `fix/headless-perassembly` `d5c660a` — it breaks
+   `MainWindowViewModel`'s `Application.Current is null` seam); the 2026-09-19 `IOException` on a temp
+   `settings.json`; and one `GuiSave_WritesEveryProductsChanges…` failure seen once locally, message not
+   captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
+4. ⓘ Coverage that left with the library and is not yet restored in the ScopedEditors repo: drift 12.
+
+### ✅ DONE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23, merged 2026-09-24 as #77
 
 ClaudeForge **and** AgentForge move from the local `LayeredEditors.*` projects to the seven ids
 published on nuget.org at `2026.3.923` — `Bennewitz.Ninja.ScopedEditors.{Abstractions,ViewModels,Avalonia}`
@@ -350,7 +375,7 @@ The UI also reported `v2026.3.922.0`.
       `9.9.9` inside the feed. ⓘ Locally it had only ever been **Inconclusive** (no feed) — one of
       the "3 skipped". The full canary now passes locally, with that test measuring.
 
-### ⏭ QUEUED — [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md), approved 2026-09-23: MSTest → xUnit v3
+### ▶ NEXT — [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md), approved 2026-09-23: MSTest → xUnit v3 (unblocked: 00005 merged)
 
 Starts **after `00005` merges**, on its own branch and PR. The converter is
 `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs`, on that repository's `main` at **`17e6bd8`**
