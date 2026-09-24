@@ -169,7 +169,7 @@ the defect.
 | Step | State |
 |---|---|
 | 0 · baseline | ✅ `artifacts/xunit-move/baseline/` (gitignored): **7 assemblies, 3,068 methods, 3,298 results, 11 skipped**. Compared by `scripts/Compare-TestNames.ps1` — identity is assembly + class + method from each TRX's definitions, data rows by COUNT. Canaried: one test and one `[DataRow]` removed from a copy → it named exactly those two (`REMOVED …`, `ROWS … 21 -> 20`) |
-| 1 · MSTest onto MTP | ✅ `global.json` runner, `EnableMSTestRunner`, test projects `Exe`; every `dotnet test` in workflows and the canary uses `--solution`, CI uses `--report-trx`. Name set vs step 0: **0 differences**. Package canary green in package mode. ⏳ CI on three OSes |
+| 1 · MSTest onto MTP | ✅ `global.json` runner, `EnableMSTestRunner`, test projects `Exe`; every `dotnet test` in workflows and the canary uses `--solution`, CI uses `--report-trx`. Name set vs step 0: **0 differences**. Package canary green in package mode. ⏳ CI on three OSes. ✅ **Premise for decision 7 holds**: a throwaway xUnit v3 project ran beside the seven MSTest ones under one `dotnet test --solution` (3,301 = 3,298 + 3), wrote its own TRX, then was deleted. `tests/Directory.Build.props` now picks the framework per project — `<UseXunitV3>true</UseXunitV3>` in a converted csproj |
 | 2 – 7 | ⏳ Not started. Rewriter dry-run over all seven: `ClaudeForge.Avalonia.Tests` maps cleanly; the other six list **40 UNMAPPED** sites — 5× assembly `[Parallelize]`, 1 sync `[Timeout]`, 5× `[Description]`, 16× 3-argument `AreEqual` in `ClaudeArtifactPathsTests`, 2× `AllItemsAreUnique(msg)`, 2× `CollectionAssert.AreNotEqual(msg)`, 2× named-argument `AreEqual`, 7× 4-argument `StartsWith`/`Contains`/`AreNotEqual`. Each is a rule for the TOOL first, never a hand patch |
 
 ⚠ **Drift from the frozen plan** — recorded here, because `00006` is never edited:
@@ -187,6 +187,12 @@ the defect.
    package canary caught it. `ValidateExecutableReferencesMatchSelfContained=false` on that one project.
 5. **The converter's commit is now on Templates `main`** (the plan says `feat/mstest-to-xunit`); the file
    is unchanged from `17e6bd8` through `6d83523`.
+6. ⚠ **xUnit's TRX spells a method `Namespace.Class.Method(arg: value)`**, MSTest's the bare name — so
+   `Compare-TestNames.ps1` normalises both, or every converted test would read as removed-and-added.
+   Proven on the probe: its theory's two rows grouped as one method, count 2.
+7. ⚠ **Compare in the baseline's ENVIRONMENT.** `PackageVersionLockstepTests` is Inconclusive unless
+   `artifacts/localfeed` exists, and the package canary creates it — so a comparison after a canary run
+   shows one `NotExecuted -> Passed`. Delete `artifacts/localfeed` before comparing.
 
 ### ✅ DONE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23, merged 2026-09-24 as #77
 

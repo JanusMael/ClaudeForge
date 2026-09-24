@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
     <!-- MSBuild applies only the CLOSEST Directory.Build.props by default.
          To inherit the repo-root settings (Nullable, LangVersion, AutoVersioning,
          debug-type policy, etc.) on top of the test-only additions below, the
@@ -14,12 +14,31 @@
         <!-- Microsoft.Testing.Platform, selected for `dotnet test` by global.json. Each test
              project is an executable that hosts its own runner (plans/00006 step 1). -->
         <EnableMSTestRunner>true</EnableMSTestRunner>
+        <!-- Without this an xunit.v3 executable runs xUnit's NATIVE console runner, which does
+             not know `report-trx` — so CI would get no .trx files. Inert for MSTest projects. -->
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     </PropertyGroup>
 
-    <ItemGroup>
-        <!-- Test framework + coverage tooling — applied to every project under tests/.
-             Previously duplicated across all 5 test csprojs. -->
+    <!-- ⚠ THE FRAMEWORK IS CHOSEN PER PROJECT while plans/00006 moves the suite, one project per
+         commit: a converted csproj sets <UseXunitV3>true</UseXunitV3>. The switch lives on the
+         ITEM groups because MSBuild evaluates every property — the csproj's included — before any
+         item, so an item condition sees the csproj's value and a property condition here would
+         not. ⛔ Do not move this into a tests/Directory.Build.targets: MSBuild imports only the
+         CLOSEST one, and that would silently detach every test project from the root file. -->
+    <ItemGroup Condition="'$(UseXunitV3)' != 'true'">
         <PackageReference Include="MSTest" Version="4.3.3" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseXunitV3)' == 'true'">
+        <PackageReference Include="xunit.v3" Version="3.2.2" />
+        <!-- ⚠ Keep on xunit.v3's Microsoft.Testing.Platform line (1.9.x for 3.2.2). A newer
+             TrxReport pins the platform above what xunit's bundled MSBuild extension can load,
+             and the failure reads as an unrelated loader error (measured by the peers). -->
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- FakeTimeProvider: a clock tests advance by hand, so anything on a
              TimeProvider (StatusController's auto-clear) is deterministic without
              sleeping or pumping a dispatcher. -->

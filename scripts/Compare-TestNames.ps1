@@ -61,8 +61,17 @@ function Read-TestSet([string] $path) {
         foreach ($unitTest in $trx.SelectNodes('//t:TestDefinitions/t:UnitTest', $ns)) {
             $method = $unitTest.SelectSingleNode('t:TestMethod', $ns)
             $assembly = [System.IO.Path]::GetFileNameWithoutExtension($method.GetAttribute('codeBase'))
-            $definitions[$unitTest.GetAttribute('id')] =
-                $assembly + '|' + $method.GetAttribute('className') + '|' + $method.GetAttribute('name')
+            $className = $method.GetAttribute('className')
+            # ⚠ The frameworks spell the METHOD differently: MSTest writes the bare name, xUnit v3
+            # writes 'Namespace.Class.Method' and, for a theory row, appends '(arg: value)'.
+            # Normalise both to the bare name so a moved test keeps its identity.
+            $name = $method.GetAttribute('name')
+            if ($name.StartsWith($className + '.', [System.StringComparison]::Ordinal)) {
+                $name = $name.Substring($className.Length + 1)
+            }
+            $paren = $name.IndexOf('(')
+            if ($paren -gt 0) { $name = $name.Substring(0, $paren) }
+            $definitions[$unitTest.GetAttribute('id')] = $assembly + '|' + $className + '|' + $name
         }
 
         foreach ($result in $trx.SelectNodes('//t:Results/t:UnitTestResult', $ns)) {
