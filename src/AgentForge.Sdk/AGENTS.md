@@ -142,7 +142,7 @@ A test for this contract is in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedCha
 | `internal ClaudeCodeClient(ConfigScope, SchemaRegistry)`             | Inject a test-controlled `SchemaRegistry`. Lives in `ClaudeForge.Sdk.Claude`. |
 | `ClaudeCodeClient.FromExistingWorkspace(workspace, scope, registry)` | Supply pre-built workspace (GUI migration tests). Same project.        |
 | `PlatformPaths.TestUserProfileOverride = sandbox`                    | Redirect `~/.claude/` to a temp dir                                   |
-| `DebugFlags.ResetForTesting()`                                       | Reset all debug flags + `PlatformInfo.Current` in `[TestCleanup]`     |
+| `DebugFlags.ResetForTesting()`                                       | Reset all debug flags + `PlatformInfo.Current` in `Dispose`          |
 | `InternalsVisibleTo("ClaudeForge.Tests")`                            | In `AgentForge.Sdk.csproj` — grants access to all `internal` members |
 | `InternalsVisibleTo("ClaudeForge.Sdk.Claude")`                       | Also in `AgentForge.Sdk.csproj`. Lets the Claude accessors reach `GetEffectiveNode` / `GetScopeValue` / `RaiseChangedFromAccessor`, which stay `internal` to keep `JsonNode` off the public surface. An assembly attribute, **not** a reference — the layering rule is untouched. |
 

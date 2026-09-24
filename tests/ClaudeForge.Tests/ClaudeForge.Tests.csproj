@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <UseXunitV3>true</UseXunitV3>
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Tests</RootNamespace>
         <!-- ⚠ This project references the APP, which is SelfContained in Release. Now that a test
              project is an executable (Microsoft.Testing.Platform), the SDK refuses an executable

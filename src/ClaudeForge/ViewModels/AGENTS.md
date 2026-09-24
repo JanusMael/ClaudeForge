@@ -432,4 +432,4 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 | `GetClaudeCodeSdkClientForTesting()`    | `MainWindowViewModel.cs`         | Access live SDK client for mutation-based integration tests     |
 | `SearchViewModel` delegate constructor  | `AgentForge.Avalonia.Shell/Search/SearchViewModel.cs` | Pass fake `getNavigationTree` + `isLoadingProbe`; omit `getSyntheticEntries` for a product-free fixture |
 | `PlatformPaths.TestUserProfileOverride` | `Core/Platform/PlatformPaths.cs` | Redirect `~/.claude/` to sandbox                                |
-| `DebugFlags.ResetForTesting()`          | `Services/DebugFlags.cs`         | Reset flags + `PlatformInfo.Current` in `[TestCleanup]`         |
+| `DebugFlags.ResetForTesting()`          | `Services/DebugFlags.cs`         | Reset flags + `PlatformInfo.Current` in `Dispose`              |

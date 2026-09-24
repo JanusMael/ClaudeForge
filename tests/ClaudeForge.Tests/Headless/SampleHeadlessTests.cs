@@ -23,14 +23,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// <para>
 /// Pattern for adding a new SYNCHRONOUS headless test — the two below:
 /// <code>
-/// [TestMethod]
+/// [Fact]
 /// public Task MyTest() =&gt; Session.Dispatch(() =&gt;
 /// {
 ///     // Now on the headless UI thread.  Construct controls and fire
 ///     // dispatcher work as if you were in a real app.
 ///     var window = new Window { Width = 800, Height = 600 };
 ///     window.Show();
-///     Assert.IsTrue(window.IsVisible);
+///     Assert.True(window.IsVisible);
 ///     window.Close();
 /// }, CancellationToken.None);
 /// </code>
@@ -47,7 +47,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// from the lambda</b> so it binds <c>Dispatch&lt;T&gt;(Func&lt;Task&lt;T&gt;&gt;, …)</c>, which
 /// unwraps properly:
 /// <code>
-/// [TestMethod]
+/// [Fact]
 /// public async Task MyAsyncTest()
 /// {
 ///     string result = await Session.Dispatch(async () =&gt;
@@ -57,7 +57,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 ///         return vm.SomeValue;          // ← the return is what makes this observable
 ///     }, CancellationToken.None);
 ///
-///     Assert.AreEqual("expected", result);
+///     Assert.Equal("expected", result);
 /// }
 /// </code>
 /// <c>Headless/SavePreservationTests.cs</c> is the worked example. Whichever shape you

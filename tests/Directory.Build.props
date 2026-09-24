@@ -11,55 +11,41 @@
         <!-- Test projects never get packed as NuGets; suppress the per-project
              redundant declarations. -->
         <IsPackable>false</IsPackable>
-        <!-- Microsoft.Testing.Platform, selected for `dotnet test` by global.json. Each test
-             project is an executable that hosts its own runner (plans/00006 step 1). -->
-        <EnableMSTestRunner>true</EnableMSTestRunner>
-        <!-- Without this an xunit.v3 executable runs xUnit's NATIVE console runner, which does
-             not know `report-trx` — so CI would get no .trx files. Inert for MSTest projects. -->
+        <!-- xUnit v3 on Microsoft.Testing.Platform, selected for `dotnet test` by global.json
+             (plans/00006). Each test project is an executable that hosts its own runner. Without
+             this property an xunit.v3 executable runs xUnit's NATIVE console runner, which does
+             not know `report-trx` — so CI would get no .trx files. -->
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-        <!-- ⚠ xUnit1051 ("pass TestContext.Current.CancellationToken") is SUPPRESSED for the move.
-             It flagged 383 calls in AgentForge.Core.Tests alone. Adding a token to each would change
-             how those calls cancel, and plans/00006 decision 5 forbids rewriting tests during the
-             move — the identity proof depends on it. Advisory, not a correctness rule. Reconsider
-             it as its own change once the move is done. Inert for MSTest projects. -->
+        <!-- ⚠ xUnit1051 ("pass TestContext.Current.CancellationToken") is SUPPRESSED. It flagged 383
+             calls in AgentForge.Core.Tests alone during the MSTest move. Adding a token to each would
+             change how those calls cancel, and plans/00006 decision 5 forbade rewriting tests during
+             the move — the identity proof depended on it. Advisory, not a correctness rule;
+             reconsider it as its own change. -->
         <NoWarn>$(NoWarn);xUnit1051</NoWarn>
     </PropertyGroup>
 
-    <!-- ⚠ THE FRAMEWORK IS CHOSEN PER PROJECT while plans/00006 moves the suite, one project per
-         commit: a converted csproj sets <UseXunitV3>true</UseXunitV3>. The switch lives on the
-         ITEM groups because MSBuild evaluates every property — the csproj's included — before any
-         item, so an item condition sees the csproj's value and a property condition here would
-         not. ⛔ Do not move this into a tests/Directory.Build.targets: MSBuild imports only the
-         CLOSEST one, and that would silently detach every test project from the root file. -->
-    <ItemGroup Condition="'$(UseXunitV3)' != 'true'">
-        <PackageReference Include="MSTest" Version="4.3.3" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(UseXunitV3)' == 'true'">
+    <ItemGroup>
         <PackageReference Include="xunit.v3" Version="3.2.2" />
         <!-- ⚠ Keep on xunit.v3's Microsoft.Testing.Platform line (1.9.x for 3.2.2). A newer
              TrxReport pins the platform above what xunit's bundled MSBuild extension can load,
              and the failure reads as an unrelated loader error (measured by the peers). -->
         <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
-        <Using Include="Xunit" />
-        <!-- MessageAssert (a converted assertion keeps its message) and the DoNotParallelize
-             collection. ONE emitted file, linked into every converted project, so the helpers and
-             the rules that call them always come from one converter commit. Regenerate it with
-             the converter's `emit-helpers`; never edit it by hand. -->
-        <Compile Include="$(MSBuildThisFileDirectory)Shared/MessageAssert.cs" Link="Shared/MessageAssert.cs" />
-        <Using Include="Bennewitz.Ninja.Testing" />
-    </ItemGroup>
-
-    <ItemGroup>
         <!-- FakeTimeProvider: a clock tests advance by hand, so anything on a
              TimeProvider (StatusController's auto-clear) is deterministic without
              sleeping or pumping a dispatcher. -->
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
-        <PackageReference Update="Microsoft.NET.Test.Sdk" Version="18.7.0" />
-        <PackageReference Update="coverlet.collector" Version="10.0.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+        <!-- MessageAssert (a converted assertion keeps its message), OrdinalAssert (a converted
+             string assertion keeps MSTest's ORDINAL comparison) and the DoNotParallelize collection.
+             ONE emitted file, linked into every test project, so the helpers and the rules that call
+             them always come from one converter commit. Regenerate it with the converter's
+             `emit-helpers` (Bennewitz.Ninja.Templates scripts/mstest-to-xunit.cs); never edit it
+             by hand. New tests use xUnit's Assert directly. -->
+        <Compile Include="$(MSBuildThisFileDirectory)Shared/MessageAssert.cs" Link="Shared/MessageAssert.cs" />
+        <Using Include="Bennewitz.Ninja.Testing" />
     </ItemGroup>
 
 </Project>
