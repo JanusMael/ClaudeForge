@@ -42,7 +42,7 @@
           LayeredEditors.* and JsonC to the private feed, so this id falls to nuget.org's `*`.
           That is the payoff for naming the two families there instead of a broad prefix.
         -->
-        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.921" />
+        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.924" />
     </ItemGroup>
 
     <ItemGroup>
