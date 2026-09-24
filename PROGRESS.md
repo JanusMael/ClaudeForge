@@ -327,6 +327,15 @@ The UI also reported `v2026.3.922.0`.
     at **1,606 tests, 0 skipped** — 154 short of 1,760, with the 3 skips missing too, and nothing
     failed. Four runs since (one isolated, three full-suite) each report 1,760. It left no TRX, so
     the cause is unknown. If a total ever reads short again, capture the TRX before rerunning.
+    ✅ **Explained 2026-09-24: a short `Passed!` total is a CRASHED TEST HOST.** Reproduced by
+    accident — a timer callback that threw on a pool thread aborted the run, and the summary still
+    printed `Passed!` at **1,587**. CI then caught the real instance (PR #77, Windows push run):
+    `StatusController`'s auto-clear timer, left armed by an undisposed `MainWindowViewModel`, fired
+    after its test and posted into a dispatcher the `PerTest` teardown had reset — a
+    `NullReferenceException` inside `Dispatcher.Post`, unhandled, taking the host down. ⛔ So a
+    `Passed!` line proves nothing about completeness; compare the TOTAL against the known count.
+    The fix — disposing every `MainWindowViewModel` a test creates — is on `fix/headless-leaked-timers`,
+    judged by repeated CI before it becomes a PR.
 16. **Step 10's first CI run (`859cf41`) — two jobs red by construction, one real guard defect.**
     - ⛔ **`Feed Restore` is red by construction too**, not only `Published Version` as the plan
       named: both restore the PUBLISHED AgentForge packages at `SharedPackageVersion` `2026.3.922`,
