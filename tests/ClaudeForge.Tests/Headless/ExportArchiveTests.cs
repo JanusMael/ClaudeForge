@@ -164,7 +164,7 @@ public sealed class ExportArchiveTests
         bool ran = await Session.Dispatch(
             async () =>
             {
-                MainWindowViewModel vm = new(ClaudeEnvironment.Empty, 
+                using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, 
                     new SchemaRegistry(), new ExportingDialogService(destination));
                 await vm.LoadAllWorkspacesAsync();
 

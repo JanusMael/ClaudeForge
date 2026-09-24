@@ -129,7 +129,7 @@ public sealed class SchemaCheckActionTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new ComesUpHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new ComesUpHandler());
 
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
             NavigationNodeViewModel dt = Header(vm, MainWindowViewModel.NavIdClaudeDesktop);
@@ -166,7 +166,7 @@ public sealed class SchemaCheckActionTests
     {
         bool ran = await Session.Dispatch(async () =>
         {
-            MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
+            using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
 
             string summary = await vm.CheckForSchemaUpdatesAsync(CancellationToken.None);
 
