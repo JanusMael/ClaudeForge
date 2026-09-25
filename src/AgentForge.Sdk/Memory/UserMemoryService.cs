@@ -216,7 +216,12 @@ public static class UserMemoryService
     {
         try
         {
-            using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            // Share write + delete, as EditableMemoryService.LoadDescription does: a background
+            // subtitle read must never lock out a writer. It did: this preview runs on every
+            // memory-editor refresh after a reload, reaches settings.json, and a save landing
+            // during it failed "being used by another process" — measured as ReloadHardeningTests'
+            // timing flake, the holder named by a first-chance stack capture.
+            using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using StreamReader reader = new(stream);
             char[] buf = new char[4096];
             int read = reader.Read(buf, 0, buf.Length);
