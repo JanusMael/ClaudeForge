@@ -175,7 +175,7 @@ the defect.
    `settings.json` has the same message and file as the `ReloadHardeningTests` flake captured and fixed
    2026-09-25 (drift 9: two background reads shared READ only) — very likely the same fault; its own
    stack was never captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
-4. ⓘ Coverage that left with the library and is not yet restored in the ScopedEditors repo: drift 12.
+4. ✅ Coverage that left with the library: drift 12 is CLOSED — ScopedEditors already carried all three guards at `v2026.3.924` (#5).
 5. ✅ **`docs/UI-STYLE-GUIDE.md` §14 now points at XamlQuality** (its #25 landed six entries, two with
    corrected causes). §14 keeps a map of where each former entry went and what changed, plus the two
    app-specific entries (the inheritance watermark; Markdown.Avalonia under Semi, held by XamlQuality
@@ -446,10 +446,21 @@ The UI also reported `v2026.3.922.0`.
     | `PackageMetadataTests`, `AssemblyLayeringTests` | `LayeredEditors.` prefix / globs removed — a stale DLL in a test `bin/` would otherwise be scanned as shared code | — |
     | `scripts/verify-feed-restore.ps1` | 11 ids → 6 — it would have failed CI's `feed-restore` | — |
 
-    ⏳ **Filed as [JanusMael/Bennewitz.Ninja.ScopedEditors#5](https://github.com/JanusMael/Bennewitz.Ninja.ScopedEditors/issues/5)**
-    (2026-09-25), with the originals at `ec3a18f`; a session in that repository will port them and report
-    back. Close this drift when it does.
-    ⛔ **GAPS — no test anywhere covers these now; restore them IN the ScopedEditors repo:** the
+    ✅ **CLOSED 2026-09-25 — nothing needed porting.** Filed as
+    [JanusMael/Bennewitz.Ninja.ScopedEditors#5](https://github.com/JanusMael/Bennewitz.Ninja.ScopedEditors/issues/5)
+    with the originals at `ec3a18f`; the ScopedEditors session reported back and closed it as completed.
+    All three gaps were **already covered in ScopedEditors before `v2026.3.924` shipped**, ported from
+    `d004918` in `3ee1593` and `14bd2a9` (2026-09-23, both inside the tag; `ec3a18f`'s four files are
+    byte-identical to `d004918`'s). Checked here against the tag rather than taken from the report —
+    `DangerSurfaceMarkupTests` and `SeverityGlyphFontSizeMarkupTests` (banner and glyph sizing),
+    `ThemeResourceIntegrityTests` (`LE.*` consistency, with a C# half the original lacked), and
+    `AxamlAccessibilityCoverageTests` on XamlQuality's XQ1002 plus `ExpanderAutomationNameTests` (XQ1001).
+    That session re-proved them on its `main` at `c1a26bd` with one planted defect per gap, each
+    reddening exactly its own guard; the evidence is in the issue's closing comment.
+    ⛔ **The GAPS sentence below was false when written.** It said *"no test anywhere covers these now"*
+    on 2026-09-25, two days after the guards landed in ScopedEditors. It is AGENTS.md §6 rule 3's shape
+    — a claim about coverage made without finding the guard — and it is kept, not deleted, for that reason.
+    ~~⛔ **GAPS — no test anywhere covers these now; restore them IN the ScopedEditors repo:**~~ the
     shared `PropertyEditorWrapper`'s danger banner and glyph sizing, the `LE.*` token
     reference/declaration consistency, and the AXAML accessibility scan of the package's own
     controls. (`TemplatePartAutomationNameTests` and `ThemedBrushTrackingTests` DID move — they are in
