@@ -176,13 +176,11 @@ the defect.
    2026-09-25 (drift 9: two background reads shared READ only) — very likely the same fault; its own
    stack was never captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
 4. ⓘ Coverage that left with the library and is not yet restored in the ScopedEditors repo: drift 12.
-5. ⏸ **`docs/UI-STYLE-GUIDE.md` §14 → XamlQuality: HOLD the repoint.** The eight §14 entries were sent
-   to XamlQuality 2026-09-25 and all checked on 12.1.3; its drafts await the owner, and two of the
-   headings §14 would point at are changing. It sends the exact headings when they land. Then, in ONE
-   change: repoint §14 (keep only the app-specific inheritance-watermark entry), fix §14's false
-   "`X11PlatformOptions.WmClass` gone" (present and not obsolete on 12.1.3, metadata-probed), and rewrite
-   `AGENTS.md` line 49's tooltip row — it states the 11.0 behaviour; since 11.1.0 a child shows its
-   nearest ancestor's tooltip.
+5. ✅ **`docs/UI-STYLE-GUIDE.md` §14 now points at XamlQuality** (its #25 landed six entries, two with
+   corrected causes). §14 keeps a map of where each former entry went and what changed, plus the two
+   app-specific entries (the inheritance watermark; Markdown.Avalonia under Semi, held by XamlQuality
+   for lack of a measurable package). Our `NumericUpDown`/`WmClass` entry was false in both halves, and
+   `AGENTS.md`'s tooltip row stated Avalonia 11.0 behaviour — both corrected in the same change.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 
@@ -448,6 +446,9 @@ The UI also reported `v2026.3.922.0`.
     | `PackageMetadataTests`, `AssemblyLayeringTests` | `LayeredEditors.` prefix / globs removed — a stale DLL in a test `bin/` would otherwise be scanned as shared code | — |
     | `scripts/verify-feed-restore.ps1` | 11 ids → 6 — it would have failed CI's `feed-restore` | — |
 
+    ⏳ **Filed as [JanusMael/Bennewitz.Ninja.ScopedEditors#5](https://github.com/JanusMael/Bennewitz.Ninja.ScopedEditors/issues/5)**
+    (2026-09-25), with the originals at `ec3a18f`; a session in that repository will port them and report
+    back. Close this drift when it does.
     ⛔ **GAPS — no test anywhere covers these now; restore them IN the ScopedEditors repo:** the
     shared `PropertyEditorWrapper`'s danger banner and glyph sizing, the `LE.*` token
     reference/declaration consistency, and the AXAML accessibility scan of the package's own

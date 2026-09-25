@@ -640,26 +640,26 @@ Text="{x:Static loc:Strings.Xxx}"/>` as nested button content.
 
 ---
 
-## 14. Avalonia 12 gotchas (iteration receipts)
+## 14. Avalonia 12 gotchas
 
-These came out of this codebase's polish iterations.  Future Avalonia
-versions may resolve some; check before assuming they still apply.
+⭐ **General Avalonia behaviour lives in XamlQuality's
+[`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md)**,
+the one living copy, where each claim is checked against the Avalonia source before it lands. This
+section's former entries went there on 2026-09-25 (XamlQuality#25), several of them corrected:
 
-### Drag-drop payload API
-The legacy `IDataObject` / `DataFormats.Files` surface is GONE in
-Avalonia 12.  New surface: `IDataTransfer` / `DataFormat.File`, accessed
-via `DragEventArgs.DataTransfer`, with `TryGetFiles()` extension on
-`DataTransferExtensions`.  The `FileDropBehavior` in
-`LayeredEditors.Avalonia.Behaviors` insulates consumers from this delta
-— attach the behaviour rather than handle raw events.
+| What this section used to say | Where it lives now, and what changed |
+|---|---|
+| Drag-drop payload API | *"Avalonia 12 removed `DragEventArgs.Data` and `IDataObject`, so drop data comes through `DataTransfer`"* |
+| `AutoCompleteBox` dropdown filtering | *"Opening an `AutoCompleteBox` filters by its current text, so after a selection it lists one item"* |
+| `ContentControl` auto-derives its automation name | *"A `ContentControl` names itself with its content's raw text, the mnemonic underscore and any emoji included"* |
+| `Run.Text` accepts bindings / one baseline | *"Two `TextBlock`s in different fonts do not share a baseline, but the `Run`s of one `TextBlock` do"* |
+| `Semi.Avalonia` locale lazy-loads | ⛔ **The cause here was wrong**: Semi never reads `CurrentUICulture`. *"Semi's own strings are Chinese until `SemiTheme.Locale` is set, and the UI culture is never read"* |
+| Tooltips don't propagate from a parent `Border` to a child | ⛔ **Stale since Avalonia 11.1.0** — a child now shows its nearest ancestor's tooltip. *"A tooltip covers its host's children, so set it once, on the parent"* |
+| `Window.Icon` on Wayland is a no-op | *"`Window.Icon` is a no-op on Wayland"*; this app's detail stays in [`LINUX-DESKTOP-INTEGRATION.md`](LINUX-DESKTOP-INTEGRATION.md) |
+| `NumericUpDown.IsAllowSpin` renamed; `X11PlatformOptions.WmClass` gone | ⛔ **Both halves were false.** The property is `AllowSpin` in every tag from 11.0.0 to 12.1.3 — `IsAllowSpin` never existed — and `WmClass` is present and not obsolete on 12.1.3 (metadata of the shipped assemblies, 2026-09-25) |
 
-### AutoCompleteBox dropdown filtering
-After selecting an item, clicking the dropdown chevron filters the
-suggestion list to items containing the current `Text` — usually just
-the selected one.  Fix in the chevron click handler: temporarily set
-`FilterMode = AutoCompleteFilterMode.None`, open dropdown, restore
-original mode via a one-shot `DropDownClosed` handler.  See
-`PropertyEditorWrapper.axaml.cs`.
+A new finding goes to XamlQuality, not here — see `AGENTS.md` §7. Two entries stay, because they are
+about this app rather than Avalonia:
 
 ### Inheritance display: treat empty string as "not set"
 `IEditorValue.EffectiveValue` can be an empty string (e.g. from a
@@ -668,32 +668,6 @@ Code that builds an "(inherits: X)" watermark should fall through to
 the schema default when X formats empty; rendering "(inherits: )" with
 no value is a worse UX than "(inherits: <default>)" or "(not set)".
 See `PropertyEditorViewModel.UpdateInheritedDisplay`.
-
-### ContentControl auto-derives `AutomationProperties.Name` from Content
-But it picks up emoji glyphs and `_` mnemonic prefixes verbatim
-("Underscore S a v e" / "Floppy disk save" — useless to a screen
-reader).  Always set the property explicitly; never rely on
-auto-derivation.
-
-### `Run.Text` accepts bindings
-A single `TextBlock` with multiple `Run` inlines shares one baseline
-regardless of per-Run `FontFamily`.  Use this when you need a label +
-monospace value on the same line and `VerticalAlignment=Center` of two
-TextBlocks is visually mis-aligning.
-
-### `Semi.Avalonia` locale lazy-loads
-On first control creation it reads `CultureInfo.CurrentUICulture`.
-Call `LocalizationService.ApplyCulture()` *before* `BuildAvaloniaApp()`
-in `Program.Main` so localized strings are available when Semi
-initialises.
-
-### `Window.Icon` on Wayland is a no-op
-`Window.Icon` writes `_NET_WM_ICON` on X11 (works) but Wayland's
-protocol has no per-window-icon API.  Compositors read
-`app_id.desktop` from `$XDG_DATA_DIRS/applications/` and resolve the
-`Icon=` field.  A Wayland user without an installed `.desktop` file
-sees a generic placeholder no matter what `AppIcon.cs` does.  See
-`docs/LINUX-DESKTOP-INTEGRATION.md`.
 
 ### Markdown.Avalonia + Fluent-coupled controls under Semi
 Components like `AvaloniaEdit` ship per-theme XAML resources that some
@@ -705,17 +679,8 @@ typography tokens Semi doesn't define.  **Recommendation**: avoid
 Fluent-coupled 3rd-party controls under Semi.  When we hit this with
 `Markdown.Avalonia.SyntaxHigh` we downgraded to
 `Markdown.Avalonia.Tight` which doesn't depend on AvaloniaEdit.
-
-### Tooltips don't propagate from parent Border to child TextBlock
-Setting `ToolTip.Tip` on a parent `Border` does NOT cover child
-`TextBlock`s the user hovers — Avalonia tooltip resolution doesn't
-walk up the visual tree.  Set the tooltip on BOTH the parent (for the
-padding area) AND the inner text element.
-
-### `<NumericUpDown.IsAllowSpin>` renamed; `X11PlatformOptions.WmClass` gone
-Avalonia 11 APIs that don't exist in 12.  Check
-`~/.nuget/packages/avalonia/12.0.0/lib/net10.0/Avalonia.*.xml` for the
-actual surface when you suspect drift.
+ⓘ Sent to XamlQuality and **held there**: the package is not available to measure. Its own
+AvaloniaEdit-under-Semi entry resolves the control with the compat dictionaries.
 
 ---
 
