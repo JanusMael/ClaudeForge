@@ -36,16 +36,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// deliberate failure.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class ExportArchiveTests
+public sealed class ExportArchiveTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public ExportArchiveTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_export_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -61,8 +61,7 @@ public sealed class ExportArchiveTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, """{ "preferences": { "theme": "dark" } }""");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -78,21 +77,27 @@ public sealed class ExportArchiveTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task Export_ManifestNamesEveryOpenProduct_AndNothingElse()
     {
         string manifestJson = await ExportAndRead(entryPath: "manifest.json");
 
         JsonNode manifest = JsonNode.Parse(manifestJson)!;
 
-        Assert.AreEqual("export", (string?)manifest["kind"],
+        MessageAssert.Equal("export", (string?)manifest["kind"],
             "The Restore list filters on kind to keep exports out of the restorable list.");
-        Assert.AreEqual(2, (int?)manifest["schemaVersion"],
+        MessageAssert.Equal(2, (int?)manifest["schemaVersion"],
             "Schema v2 is the Clients list. A v1 archive here would mean the write side "
             + "regressed to the two booleans.");
 
         string[] clients = manifest["clients"]!.AsArray().Select(n => (string)n!).ToArray();
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[]
             {
                 SchemaRegistry.ClaudeCodeArchiveFolder,
@@ -102,13 +107,13 @@ public sealed class ExportArchiveTests
             "The manifest must name BOTH open products, in navigation order. One entry means "
             + "the manifest is built from something narrower than the open-section list.");
 
-        Assert.IsNull(manifest["includesClaudeCode"],
+        MessageAssert.Null(manifest["includesClaudeCode"],
             "The v1 booleans must not be written any more — a second, silently stale "
             + "statement of which products the archive covers.");
-        Assert.IsNull(manifest["includesClaudeDesktop"]);
+        Assert.Null(manifest["includesClaudeDesktop"]);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Export_EveryFolderTheManifestNames_ActuallyExistsInTheArchive()
     {
         // The invariant that makes the manifest usable: a reader takes `clients` as the list
@@ -124,11 +129,11 @@ public sealed class ExportArchiveTests
         JsonNode manifest = JsonNode.Parse(manifestStream)!;
         string[] clients = manifest["clients"]!.AsArray().Select(n => (string)n!).ToArray();
 
-        Assert.AreEqual(2, clients.Length, "Precondition: both products were open.");
+        MessageAssert.Equal(2, clients.Length, "Precondition: both products were open.");
 
         foreach (string client in clients)
         {
-            Assert.IsTrue(
+            Assert.True(
                 entries.Any(e => e.StartsWith(client + "/", StringComparison.Ordinal)),
                 $"The manifest names \"{client}\" but no archive entry sits under "
                 + $"\"{client}/\". Entries were:\n  {string.Join("\n  ", entries)}");
@@ -136,8 +141,8 @@ public sealed class ExportArchiveTests
 
         // The exact persisted paths, not just their prefixes. Users have archives with these
         // names; deriving the folder segment from ArchiveFolder must not have moved them.
-        CollectionAssert.Contains(entries, "ClaudeCode/.claude/settings.json");
-        CollectionAssert.Contains(entries, "ClaudeDesktop/claude_desktop_config.json");
+        Assert.Contains("ClaudeCode/.claude/settings.json", entries);
+        Assert.Contains("ClaudeDesktop/claude_desktop_config.json", entries);
     }
 
     // ── helpers ─────────────────────────────────────────────────────────
@@ -152,7 +157,7 @@ public sealed class ExportArchiveTests
 
         using ZipArchive archive = ZipFile.OpenRead(destination);
         ZipArchiveEntry? entry = archive.GetEntry(entryPath);
-        Assert.IsNotNull(entry, $"Export archive has no \"{entryPath}\" entry.");
+        MessageAssert.NotNull(entry, $"Export archive has no \"{entryPath}\" entry.");
         using StreamReader reader = new(entry!.Open());
         return await reader.ReadToEndAsync();
     }
@@ -168,7 +173,7 @@ public sealed class ExportArchiveTests
                     new SchemaRegistry(), new ExportingDialogService(destination));
                 await vm.LoadAllWorkspacesAsync();
 
-                Assert.AreEqual(2, vm.Sections.Count(s => s.Client is not null),
+                MessageAssert.Equal(2, vm.Sections.Count(s => s.Client is not null),
                     "Precondition: both product sections must be open, or a one-product "
                     + "export would satisfy the assertions by default.");
 
@@ -177,8 +182,8 @@ public sealed class ExportArchiveTests
             },
             CancellationToken.None);
 
-        Assert.IsTrue(ran);
-        Assert.IsTrue(File.Exists(destination),
+        Assert.True(ran);
+        Assert.True(File.Exists(destination),
             "The export command must have written the archive. If it did not, it bailed out "
             + "early — most likely the dialog double returned no destination, or no section "
             + "was open.");

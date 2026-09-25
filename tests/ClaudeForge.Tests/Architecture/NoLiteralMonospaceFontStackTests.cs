@@ -39,7 +39,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// same trap as a text search matching the comment above a flag rather than the flag.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class NoLiteralMonospaceFontStackTests
 {
     /// <summary>The key every rendering site must bind instead of naming a face.</summary>
@@ -53,7 +52,7 @@ public sealed class NoLiteralMonospaceFontStackTests
         """(?:FontFamily="(?<v>[^"]*)")|(?:<Setter\s+Property="FontFamily"\s+Value="(?<v>[^"]*)")""",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    [TestMethod]
+    [Fact]
     public void NoAxamlNamesAMonospaceFaceInline()
     {
         List<string> offenders = [];
@@ -81,7 +80,7 @@ public sealed class NoLiteralMonospaceFontStackTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             offenders.Count,
             $"{offenders.Count} markup site(s) name a monospace face inline instead of binding " +
@@ -95,14 +94,14 @@ public sealed class NoLiteralMonospaceFontStackTests
     /// offenders passes just as happily when every site has been deleted. This pins the
     /// positive side.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheMonospaceTokenIsActuallyBoundByMarkup()
     {
         int sites = EnumerateAxaml()
             .Where(p => !string.Equals(Path.GetFileName(p), "App.axaml", StringComparison.Ordinal))
             .Sum(p => Regex.Matches(File.ReadAllText(p), Regex.Escape(Token)).Count);
 
-        Assert.IsTrue(
+        Assert.True(
             sites >= 60,
             $"Only {sites} markup site(s) bind {Token}. There were 67 when the token was " +
             "introduced; a collapse means the sweep was reverted or the key was renamed in " +
@@ -135,7 +134,7 @@ public sealed class NoLiteralMonospaceFontStackTests
     /// at first layout.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task EveryBundledFontUriPointsAtRealFontFiles()
     {
         Regex fontUri = new(
@@ -181,13 +180,13 @@ public sealed class NoLiteralMonospaceFontStackTests
             }
         }
 
-        Assert.AreNotEqual(
+        MessageAssert.NotEqual(
             0,
             checkedUris,
             "No avares:// font URI was found anywhere. Either the bundled font was removed, or " +
             "this pattern stopped matching how they are written — both make this test vacuous.");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             offenders.Count,
             $"{offenders.Count} font URI(s) name a location with no font files. Avalonia resolves " +
@@ -212,7 +211,7 @@ public sealed class NoLiteralMonospaceFontStackTests
     /// text in it is laid out. A control URI that must fail proves the probe can fail at all.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task EveryBundledFontUri_LaysOutText()
     {
         Regex fullUri = new(
@@ -228,12 +227,12 @@ public sealed class NoLiteralMonospaceFontStackTests
             }
         }
 
-        Assert.IsTrue(uris.Count >= 2,
+        Assert.True(uris.Count >= 2,
             $"Found {uris.Count} full font URI(s); ClaudeForge names at least two families "
             + "(AppMonoFontFamily and AppMonoLigaturesFontFamily). The scan stopped matching.");
 
         string control = uris.First()[..(uris.First().IndexOf('#') + 1)] + "No Such Face Anywhere";
-        Assert.IsNotNull(await LayoutFailureAsync(control),
+        MessageAssert.NotNull(await LayoutFailureAsync(control),
             $"The control '{control}' laid out without error, so this probe cannot tell a "
             + "resolvable family from a missing one — the check below would be vacuous.");
 
@@ -246,7 +245,7 @@ public sealed class NoLiteralMonospaceFontStackTests
             }
         }
 
-        Assert.AreEqual(0, failures.Count,
+        MessageAssert.Equal(0, failures.Count,
             $"{failures.Count} font URI(s) do not resolve to a family the app can lay out:\n  "
             + string.Join("\n  ", failures));
     }
@@ -268,11 +267,11 @@ public sealed class NoLiteralMonospaceFontStackTests
     /// another weight, or this probe cannot see a substitution at all.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task EveryWeightTheMarkupAsksOfAMonospaceToken_HasItsOwnFace()
     {
         Dictionary<string, string> tokenUris = TokenUris();
-        Assert.IsTrue(tokenUris.ContainsKey(Token), $"App.axaml no longer defines {Token} as a FontFamily element.");
+        Assert.True(tokenUris.ContainsKey(Token), $"App.axaml no longer defines {Token} as a FontFamily element.");
 
         SortedSet<(string Token, string Weight)> pairs = [];
         Regex element = new(@"<[A-Za-z][^<>]*?>", RegexOptions.Singleline);
@@ -291,14 +290,14 @@ public sealed class NoLiteralMonospaceFontStackTests
 
         // Premise: the scan found the weights it exists for. Without a non-Normal pair it would
         // pass by checking only the regular face.
-        Assert.IsTrue(pairs.Any(p => p.Weight != "Normal"),
+        Assert.True(pairs.Any(p => p.Weight != "Normal"),
             $"Found {pairs.Count} token/weight pair(s) and none asks for a weight other than Normal: "
             + string.Join(", ", pairs) + ". The markup scan stopped matching.");
 
         string ligatures = tokenUris.GetValueOrDefault("AppMonoLigaturesFontFamily")
             ?? throw new InvalidOperationException("App.axaml no longer defines AppMonoLigaturesFontFamily; the control needs a family without a SemiBold face.");
         int control = await ShapedWeightAsync(ligatures, FontWeight.SemiBold);
-        Assert.AreNotEqual((int)FontWeight.SemiBold, control,
+        MessageAssert.NotEqual((int)FontWeight.SemiBold, control,
             "SemiBold asked of the ligatures family came back as SemiBold. Either that family now ships a "
             + "SemiBold face — pick another control weight — or the probe no longer sees substitution.");
 
@@ -318,7 +317,7 @@ public sealed class NoLiteralMonospaceFontStackTests
             }
         }
 
-        Assert.AreEqual(0, wrong.Count,
+        MessageAssert.Equal(0, wrong.Count,
             "A weight the markup asks for has no face of its own, so another face silently stands in:\n  "
             + string.Join("\n  ", wrong)
             + "\n\nShip the missing file in the font package, or stop asking for that weight.");
@@ -422,7 +421,7 @@ public sealed class NoLiteralMonospaceFontStackTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "Could not locate the repository root from the test output folder.");
+        MessageAssert.NotNull(dir, "Could not locate the repository root from the test output folder.");
         return dir.FullName;
     }
 }

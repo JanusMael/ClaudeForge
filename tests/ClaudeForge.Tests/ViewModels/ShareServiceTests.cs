@@ -98,7 +98,6 @@ file sealed class NullDialogService : IDialogService
 // BackupRestoreViewModel — ShareBackupCommand
 // ─────────────────────────────────────────────────────────────────────────────
 
-[TestClass]
 public class BackupShareCommandTests
 {
     private static BackupRowViewModel MakeRow(string path = @"C:/backups/test.zip")
@@ -113,7 +112,7 @@ public class BackupShareCommandTests
         });
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_NullRow_DoesNotCallService()
     {
         RecordingShareService svc = new();
@@ -122,11 +121,11 @@ public class BackupShareCommandTests
         // Execute with null — must be a no-op.
         await vm.ShareBackupCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(0, svc.FileCalls.Count,
+        MessageAssert.Equal(0, svc.FileCalls.Count,
             "Passing null row must not forward any call to the share service.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_NullService_IsNoOp()
     {
         // No share service wired up — command must complete silently.
@@ -137,7 +136,7 @@ public class BackupShareCommandTests
         await vm.ShareBackupCommand.ExecuteAsync(row);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_CallsServiceWithArchivePath()
     {
         const string archivePath = @"C:/backups/my-backup-2026.zip";
@@ -147,13 +146,13 @@ public class BackupShareCommandTests
 
         await vm.ShareBackupCommand.ExecuteAsync(row);
 
-        Assert.AreEqual(1, svc.FileCalls.Count,
+        MessageAssert.Equal(1, svc.FileCalls.Count,
             "Exactly one ShareFileAsync call should be forwarded.");
-        Assert.AreEqual(archivePath, svc.FileCalls[0].FilePath,
+        MessageAssert.Equal(archivePath, svc.FileCalls[0].FilePath,
             "The archive path must be passed verbatim to the share service.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareBackup_TitleIsDisplayName()
     {
         const string archivePath = @"C:/backups/my-backup-2026.zip";
@@ -163,7 +162,7 @@ public class BackupShareCommandTests
 
         await vm.ShareBackupCommand.ExecuteAsync(row);
 
-        Assert.AreEqual(row.DisplayName, svc.FileCalls[0].Title,
+        MessageAssert.Equal(row.DisplayName, svc.FileCalls[0].Title,
             "The share title must match the row's DisplayName.");
     }
 }
@@ -172,7 +171,6 @@ public class BackupShareCommandTests
 // EffectiveSettingsViewModel — ShareConfigCommand
 // ─────────────────────────────────────────────────────────────────────────────
 
-[TestClass]
 public class EffectiveSettingsShareCommandTests
 {
     private static AgentConfigClientCore MakeClient()
@@ -192,7 +190,7 @@ public class EffectiveSettingsShareCommandTests
     /// that matters here — no throw — and the sentence it emits is asserted in
     /// <c>ShareOutcomeTests.WithNoShareServiceWired_TheUserIsToldSoRatherThanNothing</c>.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task ShareConfig_NullService_DoesNotThrow()
     {
         EffectiveSettingsViewModel vm = new(MakeClient(), shareService: null);
@@ -201,7 +199,7 @@ public class EffectiveSettingsShareCommandTests
         await vm.ShareConfigCommand.ExecuteAsync(null);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareConfig_CallsServiceWithEffectiveJson()
     {
         RecordingShareService svc = new();
@@ -209,15 +207,15 @@ public class EffectiveSettingsShareCommandTests
 
         await vm.ShareConfigCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, svc.TextCalls.Count,
+        MessageAssert.Equal(1, svc.TextCalls.Count,
             "ShareConfigCommand must invoke ShareTextAsync once.");
-        Assert.AreEqual("Claude Config", svc.TextCalls[0].Title,
+        MessageAssert.Equal("Claude Config", svc.TextCalls[0].Title,
             "Title must be 'Claude Config'.");
-        Assert.IsNotNull(svc.TextCalls[0].Text,
+        MessageAssert.NotNull(svc.TextCalls[0].Text,
             "Text payload must not be null.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareConfig_TextMatchesEffectiveJson()
     {
         RecordingShareService svc = new();
@@ -226,7 +224,7 @@ public class EffectiveSettingsShareCommandTests
         await vm.ShareConfigCommand.ExecuteAsync(null);
 
         // The text forwarded to the share service should equal the VM's EffectiveJson.
-        Assert.AreEqual(vm.EffectiveJson, svc.TextCalls[0].Text,
+        MessageAssert.Equal(vm.EffectiveJson, svc.TextCalls[0].Text,
             "The text payload must match the current EffectiveJson string.");
     }
 }
@@ -235,12 +233,11 @@ public class EffectiveSettingsShareCommandTests
 // AboutEditorViewModel — ShareLogCommand
 // ─────────────────────────────────────────────────────────────────────────────
 
-[TestClass]
 public class AboutShareLogCommandTests
 {
     private const string FakeLogPath = @"C:/logs/claudeforge-20260427.log";
 
-    [TestMethod]
+    [Fact]
     public void ShareLog_NullService_CommandCannotExecute()
     {
         // No share service → CanExecute must be false regardless of log path.
@@ -249,11 +246,11 @@ public class AboutShareLogCommandTests
             shareService: null,
             logPathProvider: () => FakeLogPath);
 
-        Assert.IsFalse(vm.ShareLogCommand.CanExecute(null),
+        Assert.False(vm.ShareLogCommand.CanExecute(null),
             "ShareLogCommand must be disabled when no IShareService is wired up.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ShareLog_NullLogPath_CommandCannotExecute()
     {
         RecordingShareService svc = new();
@@ -263,11 +260,11 @@ public class AboutShareLogCommandTests
             shareService: svc,
             logPathProvider: () => null);
 
-        Assert.IsFalse(vm.ShareLogCommand.CanExecute(null),
+        Assert.False(vm.ShareLogCommand.CanExecute(null),
             "ShareLogCommand must be disabled when the log path is unavailable.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ShareLog_BothPrerequisitesMet_CommandCanExecute()
     {
         RecordingShareService svc = new();
@@ -276,11 +273,11 @@ public class AboutShareLogCommandTests
             shareService: svc,
             logPathProvider: () => FakeLogPath);
 
-        Assert.IsTrue(vm.ShareLogCommand.CanExecute(null),
+        Assert.True(vm.ShareLogCommand.CanExecute(null),
             "ShareLogCommand must be enabled when both a service and a log path are present.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareLog_CallsServiceWithLogPath()
     {
         RecordingShareService svc = new();
@@ -291,13 +288,13 @@ public class AboutShareLogCommandTests
 
         await vm.ShareLogCommand.ExecuteAsync(null);
 
-        Assert.AreEqual(1, svc.FileCalls.Count,
+        MessageAssert.Equal(1, svc.FileCalls.Count,
             "ShareLogCommand must invoke ShareFileAsync exactly once.");
-        Assert.AreEqual(FakeLogPath, svc.FileCalls[0].FilePath,
+        MessageAssert.Equal(FakeLogPath, svc.FileCalls[0].FilePath,
             "The log file path must be forwarded verbatim to the share service.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareLog_NullService_IsNoOp()
     {
         // Even when forced to execute, the command must not throw with no service.
@@ -320,7 +317,6 @@ public class AboutShareLogCommandTests
 // tabs during test runs.
 // ─────────────────────────────────────────────────────────────────────────────
 
-[TestClass]
 public class DefaultShareServiceTests
 {
     /// <summary>No-op process launcher — prevents any real process from starting.</summary>
@@ -331,7 +327,7 @@ public class DefaultShareServiceTests
     // the developer's clipboard on every run. One did, until 2026-09-23. The package's own suite
     // (AppServices.Tests) owns DefaultShareService's outcomes.
 
-    [TestMethod]
+    [Fact]
     public async Task ShareFileAsync_DoesNotThrow_WhenFileDoesNotExist()
     {
         // Even with a non-existent path, the service must not throw —
@@ -340,7 +336,7 @@ public class DefaultShareServiceTests
         await svc.ShareFileAsync("Test Title", @"C:/does/not/exist/file.zip", CancellationToken.None);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareTextAsync_DoesNotThrow_WithUri()
     {
         DefaultShareService svc = new(processLauncher: NoOpLauncher);
@@ -357,7 +353,7 @@ public class DefaultShareServiceTests
     /// built — so both tests were asserting the wiring of a code path no build contained. What is
     /// worth pinning is what the composition root actually calls.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void DefaultShareService_ConstructsWithNoArguments_AndLaunchesNothing()
     {
         bool launched = false;
@@ -368,14 +364,14 @@ public class DefaultShareServiceTests
             return null;
         });
 
-        Assert.IsNotNull(svc);
-        Assert.IsFalse(launched, "Construction must not start a process.");
+        Assert.NotNull(svc);
+        Assert.False(launched, "Construction must not start a process.");
 
         // The parameterless form is the one App.axaml.cs uses; it must not throw either.
-        Assert.IsNotNull(new DefaultShareService());
+        Assert.NotNull(new DefaultShareService());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ShareTextAsync_InvokesProcessLauncher_WhenUriProvidedOnWindows()
     {
         // Verify the injected launcher is called (not silently skipped) when a URI
@@ -392,7 +388,7 @@ public class DefaultShareServiceTests
         await svc.ShareTextAsync("T", "body", "https://example.com", CancellationToken.None);
 
         // Exactly 0 or 1 launches depending on OS — the important thing is no exception.
-        Assert.IsTrue(launchCount is 0 or 1,
+        Assert.True(launchCount is 0 or 1,
             "Launcher should be invoked 0 or 1 times, never more.");
     }
 }

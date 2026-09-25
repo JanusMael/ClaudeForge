@@ -31,7 +31,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 /// matcher key" through every round-trip.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class HooksAccessorRoundTripTests
 {
     private static SettingsWorkspace MakeWorkspace(JsonObject hooksBlock)
@@ -73,7 +72,7 @@ public sealed class HooksAccessorRoundTripTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void EventsAt_NoMatcherGroup_ReportsEmptyMatcherNotStar()
     {
         // The user's plugin-managed hooks have outer entries WITHOUT a
@@ -89,13 +88,13 @@ public sealed class HooksAccessorRoundTripTests
 
         IReadOnlyList<HookEvent> events = client.Hooks.EventsAt(ConfigScope.User);
 
-        Assert.AreEqual(1, events.Count);
-        Assert.AreEqual(string.Empty, events[0].Matcher,
+        Assert.Single(events);
+        MessageAssert.Equal(string.Empty, events[0].Matcher,
             "A hook from a no-matcher outer group must materialise with " +
             "Matcher == empty string, not \"*\".");
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_EmptyMatcher_DoesNotEmitMatcherKey()
     {
         // When adding a hook with empty Matcher, the SDK must produce an
@@ -112,14 +111,14 @@ public sealed class HooksAccessorRoundTripTests
 
         JsonObject hooks = (JsonObject)client.GetScopeValue("hooks", ConfigScope.User)!;
         JsonArray stop = hooks["Stop"]!.AsArray();
-        Assert.AreEqual(1, stop.Count);
+        Assert.Single(stop);
         JsonObject outer = stop[0]!.AsObject();
-        Assert.IsFalse(outer.ContainsKey("matcher"),
+        Assert.False(outer.ContainsKey("matcher"),
             "Adding a hook with empty matcher must NOT emit a matcher key. " +
             "If it does, the on-disk shape diverges from the user's input.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_ExplicitMatcher_EmitsMatcherKey()
     {
         // Symmetric: a non-empty matcher MUST emit the matcher key.
@@ -134,11 +133,11 @@ public sealed class HooksAccessorRoundTripTests
 
         JsonObject hooks = (JsonObject)client.GetScopeValue("hooks", ConfigScope.User)!;
         JsonObject outer = hooks["Stop"]!.AsArray()[0]!.AsObject();
-        Assert.IsTrue(outer.ContainsKey("matcher"));
-        Assert.AreEqual("Bash", outer["matcher"]!.GetValue<string>());
+        Assert.True(outer.ContainsKey("matcher"));
+        Assert.Equal("Bash", outer["matcher"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_TwoOuterGroupsForSameEvent_PreservesBoth()
     {
         // The user's exact pattern: an event with a matcher="*" group AND
@@ -169,24 +168,24 @@ public sealed class HooksAccessorRoundTripTests
         JsonObject output = (JsonObject)client.GetScopeValue("hooks", ConfigScope.User)!;
         JsonArray stop = output["Stop"]!.AsArray();
 
-        Assert.AreEqual(2, stop.Count,
+        MessageAssert.Equal(2, stop.Count,
             $"Stop must round-trip to exactly 2 outer groups. Got {stop.Count}.\n" +
             $"Output:\n{output.ToJsonString(new JsonSerializerOptions { WriteIndented = true })}");
 
         // First group: matcher="*" with 6 hooks
         JsonObject groupA = stop[0]!.AsObject();
-        Assert.IsTrue(groupA.ContainsKey("matcher"));
-        Assert.AreEqual("*", groupA["matcher"]!.GetValue<string>());
-        Assert.AreEqual(6, groupA["hooks"]!.AsArray().Count);
+        Assert.True(groupA.ContainsKey("matcher"));
+        Assert.Equal("*", groupA["matcher"]!.GetValue<string>());
+        Assert.Equal(6, groupA["hooks"]!.AsArray().Count);
 
         // Second group: no matcher key, 1 hook
         JsonObject groupB = stop[1]!.AsObject();
-        Assert.IsFalse(groupB.ContainsKey("matcher"),
+        Assert.False(groupB.ContainsKey("matcher"),
             "Second outer group must NOT have a matcher key.");
-        Assert.AreEqual(1, groupB["hooks"]!.AsArray().Count);
+        Assert.Single(groupB["hooks"]!.AsArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_PreservesPerHookFields_TimeoutAndStatusMessage()
     {
         // a hook entry can carry per-entry sub-fields the SDK
@@ -219,12 +218,12 @@ public sealed class HooksAccessorRoundTripTests
         JsonObject hook = output["Stop"]!.AsArray()[0]!.AsObject()
             ["hooks"]!.AsArray()[0]!.AsObject();
 
-        Assert.AreEqual(30, hook["timeout"]!.GetValue<int>());
-        Assert.IsTrue(hook["async"]!.GetValue<bool>());
-        Assert.AreEqual("Running echo", hook["statusMessage"]!.GetValue<string>());
+        Assert.Equal(30, hook["timeout"]!.GetValue<int>());
+        Assert.True(hook["async"]!.GetValue<bool>());
+        Assert.Equal("Running echo", hook["statusMessage"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_PreservesPerHookFields_HttpTypeWithHeadersAndAllowedEnvVars()
     {
         // The http-type hook has unique fields (headers, allowedEnvVars)
@@ -255,13 +254,13 @@ public sealed class HooksAccessorRoundTripTests
         JsonObject hook = output["PreToolUse"]!.AsArray()[0]!.AsObject()
             ["hooks"]!.AsArray()[0]!.AsObject();
 
-        Assert.IsTrue(hook.ContainsKey("headers"));
-        Assert.AreEqual("Bearer x", hook["headers"]!.AsObject()["Authorization"]!.GetValue<string>());
-        Assert.IsTrue(hook.ContainsKey("allowedEnvVars"));
-        Assert.AreEqual(60, hook["timeout"]!.GetValue<int>());
+        Assert.True(hook.ContainsKey("headers"));
+        Assert.Equal("Bearer x", hook["headers"]!.AsObject()["Authorization"]!.GetValue<string>());
+        Assert.True(hook.ContainsKey("allowedEnvVars"));
+        Assert.Equal(60, hook["timeout"]!.GetValue<int>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_NoMatcherEntry_RemovesFromCorrectOuterGroup()
     {
         // Matcher equality must treat "missing matcher" the same way
@@ -280,12 +279,12 @@ public sealed class HooksAccessorRoundTripTests
         HookEvent noMatcher = events.First(e => e.Matcher == string.Empty);
         bool removed = client.Hooks.Remove(noMatcher);
 
-        Assert.IsTrue(removed, "Remove must find and remove the no-matcher hook.");
+        Assert.True(removed, "Remove must find and remove the no-matcher hook.");
 
         JsonArray stop = client.GetScopeValue("hooks", ConfigScope.User)!.AsObject()["Stop"]!.AsArray();
-        Assert.AreEqual(1, stop.Count, "Only the matcher=\"*\" group should remain.");
+        MessageAssert.Equal(1, stop.Count, "Only the matcher=\"*\" group should remain.");
         JsonObject only = stop[0]!.AsObject();
-        Assert.AreEqual("*", only["matcher"]!.GetValue<string>());
-        Assert.AreEqual("keep-me", only["hooks"]!.AsArray()[0]!.AsObject()["command"]!.GetValue<string>());
+        Assert.Equal("*", only["matcher"]!.GetValue<string>());
+        Assert.Equal("keep-me", only["hooks"]!.AsArray()[0]!.AsObject()["command"]!.GetValue<string>());
     }
 }

@@ -14,14 +14,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests;
 /// the public read/write surface against a real on-disk workspace and verifies
 /// the resulting JSON shape round-trips through Save/Reload.
 /// </summary>
-[TestClass]
-public class AccessorsTests
+public class AccessorsTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public AccessorsTests() => Setup();
+
+    private void Setup()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-sdk-acc-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
@@ -29,8 +29,7 @@ public class AccessorsTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -46,6 +45,12 @@ public class AccessorsTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private async Task<ClaudeCodeClient> OpenAsync()
     {
         ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -55,21 +60,21 @@ public class AccessorsTests
 
     // ── Permissions ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Permissions_DefaultMode_RoundTripsViaCamelCase()
     {
         using ClaudeCodeClient client = await OpenAsync();
         client.Permissions.DefaultMode = PermissionDefaultMode.AcceptEdits;
 
-        Assert.AreEqual(PermissionDefaultMode.AcceptEdits, client.Permissions.DefaultMode);
+        Assert.Equal(PermissionDefaultMode.AcceptEdits, client.Permissions.DefaultMode);
 
         // Verify the on-disk JSON uses the documented camelCase string.
         await client.SaveAsync(force: true, CancellationToken.None);
         string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
-        StringAssert.Contains(json, "\"defaultMode\": \"acceptEdits\"");
+        OrdinalAssert.Contains("\"defaultMode\": \"acceptEdits\"", json);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Permissions_AddAllow_AppendsRule_AndDedupes()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -78,25 +83,25 @@ public class AccessorsTests
         client.Permissions.AddAllow(PermissionRule.Parse("Bash(git status)")); // duplicate — must be a no-op
 
         IReadOnlyList<PermissionRule> allow = client.Permissions.Allow;
-        Assert.AreEqual(2, allow.Count);
-        Assert.IsTrue(allow.Any(r => r.Value == "Bash(git status)"));
-        Assert.IsTrue(allow.Any(r => r.Value == "Read"));
+        Assert.Equal(2, allow.Count);
+        Assert.Contains(allow, r => r.Value == "Bash(git status)");
+        Assert.Contains(allow, r => r.Value == "Read");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Permissions_RemoveAllow_DeletesRule_AndCleansEmptyArray()
     {
         using ClaudeCodeClient client = await OpenAsync();
         PermissionRule rule = PermissionRule.Parse("Bash(git status)");
         client.Permissions.AddAllow(rule);
 
-        Assert.IsTrue(client.Permissions.RemoveAllow(rule));
-        Assert.AreEqual(0, client.Permissions.Allow.Count);
+        Assert.True(client.Permissions.RemoveAllow(rule));
+        Assert.Empty(client.Permissions.Allow);
         // RemoveAllow on an absent rule reports false.
-        Assert.IsFalse(client.Permissions.RemoveAllow(rule));
+        Assert.False(client.Permissions.RemoveAllow(rule));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Permissions_Clear_RemovesEntirePermissionsKey()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -105,33 +110,33 @@ public class AccessorsTests
 
         client.Permissions.Clear();
 
-        Assert.AreEqual(0, client.Permissions.Allow.Count);
-        Assert.IsNull(client.Permissions.DefaultMode);
+        Assert.Empty(client.Permissions.Allow);
+        Assert.Null(client.Permissions.DefaultMode);
     }
 
-    [TestMethod]
+    [Fact]
     public void PermissionRule_Parse_AcceptsValidShapes()
     {
-        Assert.IsTrue(PermissionRule.TryParse("Read", out PermissionRule? _));
-        Assert.IsTrue(PermissionRule.TryParse("Bash(git status)", out PermissionRule? _));
-        Assert.IsTrue(PermissionRule.TryParse("WebFetch(domain:doc.org)", out PermissionRule? _));
-        Assert.IsTrue(PermissionRule.TryParse("PowerShell(Get-Item *)", out PermissionRule? _));
-        Assert.IsTrue(PermissionRule.TryParse("mcp__github", out PermissionRule? _));
+        Assert.True(PermissionRule.TryParse("Read", out PermissionRule? _));
+        Assert.True(PermissionRule.TryParse("Bash(git status)", out PermissionRule? _));
+        Assert.True(PermissionRule.TryParse("WebFetch(domain:doc.org)", out PermissionRule? _));
+        Assert.True(PermissionRule.TryParse("PowerShell(Get-Item *)", out PermissionRule? _));
+        Assert.True(PermissionRule.TryParse("mcp__github", out PermissionRule? _));
     }
 
-    [TestMethod]
+    [Fact]
     public void PermissionRule_Parse_RejectsInvalidShapes()
     {
-        Assert.IsFalse(PermissionRule.TryParse("", out PermissionRule? _));
-        Assert.IsFalse(PermissionRule.TryParse("BogusTool", out PermissionRule? _));
-        Assert.IsFalse(PermissionRule.TryParse("Bash(*)", out PermissionRule? _)); // schema requires non-wildcard content
-        Assert.IsFalse(PermissionRule.TryParse("Bash()", out PermissionRule? _));
-        Assert.ThrowsExactly<FormatException>(() => PermissionRule.Parse("BogusTool"));
+        Assert.False(PermissionRule.TryParse("", out PermissionRule? _));
+        Assert.False(PermissionRule.TryParse("BogusTool", out PermissionRule? _));
+        Assert.False(PermissionRule.TryParse("Bash(*)", out PermissionRule? _)); // schema requires non-wildcard content
+        Assert.False(PermissionRule.TryParse("Bash()", out PermissionRule? _));
+        Assert.Throws<FormatException>(() => PermissionRule.Parse("BogusTool"));
     }
 
     // ── Hooks ─────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Hooks_Add_FlattensInnerHookEntry()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -141,13 +146,13 @@ public class AccessorsTests
         client.Hooks.Add(new HookEvent("PostToolUse", "*", HookCommandType.Prompt, "Now reflect"));
 
         IReadOnlyList<HookEvent> events = client.Hooks.Events;
-        Assert.AreEqual(3, events.Count);
-        Assert.IsTrue(events.Any(e => e is { EventName: "PreToolUse", CommandValue: "echo before" }));
-        Assert.IsTrue(events.Any(e => e is { EventName: "PreToolUse", CommandValue: "echo also-before" }));
-        Assert.IsTrue(events.Any(e => e is { EventName: "PostToolUse", CommandType: HookCommandType.Prompt }));
+        Assert.Equal(3, events.Count);
+        Assert.Contains(events, e => e is { EventName: "PreToolUse", CommandValue: "echo before" });
+        Assert.Contains(events, e => e is { EventName: "PreToolUse", CommandValue: "echo also-before" });
+        Assert.Contains(events, e => e is { EventName: "PostToolUse", CommandType: HookCommandType.Prompt });
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Hooks_Remove_DeletesOnlyMatchingEntry()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -157,16 +162,16 @@ public class AccessorsTests
         client.Hooks.Add(first);
         client.Hooks.Add(second);
 
-        Assert.IsTrue(client.Hooks.Remove(first));
+        Assert.True(client.Hooks.Remove(first));
 
         IReadOnlyList<HookEvent> remaining = client.Hooks.Events;
-        Assert.AreEqual(1, remaining.Count);
-        Assert.AreEqual("second", remaining[0].CommandValue);
+        Assert.Single(remaining);
+        Assert.Equal("second", remaining[0].CommandValue);
     }
 
     // ── McpServers ────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task McpServers_Set_StdioRoundTripsArgsAndEnv()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -181,17 +186,17 @@ public class AccessorsTests
         client.McpServers.Set(server.Name, server);
 
         McpServer? read = client.McpServers.Get("github");
-        Assert.IsNotNull(read);
-        Assert.AreEqual(McpTransport.Stdio, read!.Transport);
-        Assert.AreEqual("npx", read.Command);
-        Assert.IsNotNull(read.Args);
-        Assert.AreEqual(2, read.Args!.Count);
-        Assert.AreEqual("-y", read.Args[0]);
-        Assert.IsNotNull(read.Env);
-        Assert.AreEqual("redacted", read.Env!["GH_TOKEN"]);
+        Assert.NotNull(read);
+        Assert.Equal(McpTransport.Stdio, read!.Transport);
+        Assert.Equal("npx", read.Command);
+        Assert.NotNull(read.Args);
+        Assert.Equal(2, read.Args!.Count);
+        Assert.Equal("-y", read.Args[0]);
+        Assert.NotNull(read.Env);
+        Assert.Equal("redacted", read.Env!["GH_TOKEN"]);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task McpServers_Set_StreamableHttpEmitsTypeAndUrl()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -203,26 +208,26 @@ public class AccessorsTests
 
         await client.SaveAsync(force: true, CancellationToken.None);
         string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
-        StringAssert.Contains(json, "\"type\": \"streamable-http\"");
-        StringAssert.Contains(json, "\"url\": \"https://example.com/mcp\"");
+        OrdinalAssert.Contains("\"type\": \"streamable-http\"", json);
+        OrdinalAssert.Contains("\"url\": \"https://example.com/mcp\"", json);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task McpServers_Remove_DeletesByName()
     {
         using ClaudeCodeClient client = await OpenAsync();
         client.McpServers.Set("a", new McpServer("a", McpTransport.Stdio, Command: "echo"));
         client.McpServers.Set("b", new McpServer("b", McpTransport.Stdio, Command: "echo"));
 
-        Assert.IsTrue(client.McpServers.Remove("a"));
-        Assert.IsFalse(client.McpServers.Remove("a")); // already gone
+        Assert.True(client.McpServers.Remove("a"));
+        Assert.False(client.McpServers.Remove("a")); // already gone
 
         IReadOnlyDictionary<string, McpServer> all = client.McpServers.All;
-        Assert.AreEqual(1, all.Count);
-        Assert.IsTrue(all.ContainsKey("b"));
+        Assert.Single(all);
+        Assert.True(all.ContainsKey("b"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Permissions_AllowAt_ReadsScopeOnlyValues()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -234,14 +239,14 @@ public class AccessorsTests
         PermissionDefaultMode? modeAtUser = client.Permissions.GetDefaultModeAt(ConfigScope.User);
         PermissionDefaultMode? modeAtProject = client.Permissions.GetDefaultModeAt(ConfigScope.Project);
 
-        Assert.AreEqual(1, allowAtUser.Count);
-        Assert.AreEqual("Bash(git status)", allowAtUser[0].Value);
-        Assert.AreEqual(0, allowAtProject.Count);
-        Assert.AreEqual(PermissionDefaultMode.AcceptEdits, modeAtUser);
-        Assert.IsNull(modeAtProject);
+        Assert.Single(allowAtUser);
+        Assert.Equal("Bash(git status)", allowAtUser[0].Value);
+        Assert.Empty(allowAtProject);
+        Assert.Equal(PermissionDefaultMode.AcceptEdits, modeAtUser);
+        Assert.Null(modeAtProject);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Hooks_EventsAt_ReadsScopeOnlyValues()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -250,14 +255,14 @@ public class AccessorsTests
         IReadOnlyList<HookEvent> atUser = client.Hooks.EventsAt(ConfigScope.User);
         IReadOnlyList<HookEvent> atProject = client.Hooks.EventsAt(ConfigScope.Project);
 
-        Assert.AreEqual(1, atUser.Count);
-        Assert.AreEqual("PreToolUse", atUser[0].EventName);
-        Assert.AreEqual("Bash", atUser[0].Matcher);
-        Assert.AreEqual(HookCommandType.Command, atUser[0].CommandType);
-        Assert.AreEqual(0, atProject.Count);
+        Assert.Single(atUser);
+        Assert.Equal("PreToolUse", atUser[0].EventName);
+        Assert.Equal("Bash", atUser[0].Matcher);
+        Assert.Equal(HookCommandType.Command, atUser[0].CommandType);
+        Assert.Empty(atProject);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task McpServers_GetAt_ReadsScopeOnlyValues()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -267,15 +272,15 @@ public class AccessorsTests
         IReadOnlyDictionary<string, McpServer> atUser = client.McpServers.GetAt(ConfigScope.User);
         IReadOnlyDictionary<string, McpServer> atProject = client.McpServers.GetAt(ConfigScope.Project);
 
-        Assert.AreEqual(1, atUser.Count);
-        Assert.IsTrue(atUser.ContainsKey("local"));
-        Assert.AreEqual(McpTransport.Stdio, atUser["local"].Transport);
-        Assert.AreEqual(0, atProject.Count);
+        Assert.Single(atUser);
+        Assert.True(atUser.ContainsKey("local"));
+        Assert.Equal(McpTransport.Stdio, atUser["local"].Transport);
+        Assert.Empty(atProject);
     }
 
     // ── Marketplaces ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_Set_ProducesSchemaCanonicalShape()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -287,11 +292,11 @@ public class AccessorsTests
 
         await client.SaveAsync(force: true, CancellationToken.None);
         string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
-        StringAssert.Contains(json, "\"source\": \"github\"");
-        StringAssert.Contains(json, "\"repository\": \"anthropic-experimental/everything-claude-code\"");
+        OrdinalAssert.Contains("\"source\": \"github\"", json);
+        OrdinalAssert.Contains("\"repository\": \"anthropic-experimental/everything-claude-code\"", json);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_Get_ReadsBothSchemaCanonicalAndFlatShapes()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -299,12 +304,12 @@ public class AccessorsTests
         // Schema-canonical: nested source object.
         client.Marketplaces.Set(new MarketplaceEntry("a", MarketplaceSourceKind.Url, "https://example.com/a"));
         MarketplaceEntry? a = client.Marketplaces.Get("a");
-        Assert.IsNotNull(a);
-        Assert.AreEqual(MarketplaceSourceKind.Url, a!.SourceKind);
-        Assert.AreEqual("https://example.com/a", a.SourceValue);
+        Assert.NotNull(a);
+        Assert.Equal(MarketplaceSourceKind.Url, a!.SourceKind);
+        Assert.Equal("https://example.com/a", a.SourceValue);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_GetAt_ReadsScopeOnlyValues()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -314,15 +319,15 @@ public class AccessorsTests
         IReadOnlyList<MarketplaceEntry> atUser = client.Marketplaces.GetAt(ConfigScope.User);
         IReadOnlyList<MarketplaceEntry> atProject = client.Marketplaces.GetAt(ConfigScope.Project);
 
-        Assert.AreEqual(1, atUser.Count);
-        Assert.AreEqual("user-only", atUser[0].Name);
-        Assert.AreEqual(MarketplaceSourceKind.Url, atUser[0].SourceKind);
-        Assert.AreEqual(0, atProject.Count);
+        Assert.Single(atUser);
+        Assert.Equal("user-only", atUser[0].Name);
+        Assert.Equal(MarketplaceSourceKind.Url, atUser[0].SourceKind);
+        Assert.Empty(atProject);
     }
 
     // ── EnabledPlugins ────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_Set_StoresPluginRefAndBool()
     {
         using ClaudeCodeClient client = await OpenAsync();
@@ -331,23 +336,23 @@ public class AccessorsTests
         client.Plugins.Set(new EnabledPlugin("anthropic/safety", Enabled: false));
 
         IReadOnlyList<EnabledPlugin> all = client.Plugins.All;
-        Assert.AreEqual(2, all.Count);
-        Assert.IsTrue(all.Any(p => p.PluginRef == "everything-claude-code/code-review" && p.Enabled));
-        Assert.IsTrue(all.Any(p => p.PluginRef == "anthropic/safety" && !p.Enabled));
+        Assert.Equal(2, all.Count);
+        Assert.Contains(all, p => p.PluginRef == "everything-claude-code/code-review" && p.Enabled);
+        Assert.Contains(all, p => p.PluginRef == "anthropic/safety" && !p.Enabled);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_Remove_DeletesByRef()
     {
         using ClaudeCodeClient client = await OpenAsync();
         client.Plugins.Set(new EnabledPlugin("a/b", true));
         client.Plugins.Set(new EnabledPlugin("c/d", false));
 
-        Assert.IsTrue(client.Plugins.Remove("a/b"));
-        Assert.AreEqual(1, client.Plugins.All.Count);
+        Assert.True(client.Plugins.Remove("a/b"));
+        Assert.Single(client.Plugins.All);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_GetAt_ReadsScopeOnlyValues()
     {
         // Set a value at the User scope (the SDK default) and confirm
@@ -361,17 +366,17 @@ public class AccessorsTests
         IReadOnlyList<EnabledPlugin> atUser = client.Plugins.GetAt(ConfigScope.User);
         IReadOnlyList<EnabledPlugin> atProject = client.Plugins.GetAt(ConfigScope.Project);
 
-        Assert.AreEqual(1, atUser.Count);
-        Assert.AreEqual("only-at-user/x", atUser[0].PluginRef);
-        Assert.IsTrue(atUser[0].Enabled);
+        Assert.Single(atUser);
+        Assert.Equal("only-at-user/x", atUser[0].PluginRef);
+        Assert.True(atUser[0].Enabled);
 
         // The Project document was never loaded in this test (no project
         // root) — GetAt should return an empty list rather than falling
         // back to effective.
-        Assert.AreEqual(0, atProject.Count);
+        Assert.Empty(atProject);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_Set_WithComponents_RoundTripsAsArray()
     {
         // The schema permits an array-of-strings value (enable specific plugin
@@ -382,17 +387,17 @@ public class AccessorsTests
         client.Plugins.Set(new EnabledPlugin("formatter/tools", Enabled: true, Components: ["alpha", "beta"]));
 
         EnabledPlugin? got = client.Plugins.Get("formatter/tools");
-        Assert.IsNotNull(got);
-        Assert.IsTrue(got!.Enabled);
-        Assert.IsNotNull(got.Components);
-        CollectionAssert.AreEqual(new[] { "alpha", "beta" }, got.Components!.ToArray());
+        Assert.NotNull(got);
+        Assert.True(got!.Enabled);
+        Assert.NotNull(got.Components);
+        Assert.Equal(new[] { "alpha", "beta" }, got.Components!.ToArray());
 
         // A plain-bool entry still reports null Components.
         client.Plugins.Set(new EnabledPlugin("plain/bool", Enabled: true));
-        Assert.IsNull(client.Plugins.Get("plain/bool")!.Components);
+        Assert.Null(client.Plugins.Get("plain/bool")!.Components);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_All_SurfacesArrayValuedPlugins()
     {
         // Regression: the accessor formerly OMITTED non-bool values entirely, making
@@ -403,8 +408,8 @@ public class AccessorsTests
         client.Plugins.Set(new EnabledPlugin("plain/flag", Enabled: false));
 
         IReadOnlyList<EnabledPlugin> all = client.Plugins.All;
-        Assert.AreEqual(2, all.Count, "Both the array-valued and the bool-valued plugin must surface.");
-        Assert.IsTrue(all.Any(p => p.PluginRef == "with/components" && p.Components is { Count: 1 }));
-        Assert.IsTrue(all.Any(p => p.PluginRef == "plain/flag" && !p.Enabled && p.Components is null));
+        MessageAssert.Equal(2, all.Count, "Both the array-valued and the bool-valued plugin must surface.");
+        Assert.Contains(all, p => p.PluginRef == "with/components" && p.Components is { Count: 1 });
+        Assert.Contains(all, p => p.PluginRef == "plain/flag" && !p.Enabled && p.Components is null);
     }
 }

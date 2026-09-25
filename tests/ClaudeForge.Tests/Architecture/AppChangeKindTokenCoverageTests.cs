@@ -30,7 +30,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// flat dictionary.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class AppChangeKindTokenCoverageTests
 {
     private static readonly string[] AppFiles =
@@ -46,11 +45,11 @@ public sealed class AppChangeKindTokenCoverageTests
     /// <summary>WCAG AA for normal text. The glyph is small and bold, so this is the right floor.</summary>
     private const double MinGlyphContrast = 4.5;
 
-    [TestMethod]
+    [Fact]
     public void EveryChangeKindHasABrushInBothVariantsOfBothApps()
     {
         ChangeKind[] kinds = Enum.GetValues<ChangeKind>();
-        Assert.IsTrue(kinds.Length >= 3,
+        Assert.True(kinds.Length >= 3,
             $"expected at least 3 change kinds, found {kinds.Length} — the scan below would "
             + "under-assert if the enum were emptied");
 
@@ -91,7 +90,7 @@ public sealed class AppChangeKindTokenCoverageTests
     /// <summary>
     /// Every declared pill fill keeps a white glyph at or above <see cref="MinGlyphContrast"/>.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryDeclaredPillKeepsItsWhiteGlyphLegible()
     {
         List<string> failures = [];
@@ -130,7 +129,7 @@ public sealed class AppChangeKindTokenCoverageTests
 
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. Was 12 (3 kinds x 2 variants x 2 apps);
         // this branch ships one app. Restore 12 when OpenCodeForge rejoins.
-        Assert.IsTrue(measured >= 6,
+        Assert.True(measured >= 6,
             $"only {measured} pill colour(s) were measured; 3 kinds x 2 variants x 1 app = 6 are "
             + "expected, so the scan has lost its subjects and would pass without checking "
             + "anything.");
@@ -151,7 +150,7 @@ public sealed class AppChangeKindTokenCoverageTests
     private static string ReadApp(string relative)
     {
         string path = Path.Combine(FindRepoRoot(), relative.Replace('/', Path.DirectorySeparatorChar));
-        Assert.IsTrue(File.Exists(path), $"missing app file: {relative}");
+        Assert.True(File.Exists(path), $"missing app file: {relative}");
         return File.ReadAllText(path);
     }
 
@@ -185,7 +184,7 @@ public sealed class AppChangeKindTokenCoverageTests
     private static string ExtractVariantBlock(string text, string variant, string relative)
     {
         int start = text.IndexOf($"x:Key=\"{variant}\"", StringComparison.Ordinal);
-        Assert.IsTrue(start >= 0, $"{relative} has no <ResourceDictionary x:Key=\"{variant}\"> block");
+        Assert.True(start >= 0, $"{relative} has no <ResourceDictionary x:Key=\"{variant}\"> block");
 
         // Up to the next variant block, or end of file — enough to scope the key search.
         string other = variant == "Light" ? "Dark" : "Light";
@@ -201,7 +200,7 @@ public sealed class AppChangeKindTokenCoverageTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repo root (no ClaudeForge.slnx above the test binary)");
+        MessageAssert.NotNull(dir, "could not locate the repo root (no ClaudeForge.slnx above the test binary)");
         return dir!.FullName;
     }
 }

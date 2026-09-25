@@ -9,7 +9,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Converters;
 /// a null input yields a null output (so the pill's IsVisible binding hides
 /// the Border entirely rather than rendering an empty colored box).
 /// </summary>
-[TestClass]
 public sealed class ScopeToDisplayNameConverterTests
 {
     private static object? Convert(object? value)
@@ -17,29 +16,29 @@ public sealed class ScopeToDisplayNameConverterTests
         return new ScopeToDisplayNameConverter().Convert(value, typeof(string), null, CultureInfo.InvariantCulture);
     }
 
-    [TestMethod]
+    [Fact]
     public void Converts_EachConfigScope_ToNonEmptyDisplayLabel()
     {
         foreach (ConfigScope scope in ConfigScope.All)
         {
             string? label = Convert(scope) as string;
-            Assert.IsFalse(string.IsNullOrWhiteSpace(label),
+            Assert.False(string.IsNullOrWhiteSpace(label),
                 $"ConfigScope.{scope} must produce a non-empty display label.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void ReturnsNull_ForNullInput()
     {
-        Assert.IsNull(Convert(null));
+        Assert.Null(Convert(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void ConvertsKnownScopes_ToExpectedLabels()
     {
-        Assert.AreEqual("Managed", Convert(ConfigScope.Managed));
-        Assert.AreEqual("User", Convert(ConfigScope.User));
-        Assert.AreEqual("Project", Convert(ConfigScope.Project));
-        Assert.AreEqual("Local", Convert(ConfigScope.Local));
+        Assert.Equal("Managed", Convert(ConfigScope.Managed));
+        Assert.Equal("User", Convert(ConfigScope.User));
+        Assert.Equal("Project", Convert(ConfigScope.Project));
+        Assert.Equal("Local", Convert(ConfigScope.Local));
     }
 }

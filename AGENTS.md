@@ -38,7 +38,7 @@ Two specific anti-patterns this file refuses on principle:
 | **OpenCode has TWO live config roots, and a backup carries both: `config/` from `GlobalDirectory(env)`, `config-default/` from `DefaultGlobalDirectory()`.** `$OPENCODE_CONFIG_DIR` redirects the config that LOADS, while the default root stays live because plugin discovery reads it regardless — so neither alone is the install. `config-default/` is gated by `ProductArchiveSection.IncludeWhen` to the case where the two genuinely differ, compared as normalised full paths. ⛔ **`IncludeWhen` is consulted by the WRITER ONLY.** `RestoreEngine` never calls it: what a restore may apply is decided by what is in the archive, because the machine reading it need not have the environment of the machine that wrote it. | ⛔⛔ **The archive comes back EMPTY and the page says "Backup saved".** Measured 2026-09-12 before the fix: with the variable pointed at a populated directory, a backup of `OpenCodeProducts.Config` produced an archive whose complete contents were `Schemas/opencode-config.json` and `manifest.json` — not one configuration file — and reported success. ⚠ **Ungating the second section is the mirror failure**: with the variable unset both roots resolve to one directory, so every config file is archived twice under two names and restored twice. Neither throws. ⚠ **No manifest bump**: `BackupManifest.Clients` records top-level archive folders (`ArchiveFolder`), and `config-default/` is a sub-path inside `OpenCode/`. An older build reading a newer archive iterates its own sections, so it restores `config/` and ignores `config-default/` — degraded, never wrong. | Layout: `OpenCode.Sdk/OpenCodeProducts.cs` (+ its private `SameDirectory`, which asks `OperatingSystem.IsWindows()` and NOT `PlatformInfo.Current` — the latter is a simulation seam the `--windows`/`--macos`/`--linux` flags drive, and case sensitivity here is a fact about the disk). Gate: `ProductArchiveSection.IncludeWhen`, honoured in `BackupEngine`'s section loop. Guards: `OpenCodeRedirectedConfigBackupTests` — 4 tests, each canaried; ⚠ `OpenCodeBackupRoundTripTests` CANNOT cover this, since it redirects the HOME directory and then writes into `DefaultGlobalDirectory()`, leaving the two roots one folder for its whole run. A test that never sets the variable cannot fail this way however thorough it is otherwise. |
 | **A product's backup layout lives on its `ProductDescriptor`, and its destinations MUST stay `Func<string>`.** `ProductBackupLayout` (sections + skip rules) is how a product in another assembly supplies backup data to `AgentForge.Core`, which must never reference it. Destinations are factories because descriptors are `static readonly`: a resolved path freezes to whichever profile was current when the type initialiser ran. `BackupMode` cannot appear in these types — `AgentForge.Abstractions` is BCL-only — hence the `IncludedInFullBackup` bool. | ⛔ A frozen destination means a sequential suite restores into **another test's sandbox**, writing real files into a real home directory; it reads as flakiness, not as a stale value. A wrong `IsDirectory` or sub-path restores nothing and still reports success — neither throws. | Types: `src/AgentForge.Abstractions/Configuration/ProductBackupLayout.cs` + siblings. Consumers: `BackupEngine.ShouldSkipHomeSubdir`, `RestoreEngine.RestorableProducts`. Guards: `ProductBackupLayoutTests`, `CrossAssemblyBackupLayoutTests`. |
 | **`tests/AgentForge.Core.Tests/Fixtures/*.zip` are FROZEN archives and are never regenerated.** Each was minted by the shipped engine at a known layout; `BackupArchiveCompatibilityTests` restores them to prove archives already on users' disks still restore. A change that cannot restore one needs a migration, or a SECOND fixture added beside it — never a re-mint. | ⛔ Every other round-trip test creates its archive with the same build that reads it, so **none of them would notice** a layout change that broke old archives. Re-minting turns the suite green by deleting the only evidence of what users hold. | Fixture: `Fixtures/backup-v1-claudeforge.zip` (`manifest.json` v1, `ClaudeCode/` + `ClaudeDesktop/` prefixes). Guard: `tests/AgentForge.Core.Tests/Backup/BackupArchiveCompatibilityTests.cs`. |
-| **`FootprintCategory` is a struct over a product-supplied `FootprintCatalog`, with the same two invisible semantics as `ConfigScope`.** (1) `FootprintCatalog.Default` MUST stay encoded as a `null` field so `default(FootprintCategory)` is still `SessionTranscripts` and the statics still equal what a Claude client hands out. (2) `ToString()` MUST keep returning the former enum member names and `Id` the lower-case machine key — the app's resx label lookup is keyed by `Id`, and catalog ORDER is the footprint table's render order. It cannot be a `case` label, a `[DataRow]` argument, or a default parameter value. | ⛔ `Enum.GetValues(typeof(FootprintCategory))` is **reflection**: it kept compiling after the type stopped being an enum and threw `"Type provided must be an Enum"` at run time — the one call site in the conversion the compiler could not point at. A renamed `Id` silently drops a category to its `ToString()` fallback, which reads as a translation gap rather than a rename. | Types: `src/AgentForge.Sdk/Memory/FootprintCategory.cs`, `FootprintCatalog.cs`, `FootprintSource.cs`, `FootprintRoots.cs`. Guard: `tests/AgentForge.Sdk.Tests/Memory/FootprintCatalogTests.cs`. |
+| **`FootprintCategory` is a struct over a product-supplied `FootprintCatalog`, with the same two invisible semantics as `ConfigScope`.** (1) `FootprintCatalog.Default` MUST stay encoded as a `null` field so `default(FootprintCategory)` is still `SessionTranscripts` and the statics still equal what a Claude client hands out. (2) `ToString()` MUST keep returning the former enum member names and `Id` the lower-case machine key — the app's resx label lookup is keyed by `Id`, and catalog ORDER is the footprint table's render order. It cannot be a `case` label, an `[InlineData]` argument, or a default parameter value. | ⛔ `Enum.GetValues(typeof(FootprintCategory))` is **reflection**: it kept compiling after the type stopped being an enum and threw `"Type provided must be an Enum"` at run time — the one call site in the conversion the compiler could not point at. A renamed `Id` silently drops a category to its `ToString()` fallback, which reads as a translation gap rather than a rename. | Types: `src/AgentForge.Sdk/Memory/FootprintCategory.cs`, `FootprintCatalog.cs`, `FootprintSource.cs`, `FootprintRoots.cs`. Guard: `tests/AgentForge.Sdk.Tests/Memory/FootprintCatalogTests.cs`. |
 | **`_suppressStateSave` latch must be set BEFORE `Shutdown()` in `ClearAppData`**. Otherwise `OnClosed → SaveWindowState` re-creates the file `WindowStateService.Delete()` just removed. | User clicks Clear App Data → app exits → next launch reads the freshly re-saved file instead of clean defaults. | Latch declared on `MainWindowViewModel`. Set in `ClearAppData` (must precede `WindowStateService.Delete()` and the `Shutdown()` call). |
 | **`PlatformInfo.Current` for UI / display branches; `OperatingSystem.IsWindows()` (or `RuntimeInformation.IsOSPlatform`) for platform-intrinsic APIs (registry, MSIX, env-var Machine scope)**. Emulation flags `--windows` / `--macos` / `--linux` swap `PlatformInfo.Current` but cannot make Windows registry calls work on Linux, so platform-intrinsic call sites must keep using the real-OS check. | Running on Windows with `--linux` shows Windows install commands instead of Linux ones (UI used real-OS check). Or: registry call attempted on Linux because the call site went through `PlatformInfo.Current`. | Abstraction: `src/AgentForge.Core/Platform/PlatformInfo.cs` (`PlatformInfo.Current`, `RuntimePlatformInfo`, `EmulatedPlatformInfo`). Decision tree: [`PLATFORM.md`](./PLATFORM.md). |
 | **`WindowStateService.StatePath` is a property, not `static readonly`**. Tests mutate `PlatformPaths.TestUserProfileOverride` between runs; a cached path captures the host's real `%USERPROFILE%` at type-init and bypasses the sandbox forever after. | Tests touch `~/.claude/cache/ClaudeForge-gui-state.json` on the developer's real machine instead of the per-test sandbox. | `src/ClaudeForge/Services/WindowStateService.cs` — must declare `private static string StatePath =>` (the `=>`, NOT `=`). |
@@ -309,7 +309,7 @@ minimal index-backed form.
 - [ ] `Description` in the csproj. This repo uses it as the project's design rationale — see `src/JsonC/JsonC.csproj` for the tone. ⚠ Since plan 00001 item 2 it is **also** the nuspec description of any packable project, so it is read by a second audience on the feed page; write it for both, and keep the rationale.
 - [ ] `InternalsVisibleTo` for the test project if anything is `internal`.
 - [ ] **`AgentForge.*` may never reference `ClaudeForge.*` or `OpenCode.*`.** No widening needed — `SharedProjectsNeverDeclareAProductReference` globs `AgentForge.*.csproj` across `src/` and `tests/`, so a new project is inside the net automatically. ✅ Verified by canary: pointing `AgentForge.Artifacts` at `ClaudeForge.Sdk.Claude` failed and named the file.
-- [ ] A test project gets a `Parallelization.cs`. Default to **sequential** unless the tests are pure in-memory with no filesystem, no statics and no process-global seam. Copy the *reasoning*, not just the attribute: `tests/JsonC.Tests/Parallelization.cs` states why it is safe, and `tests/ClaudeForge.Tests/Parallelization.cs` states why that suite is `DoNotParallelize`.
+- [ ] A test project gets a `Parallelization.cs`. Default to **sequential** unless the tests are pure in-memory with no filesystem, no statics and no process-global seam. Copy the *reasoning*, not just the attribute: `tests/JsonC.Tests/Parallelization.cs` states why it is safe, and `tests/ClaudeForge.Tests/Parallelization.cs` states why that suite sets `CollectionBehavior(DisableTestParallelization = true)`. A single class that must never run beside another joins `[Collection("DoNotParallelize")]`, defined in `tests/Shared/MessageAssert.cs`.
 - [ ] **The trim gate names its apps explicitly** in `.github/workflows/ci.yml`. A new *library* needs nothing there, but it is only trim-checked once an app references it — so a library added ahead of its consumers is **not** yet covered by that gate. Say so rather than assuming green.
 - [ ] **State `IsPackable` explicitly**, `true` or `false`, in the csproj next to `<OutputType>`. Six shared projects under `src/` are published as NuGet packages on GitHub Packages; the SDK defaults a library to **packable**, so a project that says nothing is pushed to the feed by the next release — and GitHub Packages will not let a version be replaced. ⛔ **Those packages are PUBLIC** (they inherit the repository's visibility; measured after the first publish), so an accidentally-packable project is published to the world, not merely to a token-holder. The feed still demands a token for every read, which is a separate property and the one the phrase "private feed" means elsewhere in this file. Guard: `PackageMetadataTests.EverySrcProjectStatesIsPackableExplicitly`, `src/` only. ⚠ It deliberately does **not** check *which* projects pack: that would need a list of the eleven, and the list is what drifts.
 - [ ] **A packable project needs a real `<Description>`**, which the row above already asks for — but here it also ships. The SDK's default is the literal string `Package Description`, which is what two packages were about to publish. Guard: `PackageMetadataTests.EveryPackableProjectDescribesItself`.
@@ -424,10 +424,9 @@ A cherry-pick is impossible across the Phase-1 renames — `ClaudeForge.Core` �
 Every test that reads or writes anything path-relative MUST scope the writes to a temp dir.
 
 ```csharp
-private string _sandbox = null!;
+private readonly string _sandbox;
 
-[TestInitialize]
-public void Init()
+public MyTests()   // xUnit: a fresh instance per test, so the constructor is set-up
 {
     _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
     Directory.CreateDirectory(_sandbox);
@@ -435,8 +434,7 @@ public void Init()
     PlatformPaths.TestUserProfileOverride = _sandbox;
 }
 
-[TestCleanup]
-public void Cleanup()
+public void Dispose()   // ...and Dispose is clean-up (the class implements IDisposable)
 {
     PlatformPaths.TestUserProfileOverride = null;
     if (Directory.Exists(_sandbox))
@@ -489,8 +487,7 @@ The seam is `internal` and exposed to `ClaudeForge.Tests` via `InternalsVisibleT
 Static state isolation between tests:
 
 ```csharp
-[TestCleanup]
-public void Cleanup() => DebugFlags.ResetForTesting();
+public void Dispose() => DebugFlags.ResetForTesting();   // class : IDisposable
 ```
 
 Internally it also calls `PlatformInfo.ResetForTesting()`, so a single call covers both.
@@ -529,13 +526,13 @@ awaiting body is inert; see §1). Live example:
 The pattern that locks the force-fire invariant in place:
 
 ```csharp
-[TestMethod]
+[Fact]
 public void RemovingXxxAfterLoad_FiresIsModifiedPropertyChanged()
 {
     // Arrange: load a populated scope so IsModified starts true.
     var vm = new MyEditorViewModel(SchemaRegistry.Empty, ConfigScope.User);
     vm.LoadFromLayered(LayeredWith(ConfigScope.User, populatedJsonObject), ConfigScope.User);
-    Assert.IsTrue(vm.IsModified, "Precondition: load must leave IsModified=true.");
+    Assert.True(vm.IsModified, "Precondition: load must leave IsModified=true.");
 
     var fired = 0;
     vm.PropertyChanged += (_, e) =>
@@ -549,7 +546,7 @@ public void RemovingXxxAfterLoad_FiresIsModifiedPropertyChanged()
 
     // Assert: the force-fire pattern emitted PropertyChanged even though
     // IsModified was already true — that's what wakes the live-write chain.
-    Assert.IsTrue(fired >= 1,
+    Assert.True(fired >= 1,
         "PropertyChanged(IsModified) must fire on user remove, even though " +
         "the flag was already true from the load.");
 }
@@ -590,7 +587,7 @@ Both exercised by `tests/AgentForge.Core.Tests/Schema/SchemaRegistryOverlayTests
 ### Draining fire-and-forget work before deleting a sandbox
 
 Two hops of deliberately unawaited work can outlive the test that started them and race
-`[TestCleanup]`'s `Directory.Delete`, which on Windows fails with *"the process cannot access the
+the test's clean-up `Directory.Delete`, which on Windows fails with *"the process cannot access the
 file `claude-code-settings.json`"*. Both are now observable; a fixture that triggers either MUST
 drain it before removing its sandbox.
 
@@ -603,8 +600,7 @@ Order matters and is one-directional: the reload is what *starts* the sync, so a
 first or the sync snapshot is taken before the work exists.
 
 ```csharp
-[TestCleanup]
-public async Task Cleanup()
+public async ValueTask DisposeAsync()   // class : IAsyncDisposable
 {
     if (_vm.LastAutomaticReload is { } reload)
     {
@@ -743,7 +739,7 @@ What breaks: the `--linux` debug flag (and the equivalent for macOS) is meant to
 ### `static readonly` capturing host state at type-init
 
 ```csharp
-// WRONG — captured at type init, before the test's TestInitialize runs.
+// WRONG — captured at type init, before the test's constructor runs.
 private static readonly string StatePath =
     Path.Combine(PlatformPaths.ClaudeHome, "cache", "ClaudeForge-gui-state.json");
 ```

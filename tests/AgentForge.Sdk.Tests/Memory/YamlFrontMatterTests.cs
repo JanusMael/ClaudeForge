@@ -11,10 +11,9 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// edits one field through ClaudeForge must not see their other fields,
 /// comments, or unknown keys reformatted or dropped.
 /// </summary>
-[TestClass]
 public sealed class YamlFrontMatterTests
 {
-    [TestMethod]
+    [Fact]
     public void Parse_RoundTripsThroughCompose_ByteForByte_KnownKeys()
     {
         string input =
@@ -29,12 +28,12 @@ public sealed class YamlFrontMatterTests
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.IsTrue(fm.Present, "A well-formed --- block must parse as present.");
-        Assert.AreEqual(input, YamlFrontMatter.Compose(fm),
+        Assert.True(fm.Present, "A well-formed --- block must parse as present.");
+        MessageAssert.Equal(input, YamlFrontMatter.Compose(fm),
             "Parse → Compose of an unmodified file must be byte-identical (every field keeps its RawText).");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_RoundTripsThroughCompose_ByteForByte_CrlfLineEndings()
     {
         string input =
@@ -46,25 +45,25 @@ public sealed class YamlFrontMatterTests
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.IsTrue(fm.Present);
-        Assert.AreEqual(input, YamlFrontMatter.Compose(fm),
+        Assert.True(fm.Present);
+        MessageAssert.Equal(input, YamlFrontMatter.Compose(fm),
             "CRLF line endings must survive the round trip (body is rejoined with original '\\r').");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_NoFrontMatter_ReturnsNotPresentPlusFullBody()
     {
         string input = "# Just a CLAUDE.md\n\nNo front-matter here.\n";
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.IsFalse(fm.Present, "A file with no leading --- must report Present=false.");
-        Assert.AreEqual(input, fm.Body, "The whole text becomes the body when there's no front-matter.");
-        Assert.AreEqual(0, fm.Nodes.Count);
-        Assert.AreEqual(input, YamlFrontMatter.Compose(fm), "Compose of a front-matter-less doc returns the body unchanged.");
+        Assert.False(fm.Present, "A file with no leading --- must report Present=false.");
+        MessageAssert.Equal(input, fm.Body, "The whole text becomes the body when there's no front-matter.");
+        Assert.Empty(fm.Nodes);
+        MessageAssert.Equal(input, YamlFrontMatter.Compose(fm), "Compose of a front-matter-less doc returns the body unchanged.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_UnterminatedFrontMatter_TreatedAsNoFrontMatter()
     {
         // Opening --- but no closing --- → almost certainly not real
@@ -74,11 +73,11 @@ public sealed class YamlFrontMatterTests
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.IsFalse(fm.Present);
-        Assert.AreEqual(input, fm.Body);
+        Assert.False(fm.Present);
+        Assert.Equal(input, fm.Body);
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_UnknownKey_PreservedThroughEditOfAnotherKey()
     {
         string input =
@@ -92,19 +91,19 @@ public sealed class YamlFrontMatterTests
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
         // The unknown key is just an ordinary field — present and readable.
-        Assert.AreEqual("keep-me-verbatim", fm.FindScalar("x-custom-extension"));
+        Assert.Equal("keep-me-verbatim", fm.FindScalar("x-custom-extension"));
 
         // Edit a DIFFERENT (known) key, then compose: the unknown key must
         // survive byte-for-byte.
         FrontMatter edited = fm.WithScalar("name", "bar");
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "x-custom-extension: keep-me-verbatim",
+        MessageAssert.Contains("x-custom-extension: keep-me-verbatim", composed,
             "Editing one key must not drop or reformat an un-modelled sibling key.");
-        StringAssert.Contains(composed, "name: bar", "The edited key must re-render with its new value.");
+        MessageAssert.Contains("name: bar", composed, "The edited key must re-render with its new value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_CommentInFrontMatter_PreservedOnCompose()
     {
         string input =
@@ -117,11 +116,11 @@ public sealed class YamlFrontMatterTests
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.AreEqual(input, YamlFrontMatter.Compose(fm),
+        MessageAssert.Equal(input, YamlFrontMatter.Compose(fm),
             "Comment lines inside the front-matter must round-trip verbatim and in place.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_QuotedStringWithColon_DoesNotSplitIncorrectly()
     {
         string input =
@@ -133,12 +132,12 @@ public sealed class YamlFrontMatterTests
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.AreEqual("Foo: bar baz", fm.FindScalar("description"),
+        MessageAssert.Equal("Foo: bar baz", fm.FindScalar("description"),
             "Only the FIRST colon delimits key:value; quotes are stripped from the value, " +
             "so an embedded colon stays in the scalar.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_InlineListAndBlockList_ProduceEquivalentTypedShape()
     {
         FrontMatter inline = YamlFrontMatter.Parse(
@@ -148,23 +147,23 @@ public sealed class YamlFrontMatterTests
 
         string[] expected = ["Read", "Grep", "Bash"];
 
-        CollectionAssert.AreEqual(expected, inline.FindList("tools")!.ToArray(),
+        MessageAssert.SequenceEqual(expected, inline.FindList("tools")!.ToArray(),
             "Inline list [a, b, c] must parse to the same typed shape as a block list.");
-        CollectionAssert.AreEqual(expected, block.FindList("tools")!.ToArray(),
+        MessageAssert.SequenceEqual(expected, block.FindList("tools")!.ToArray(),
             "Block list (- a / - b / - c) must parse to the same typed shape as an inline list.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_EmptyInlineList_ProducesEmptyList()
     {
         FrontMatter fm = YamlFrontMatter.Parse("---\ntools: []\n---\n\nBody.\n");
 
         IReadOnlyList<string>? tools = fm.FindList("tools");
-        Assert.IsNotNull(tools);
-        Assert.AreEqual(0, tools!.Count);
+        Assert.NotNull(tools);
+        Assert.Empty(tools!);
     }
 
-    [TestMethod]
+    [Fact]
     public void Compose_PreservesOriginalKeyOrder()
     {
         string input =
@@ -179,12 +178,12 @@ public sealed class YamlFrontMatterTests
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
         string[] order = fm.Fields.Select(f => f.Key).ToArray();
-        CollectionAssert.AreEqual(new[] { "model", "name", "description" }, order,
+        MessageAssert.SequenceEqual(new[] { "model", "name", "description" }, order,
             "Field order must match source order, not an alphabetised / canonical order.");
-        Assert.AreEqual(input, YamlFrontMatter.Compose(fm));
+        Assert.Equal(input, YamlFrontMatter.Compose(fm));
     }
 
-    [TestMethod]
+    [Fact]
     public void WithScalar_NewKey_AppendsAfterExistingFields()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -193,12 +192,12 @@ public sealed class YamlFrontMatterTests
         FrontMatter edited = fm.WithScalar("model", "sonnet");
 
         string[] order = edited.Fields.Select(f => f.Key).ToArray();
-        CollectionAssert.AreEqual(new[] { "name", "description", "model" }, order,
+        MessageAssert.SequenceEqual(new[] { "name", "description", "model" }, order,
             "A newly-added key appends after the last existing field, minimising the diff.");
-        StringAssert.Contains(YamlFrontMatter.Compose(edited), "model: sonnet");
+        OrdinalAssert.Contains("model: sonnet", YamlFrontMatter.Compose(edited));
     }
 
-    [TestMethod]
+    [Fact]
     public void WithScalar_ExistingKey_ReplacesInPlace()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -207,12 +206,12 @@ public sealed class YamlFrontMatterTests
         FrontMatter edited = fm.WithScalar("name", "renamed");
 
         string[] order = edited.Fields.Select(f => f.Key).ToArray();
-        CollectionAssert.AreEqual(new[] { "name", "description" }, order,
+        MessageAssert.SequenceEqual(new[] { "name", "description" }, order,
             "Replacing an existing key must keep its position, not move it to the end.");
-        Assert.AreEqual("renamed", edited.FindScalar("name"));
+        Assert.Equal("renamed", edited.FindScalar("name"));
     }
 
-    [TestMethod]
+    [Fact]
     public void EditedScalarWithColon_ReRendersQuoted()
     {
         FrontMatter fm = YamlFrontMatter.Parse("---\nname: foo\n---\n\nBody.\n");
@@ -222,15 +221,15 @@ public sealed class YamlFrontMatterTests
         FrontMatter edited = fm.WithScalar("description", "Foo: bar");
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "description: \"Foo: bar\"",
+        MessageAssert.Contains("description: \"Foo: bar\"", composed,
             "A re-rendered scalar containing a colon must be double-quoted.");
 
         // Re-parse to confirm the quoting actually round-trips the value.
         FrontMatter reparsed = YamlFrontMatter.Parse(composed);
-        Assert.AreEqual("Foo: bar", reparsed.FindScalar("description"));
+        Assert.Equal("Foo: bar", reparsed.FindScalar("description"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Without_RemovesKey()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -238,11 +237,11 @@ public sealed class YamlFrontMatterTests
 
         FrontMatter edited = fm.Without("description");
 
-        Assert.IsNull(edited.FindScalar("description"), "Removed key must no longer be found.");
-        CollectionAssert.AreEqual(new[] { "name" }, edited.Fields.Select(f => f.Key).ToArray());
+        MessageAssert.Null(edited.FindScalar("description"), "Removed key must no longer be found.");
+        Assert.Equal(new[] { "name" }, edited.Fields.Select(f => f.Key).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void EditedListField_ReRendersAsBlockList()
     {
         FrontMatter fm = YamlFrontMatter.Parse("---\nname: foo\n---\n\nBody.\n");
@@ -250,25 +249,25 @@ public sealed class YamlFrontMatterTests
         FrontMatter edited = fm.WithList("tools", ["Read", "Grep"]);
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "tools:\n  - Read\n  - Grep",
+        MessageAssert.Contains("tools:\n  - Read\n  - Grep", composed,
             "A canonically re-rendered list field uses block-list syntax.");
 
         // And it must re-parse back to the same typed shape.
         FrontMatter reparsed = YamlFrontMatter.Parse(composed);
-        CollectionAssert.AreEqual(new[] { "Read", "Grep" }, reparsed.FindList("tools")!.ToArray());
+        Assert.Equal(new[] { "Read", "Grep" }, reparsed.FindList("tools")!.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyFrontMatterBlock_ParsesPresentWithNoFields()
     {
         FrontMatter fm = YamlFrontMatter.Parse("---\n---\n\nBody.\n");
 
-        Assert.IsTrue(fm.Present, "An empty --- / --- block is still 'present' (just field-less).");
-        Assert.AreEqual(0, fm.Fields.Count());
-        Assert.AreEqual("\nBody.\n", fm.Body);
+        Assert.True(fm.Present, "An empty --- / --- block is still 'present' (just field-less).");
+        Assert.Empty(fm.Fields);
+        Assert.Equal("\nBody.\n", fm.Body);
     }
 
-    [TestMethod]
+    [Fact]
     public void EditedCommaScalar_NotOverQuoted_MatchesClaudeCodeNativeForm()
     {
         // A mid-string comma is legal in a YAML plain scalar in block context,
@@ -278,13 +277,13 @@ public sealed class YamlFrontMatterTests
         FrontMatter edited = fm.WithScalar("tools", "Read, Grep, Bash");
 
         string composed = YamlFrontMatter.Compose(edited);
-        StringAssert.Contains(composed, "tools: Read, Grep, Bash",
+        MessageAssert.Contains("tools: Read, Grep, Bash", composed,
             "A comma-separated scalar must render unquoted (commas are legal in block-context plain scalars).");
-        Assert.IsFalse(composed.Contains("\"Read, Grep, Bash\""),
+        Assert.False(composed.Contains("\"Read, Grep, Bash\""),
             "The comma-scalar must NOT be double-quoted.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditedScalarStartingWithIndicator_IsQuoted()
     {
         // Leading '[' would otherwise be read as an inline-list opener.
@@ -292,7 +291,7 @@ public sealed class YamlFrontMatterTests
         FrontMatter edited = fm.WithScalar("description", "[bracketed] value");
 
         string composed = YamlFrontMatter.Compose(edited);
-        StringAssert.Contains(composed, "description: \"[bracketed] value\"",
+        MessageAssert.Contains("description: \"[bracketed] value\"", composed,
             "A scalar starting with a YAML indicator char must be quoted.");
     }
 }

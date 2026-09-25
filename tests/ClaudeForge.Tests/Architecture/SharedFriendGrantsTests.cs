@@ -25,7 +25,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// first test below asserts presence rather than correctness.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SharedFriendGrantsTests
 {
     private const string SharedFileName = "AssemblyInfo.InternalsVisibleTo.cs";
@@ -36,12 +35,12 @@ public sealed class SharedFriendGrantsTests
     /// </summary>
     private const string ExpectedInclude = "../../" + SharedFileName;
 
-    [TestMethod]
+    [Fact]
     public void TheSharedGrantFile_SitsBesideTheSolution()
     {
         string repoRoot = FindRepoRoot();
 
-        Assert.IsTrue(
+        Assert.True(
             File.Exists(Path.Combine(repoRoot, SharedFileName)),
             $"Expected {SharedFileName} at the repo root, beside ClaudeForge.slnx. Every project "
             + "links it by a relative path from there; moving it means updating all of them.");
@@ -49,12 +48,12 @@ public sealed class SharedFriendGrantsTests
         // The premise. A file that exists but grants nothing would leave every test below
         // passing over a set of internals no longer visible to anyone.
         string text = File.ReadAllText(Path.Combine(repoRoot, SharedFileName));
-        Assert.IsTrue(
+        Assert.True(
             text.Contains("[assembly: InternalsVisibleTo(", StringComparison.Ordinal),
             $"{SharedFileName} declares no InternalsVisibleTo attributes at all.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryProject_LinksTheSharedGrantFile()
     {
         string repoRoot = FindRepoRoot();
@@ -74,7 +73,7 @@ public sealed class SharedFriendGrantsTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             failures.Count,
             $"These projects do not link {SharedFileName}, so their internals are visible to "
@@ -82,7 +81,7 @@ public sealed class SharedFriendGrantsTests
             + string.Join("\n", failures));
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryProject_LinksItByARelativeForwardSlashedPath()
     {
         string repoRoot = FindRepoRoot();
@@ -111,10 +110,10 @@ public sealed class SharedFriendGrantsTests
             }
         }
 
-        Assert.AreEqual(0, failures.Count, "Link paths must be portable:\n" + string.Join("\n", failures));
+        MessageAssert.Equal(0, failures.Count, "Link paths must be portable:\n" + string.Join("\n", failures));
     }
 
-    [TestMethod]
+    [Fact]
     public void NoProject_DeclaresItsOwnFriendGrant()
     {
         string repoRoot = FindRepoRoot();
@@ -151,7 +150,7 @@ public sealed class SharedFriendGrantsTests
             }
         }
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             failures.Count,
             $"Friend grants belong in {SharedFileName}, not in individual projects — a per-project "

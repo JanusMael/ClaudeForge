@@ -18,15 +18,15 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 // Tests the process-lifetime claude-code location cache by design — inherently
 // process-wide shared state, so it cannot run concurrently. Run serially,
 // isolated from the method-level-parallelized rest of the assembly.
-[DoNotParallelize]
-[TestClass]
-public sealed class PlatformPathsCacheTests
+[Collection("DoNotParallelize")]
+public sealed class PlatformPathsCacheTests : IDisposable
 {
     private string _sandbox = null!;
     private string? _originalPath;
 
-    [TestInitialize]
-    public void Init()
+    public PlatformPathsCacheTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "ppc-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -38,8 +38,7 @@ public sealed class PlatformPathsCacheTests
         PlatformPaths.InvalidatePathCache();
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         Environment.SetEnvironmentVariable("PATH", _originalPath);
@@ -50,7 +49,13 @@ public sealed class PlatformPathsCacheTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void TryFindClaudeCodeBinary_CachesResult_AcrossCalls()
     {
         // Place a binary at the canonical first-priority self-contained location.
@@ -64,8 +69,8 @@ public sealed class PlatformPathsCacheTests
 
         // First call — primes the cache and returns the located binary.
         PlatformPaths.ClaudeCodeLocation? first = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
-        Assert.IsNotNull(first);
-        Assert.AreEqual(binaryPath, first!.BinaryPath);
+        Assert.NotNull(first);
+        Assert.Equal(binaryPath, first!.BinaryPath);
 
         // Delete the binary on disk. A re-probe would now find nothing.
         File.Delete(binaryPath);
@@ -73,22 +78,22 @@ public sealed class PlatformPathsCacheTests
         // Second call WITHOUT invalidation — must still return the cached
         // location. (Process-lifetime cache contract.)
         PlatformPaths.ClaudeCodeLocation? secondCached = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
-        Assert.IsNotNull(secondCached,
+        MessageAssert.NotNull(secondCached,
             "Cache should still return the prior location even though the file is gone.");
-        Assert.AreEqual(binaryPath, secondCached!.BinaryPath);
+        Assert.Equal(binaryPath, secondCached!.BinaryPath);
 
         // After invalidation, re-probe sees the empty disk.
         PlatformPaths.InvalidatePathCache();
         PlatformPaths.ClaudeCodeLocation? afterInvalidate = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
-        Assert.IsNull(afterInvalidate,
+        MessageAssert.Null(afterInvalidate,
             "Post-invalidation probe should reflect the now-empty sandbox.");
     }
 
-    [TestMethod]
+    [Fact]
     public void IsClaudeCodeOnPath_CachesNegativeResult()
     {
         // PATH is empty (set by Init), so the bare-name lookup will miss.
-        Assert.IsFalse(PlatformPaths.IsClaudeCodeOnPath,
+        Assert.False(PlatformPaths.IsClaudeCodeOnPath,
             "Sanity: empty PATH means claude is not on PATH.");
 
         // Now create a `claude` binary in a directory and prepend that
@@ -103,12 +108,12 @@ public sealed class PlatformPathsCacheTests
         File.WriteAllText(Path.Combine(pathDir, binaryName), string.Empty);
         Environment.SetEnvironmentVariable("PATH", pathDir);
 
-        Assert.IsFalse(PlatformPaths.IsClaudeCodeOnPath,
+        Assert.False(PlatformPaths.IsClaudeCodeOnPath,
             "Negative cache must be honoured until InvalidatePathCache is called.");
 
         PlatformPaths.InvalidatePathCache();
 
-        Assert.IsTrue(PlatformPaths.IsClaudeCodeOnPath,
+        Assert.True(PlatformPaths.IsClaudeCodeOnPath,
             "After invalidation, the next probe should see the binary on PATH.");
     }
 }

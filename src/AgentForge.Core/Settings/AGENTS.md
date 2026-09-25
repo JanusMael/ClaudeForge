@@ -311,7 +311,7 @@ The only writes happen in the constructor, `MarkClean()`, and `UpdateRoot()`.
   `MainWindowViewModel.GetClaudeCodeWorkspaceForTesting`). Mutate via `SetValue` / `RemoveValue`,
   observe `vm.HasUnsavedChanges`.
 - **Sandbox file paths**: `PlatformPaths.TestUserProfileOverride = sandbox`
-  in `[TestInitialize]`, restore to `null` in `[TestCleanup]`. Template in
+  in the test class's constructor, restore to `null` in `Dispose`. Template in
   the root [`AGENTS.md`](../../../AGENTS.md) §3.
 - **Merge-engine round-trip**: build `SettingsDocument` instances directly
   from `JsonObject` literals and feed to `MergeEngine.ComputeEffective`.

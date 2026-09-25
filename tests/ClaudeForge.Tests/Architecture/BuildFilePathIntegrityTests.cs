@@ -34,7 +34,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// plan's Phase 1 checklist named the solution file but not the workflows or scripts.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class BuildFilePathIntegrityTests
 {
     /// <summary>
@@ -171,11 +170,11 @@ public sealed class BuildFilePathIntegrityTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void ScanFindsFiles_SoThisTestIsNotVacuous()
     {
         string repoRoot = FindRepoRoot();
-        Assert.IsTrue(
+        Assert.True(
             ScannedFiles(repoRoot).Any(),
             $"No workflows, scripts, or .slnx found under '{repoRoot}'. This test would pass "
             + "without checking anything.");
@@ -241,7 +240,7 @@ public sealed class BuildFilePathIntegrityTests
     /// <c>src/dist/*</c> are one and the same check.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryHardcodedRepoPathInBuildFilesExists()
     {
         string repoRoot = FindRepoRoot();
@@ -325,7 +324,7 @@ public sealed class BuildFilePathIntegrityTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             checkedCount > 0,
             "No repo-relative src/ or tests/ paths were found in any build file. Either the "
             + "regex no longer matches how these files are written, or the paths moved out of "
@@ -333,7 +332,7 @@ public sealed class BuildFilePathIntegrityTests
 
         // ONE list, not two assertions. Two would mask each other: the second reason could
         // never be reported while the first still had an entry.
-        Assert.IsTrue(
+        Assert.True(
             broken.Count == 0,
             $"{broken.Count} hardcoded path(s) in build files point at something a fresh checkout "
             + "does not have. A stale path here fails silently — a workflow trigger simply stops "
@@ -416,7 +415,7 @@ public sealed class BuildFilePathIntegrityTests
     /// same reason: a link that resolves only on the author's machine is dead everywhere else.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryRelativeMarkdownLinkInGuidanceDocsResolves()
     {
         string repoRoot = FindRepoRoot();
@@ -492,13 +491,13 @@ public sealed class BuildFilePathIntegrityTests
 
         // ⛔ Without this, deleting every guidance doc — or breaking the regex — reads as a pass.
         // The sibling guard carries the same assertion for the same reason.
-        Assert.IsTrue(
+        Assert.True(
             checkedCount > 0,
             "No relative Markdown links were found in any guidance document. Either the docs "
             + "stopped using Markdown links, or MarkdownLinkRegex no longer matches how they are "
             + "written — either way this guard is no longer looking at anything.");
 
-        Assert.IsTrue(
+        Assert.True(
             broken.Count == 0,
             $"{broken.Count} Markdown link(s) in the guidance docs point at nothing a fresh "
             + "checkout has. A reader following one gets an error, and every such link makes the "
@@ -537,12 +536,12 @@ public sealed class BuildFilePathIntegrityTests
     /// a project to delete.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryProjectOnDiskIsInTheSolution()
     {
         string repoRoot = FindRepoRoot();
         string solutionPath = Path.Combine(repoRoot, "ClaudeForge.slnx");
-        Assert.IsTrue(
+        Assert.True(
             File.Exists(solutionPath),
             $"'{solutionPath}' not found. This test cannot check solution membership without it.");
 
@@ -556,7 +555,7 @@ public sealed class BuildFilePathIntegrityTests
             .Select(p => p!.Replace('\\', '/'))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        Assert.IsTrue(
+        Assert.True(
             listed.Count > 0,
             $"Parsed no <Project Path=…> entries out of '{solutionPath}'. Either the solution "
             + "format changed or this test is no longer reading it — either way it is guarding "
@@ -594,12 +593,12 @@ public sealed class BuildFilePathIntegrityTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             onDisk > 0,
             $"Found no .csproj files under src/, tests/ or samples/ in '{repoRoot}'. This test "
             + "would pass without checking anything.");
 
-        Assert.IsTrue(
+        Assert.True(
             unlisted.Count == 0,
             $"{unlisted.Count} project(s) exist on disk but are absent from ClaudeForge.slnx, so "
             + "CI never builds or tests them and a local build cannot tell you that:\n  "
@@ -630,7 +629,7 @@ public sealed class BuildFilePathIntegrityTests
     /// catch — and every machine that can clone this repository has git.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void NoCompiledSourceFileIsHiddenFromGitByAnIgnoreRule()
     {
         string repoRoot = FindRepoRoot();
@@ -654,7 +653,7 @@ public sealed class BuildFilePathIntegrityTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             sources.Count > 0,
             $"Found no .cs files under src/ or tests/ in '{repoRoot}'. This test would pass "
             + "without checking anything.");
@@ -663,7 +662,7 @@ public sealed class BuildFilePathIntegrityTests
 
         // `git check-ignore --stdin` exits 0 when it matched something, 1 when it matched
         // nothing, and 128 on a real failure. Only 0 and 1 are answers.
-        Assert.IsTrue(
+        Assert.True(
             exitCode is 0 or 1,
             $"git check-ignore could not run (exit {exitCode}), so this guard checked nothing:\n"
             + output + error);
@@ -671,7 +670,7 @@ public sealed class BuildFilePathIntegrityTests
         List<string> ignored = [.. output
             .Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
-        Assert.IsTrue(
+        Assert.True(
             ignored.Count == 0,
             $"{ignored.Count} compiled source file(s) are excluded by .gitignore, so they exist "
             + "only on this machine and CI will never see them:\n  "
@@ -707,7 +706,7 @@ public sealed class BuildFilePathIntegrityTests
 
         // Loud, never silent: a guard that decides "no git, nothing to check" is the decorative
         // protection this whole file exists to avoid.
-        Assert.IsTrue(
+        Assert.True(
             exitCode == 0,
             $"`git ls-files` could not run (exit {exitCode}), so this guard checked nothing:\n"
             + output + error);
@@ -725,7 +724,7 @@ public sealed class BuildFilePathIntegrityTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             files.Count > 0,
             $"`git ls-files` reported no tracked files in '{repoRoot}'. Every path would be "
             + "reported as missing, so this is a broken guard rather than a broken repository.");

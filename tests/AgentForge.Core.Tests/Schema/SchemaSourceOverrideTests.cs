@@ -33,14 +33,11 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// design runs serially, isolated from the parallelized rest.
 /// </para>
 /// </remarks>
-[DoNotParallelize]
-[TestClass]
+[Collection("DoNotParallelize")]
 public sealed class SchemaSourceOverrideTests
 {
     private const string Url = "https://json.schemastore.org/claude-code-settings.json";
     private const string File = "claude-code-settings.json";
-
-    public required TestContext TestContext { get; set; }
 
     /// <summary>Fails every request, and records that it was asked.</summary>
     private sealed class OfflineHandler : HttpMessageHandler
@@ -82,43 +79,43 @@ public sealed class SchemaSourceOverrideTests
     /// fall back. The handler's call count is what separates "prefers bundled" from "offline",
     /// and offline is what the flag promises.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task Bundled_NeverTouchesTheNetwork()
     {
         ServingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Bundled);
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(0, handler.Calls,
+        MessageAssert.Equal(0, handler.Calls,
             "The network was contacted despite --schema-source bundled, so the flag only changes "
             + "which copy wins rather than staying offline.");
-        Assert.AreEqual(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
+        Assert.Equal(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
     }
 
     /// <summary>⛔ <c>fetched</c> with no network is FATAL, not a silent fallback.</summary>
-    [TestMethod]
+    [Fact]
     public async Task Fetched_WithNoNetwork_Throws()
     {
         OfflineHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
 
-        await Assert.ThrowsExactlyAsync<SchemaUnavailableException>(
-            () => registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token));
+        await Assert.ThrowsAsync<SchemaUnavailableException>(
+            () => registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken));
 
-        Assert.IsTrue(handler.Calls > 0, "Premise: the fetch must have been attempted.");
+        Assert.True(handler.Calls > 0, "Premise: the fetch must have been attempted.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Fetched_WithAReachableNetwork_UsesTheFetchedCopy()
     {
         ServingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source);
-        Assert.IsTrue(handler.Calls > 0);
+        Assert.Equal(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source);
+        Assert.True(handler.Calls > 0);
     }
 
     /// <summary>With no override, an unreachable network still falls back to bundled.</summary>
@@ -128,15 +125,15 @@ public sealed class SchemaSourceOverrideTests
     /// whenever the network is down — a serious regression wearing the costume of a working
     /// feature.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task WithNoOverride_AnUnreachableNetworkFallsBackToBundled()
     {
         OfflineHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
+        Assert.Equal(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
     }
 
     /// <summary>
@@ -148,7 +145,7 @@ public sealed class SchemaSourceOverrideTests
     /// landing on the first alone would leave the pages on one source while save-validation used
     /// another, which is why the override is not a constructor argument alone.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task TheProcessDefault_ReachesARegistryWithNoExplicitOverride()
     {
         SchemaRegistry.ProcessSourceOverride = SchemaSourceOverride.Bundled;
@@ -157,12 +154,12 @@ public sealed class SchemaSourceOverrideTests
             ServingHandler handler = new();
             using SchemaRegistry registry = new(new HttpClient(handler));
 
-            _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+            _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(0, handler.Calls,
+            MessageAssert.Equal(0, handler.Calls,
                 "The process-wide override did not reach a registry constructed without one, so "
                 + "the flag would only affect whichever registry happened to be passed it.");
-            Assert.AreEqual(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
+            Assert.Equal(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
         }
         finally
         {
@@ -175,7 +172,7 @@ public sealed class SchemaSourceOverrideTests
     /// Which is what lets the other tests here pin a branch through the constructor and stay
     /// independent of whatever the process default happens to be.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task AnExplicitOverride_BeatsTheProcessDefault()
     {
         SchemaRegistry.ProcessSourceOverride = SchemaSourceOverride.Bundled;
@@ -184,9 +181,9 @@ public sealed class SchemaSourceOverrideTests
             ServingHandler handler = new();
             using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
 
-            _ = await registry.GetSchemaAsync(Url, File, TestContext.CancellationTokenSource.Token);
+            _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
 
-            Assert.AreEqual(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source,
+            MessageAssert.Equal(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source,
                 "The constructor argument lost to the process default.");
         }
         finally

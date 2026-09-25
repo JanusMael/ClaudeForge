@@ -13,32 +13,31 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// <see cref="SearchTrigger.PrefixOf"/> is narrower than both.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class SearchTriggerTests
 {
-    [TestMethod]
+    [Fact]
     public void Phrases_MatchInBothDirections()
     {
         SearchTrigger trigger = new() { Phrases = ["sandbox"] };
 
-        Assert.IsTrue(trigger.Matches("sandbox"), "Exact phrase must match.");
-        Assert.IsTrue(trigger.Matches("bash sandbox settings"),
+        Assert.True(trigger.Matches("sandbox"), "Exact phrase must match.");
+        Assert.True(trigger.Matches("bash sandbox settings"),
             "Query containing the phrase must match.");
-        Assert.IsTrue(trigger.Matches("san"),
+        Assert.True(trigger.Matches("san"),
             "Phrase containing the query must match — this is what makes partial typing land early.");
-        Assert.IsFalse(trigger.Matches("network"), "Unrelated query must not match.");
+        Assert.False(trigger.Matches("network"), "Unrelated query must not match.");
     }
 
-    [TestMethod]
+    [Fact]
     public void PrefixOf_MatchesOnlyFromTheFront()
     {
         SearchTrigger trigger = new() { PrefixOf = ["dangerouslyskippermissions"], MinQueryLength = 3 };
 
-        Assert.IsTrue(trigger.Matches("danger"), "A prefix of the term must match.");
-        Assert.IsTrue(trigger.Matches("dangerouslyskippermissions"), "The whole term must match.");
-        Assert.IsFalse(trigger.Matches("skip"),
+        Assert.True(trigger.Matches("danger"), "A prefix of the term must match.");
+        Assert.True(trigger.Matches("dangerouslyskippermissions"), "The whole term must match.");
+        Assert.False(trigger.Matches("skip"),
             "An interior fragment must NOT match — that is the whole reason this rule is not Phrases.");
-        Assert.IsFalse(trigger.Matches("permissions"),
+        Assert.False(trigger.Matches("permissions"),
             "A trailing fragment must not match either.");
     }
 
@@ -47,20 +46,20 @@ public sealed class SearchTriggerTests
     /// row declared with <see cref="SearchTrigger.Phrases"/> instead of
     /// <see cref="SearchTrigger.Mentions"/>, a query of "pass" would pin it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Mentions_IsOneDirectional_UnlikePhrases()
     {
         SearchTrigger mentions = new() { Mentions = ["bypass"], MinQueryLength = 3 };
         SearchTrigger phrases = new() { Phrases = ["bypass"], MinQueryLength = 3 };
 
-        Assert.IsTrue(mentions.Matches("bypass permissions"), "Query containing the term matches.");
-        Assert.IsFalse(mentions.Matches("pass"),
+        Assert.True(mentions.Matches("bypass permissions"), "Query containing the term matches.");
+        Assert.False(mentions.Matches("pass"),
             "A query the term merely contains must NOT match a Mentions rule.");
-        Assert.IsTrue(phrases.Matches("pass"),
+        Assert.True(phrases.Matches("pass"),
             "…whereas it does match a Phrases rule. Confirms the two kinds are genuinely different.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Excluding_VetoesAMatchAPositiveRuleWouldAllow()
     {
         SearchTrigger trigger = new()
@@ -70,21 +69,21 @@ public sealed class SearchTriggerTests
             MinQueryLength = 3,
         };
 
-        Assert.IsTrue(trigger.Matches("bypass"), "Without the veto word, the row matches.");
-        Assert.IsFalse(trigger.Matches("disable bypass"),
+        Assert.True(trigger.Matches("bypass"), "Without the veto word, the row matches.");
+        Assert.False(trigger.Matches("disable bypass"),
             "The veto must beat the positive rule — the opposite intent gets its own row.");
     }
 
-    [TestMethod]
+    [Fact]
     public void MinQueryLength_GatesShortQueries()
     {
         SearchTrigger trigger = new() { Phrases = ["model"], MinQueryLength = 2 };
 
-        Assert.IsFalse(trigger.Matches("m"), "One character is below the gate.");
-        Assert.IsTrue(trigger.Matches("mo"), "Two characters clear it.");
+        Assert.False(trigger.Matches("m"), "One character is below the gate.");
+        Assert.True(trigger.Matches("mo"), "Two characters clear it.");
 
         SearchTrigger stricter = trigger with { MinQueryLength = 3 };
-        Assert.IsFalse(stricter.Matches("mo"), "A higher gate rejects the same query.");
+        Assert.False(stricter.Matches("mo"), "A higher gate rejects the same query.");
     }
 
     /// <summary>
@@ -92,16 +91,16 @@ public sealed class SearchTriggerTests
     /// would pin a row to the top of every single search. The empty trigger
     /// therefore fails closed.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void NoRules_MatchesNothing()
     {
         SearchTrigger trigger = new();
 
-        Assert.IsFalse(trigger.Matches("anything"));
-        Assert.IsFalse(trigger.Matches(string.Empty));
+        Assert.False(trigger.Matches("anything"));
+        Assert.False(trigger.Matches(string.Empty));
     }
 
-    [TestMethod]
+    [Fact]
     public void Matching_IsOrdinal_AgainstAnAlreadyNormalisedQuery()
     {
         // The caller lower-cases and trims; the rules then compare ordinally, so a
@@ -110,7 +109,7 @@ public sealed class SearchTriggerTests
         // here, which would double-normalise and hide the real bug in the table.
         SearchTrigger trigger = new() { Phrases = ["Sandbox"] };
 
-        Assert.IsFalse(trigger.Matches("sandbox"),
+        Assert.False(trigger.Matches("sandbox"),
             "An upper-case rule does not match a normalised query — declare rules lower-case.");
     }
 }

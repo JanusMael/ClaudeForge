@@ -8,16 +8,15 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// JSON context. Guards against accidentally breaking backup-archive compatibility
 /// when evolving the POCO.
 /// </summary>
-[TestClass]
 public sealed class BackupManifestTests
 {
-    [TestMethod]
-    [DataRow(BackupMode.SettingsOnly, "windows")]
-    [DataRow(BackupMode.SettingsOnly, "macos")]
-    [DataRow(BackupMode.SettingsOnly, "linux")]
-    [DataRow(BackupMode.Full, "windows")]
-    [DataRow(BackupMode.Full, "macos")]
-    [DataRow(BackupMode.Full, "linux")]
+    [Theory]
+    [InlineData(BackupMode.SettingsOnly, "windows")]
+    [InlineData(BackupMode.SettingsOnly, "macos")]
+    [InlineData(BackupMode.SettingsOnly, "linux")]
+    [InlineData(BackupMode.Full, "windows")]
+    [InlineData(BackupMode.Full, "macos")]
+    [InlineData(BackupMode.Full, "linux")]
     public void RoundTrip_EveryModeAndPlatform(BackupMode mode, string platform)
     {
         BackupManifest original = new()
@@ -42,37 +41,37 @@ public sealed class BackupManifestTests
         string json = JsonSerializer.Serialize(original, BackupJsonContext.Default.BackupManifest);
         BackupManifest? round = JsonSerializer.Deserialize(json, BackupJsonContext.Default.BackupManifest);
 
-        Assert.IsNotNull(round);
-        Assert.AreEqual(original.Kind, round!.Kind);
-        Assert.AreEqual(original.SchemaVersion, round.SchemaVersion);
-        Assert.AreEqual(original.CreatedUtc, round.CreatedUtc);
-        Assert.AreEqual(original.Platform, round.Platform);
-        Assert.AreEqual(original.AppVersion, round.AppVersion);
-        Assert.AreEqual(original.Mode, round.Mode);
-        Assert.AreEqual(original.IncludedCredentials, round.IncludedCredentials);
-        Assert.AreEqual(original.SizeBytes, round.SizeBytes);
-        Assert.AreEqual(original.ItemCount, round.ItemCount);
-        CollectionAssert.AreEqual(original.Clients, round.Clients);
-        CollectionAssert.AreEqual(original.Projects, round.Projects);
-        CollectionAssert.AreEqual(original.Warnings, round.Warnings);
-        Assert.AreEqual(1, round.Worktrees.Count);
-        Assert.AreEqual(original.Worktrees[0].ProjectRoot, round.Worktrees[0].ProjectRoot);
-        Assert.AreEqual(original.Worktrees[0].WorktreePath, round.Worktrees[0].WorktreePath);
+        Assert.NotNull(round);
+        Assert.Equal(original.Kind, round!.Kind);
+        Assert.Equal(original.SchemaVersion, round.SchemaVersion);
+        Assert.Equal(original.CreatedUtc, round.CreatedUtc);
+        Assert.Equal(original.Platform, round.Platform);
+        Assert.Equal(original.AppVersion, round.AppVersion);
+        Assert.Equal(original.Mode, round.Mode);
+        Assert.Equal(original.IncludedCredentials, round.IncludedCredentials);
+        Assert.Equal(original.SizeBytes, round.SizeBytes);
+        Assert.Equal(original.ItemCount, round.ItemCount);
+        Assert.Equal(original.Clients, round.Clients);
+        Assert.Equal(original.Projects, round.Projects);
+        Assert.Equal(original.Warnings, round.Warnings);
+        Assert.Single(round.Worktrees);
+        Assert.Equal(original.Worktrees[0].ProjectRoot, round.Worktrees[0].ProjectRoot);
+        Assert.Equal(original.Worktrees[0].WorktreePath, round.Worktrees[0].WorktreePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void ModeSerialisedAsReadableString()
     {
         BackupManifest m = new() { Mode = BackupMode.Full };
         string json = JsonSerializer.Serialize(m, BackupJsonContext.Default.BackupManifest);
-        StringAssert.Contains(json, "\"mode\": \"Full\"",
+        MessageAssert.Contains("\"mode\": \"Full\"", json,
             "BackupMode must be serialised as a string for on-disk readability.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaVersion_DefaultIsCurrent()
     {
         BackupManifest m = new();
-        Assert.AreEqual(BackupManifest.CurrentSchemaVersion, m.SchemaVersion);
+        Assert.Equal(BackupManifest.CurrentSchemaVersion, m.SchemaVersion);
     }
 }

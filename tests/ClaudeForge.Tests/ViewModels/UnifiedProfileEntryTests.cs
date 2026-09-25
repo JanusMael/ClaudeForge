@@ -2,32 +2,31 @@ using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
-[TestClass]
 public sealed class UnifiedProfileEntryTests
 {
     // -----------------------------------------------------------------------
     // Global sentinel
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Global_HasCliTrue()
     {
-        Assert.IsTrue(UnifiedProfileEntry.Global.HasCli);
+        Assert.True(UnifiedProfileEntry.Global.HasCli);
     }
 
-    [TestMethod]
+    [Fact]
     public void Global_HasDesktopTrue()
     {
-        Assert.IsTrue(UnifiedProfileEntry.Global.HasDesktop);
+        Assert.True(UnifiedProfileEntry.Global.HasDesktop);
     }
 
-    [TestMethod]
+    [Fact]
     public void Global_IsGlobal_IsTrue()
     {
-        Assert.IsTrue(UnifiedProfileEntry.Global.IsGlobal);
+        Assert.True(UnifiedProfileEntry.Global.IsGlobal);
     }
 
-    [TestMethod]
+    [Fact]
     public void GlobalName_MatchesMainWindowViewModelSentinel()
     {
         // The sentinel string must be identical so that persisted profile names
@@ -35,7 +34,7 @@ public sealed class UnifiedProfileEntryTests
         // MSTEST0032: both are consts, so this folds to always-true. Catching the day
         // someone changes one and not the other is exactly why the assert is here.
 #pragma warning disable MSTEST0032
-        Assert.AreEqual(MainWindowViewModel.GlobalProfileSentinel, UnifiedProfileEntry.GlobalName);
+        Assert.Equal(MainWindowViewModel.GlobalProfileSentinel, UnifiedProfileEntry.GlobalName);
 #pragma warning restore MSTEST0032
     }
 
@@ -43,104 +42,104 @@ public sealed class UnifiedProfileEntryTests
     // IsGlobal
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void IsGlobal_FalseForCliOnlyProfile()
     {
         UnifiedProfileEntry entry = new("work", HasCli: true, HasDesktop: false);
-        Assert.IsFalse(entry.IsGlobal);
+        Assert.False(entry.IsGlobal);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsGlobal_FalseForDesktopOnlyProfile()
     {
         UnifiedProfileEntry entry = new("work", HasCli: false, HasDesktop: true);
-        Assert.IsFalse(entry.IsGlobal);
+        Assert.False(entry.IsGlobal);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsGlobal_FalseForSharedProfile()
     {
         UnifiedProfileEntry entry = new("work", HasCli: true, HasDesktop: true);
-        Assert.IsFalse(entry.IsGlobal);
+        Assert.False(entry.IsGlobal);
     }
 
     // -----------------------------------------------------------------------
     // ShowCliChiclet
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ShowCliChiclet_TrueWhenHasCliAndNotGlobal()
     {
         UnifiedProfileEntry entry = new("work", HasCli: true, HasDesktop: false);
-        Assert.IsTrue(entry.ShowCliChiclet);
+        Assert.True(entry.ShowCliChiclet);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowCliChiclet_TrueForSharedNonGlobalProfile()
     {
         UnifiedProfileEntry entry = new("work", HasCli: true, HasDesktop: true);
-        Assert.IsTrue(entry.ShowCliChiclet);
+        Assert.True(entry.ShowCliChiclet);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowCliChiclet_FalseWhenHasCliButIsGlobal()
     {
         // Global entry never shows a chiclet even though it represents "both products".
-        Assert.IsFalse(UnifiedProfileEntry.Global.ShowCliChiclet);
+        Assert.False(UnifiedProfileEntry.Global.ShowCliChiclet);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowCliChiclet_FalseWhenDesktopOnly()
     {
         UnifiedProfileEntry entry = new("home", HasCli: false, HasDesktop: true);
-        Assert.IsFalse(entry.ShowCliChiclet);
+        Assert.False(entry.ShowCliChiclet);
     }
 
     // -----------------------------------------------------------------------
     // ShowDesktopChiclet
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ShowDesktopChiclet_TrueWhenHasDesktopAndNotGlobal()
     {
         UnifiedProfileEntry entry = new("home", HasCli: false, HasDesktop: true);
-        Assert.IsTrue(entry.ShowDesktopChiclet);
+        Assert.True(entry.ShowDesktopChiclet);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowDesktopChiclet_TrueForSharedNonGlobalProfile()
     {
         UnifiedProfileEntry entry = new("work", HasCli: true, HasDesktop: true);
-        Assert.IsTrue(entry.ShowDesktopChiclet);
+        Assert.True(entry.ShowDesktopChiclet);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowDesktopChiclet_FalseWhenHasDesktopButIsGlobal()
     {
-        Assert.IsFalse(UnifiedProfileEntry.Global.ShowDesktopChiclet);
+        Assert.False(UnifiedProfileEntry.Global.ShowDesktopChiclet);
     }
 
-    [TestMethod]
+    [Fact]
     public void ShowDesktopChiclet_FalseWhenCliOnly()
     {
         UnifiedProfileEntry entry = new("work", HasCli: true, HasDesktop: false);
-        Assert.IsFalse(entry.ShowDesktopChiclet);
+        Assert.False(entry.ShowDesktopChiclet);
     }
 
     // -----------------------------------------------------------------------
     // ToString
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void ToString_ReturnsName()
     {
         UnifiedProfileEntry entry = new("personal", HasCli: true, HasDesktop: false);
-        Assert.AreEqual("personal", entry.ToString());
+        Assert.Equal("personal", entry.ToString());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToString_GlobalReturnsGlobalName()
     {
-        Assert.AreEqual(UnifiedProfileEntry.GlobalName, UnifiedProfileEntry.Global.ToString());
+        Assert.Equal(UnifiedProfileEntry.GlobalName, UnifiedProfileEntry.Global.ToString());
     }
 }

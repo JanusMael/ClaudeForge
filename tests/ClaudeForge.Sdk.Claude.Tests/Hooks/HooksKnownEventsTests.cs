@@ -10,14 +10,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Hooks;
 /// servers — get the schema-derived, curated-ordered event list without any GUI
 /// or schema plumbing. Mirrors how <c>client.Models</c> surfaces the model catalog.
 /// </summary>
-[TestClass]
-public sealed class HooksKnownEventsTests
+public sealed class HooksKnownEventsTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public HooksKnownEventsTests() => Setup();
+
+    private void Setup()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "claudeforge-hooks-known-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
@@ -25,8 +25,7 @@ public sealed class HooksKnownEventsTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -42,7 +41,13 @@ public sealed class HooksKnownEventsTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task KnownEvents_ExposesSchemaDerivedVocabulary()
     {
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
@@ -52,16 +57,16 @@ public sealed class HooksKnownEventsTests
 
         // The bundled schema defines the standard events; the accessor surfaces
         // them curated-ordered — no GUI or schema plumbing needed by the consumer.
-        CollectionAssert.Contains(events, "PreToolUse");
-        CollectionAssert.Contains(events, "PostToolUse");
-        CollectionAssert.Contains(events, "Stop");
-        Assert.IsTrue(events.Count >= 10, "The bundled schema exposes the full hook-event set.");
+        Assert.Contains("PreToolUse", events);
+        Assert.Contains("PostToolUse", events);
+        Assert.Contains("Stop", events);
+        Assert.True(events.Count >= 10, "The bundled schema exposes the full hook-event set.");
 
         // Already curated-ordered — re-resolving the same set is a no-op (idempotent).
-        CollectionAssert.AreEqual(HookEventCatalog.ResolveOrder(events).ToList(), events);
+        Assert.Equal(HookEventCatalog.ResolveOrder(events).ToList(), events);
     }
 
-    [TestMethod]
+    [Fact]
     public void KnownEvents_BeforeOpen_ReadsBundledSchema_WithDescriptions()
     {
         // A client that was never opened has no cached schema tree — this is the GUI's
@@ -76,19 +81,19 @@ public sealed class HooksKnownEventsTests
         IReadOnlyList<HookEventInfo> known = client.Hooks.KnownEvents;
 
         List<string> names = known.Select(e => e.Name).ToList();
-        CollectionAssert.Contains(names, "PreToolUse");
-        CollectionAssert.Contains(names, "Stop");
+        Assert.Contains("PreToolUse", names);
+        Assert.Contains("Stop", names);
         // Already curated-ordered — re-resolving the same set is a no-op (idempotent).
-        CollectionAssert.AreEqual(HookEventCatalog.ResolveOrder(names).ToList(), names);
+        Assert.Equal(HookEventCatalog.ResolveOrder(names).ToList(), names);
 
         // The fix: descriptions are present even before Open.
         HookEventInfo cwd = known.First(e => e.Name == "CwdChanged");
-        Assert.IsFalse(string.IsNullOrWhiteSpace(cwd.Description),
+        Assert.False(string.IsNullOrWhiteSpace(cwd.Description),
             "KnownEvents must carry the schema description even when the client was never opened.");
-        StringAssert.Contains(cwd.Description!, "working directory");
+        OrdinalAssert.Contains("working directory", cwd.Description!);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task KnownEvents_CarrySchemaDescriptions()
     {
         // Headless consumers get the schema DESCRIPTION too, not just the name —
@@ -97,8 +102,8 @@ public sealed class HooksKnownEventsTests
         await client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
 
         HookEventInfo cwd = client.Hooks.KnownEvents.First(e => e.Name == "CwdChanged");
-        Assert.IsFalse(string.IsNullOrWhiteSpace(cwd.Description),
+        Assert.False(string.IsNullOrWhiteSpace(cwd.Description),
             "KnownEvents must carry the schema description, not just the name.");
-        StringAssert.Contains(cwd.Description!, "working directory");
+        OrdinalAssert.Contains("working directory", cwd.Description!);
     }
 }

@@ -33,7 +33,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// their caller, and <c>tests/</c> is where the offline default is supposed to be used.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ProductionSchemaRegistryTests
 {
     /// <summary>The app assemblies — i.e. every composition root this repo ships.</summary>
@@ -64,7 +63,7 @@ public sealed class ProductionSchemaRegistryTests
         @"SchemaRegistry\.CreateWithNetwork\s*\(",
         RegexOptions.Compiled);
 
-    [TestMethod]
+    [Fact]
     public void NoAppAssemblyConstructsAnOfflineSchemaRegistry()
     {
         string repoRoot = FindRepoRoot();
@@ -88,11 +87,11 @@ public sealed class ProductionSchemaRegistryTests
         // Non-vacuity. A rename that empties the scan must fail here rather than pass by
         // finding nothing to object to — the failure mode AssemblyLayeringTests was shipped
         // with and only caught by canarying it.
-        Assert.IsTrue(
+        Assert.True(
             scanned > 0,
             $"Scanned no sources under {string.Join(", ", AppProjectDirs)}; the scan has been narrowed to nothing.");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             offences.Count,
             "An app composition root built a SchemaRegistry with no HttpClient, which means OFFLINE. "
@@ -100,8 +99,8 @@ public sealed class ProductionSchemaRegistryTests
             + string.Join(", ", offences));
     }
 
-    [TestMethod]
-    [DataRow("ClaudeForge")]
+    [Theory]
+    [InlineData("ClaudeForge")]
     // TWO-APP GUARD NARROWED — plans/00003 Phase 0. [DataRow("OpenCodeForge")] was here; restore
     // it when OpenCodeForge rejoins.
     public void EachAppAsksForTheNetworkByName(string app)
@@ -111,7 +110,7 @@ public sealed class ProductionSchemaRegistryTests
         bool found = EnumerateSources(repoRoot, app)
             .Any(file => AsksForNetwork.IsMatch(File.ReadAllText(file)));
 
-        Assert.IsTrue(
+        Assert.True(
             found,
             $"'{app}' never calls SchemaRegistry.CreateWithNetwork(). Either it stopped asking for "
             + "the network, or this scan no longer reaches its sources — the first is the bug the "
@@ -167,12 +166,12 @@ public sealed class ProductionSchemaRegistryTests
     /// network-first.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void NoTestResolvesSchemasAgainstTheLiveInternet()
     {
         string repoRoot = FindRepoRoot();
         string testsRoot = Path.Combine(repoRoot, "tests");
-        Assert.IsTrue(Directory.Exists(testsRoot), $"Expected a tests root at '{testsRoot}'.");
+        Assert.True(Directory.Exists(testsRoot), $"Expected a tests root at '{testsRoot}'.");
 
         List<string> offences = [];
         int scanned = 0;
@@ -195,9 +194,9 @@ public sealed class ProductionSchemaRegistryTests
             }
         }
 
-        Assert.IsTrue(scanned > 1, $"Scanned {scanned} test sources; the scan has narrowed to nothing.");
+        Assert.True(scanned > 1, $"Scanned {scanned} test sources; the scan has narrowed to nothing.");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             offences.Count,
             "A test built a SchemaRegistry with a real HttpClient, so it resolves schemas over the "
@@ -214,7 +213,7 @@ public sealed class ProductionSchemaRegistryTests
         string root = Path.Combine(repoRoot, "src", app);
 
         // A missing project directory is a scan that has silently narrowed, not an empty app.
-        Assert.IsTrue(Directory.Exists(root), $"Expected an app project at '{root}'.");
+        Assert.True(Directory.Exists(root), $"Expected an app project at '{root}'.");
 
         return EnumerateSourcesUnder(root);
     }

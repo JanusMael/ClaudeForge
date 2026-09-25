@@ -188,7 +188,10 @@ function Main {
         # "doesn't have a target for net10.0/win-x64". Reproduced in DEVELOPMENT mode too,
         # which is how it was ruled out as a symptom of the switch.
         Invoke-Dotnet -What 'build' -DotnetArgs (@('build', $solution, '-c', 'Release', '--nologo') + $switch)
-        Invoke-Dotnet -What 'test'  -DotnetArgs (@('test', $solution, '-c', 'Release', '--no-build', '--nologo') + $switch)
+        # ⛔ No `--nologo` on `test`. Under Microsoft.Testing.Platform it is forwarded to every
+        # test executable, each of which rejects it: exit 5, "Zero tests ran", and nothing in
+        # the output names the option. The `-p:` switches are consumed by MSBuild and are fine.
+        Invoke-Dotnet -What 'test'  -DotnetArgs (@('test', '--solution', $solution, '-c', 'Release', '--no-build') + $switch)
 
         if (-not $SkipPublish) {
             $rid = if ($RuntimeIdentifier) {

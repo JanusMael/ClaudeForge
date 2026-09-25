@@ -25,7 +25,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// guards the ordering behaviourally.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class OutputStylePropertyPromotionTests
 {
     private static JsonSchemaNode LoadBundledClaudeCodeRoot()
@@ -34,7 +33,7 @@ public sealed class OutputStylePropertyPromotionTests
         string resourceName = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
 
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        Assert.IsNotNull(stream, $"Embedded resource '{resourceName}' must exist.");
+        MessageAssert.NotNull(stream, $"Embedded resource '{resourceName}' must exist.");
         using StreamReader reader = new(stream!);
         string json = reader.ReadToEnd();
 
@@ -43,22 +42,22 @@ public sealed class OutputStylePropertyPromotionTests
         return schema.Root!;
     }
 
-    [TestMethod]
+    [Fact]
     public void OutputStyle_Promotes_ToEnum_WithExamples()
     {
         JsonSchemaNode root = LoadBundledClaudeCodeRoot();
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(root);
 
         SchemaNode? outputStyle = top.FirstOrDefault(n => n.Name == "outputStyle");
-        Assert.IsNotNull(outputStyle, "outputStyle property must exist at top level of schema");
+        MessageAssert.NotNull(outputStyle, "outputStyle property must exist at top level of schema");
 
-        Assert.AreEqual(SchemaValueType.Enum, outputStyle!.ValueType,
+        MessageAssert.Equal(SchemaValueType.Enum, outputStyle!.ValueType,
             "string + examples must promote to Enum so the UI shows an AutoCompleteBox.");
 
-        Assert.IsTrue(outputStyle.EnumValues.Count >= 3,
+        Assert.True(outputStyle.EnumValues.Count >= 3,
             $"Examples should provide at least three suggestions; got {outputStyle.EnumValues.Count}.");
-        CollectionAssert.Contains(outputStyle.EnumValues.ToArray(), "default");
-        CollectionAssert.Contains(outputStyle.EnumValues.ToArray(), "Explanatory");
-        CollectionAssert.Contains(outputStyle.EnumValues.ToArray(), "Learning");
+        Assert.Contains("default", outputStyle.EnumValues.ToArray());
+        Assert.Contains("Explanatory", outputStyle.EnumValues.ToArray());
+        Assert.Contains("Learning", outputStyle.EnumValues.ToArray());
     }
 }

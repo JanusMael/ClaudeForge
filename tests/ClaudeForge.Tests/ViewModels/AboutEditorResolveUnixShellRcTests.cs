@@ -8,29 +8,34 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// syntax to use.  Mutates <c>$SHELL</c> + <c>$HOME</c> for the duration
 /// of each test and restores them afterwards.
 /// </summary>
-[TestClass]
-public sealed class AboutEditorResolveUnixShellRcTests
+public sealed class AboutEditorResolveUnixShellRcTests : IDisposable
 {
     private string? _origShell;
     private string? _origHome;
 
-    [TestInitialize]
-    public void Setup()
+    public AboutEditorResolveUnixShellRcTests() => Setup();
+
+    private void Setup()
     {
         _origShell = Environment.GetEnvironmentVariable("SHELL");
         _origHome = Environment.GetEnvironmentVariable("HOME");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         Environment.SetEnvironmentVariable("SHELL", _origShell);
         Environment.SetEnvironmentVariable("HOME", _origHome);
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private const string Dir = "/home/test/.local/bin";
 
-    [TestMethod]
+    [Fact]
     public void Resolve_NoHome_ReturnsNullRcPath()
     {
         Environment.SetEnvironmentVariable("HOME", string.Empty);
@@ -38,10 +43,10 @@ public sealed class AboutEditorResolveUnixShellRcTests
 
         (string? rcPath, string _, string _) = AboutEditorViewModel.ResolveUnixShellRcTarget(Dir);
 
-        Assert.IsNull(rcPath, "Empty $HOME must produce a null rcPath so the caller falls back to Unsupported.");
+        MessageAssert.Null(rcPath, "Empty $HOME must produce a null rcPath so the caller falls back to Unsupported.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_FishShell_PicksFishConfig_AndFishSyntax()
     {
         Environment.SetEnvironmentVariable("HOME", "/home/test");
@@ -49,14 +54,14 @@ public sealed class AboutEditorResolveUnixShellRcTests
 
         (string? rcPath, string exportLine, string kind) = AboutEditorViewModel.ResolveUnixShellRcTarget(Dir);
 
-        Assert.IsNotNull(rcPath);
-        StringAssert.EndsWith(rcPath!, Path.Combine(".config", "fish", "config.fish"));
-        StringAssert.Contains(exportLine, "set -x PATH");
-        StringAssert.Contains(exportLine, Dir);
-        Assert.AreEqual("fish", kind);
+        Assert.NotNull(rcPath);
+        OrdinalAssert.EndsWith(Path.Combine(".config", "fish", "config.fish"), rcPath!);
+        OrdinalAssert.Contains("set -x PATH", exportLine);
+        OrdinalAssert.Contains(Dir, exportLine);
+        Assert.Equal("fish", kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_ZshShell_PicksZshrc_AndExportSyntax()
     {
         Environment.SetEnvironmentVariable("HOME", "/home/test");
@@ -64,14 +69,14 @@ public sealed class AboutEditorResolveUnixShellRcTests
 
         (string? rcPath, string exportLine, string kind) = AboutEditorViewModel.ResolveUnixShellRcTarget(Dir);
 
-        Assert.IsNotNull(rcPath);
-        StringAssert.EndsWith(rcPath!, ".zshrc");
-        StringAssert.Contains(exportLine, "export PATH=");
-        StringAssert.Contains(exportLine, Dir);
-        Assert.AreEqual("zsh", kind);
+        Assert.NotNull(rcPath);
+        OrdinalAssert.EndsWith(".zshrc", rcPath!);
+        OrdinalAssert.Contains("export PATH=", exportLine);
+        OrdinalAssert.Contains(Dir, exportLine);
+        Assert.Equal("zsh", kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_BashShell_PicksBashrc_AndExportSyntax()
     {
         Environment.SetEnvironmentVariable("HOME", "/home/test");
@@ -79,14 +84,14 @@ public sealed class AboutEditorResolveUnixShellRcTests
 
         (string? rcPath, string exportLine, string kind) = AboutEditorViewModel.ResolveUnixShellRcTarget(Dir);
 
-        Assert.IsNotNull(rcPath);
-        StringAssert.EndsWith(rcPath!, ".bashrc");
-        StringAssert.Contains(exportLine, "export PATH=");
-        StringAssert.Contains(exportLine, Dir);
-        Assert.AreEqual("bash", kind);
+        Assert.NotNull(rcPath);
+        OrdinalAssert.EndsWith(".bashrc", rcPath!);
+        OrdinalAssert.Contains("export PATH=", exportLine);
+        OrdinalAssert.Contains(Dir, exportLine);
+        Assert.Equal("bash", kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_UnknownShell_FallsBackToBashrc()
     {
         // Default fallback covers sh / ash / dash / busybox via the same
@@ -96,12 +101,12 @@ public sealed class AboutEditorResolveUnixShellRcTests
 
         (string? rcPath, string _, string kind) = AboutEditorViewModel.ResolveUnixShellRcTarget(Dir);
 
-        Assert.IsNotNull(rcPath);
-        StringAssert.EndsWith(rcPath!, ".bashrc");
-        Assert.AreEqual("bash", kind);
+        Assert.NotNull(rcPath);
+        OrdinalAssert.EndsWith(".bashrc", rcPath!);
+        Assert.Equal("bash", kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_FishExportLine_QuotesDirectory()
     {
         // Defensive: directory paths can contain spaces ($HOME/My Apps/.local/bin
@@ -113,6 +118,6 @@ public sealed class AboutEditorResolveUnixShellRcTests
         string dirWithSpace = "/home/test/My Apps/.local/bin";
         (string? _, string exportLine, string _) = AboutEditorViewModel.ResolveUnixShellRcTarget(dirWithSpace);
 
-        StringAssert.Contains(exportLine, $"\"{dirWithSpace}\"");
+        OrdinalAssert.Contains($"\"{dirWithSpace}\"", exportLine);
     }
 }

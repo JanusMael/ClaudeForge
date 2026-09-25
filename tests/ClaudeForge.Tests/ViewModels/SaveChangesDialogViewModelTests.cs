@@ -19,7 +19,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// a product that does not exist.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class SaveChangesDialogViewModelTests
 {
     private static SaveDialogText Text => ClaudeSaveDialogText.Create();
@@ -36,13 +35,13 @@ public sealed class SaveChangesDialogViewModelTests
     // Section: FilePath round-trip
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Section_FilePath_DefaultsToEmpty()
     {
-        Assert.AreEqual(string.Empty, Section().FilePath);
+        Assert.Equal(string.Empty, Section().FilePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Section_FilePath_RoundTrips()
     {
         SaveChangeSectionViewModel section = new()
@@ -50,7 +49,7 @@ public sealed class SaveChangesDialogViewModelTests
             FilePath = "~/.claude/settings.json",
             ActionVerb = Strings.LabelWillBeWrittenTo,
         };
-        Assert.AreEqual("~/.claude/settings.json", section.FilePath);
+        Assert.Equal("~/.claude/settings.json", section.FilePath);
     }
 
     /// <summary>
@@ -60,10 +59,10 @@ public sealed class SaveChangesDialogViewModelTests
     /// default invites. What matters now is that the builder supplies the right one,
     /// which <see cref="SaveDialogBuilderTests"/> asserts against a real workspace.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Section_ActionVerb_IsWhateverItWasGiven()
     {
-        Assert.AreEqual(Strings.LabelWillBeRestoredTo,
+        Assert.Equal(Strings.LabelWillBeRestoredTo,
             Section(Strings.LabelWillBeRestoredTo).ActionVerb);
     }
 
@@ -71,36 +70,36 @@ public sealed class SaveChangesDialogViewModelTests
     // Outer ViewModel: ActionVerb / SummaryLine vary by Mode
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Outer_ActionVerb_SaveMode()
     {
         SaveChangesDialogViewModel dlg = new() { Mode = SaveDialogMode.Save, Text = Text };
-        Assert.AreEqual(Strings.LabelWillBeWrittenTo, dlg.ActionVerb);
+        Assert.Equal(Strings.LabelWillBeWrittenTo, dlg.ActionVerb);
     }
 
-    [TestMethod]
+    [Fact]
     public void Outer_ActionVerb_RestoreMode()
     {
         SaveChangesDialogViewModel dlg = new() { Mode = SaveDialogMode.Restore, Text = Text };
-        Assert.AreEqual(Strings.LabelWillBeRestoredTo, dlg.ActionVerb);
+        Assert.Equal(Strings.LabelWillBeRestoredTo, dlg.ActionVerb);
     }
 
-    [TestMethod]
+    [Fact]
     public void Outer_TitleAndConfirmButton_VaryByMode()
     {
         SaveChangesDialogViewModel save = new() { Mode = SaveDialogMode.Save, Text = Text };
         SaveChangesDialogViewModel restore = new() { Mode = SaveDialogMode.Restore, Text = Text };
 
-        Assert.AreEqual(Strings.DialogTitleSaveChanges, save.WindowTitle);
-        Assert.AreEqual(Strings.DialogTitleRestorePreview, restore.WindowTitle);
-        Assert.AreEqual(Strings.ButtonSaveDialog, save.ConfirmButtonLabel);
-        Assert.AreEqual(Strings.ButtonRestore, restore.ConfirmButtonLabel);
-        Assert.AreEqual(Strings.ButtonCancel, save.CancelButtonLabel,
+        Assert.Equal(Strings.DialogTitleSaveChanges, save.WindowTitle);
+        Assert.Equal(Strings.DialogTitleRestorePreview, restore.WindowTitle);
+        Assert.Equal(Strings.ButtonSaveDialog, save.ConfirmButtonLabel);
+        Assert.Equal(Strings.ButtonRestore, restore.ConfirmButtonLabel);
+        MessageAssert.Equal(Strings.ButtonCancel, save.CancelButtonLabel,
             "Cancel reads the same in both modes.");
-        Assert.AreEqual(Strings.ButtonCancel, restore.CancelButtonLabel);
+        Assert.Equal(Strings.ButtonCancel, restore.CancelButtonLabel);
     }
 
-    [TestMethod]
+    [Fact]
     public void SummaryLine_SaveMode_RendersCorrectCounts()
     {
         SaveChangesDialogViewModel dlg = BuildDialog(
@@ -110,11 +109,11 @@ public sealed class SaveChangesDialogViewModelTests
         // 2 + 3 = 5 changes across 2 files. The exact wording lives in
         // Strings.resx; we assert each numeric token appears so the test
         // remains stable across translations.
-        StringAssert.Contains(dlg.SummaryLine, "5");
-        StringAssert.Contains(dlg.SummaryLine, "2");
+        OrdinalAssert.Contains("5", dlg.SummaryLine);
+        OrdinalAssert.Contains("2", dlg.SummaryLine);
     }
 
-    [TestMethod]
+    [Fact]
     public void SummaryLine_RestoreMode_UsesRestoreTemplate()
     {
         SaveChangesDialogViewModel save = BuildDialog(SaveDialogMode.Save, [1]);
@@ -122,10 +121,10 @@ public sealed class SaveChangesDialogViewModelTests
 
         // The two summary lines must come from different format strings; if
         // they were identical the Mode switch would be silently broken.
-        Assert.AreNotEqual(save.SummaryLine, restore.SummaryLine);
+        Assert.NotEqual(save.SummaryLine, restore.SummaryLine);
     }
 
-    [TestMethod]
+    [Fact]
     public void SummaryLine_NoSections_RendersZeros()
     {
         SaveChangesDialogViewModel dlg = new()
@@ -134,19 +133,19 @@ public sealed class SaveChangesDialogViewModelTests
             Mode = SaveDialogMode.Save,
             Text = Text,
         };
-        StringAssert.Contains(dlg.SummaryLine, "0");
+        OrdinalAssert.Contains("0", dlg.SummaryLine);
     }
 
-    [TestMethod]
+    [Fact]
     public void ChangesOnlyText_JoinsEverySectionAndEntry()
     {
         SaveChangesDialogViewModel dlg = BuildDialog(SaveDialogMode.Save, [2, 1]);
 
         string text = dlg.ChangesOnlyText;
 
-        StringAssert.Contains(text, "key0_0");
-        StringAssert.Contains(text, "key0_1");
-        StringAssert.Contains(text, "key1_0",
+        OrdinalAssert.Contains("key0_0", text);
+        OrdinalAssert.Contains("key0_1", text);
+        MessageAssert.Contains("key1_0", text,
             "The clipboard text must cover every section, not just the first.");
     }
 

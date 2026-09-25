@@ -38,8 +38,7 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// file's name should be read as "the" order.
 /// </para>
 /// </remarks>
-[TestClass]
-public sealed class SchemaLoadPrecedenceTests
+public sealed class SchemaLoadPrecedenceTests : IDisposable
 {
     /// <summary>A property name no real schema will ever declare.</summary>
     private const string NetworkSentinelProperty = "zzzFetchedFromNetworkSentinel";
@@ -47,8 +46,6 @@ public sealed class SchemaLoadPrecedenceTests
     private const string ClaudeCodeCacheFileName = "claude-code-settings.json";
 
     private string _fakeHome = string.Empty;
-
-    public TestContext TestContext { get; set; } = null!;
 
     /// <summary>Refuses every request, so a fall-through to bundled is unmistakable.</summary>
     private sealed class FailingHandler : HttpMessageHandler
@@ -134,16 +131,16 @@ public sealed class SchemaLoadPrecedenceTests
           }
           """;
 
-    [TestInitialize]
-    public void Setup()
+    public SchemaLoadPrecedenceTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(), "cf-schema-precedence-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_fakeHome);
         PlatformPaths.TestUserProfileOverride = _fakeHome;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -159,45 +156,51 @@ public sealed class SchemaLoadPrecedenceTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static IReadOnlyList<string> TopLevelNames(JsonSchemaNode root) =>
         [.. SchemaTreeBuilder.BuildTopLevel(root).Select(n => n.Name)];
 
     // ── The order ─────────────────────────────────────────────────────
 
-    [TestMethod]
-    [Description("A reachable network outranks the bundled copy — the whole point of the reorder.")]
+    [Fact]
+    [Trait("Description", "A reachable network outranks the bundled copy — the whole point of the reorder.")]
     public async Task FetchedSchema_OutranksBundled_WhenTheNetworkAnswers()
     {
         CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         IReadOnlyList<string> names = TopLevelNames(root);
 
-        Assert.IsTrue(
+        Assert.True(
             names.Contains(NetworkSentinelProperty, StringComparer.Ordinal),
             "The bundled copy won while the network was answering. The fetch is step 2 and must "
             + $"outrank the bundled resource. Got: {string.Join(", ", names)}");
-        Assert.AreEqual(1, handler.Attempts, "The fetch should have been attempted exactly once.");
+        MessageAssert.Equal(1, handler.Attempts, "The fetch should have been attempted exactly once.");
     }
 
-    [TestMethod]
-    [Description("With no network, the bundled copy is used — and still carries its overlay.")]
+    [Fact]
+    [Trait("Description", "With no network, the bundled copy is used — and still carries its overlay.")]
     public async Task BundledIsUsed_WhenTheNetworkIsUnavailable()
     {
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         IReadOnlyList<string> names = TopLevelNames(root);
 
-        Assert.IsFalse(
+        Assert.False(
             names.Contains(NetworkSentinelProperty, StringComparer.Ordinal),
             "Premise: nothing should have been served from the network here.");
-        Assert.IsTrue(
+        Assert.True(
             names.Contains("model", StringComparer.Ordinal),
             $"The bundled Claude Code schema should expose 'model'. Got: {string.Join(", ", names)}");
-        Assert.IsTrue(handler.Attempts > 0, "The network should have been tried before falling back.");
+        Assert.True(handler.Attempts > 0, "The network should have been tried before falling back.");
     }
 
     // ── The property that makes network-first safe ────────────────────
@@ -216,7 +219,7 @@ public sealed class SchemaLoadPrecedenceTests
     /// but easy to attribute to anything else.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task TheOverlayIsAppliedToAFetchedCopy_NotOnlyTheBundledOne()
     {
         const string upstreamShape = """
@@ -232,25 +235,25 @@ public sealed class SchemaLoadPrecedenceTests
         CannedHandler handler = new(upstreamShape);
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         SchemaNode? model = SchemaTreeBuilder
                             .BuildTopLevel(root)
                             .FirstOrDefault(n => string.Equals(n.Name, "model", StringComparison.Ordinal));
 
-        Assert.IsNotNull(model, "The fetched schema declares 'model'; it should be in the tree.");
+        MessageAssert.NotNull(model, "The fetched schema declares 'model'; it should be in the tree.");
 
         // ⛔⛔ WITHOUT THIS, THE TEST IS A TAUTOLOGY. Measured: disabling the fetch branch
         // entirely left it green, because bundled+overlay promotes 'model' to Enum too. The
         // served body declares 'model' and NOTHING else, so a one-property tree is the proof
         // that the fetched copy is the one the overlay was applied to.
         IReadOnlyList<string> names = TopLevelNames(root);
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "model" },
             names.ToArray(),
             "The tree has more than the single property the served body declared, so BUNDLED "
             + $"won and this test is not looking at a fetched copy at all. Got: {string.Join(", ", names)}");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             SchemaValueType.Enum,
             model.ValueType,
             "'model' did not promote to Enum, so the overlay was NOT applied to the fetched "
@@ -269,7 +272,7 @@ public sealed class SchemaLoadPrecedenceTests
     /// the moment a fetch can win, the runtime must strip exactly as the refresh scripts do.
     /// This is the test that would have caught shipping network-first without the strip.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task AFetchedSchemaIsStripped_SoAnExternalRefCannotReachTheEditor()
     {
         const string withExternalRef = """
@@ -290,21 +293,21 @@ public sealed class SchemaLoadPrecedenceTests
         using SchemaRegistry registry = new(new HttpClient(handler));
 
         JsonSchema schema = await registry.GetSchemaAsync(
-            "https://example.invalid/stripme.json", "stripme.json", TestContext.CancellationToken);
+            "https://example.invalid/stripme.json", "stripme.json", TestContext.Current.CancellationToken);
 
         SchemaNode? node = SchemaTreeBuilder
                            .BuildTopLevel(schema.Root!)
                            .FirstOrDefault(n => string.Equals(n.Name, "someModel", StringComparison.Ordinal));
 
-        Assert.IsNotNull(node,
+        MessageAssert.NotNull(node,
             "The property survived the strip only if it is still in the tree — a strip that ate "
             + "its sibling keys would leave an untyped schema that permits anything.");
-        Assert.AreEqual(SchemaValueType.String, node.ValueType,
+        MessageAssert.Equal(SchemaValueType.String, node.ValueType,
             "The 'type': 'string' sibling must survive, or the strip left a permissive hole.");
     }
 
     /// <summary>The strip is idempotent, which is why bundled can share the path.</summary>
-    [TestMethod]
+    [Fact]
     public void StrippingIsIdempotent_AndLeavesRefFreeTextUntouched()
     {
         const string clean = """
@@ -313,7 +316,7 @@ public sealed class SchemaLoadPrecedenceTests
                              }
                              """;
 
-        Assert.AreEqual(clean, SchemaRegistry.StripExternalRefs(clean),
+        MessageAssert.Equal(clean, SchemaRegistry.StripExternalRefs(clean),
             "Text with no external $ref must come back byte-identical, or every bundled schema "
             + "is needlessly rewritten on load.");
 
@@ -330,10 +333,10 @@ public sealed class SchemaLoadPrecedenceTests
             }
             """);
 
-        Assert.AreEqual(once, SchemaRegistry.StripExternalRefs(once),
+        MessageAssert.Equal(once, SchemaRegistry.StripExternalRefs(once),
             "A second pass must change nothing.");
-        Assert.IsFalse(once.Contains("$ref", StringComparison.Ordinal), "The $ref should be gone.");
-        Assert.IsTrue(once.Contains("\"type\": \"string\"", StringComparison.Ordinal),
+        Assert.False(once.Contains("$ref", StringComparison.Ordinal), "The $ref should be gone.");
+        Assert.True(once.Contains("\"type\": \"string\"", StringComparison.Ordinal),
             "The sibling type must remain — a strip that ate it would leave a schema that "
             + "permits anything.");
     }
@@ -353,7 +356,7 @@ public sealed class SchemaLoadPrecedenceTests
     /// <see cref="SchemaRegistry.StripExternalRefs"/> boundary, where the shape is visible.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void AnInlineExternalRef_SurvivesTheStrip_AndIsThereforeRefused()
     {
         const string inlineRef = """
@@ -364,14 +367,14 @@ public sealed class SchemaLoadPrecedenceTests
                                  }
                                  """;
 
-        Assert.IsTrue(
+        Assert.True(
             SchemaRegistry.StripExternalRefs(inlineRef).Contains("$ref", StringComparison.Ordinal),
             "Premise: the line-based strip does NOT remove an inline $ref. If this now passes, "
             + "the strip became structural and the refusal path below is dead code.");
     }
 
     /// <summary>A served copy with an unstrippable ref falls back to bundled, not to a throw.</summary>
-    [TestMethod]
+    [Fact]
     public async Task AFetchedCopyWithAnInlineRef_FallsBackToBundled()
     {
         const string inlineRef = """
@@ -387,13 +390,13 @@ public sealed class SchemaLoadPrecedenceTests
         CannedHandler handler = new(inlineRef);
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         IReadOnlyList<string> names = TopLevelNames(root);
 
-        Assert.IsTrue(names.Count > 1,
+        Assert.True(names.Count > 1,
             "The bundled schema should have supplied the tree — it declares far more than the "
             + $"one property the refused copy did. Got: {names.Count} propert(ies).");
-        Assert.IsTrue(handler.Attempts > 0, "Premise: the fetch was attempted.");
+        Assert.True(handler.Attempts > 0, "Premise: the fetch was attempted.");
     }
 
     // ── No empty fallback ─────────────────────────────────────────────
@@ -406,20 +409,20 @@ public sealed class SchemaLoadPrecedenceTests
     /// degrade validation, it removed it — while every surface still reported success. This
     /// replaced the test that asserted a fall-through to the disk cache.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task NoBundledResourceAndNoNetwork_Throws_RatherThanValidatingNothing()
     {
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
         SchemaUnavailableException ex =
-            await Assert.ThrowsExactlyAsync<SchemaUnavailableException>(
+            await Assert.ThrowsAsync<SchemaUnavailableException>(
                 () => registry.GetSchemaAsync(
                     "https://example.invalid/no-such-schema.json",
                     "no-such-bundled-schema.json",
-                    TestContext.CancellationToken));
+                    TestContext.Current.CancellationToken));
 
-        Assert.AreEqual("no-such-bundled-schema.json", ex.CacheFileName);
+        Assert.Equal("no-such-bundled-schema.json", ex.CacheFileName);
     }
 
     // ── The offline latch ─────────────────────────────────────────────
@@ -432,22 +435,22 @@ public sealed class SchemaLoadPrecedenceTests
     /// by attempt COUNT across two different URLs, because a latch that merely caches the
     /// result per URL would look identical from the outside for a single URL.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task OneFailedProbe_SuppressesFurtherFetchAttempts()
     {
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
-        Assert.AreEqual(1, handler.Attempts, "Premise: the first load probes the network once.");
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        MessageAssert.Equal(1, handler.Attempts, "Premise: the first load probes the network once.");
 
         // A DIFFERENT url and file, so nothing can be served from the memory cache.
         await registry.GetSchemaAsync(
             "https://example.invalid/opencode-config.json",
             "opencode-config.json",
-            TestContext.CancellationToken);
+            TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(1, handler.Attempts,
+        MessageAssert.Equal(1, handler.Attempts,
             "The second schema probed the network again. Offline startup then costs one timeout "
             + "per schema instead of one per session.");
     }
@@ -458,21 +461,21 @@ public sealed class SchemaLoadPrecedenceTests
     /// release direction — a latch with no reset is a one-way door, which reads as working
     /// until someone reconnects and nothing changes.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_RetriesTheNetwork_AfterTheLatchTripped()
     {
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         int afterFirstLoad = handler.Attempts;
 
         await registry.RefreshAsync(
             SchemaRegistry.ClaudeCodeSettingsSchemaUrl,
             ClaudeCodeCacheFileName,
-            TestContext.CancellationToken);
+            TestContext.Current.CancellationToken);
 
-        Assert.IsTrue(handler.Attempts > afterFirstLoad,
+        Assert.True(handler.Attempts > afterFirstLoad,
             "RefreshAsync did not re-probe the network. It must clear the offline latch, or "
             + "'check for updates' silently does nothing for the rest of the session.");
     }
@@ -489,19 +492,19 @@ public sealed class SchemaLoadPrecedenceTests
     /// served body declares no <c>$defs.hookCommand</c>, so the instance reader must report
     /// none while the static still finds the bundled ones.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task TheHookMetadataReader_FollowsTheCopyThatActuallyLoaded()
     {
         CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        Assert.IsTrue(
+        Assert.True(
             SchemaRegistry.GetHookCommandVariants(ClaudeCodeCacheFileName).Count > 0,
             "Premise: the BUNDLED Claude Code schema does declare hook command variants.");
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             0,
             registry.GetHookCommandVariantsFor(ClaudeCodeCacheFileName).Count,
             "The instance reader still reported the bundled hook variants after a fetched copy "
@@ -541,23 +544,22 @@ public sealed class SchemaLoadPrecedenceTests
     /// stopped being applied at all.
     /// </para>
     /// </remarks>
-    [TestMethod]
-    [Timeout(15000)]
+    [Fact(Timeout = 15000)]
     public async Task ASlowNetworkDoesNotHoldUpTheLoad()
     {
         using SchemaRegistry registry = new(new HttpClient(new SlowHandler()));
 
         long startedAt = Environment.TickCount64;
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         long elapsedMs = Environment.TickCount64 - startedAt;
 
-        Assert.IsTrue(
+        Assert.True(
             elapsedMs < 10_000,
             $"The load took {elapsedMs}ms against a handler that waits 20s. The fetch timeout "
             + "is not bounding it, so every launch behind a black-holed network freezes for as "
             + "long as the network cares to stall.");
 
-        Assert.IsTrue(
+        Assert.True(
             TopLevelNames(root).Contains("model", StringComparer.Ordinal),
             "After abandoning the fetch the bundled copy must supply the schema.");
     }
@@ -579,12 +581,12 @@ public sealed class SchemaLoadPrecedenceTests
     /// there is no per-type metadata that distinguishes "called the right one".
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheClaudeSdkReadsHookMetadataFromItsOwnRegistryInstance()
     {
         string path = Path.Combine(
             RepoRoot(), "src", "ClaudeForge.Sdk.Claude", "ClaudeConfigClientBase.cs");
-        Assert.IsTrue(File.Exists(path), $"'{path}' not found.");
+        Assert.True(File.Exists(path), $"'{path}' not found.");
 
         string source = File.ReadAllText(path);
 
@@ -594,14 +596,14 @@ public sealed class SchemaLoadPrecedenceTests
             "SchemaRegistry.GetHookCommandVariants(",
         })
         {
-            Assert.IsFalse(
+            Assert.False(
                 source.Contains(bundledOnly, StringComparison.Ordinal),
                 $"ClaudeConfigClientBase calls the static '{bundledOnly}', which always reads the "
                 + "BUNDLED schema. Use the instance overload on SchemaRegistryInstance so the "
                 + "metadata describes whichever copy this client actually loaded.");
         }
 
-        Assert.IsTrue(
+        Assert.True(
             source.Contains("SchemaRegistryInstance.GetHookEventsFor(", StringComparison.Ordinal),
             "Premise: the file should be calling the instance overload. If this fails the scan "
             + "has lost its subject and the assertions above pass vacuously.");
@@ -632,28 +634,28 @@ public sealed class SchemaLoadPrecedenceTests
     /// second when it means the first would state something nobody established — and it would
     /// do so on exactly the startup window where a page is most likely to be looked at.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ProvenanceIsNull_BeforeAnythingIsLoaded()
     {
         using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
 
-        Assert.IsNull(registry.ProvenanceFor(ClaudeCodeCacheFileName));
+        Assert.Null(registry.ProvenanceFor(ClaudeCodeCacheFileName));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AFetchedSchemaIsRecordedAsFetched_WithATimestamp()
     {
         DateTimeOffset before = DateTimeOffset.UtcNow;
         CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
         SchemaProvenance? p = registry.ProvenanceFor(ClaudeCodeCacheFileName);
-        Assert.IsNotNull(p);
-        Assert.AreEqual(SchemaSource.Fetched, p.Source);
-        Assert.IsNotNull(p.FetchedUtc, "A fetched schema must carry when it was fetched.");
-        Assert.IsTrue(p.FetchedUtc >= before, "The timestamp predates the fetch.");
+        Assert.NotNull(p);
+        Assert.Equal(SchemaSource.Fetched, p.Source);
+        MessageAssert.NotNull(p.FetchedUtc, "A fetched schema must carry when it was fetched.");
+        Assert.True(p.FetchedUtc >= before, "The timestamp predates the fetch.");
     }
 
     /// <summary>A bundled schema has no timestamp, because it has no meaningful one.</summary>
@@ -661,17 +663,17 @@ public sealed class SchemaLoadPrecedenceTests
     /// It is as old as the binary, which the version already states. Inventing "now" would make
     /// every launch look like a fresh download.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task ABundledSchemaIsRecordedAsBundled_WithNoTimestamp()
     {
         using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
         SchemaProvenance? p = registry.ProvenanceFor(ClaudeCodeCacheFileName);
-        Assert.IsNotNull(p);
-        Assert.AreEqual(SchemaSource.Bundled, p.Source);
-        Assert.IsNull(p.FetchedUtc,
+        Assert.NotNull(p);
+        Assert.Equal(SchemaSource.Bundled, p.Source);
+        MessageAssert.Null(p.FetchedUtc,
             "A bundled schema is as old as the binary; a timestamp here would read as a download.");
     }
 
@@ -689,7 +691,7 @@ public sealed class SchemaLoadPrecedenceTests
     /// raw-source hashing would get wrong.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task TheDigestCoversTheMergedDocument_NotTheRawSource()
     {
         // Same served text both times; the difference is the file name, which selects the
@@ -704,33 +706,33 @@ public sealed class SchemaLoadPrecedenceTests
 
         using SchemaRegistry withOverlay = new(new HttpClient(new CannedHandler(body)));
         await withOverlay.GetSchemaAsync(
-            "https://example.invalid/a.json", ClaudeCodeCacheFileName, TestContext.CancellationToken);
+            "https://example.invalid/a.json", ClaudeCodeCacheFileName, TestContext.Current.CancellationToken);
 
         using SchemaRegistry withoutOverlay = new(new HttpClient(new CannedHandler(body)));
         await withoutOverlay.GetSchemaAsync(
-            "https://example.invalid/b.json", "no-overlay-for-this.json", TestContext.CancellationToken);
+            "https://example.invalid/b.json", "no-overlay-for-this.json", TestContext.Current.CancellationToken);
 
         string merged = withOverlay.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256;
         string bare = withoutOverlay.ProvenanceFor("no-overlay-for-this.json")!.Sha256;
 
-        Assert.AreNotEqual(bare, merged,
+        MessageAssert.NotEqual(bare, merged,
             "Identical served text produced identical digests even though one had an overlay "
             + "merged onto it. The hash is covering the raw download, so two installs whose "
             + "editors behave differently would report the same fingerprint.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TheDigestIsStableForTheSameDocument()
     {
         CannedHandler h1 = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry a = new(new HttpClient(h1));
-        await a.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await a.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
         CannedHandler h2 = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry b = new(new HttpClient(h2));
-        await b.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await b.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             a.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256,
             b.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256,
             "The same document hashed differently across two registries, so the digest is "
@@ -746,24 +748,24 @@ public sealed class SchemaLoadPrecedenceTests
     /// the refresh re-recorded anything — <c>Materialise</c> overwrites the entry on every load.
     /// Serving different bytes the second time is what makes the re-record observable.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_ReRecordsTheProvenance()
     {
         MutableHandler handler = new() { Body = SentinelSchema("zzzBeforeRefresh") };
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
         string before = registry.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256;
 
         handler.Body = SentinelSchema("zzzAfterRefresh");
         await registry.RefreshAsync(
             SchemaRegistry.ClaudeCodeSettingsSchemaUrl,
             ClaudeCodeCacheFileName,
-            TestContext.CancellationToken);
+            TestContext.Current.CancellationToken);
 
         SchemaProvenance after = registry.ProvenanceFor(ClaudeCodeCacheFileName)!;
-        Assert.AreEqual(SchemaSource.Fetched, after.Source);
-        Assert.AreNotEqual(before, after.Sha256,
+        Assert.Equal(SchemaSource.Fetched, after.Source);
+        MessageAssert.NotEqual(before, after.Sha256,
             "The digest did not change after a refresh that served different bytes, so the "
             + "provenance is describing the previous load.");
     }
@@ -778,7 +780,7 @@ public sealed class SchemaLoadPrecedenceTests
     /// the refresh throws — then the cached schema is gone but a stale record would still
     /// describe it, which is a badge confidently reporting a document the app is not using.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task AFailedRefresh_LeavesNoStaleProvenance()
     {
         // A name with NO bundled resource, so a failed fetch has nothing to fall back to.
@@ -788,32 +790,32 @@ public sealed class SchemaLoadPrecedenceTests
         MutableHandler handler = new() { Body = SentinelSchema("zzzFirstLoad") };
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetSchemaAsync(url, file, TestContext.CancellationToken);
-        Assert.IsNotNull(registry.ProvenanceFor(file), "Premise: the first load recorded one.");
+        await registry.GetSchemaAsync(url, file, TestContext.Current.CancellationToken);
+        MessageAssert.NotNull(registry.ProvenanceFor(file), "Premise: the first load recorded one.");
 
         handler.Failing = true;
 
-        await Assert.ThrowsExactlyAsync<SchemaUnavailableException>(
-            () => registry.RefreshAsync(url, file, TestContext.CancellationToken));
+        await Assert.ThrowsAsync<SchemaUnavailableException>(
+            () => registry.RefreshAsync(url, file, TestContext.Current.CancellationToken));
 
-        Assert.IsNull(registry.ProvenanceFor(file),
+        MessageAssert.Null(registry.ProvenanceFor(file),
             "After a refresh that could load nothing, the provenance still describes the "
             + "previous load — so a badge would report a schema the registry no longer holds.");
     }
 
     /// <summary>The short digest is a prefix of the full one, and long enough to distinguish.</summary>
-    [TestMethod]
+    [Fact]
     public async Task TheShortDigestIsAPrefixOfTheFullOne()
     {
         using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
         SchemaProvenance p = registry.ProvenanceFor(ClaudeCodeCacheFileName)!;
 
-        Assert.AreEqual(64, p.Sha256.Length, "SHA-256 hex is 64 characters.");
-        Assert.AreEqual(12, p.ShortSha.Length);
-        Assert.IsTrue(p.Sha256.StartsWith(p.ShortSha, StringComparison.Ordinal));
-        Assert.AreEqual(p.Sha256.ToLowerInvariant(), p.Sha256,
+        MessageAssert.Equal(64, p.Sha256.Length, "SHA-256 hex is 64 characters.");
+        Assert.Equal(12, p.ShortSha.Length);
+        Assert.StartsWith(p.ShortSha, p.Sha256, StringComparison.Ordinal);
+        MessageAssert.Equal(p.Sha256.ToLowerInvariant(), p.Sha256,
             "Lower-case hex, so two reports of the same digest compare as strings.");
     }
 }

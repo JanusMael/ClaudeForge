@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// OpenCode's actual policy, in <c>OpenCodeForge.Tests</c>.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SearchResultDangerTests
 {
     private const string Section = "Widget Forge";
@@ -90,7 +89,7 @@ public sealed class SearchResultDangerTests
 
     // ── Schema-driven pages ───────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SchemaHitCarriesTheAssessmentOfThePathItPointsAt()
     {
         StubPage page = new()
@@ -104,14 +103,14 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("permission");
 
         SearchResultViewModel hit = vm.SearchResults.Single(r => r.PropertyKey == "permission");
-        Assert.AreEqual(AppSeverity.Critical, hit.Danger.Severity);
-        Assert.IsTrue(hit.Danger.IsDangerNow, "The held value's danger must survive the hop.");
-        Assert.IsTrue(hit.HasDangerSeverity, "A hit with an explanation must render a dot.");
-        Assert.AreEqual("Critical: auto-approves every tool", hit.DangerAccessibleText,
+        Assert.Equal(AppSeverity.Critical, hit.Danger.Severity);
+        Assert.True(hit.Danger.IsDangerNow, "The held value's danger must survive the hop.");
+        Assert.True(hit.HasDangerSeverity, "A hit with an explanation must render a dot.");
+        MessageAssert.Equal("Critical: auto-approves every tool", hit.DangerAccessibleText,
             "The dot is a coloured glyph; this string is the only thing a screen reader gets.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedSchemaHitIsAskedByItsOwnFullPath()
     {
         // Search flattens nested schema nodes, so the hit's path is the nested one. Asking with
@@ -134,12 +133,12 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("bash");
 
         SearchResultViewModel hit = vm.SearchResults.Single(r => r.PropertyKey == "permission.bash");
-        Assert.AreEqual(AppSeverity.Critical, hit.Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, hit.Danger.Severity,
             "A nested hit must be assessed by its own dotted path.");
-        CollectionAssert.Contains(page.Asked, "permission.bash");
+        Assert.Contains("permission.bash", page.Asked);
     }
 
-    [TestMethod]
+    [Fact]
     public void APathThePageDoesNotClaimRendersNoDot()
     {
         StubPage page = new()
@@ -153,13 +152,13 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("theme");
 
         SearchResultViewModel hit = vm.SearchResults.Single();
-        Assert.AreEqual(DangerAssessment.Unremarkable, hit.Danger);
-        Assert.IsFalse(hit.HasDangerSeverity, "No dot for a knob the product did not triage.");
-        Assert.AreEqual(string.Empty, hit.DangerAccessibleText,
+        Assert.Equal(DangerAssessment.Unremarkable, hit.Danger);
+        Assert.False(hit.HasDangerSeverity, "No dot for a knob the product did not triage.");
+        MessageAssert.Equal(string.Empty, hit.DangerAccessibleText,
             "An empty announcement, not the word 'Neutral' — there is nothing to say.");
     }
 
-    [TestMethod]
+    [Fact]
     public void APageThatCannotBeAskedStillProducesHits()
     {
         // A product with no danger table is a missing feature, not a wrong answer: search must
@@ -171,13 +170,13 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("theme");
 
         SearchResultViewModel hit = vm.SearchResults.Single();
-        Assert.AreEqual(DangerAssessment.Unremarkable, hit.Danger);
-        Assert.IsFalse(hit.HasDangerSeverity);
+        Assert.Equal(DangerAssessment.Unremarkable, hit.Danger);
+        Assert.False(hit.HasDangerSeverity);
     }
 
     // ── Specialised editors, matched through the SDK ──────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SpecialisedEditorHitCarriesTheAssessmentToo()
     {
         StubSpecialisedPage page = new()
@@ -199,12 +198,12 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("bash");
 
         SearchResultViewModel hit = vm.SearchResults.Single(r => r.PropertyKey == "permission.bash");
-        Assert.AreEqual(AppSeverity.Critical, hit.Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, hit.Danger.Severity,
             "The specialised-editor branch is where the most dangerous keys live (permissions, "
             + "MCP servers); a dot missing here would be missing on exactly the wrong page.");
     }
 
-    [TestMethod]
+    [Fact]
     public void APageTitleFallbackRowCarriesNoAssessment()
     {
         // This row points at a PAGE, not a property — its PropertyKey is empty. Asking with an
@@ -220,14 +219,14 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("Permissions");
 
         SearchResultViewModel hit = vm.SearchResults.Single();
-        Assert.AreEqual(string.Empty, hit.PropertyKey, "Guard the premise: this is the fallback row.");
-        Assert.AreEqual(DangerAssessment.Unremarkable, hit.Danger,
+        MessageAssert.Equal(string.Empty, hit.PropertyKey, "Guard the premise: this is the fallback row.");
+        MessageAssert.Equal(DangerAssessment.Unremarkable, hit.Danger,
             "A page-level row must not borrow a property's severity.");
     }
 
     // ── Synthetic rows ────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SyntheticRowCarriesTheAssessmentOfThePropertyItMapsOnto()
     {
         // A synthetic row exists to map a CLI flag or a card onto a real config property, so it
@@ -263,7 +262,7 @@ public sealed class SearchResultDangerTests
         vm.ExecuteSearch("yolo");
 
         SearchResultViewModel row = vm.SearchResults.Single(r => r.IsSynthetic);
-        Assert.AreEqual(AppSeverity.Critical, row.Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, row.Danger.Severity,
             "A synthetic row points at a real property and must carry its severity.");
     }
 }

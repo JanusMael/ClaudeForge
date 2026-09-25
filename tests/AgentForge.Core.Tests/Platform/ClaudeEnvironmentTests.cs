@@ -20,24 +20,23 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 /// does nothing but read and delegate.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ClaudeEnvironmentTests
 {
-    [TestMethod]
+    [Fact]
     public void Empty_HasNoConfigDir()
     {
-        Assert.IsNull(ClaudeEnvironment.Empty.ConfigDir);
-        Assert.IsNull(ClaudeEnvironment.Empty.ResolvedConfigDir);
+        Assert.Null(ClaudeEnvironment.Empty.ConfigDir);
+        Assert.Null(ClaudeEnvironment.Empty.ResolvedConfigDir);
     }
 
-    [TestMethod]
+    [Fact]
     public void AnAbsolutePath_ResolvesToItself()
     {
         string absolute = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "claude-env-abs"));
 
         ClaudeEnvironment env = new(absolute);
 
-        Assert.AreEqual(absolute, env.ResolvedConfigDir);
+        Assert.Equal(absolute, env.ResolvedConfigDir);
     }
 
     /// <summary>
@@ -45,15 +44,15 @@ public sealed class ClaudeEnvironmentTests
     /// does that normalisation — so a record constructed with whitespace keeps it, and resolving
     /// it must not silently produce the current directory.
     /// </summary>
-    [TestMethod]
-    [DataRow("")]
-    [DataRow("   ")]
-    [DataRow("\t")]
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t")]
     public void ABlankValue_DoesNotResolveToTheCurrentDirectory(string blank)
     {
         ClaudeEnvironment env = new(blank);
 
-        Assert.AreNotEqual(
+        MessageAssert.NotEqual(
             Directory.GetCurrentDirectory(),
             env.ResolvedConfigDir,
             "A blank CLAUDE_CONFIG_DIR must not resolve to the working directory — that would " +
@@ -65,15 +64,15 @@ public sealed class ClaudeEnvironmentTests
     /// value re-resolved per call would change its answer when the working directory changed,
     /// which defeats reading the environment once at composition.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ARelativePath_IsMadeAbsolute()
     {
         ClaudeEnvironment env = new("some-relative-dir");
 
         string? resolved = env.ResolvedConfigDir;
 
-        Assert.IsNotNull(resolved);
-        Assert.IsTrue(
+        Assert.NotNull(resolved);
+        Assert.True(
             Path.IsPathRooted(resolved),
             $"Expected an absolute path, got '{resolved}'.");
     }
@@ -82,19 +81,19 @@ public sealed class ClaudeEnvironmentTests
     /// ⛔ Resolving must NOT create the directory. A path accessor with a filesystem side effect
     /// turns a typo in the variable into a new empty config tree instead of an error anyone sees.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Resolving_DoesNotCreateTheDirectory()
     {
         string target = Path.Combine(Path.GetTempPath(), "claude-env-" + Guid.NewGuid().ToString("N"));
 
         // Assert the premise, or the claim below is vacuous.
-        Assert.IsFalse(Directory.Exists(target), "Precondition: the scratch path must not exist.");
+        Assert.False(Directory.Exists(target), "Precondition: the scratch path must not exist.");
 
         ClaudeEnvironment env = new(target);
         string? resolved = env.ResolvedConfigDir;
 
-        Assert.AreEqual(target, resolved);
-        Assert.IsFalse(
+        Assert.Equal(target, resolved);
+        Assert.False(
             Directory.Exists(target),
             "ResolvedConfigDir created the directory. It must resolve only.");
     }
@@ -103,10 +102,10 @@ public sealed class ClaudeEnvironmentTests
     /// A record, so equality is by value — which is what lets a test hand one to a path
     /// implementation and compare results without any ambient state.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TwoRecordsWithTheSameValue_AreEqual()
     {
-        Assert.AreEqual(new ClaudeEnvironment("/tmp/x"), new ClaudeEnvironment("/tmp/x"));
-        Assert.AreNotEqual(new ClaudeEnvironment("/tmp/x"), new ClaudeEnvironment("/tmp/y"));
+        Assert.Equal(new ClaudeEnvironment("/tmp/x"), new ClaudeEnvironment("/tmp/x"));
+        Assert.NotEqual(new ClaudeEnvironment("/tmp/x"), new ClaudeEnvironment("/tmp/y"));
     }
 }

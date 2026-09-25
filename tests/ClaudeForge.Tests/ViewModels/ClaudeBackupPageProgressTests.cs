@@ -25,10 +25,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// would leave it green.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ClaudeBackupPageProgressTests
 {
-    [TestMethod]
+    [Fact]
     public void EverySectionAndEnginePhaseHasALabel()
     {
         BackupPageText text = BackupPageTestOptions.Create().Text;
@@ -40,7 +39,7 @@ public sealed class ClaudeBackupPageProgressTests
                 .Select(s => s.ProgressLabelId)
         ];
 
-        Assert.IsTrue(sectionIds.Count > 0,
+        Assert.True(sectionIds.Count > 0,
             "No archive sections were found on Claude's descriptors, so this assertion covers "
             + "nothing. The layout moved or DefaultProducts is empty.");
 
@@ -51,7 +50,7 @@ public sealed class ClaudeBackupPageProgressTests
                          .Where(id => !text.ProgressLabels.ContainsKey(id))
         ];
 
-        Assert.AreEqual(0, missing.Count,
+        MessageAssert.Equal(0, missing.Count,
             "These restore progress ids have no label, so a translated build shows the engine's "
             + "English for them and nothing says so: " + string.Join(", ", missing));
     }
@@ -70,7 +69,7 @@ public sealed class ClaudeBackupPageProgressTests
     /// translations.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EachLabelMatchesTheEnglishTheEngineWouldHaveShown()
     {
         CultureInfo previous = CultureInfo.CurrentUICulture;
@@ -93,7 +92,7 @@ public sealed class ClaudeBackupPageProgressTests
                 }
             }
 
-            Assert.AreEqual(0, mismatches.Count,
+            MessageAssert.Equal(0, mismatches.Count,
                 "A section's English resx value disagrees with the label the engine reports, so "
                 + "the localized progress bar says something different from the fallback: "
                 + string.Join("; ", mismatches));

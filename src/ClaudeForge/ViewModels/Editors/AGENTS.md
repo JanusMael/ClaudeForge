@@ -254,12 +254,12 @@ public override JsonNode? ToJsonValue()
 ### Edit-after-load
 
 ```csharp
-[TestMethod]
+[Fact]
 public void EditingFieldOnLoadedEntry_FiresIsModifiedPropertyChanged()
 {
     var vm = new MyEditorViewModel(SchemaRegistry.Empty, ConfigScope.User);
     vm.LoadFromLayered(LayeredWith(ConfigScope.User, populatedJson), ConfigScope.User);
-    Assert.IsTrue(vm.IsModified);
+    Assert.True(vm.IsModified);
 
     var fired = 0;
     vm.PropertyChanged += (_, e) =>
@@ -269,7 +269,7 @@ public void EditingFieldOnLoadedEntry_FiresIsModifiedPropertyChanged()
 
     vm.MyCollection[0].SomeField = "new value";
 
-    Assert.IsTrue(fired >= 1,
+    Assert.True(fired >= 1,
         "Inline edit on a loaded entry must fire PropertyChanged(IsModified) " +
         "even though the flag was already true.");
 }
@@ -278,7 +278,7 @@ public void EditingFieldOnLoadedEntry_FiresIsModifiedPropertyChanged()
 ### Delete-after-load
 
 ```csharp
-[TestMethod]
+[Fact]
 public void DeletingEntryAfterLoad_FiresIsModifiedPropertyChanged()
 {
     var vm = new MyEditorViewModel(SchemaRegistry.Empty, ConfigScope.User);
@@ -292,14 +292,14 @@ public void DeletingEntryAfterLoad_FiresIsModifiedPropertyChanged()
 
     vm.MyCollection.RemoveAt(0);
 
-    Assert.IsTrue(fired >= 1);
+    Assert.True(fired >= 1);
 }
 ```
 
 ### Reset round-trip
 
 ```csharp
-[TestMethod]
+[Fact]
 public void ResetAfterEdit_RestoresOnDiskState()
 {
     var vm = new MyEditorViewModel(SchemaRegistry.Empty, ConfigScope.User);
@@ -307,13 +307,13 @@ public void ResetAfterEdit_RestoresOnDiskState()
     var originalCount = vm.MyCollection.Count;
 
     vm.MyCollection.Add(new MyItem("transient"));
-    Assert.AreNotEqual(originalCount, vm.MyCollection.Count);
+    Assert.NotEqual(originalCount, vm.MyCollection.Count);
 
     vm.ResetToInheritedCommand.Execute(null);
 
-    Assert.AreEqual(originalCount, vm.MyCollection.Count,
-        "OnResetToInherited must restore the on-disk state, not clear.");
-    Assert.IsFalse(vm.IsModified);
+    // OnResetToInherited must restore the on-disk state, not clear.
+    Assert.Equal(originalCount, vm.MyCollection.Count);
+    Assert.False(vm.IsModified);
 }
 ```
 

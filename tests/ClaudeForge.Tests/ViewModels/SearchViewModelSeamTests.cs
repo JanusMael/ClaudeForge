@@ -19,7 +19,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// list, which is exactly what slice 3 claims.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class SearchViewModelSeamTests
 {
     // ── Fabricated product ────────────────────────────────────────────────
@@ -64,7 +63,7 @@ public sealed class SearchViewModelSeamTests
 
     // ── Editor interfaces drive the walk ──────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SchemaGroupEditor_IsMatchedPerProperty_ByInterfaceNotByType()
     {
         List<SchemaNode> nodes =
@@ -83,14 +82,14 @@ public sealed class SearchViewModelSeamTests
         SearchViewModel vm = new(() => tree, () => false);
         vm.ExecuteSearch("widget.size");
 
-        Assert.AreEqual(1, vm.SearchResults.Count,
+        MessageAssert.Equal(1, vm.SearchResults.Count,
             "A page that merely implements ISchemaGroupEditor must be searched per property.");
-        Assert.AreEqual("widget.size", vm.SearchResults[0].PropertyKey);
-        Assert.AreEqual("Widgets", vm.SearchResults[0].GroupTitle,
+        Assert.Equal("widget.size", vm.SearchResults[0].PropertyKey);
+        MessageAssert.Equal("Widgets", vm.SearchResults[0].GroupTitle,
             "The breadcrumb group comes from the interface, not from a nav title.");
     }
 
-    [TestMethod]
+    [Fact]
     public void JsonPathScopedEditor_KeepsOnlyHitsInsideItsOwnSubtree()
     {
         NavigationNodeViewModel page = new("Paint")
@@ -113,14 +112,14 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("paint");
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "paint", "paint.gloss" },
             vm.SearchResults.Select(r => r.PropertyKey).ToArray(),
             "The owned prefix matches the node itself and its descendants, but never a path " +
             "that merely ends with the same segment.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditorImplementingNeitherInterface_FallsBackToPageTitle()
     {
         NavigationNodeViewModel page = new("Sprockets") { Editor = new FakeOpaqueEditor() };
@@ -131,15 +130,15 @@ public sealed class SearchViewModelSeamTests
         SearchViewModel vm = new(() => tree, () => false);
         vm.ExecuteSearch("sprock");
 
-        Assert.AreEqual(1, vm.SearchResults.Count);
-        Assert.AreEqual("Sprockets", vm.SearchResults[0].PropertyDisplayName);
-        Assert.AreEqual(string.Empty, vm.SearchResults[0].PropertyKey,
+        Assert.Single(vm.SearchResults);
+        Assert.Equal("Sprockets", vm.SearchResults[0].PropertyDisplayName);
+        MessageAssert.Equal(string.Empty, vm.SearchResults[0].PropertyKey,
             "A title-only hit carries no property key.");
     }
 
     // ── Synthetic entries ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void NoEntriesSupplied_ProducesNoSyntheticRows()
     {
         NavigationNodeViewModel node = new("Widgets");
@@ -148,11 +147,11 @@ public sealed class SearchViewModelSeamTests
         SearchViewModel vm = new(() => tree, () => false);
         vm.ExecuteSearch("widget");
 
-        Assert.IsFalse(vm.SearchResults.Any(r => r.IsSynthetic),
+        Assert.False(vm.SearchResults.Any(r => r.IsSynthetic),
             "A host that pins no rows gets none — the shell knows no product's phrases.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Entries_EmitInListOrder()
     {
         NavigationNodeViewModel node = new("Widgets");
@@ -166,13 +165,13 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("widget");
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "first", "second" },
             vm.SearchResults.Select(r => r.PropertyKey).ToArray(),
             "Row order is the product's declaration order.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Entry_WhoseTargetIsAbsent_EmitsNothingAndSuppressesNothing()
     {
         // The suppressor's target page does not exist in this tree. It must drop
@@ -190,7 +189,7 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("widget");
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "victim" },
             vm.SearchResults.Select(r => r.PropertyKey).ToArray(),
             "An entry that produced no row must not suppress one either.");
@@ -201,7 +200,7 @@ public sealed class SearchViewModelSeamTests
     /// displaces its opposite whether it was declared before or after it. The
     /// pre-slice implementation could only remove a row already added.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Suppression_WorksWhenTheSuppressorIsDeclaredFirst()
     {
         NavigationNodeViewModel node = new("Widgets");
@@ -216,7 +215,7 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("widget");
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "suppressor" },
             vm.SearchResults.Select(r => r.PropertyKey).ToArray());
     }
@@ -226,7 +225,7 @@ public sealed class SearchViewModelSeamTests
     /// disagreed: a leading space defeated the prefix rules while leaving a
     /// contains rule on the same row firing.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Query_IsTrimmedAndLowered_BeforeTriggersSeeIt()
     {
         NavigationNodeViewModel node = new("Widgets");
@@ -239,11 +238,11 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("  DANG  ");
 
-        Assert.AreEqual(1, vm.SearchResults.Count,
+        MessageAssert.Equal(1, vm.SearchResults.Count,
             "Leading/trailing space and case must not change which rules fire.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SyntheticRows_PrecedeSchemaRows_AndAreNotSubjectToTheResultCap()
     {
         // 60 matching properties — 10 more than the cap — plus one pinned row.
@@ -264,9 +263,9 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("widget");
 
-        Assert.AreEqual("pinned", vm.SearchResults[0].PropertyKey,
+        MessageAssert.Equal("pinned", vm.SearchResults[0].PropertyKey,
             "Pinned rows sit at the top of the list.");
-        Assert.AreEqual(51, vm.SearchResults.Count,
+        MessageAssert.Equal(51, vm.SearchResults.Count,
             "The cap of 50 applies to schema rows only; the pinned row is extra.");
     }
 
@@ -275,7 +274,7 @@ public sealed class SearchViewModelSeamTests
     /// product, which is why a one-product-only walk could go unnoticed for as
     /// long as it did elsewhere in this refactor.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TwoProducts_BothContributeRowsInOnePass()
     {
         NavigationNodeViewModel widgets = new("Widget Forge");
@@ -292,10 +291,10 @@ public sealed class SearchViewModelSeamTests
 
         vm.ExecuteSearch("forge");
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "widget-row", "sprocket-row" },
             vm.SearchResults.Select(r => r.PropertyKey).ToArray());
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "Widget Forge", "Sprocket Forge" },
             vm.SearchResults.Select(r => r.SectionTitle).ToArray(),
             "Each row is filed under the section its own entry names, not a single global one.");
@@ -306,7 +305,7 @@ public sealed class SearchViewModelSeamTests
     /// rows. Two sections, each with its own page and its own SDK provider — the
     /// second section must be reached, and its hits must be attributed to it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TwoProducts_SchemaWalkReachesTheSecondSection()
     {
         NavigationNodeViewModel widgetPage = new("Parts")
@@ -330,16 +329,16 @@ public sealed class SearchViewModelSeamTests
         SearchViewModel vm = new(() => tree, () => false);
         vm.ExecuteSearch("forge part");
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "widget.bolt", "sprocket.tooth" },
             vm.SearchResults.Select(r => r.PropertyKey).ToArray(),
             "A walk that stopped after the first section would silently return only half the hits.");
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "Widget Forge", "Sprocket Forge" },
             vm.SearchResults.Select(r => r.SectionTitle).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Entries_AreRebuiltEveryPass_SoLocalizedTextIsReadLate()
     {
         // The Claude table reads localized card titles at search time because the
@@ -358,6 +357,6 @@ public sealed class SearchViewModelSeamTests
         vm.ExecuteSearch("widget");
         vm.ExecuteSearch("widget");
 
-        Assert.AreEqual(2, builds, "The entry list must be rebuilt on every search pass.");
+        MessageAssert.Equal(2, builds, "The entry list must be rebuilt on every search pass.");
     }
 }

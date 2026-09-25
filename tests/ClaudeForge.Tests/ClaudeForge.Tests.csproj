@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType>Library</OutputType>
+        <OutputType>Exe</OutputType>
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Tests</RootNamespace>
+        <!-- ⚠ This project references the APP, which is SelfContained in Release. Now that a test
+             project is an executable (Microsoft.Testing.Platform), the SDK refuses an executable
+             referencing a self-contained one — NETSDK1151, and only in Release, so only the
+             package canary and CI's package-mode test step see it. The tests run the app's code
+             on the shared framework exactly as Debug always has; nothing here ships. -->
+        <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
     </PropertyGroup>
 
     <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
@@ -10,16 +16,6 @@
          every assembly, so a grant there applies to all of them. -->
     <ItemGroup>
         <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
-    </ItemGroup>
-
-    <!-- The headless session bootstrap and its guard are LINKED, never copied, for the same
-         reason as the friend grants above: one file that is obviously complete beats one per
-         project. HeadlessSessionBootstrap builds the Avalonia application in [AssemblyInitialize]
-         instead of leaving it to whichever test dispatches first; read its remarks before
-         touching it, and only link it into a project that has an [AvaloniaTestApplication]. -->
-    <ItemGroup>
-        <Compile Include="../../HeadlessSessionBootstrap.cs" Link="Headless/HeadlessSessionBootstrap.cs"/>
-        <Compile Include="../../HeadlessSessionBootstrapTests.cs" Link="Headless/HeadlessSessionBootstrapTests.cs"/>
     </ItemGroup>
 
     <ItemGroup>

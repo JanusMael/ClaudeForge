@@ -25,13 +25,12 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// sections and a page would quietly resolve to none — with no exception and nothing logged.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ProductDescriptorEqualityTests
 {
     private static readonly ClaudeEnvironment Relocated =
         new(Path.Combine(Path.GetTempPath(), "descriptor-equality-relocated"));
 
-    [TestMethod]
+    [Fact]
     public void TheSameProduct_ResolvedForTwoEnvironments_IsEqual()
     {
         ProductDescriptor plain = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
@@ -39,15 +38,15 @@ public sealed class ProductDescriptorEqualityTests
 
         // Assert the PREMISE first: if these were the same instance the equality claim below
         // would pass for a reason that has nothing to do with the contract under test.
-        Assert.AreNotSame(plain, moved,
+        MessageAssert.NotSame(plain, moved,
             "ClaudeCodeProductFor must build a fresh descriptor per call, or this test is vacuous.");
 
-        Assert.AreEqual(plain, moved, "One product resolved for two environments is one product.");
-        Assert.AreEqual(plain.GetHashCode(), moved.GetHashCode(),
+        MessageAssert.Equal(plain, moved, "One product resolved for two environments is one product.");
+        MessageAssert.Equal(plain.GetHashCode(), moved.GetHashCode(),
             "Equal descriptors must hash equally, or a dictionary or Distinct() silently splits them.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TheSameProduct_ResolvedTwiceForOneEnvironment_IsEqual()
     {
         // ⭐ The case reference equality already failed, BEFORE the environment existed: the
@@ -55,11 +54,11 @@ public sealed class ProductDescriptorEqualityTests
         ProductDescriptor first = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
         ProductDescriptor second = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
 
-        Assert.AreNotSame(first, second);
-        Assert.AreEqual(first, second);
+        Assert.NotSame(first, second);
+        Assert.Equal(first, second);
     }
 
-    [TestMethod]
+    [Fact]
     public void EqualDescriptors_CollapseInASetAndMatchAsADictionaryKey()
     {
         // The two real consumers reach for exactly these: Contains/Distinct over a product list,
@@ -67,15 +66,15 @@ public sealed class ProductDescriptorEqualityTests
         ProductDescriptor plain = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
         ProductDescriptor moved = SchemaRegistry.ClaudeCodeProductFor(Relocated);
 
-        Assert.AreEqual(1, new HashSet<ProductDescriptor> { plain, moved }.Count,
+        MessageAssert.Equal(1, new HashSet<ProductDescriptor> { plain, moved }.Count,
             "Two resolutions of one product must collapse to one set member.");
 
         Dictionary<ProductDescriptor, string> byProduct = new() { [plain] = "value" };
-        Assert.IsTrue(byProduct.ContainsKey(moved),
+        Assert.True(byProduct.ContainsKey(moved),
             "A descriptor resolved elsewhere must find the entry keyed by this product.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TwoDifferentProducts_AreNotEqual()
     {
         // ⛔ The other half. An Id-based Equals that returned true too readily would make every
@@ -83,15 +82,15 @@ public sealed class ProductDescriptorEqualityTests
         ProductDescriptor claudeCode = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
         ProductDescriptor claudeDesktop = SchemaRegistry.ClaudeDesktopProduct;
 
-        Assert.AreNotEqual(claudeCode.Id, claudeDesktop.Id, "The fixture needs two distinct ids.");
-        Assert.AreNotEqual(claudeCode, claudeDesktop);
+        MessageAssert.NotEqual(claudeCode.Id, claudeDesktop.Id, "The fixture needs two distinct ids.");
+        Assert.NotEqual(claudeCode, claudeDesktop);
     }
 
-    [TestMethod]
+    [Fact]
     public void ADescriptorIsNeverEqualToNull()
     {
         ProductDescriptor product = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
 
-        Assert.IsFalse(product.Equals(null));
+        Assert.False(product.Equals(null));
     }
 }

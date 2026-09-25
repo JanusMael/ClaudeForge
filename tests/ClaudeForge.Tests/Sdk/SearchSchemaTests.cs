@@ -10,21 +10,20 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Sdk;
 /// within the temp directory, never touching the user's real <c>~/.claude/</c>.
 /// The bundled schema resource is always available; no HTTP calls are made.
 /// </summary>
-[TestClass]
-public sealed class SearchSchemaTests
+public sealed class SearchSchemaTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public SearchSchemaTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         // Reset before attempting disk cleanup so later tests don't inherit a stale override
         // even if the Directory.Delete call below throws.
@@ -51,9 +50,15 @@ public sealed class SearchSchemaTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // ── Before open ───────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SearchSchema_BeforeOpen_ReturnsEmpty()
     {
         // Schema nodes are populated during OpenAsync; before that the cache is
@@ -62,7 +67,7 @@ public sealed class SearchSchemaTests
         try
         {
             IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("model");
-            Assert.AreEqual(0, results.Count,
+            MessageAssert.Equal(0, results.Count,
                 "SearchSchema before OpenAsync must return empty, not throw.");
         }
         finally
@@ -71,17 +76,17 @@ public sealed class SearchSchemaTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void SearchSchema_EmptyQuery_ReturnsEmpty()
     {
         ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         try
         {
             IReadOnlyList<SchemaSearchResult> results = client.SearchSchema(string.Empty);
-            Assert.AreEqual(0, results.Count);
+            Assert.Empty(results);
 
             results = client.SearchSchema("   ");
-            Assert.AreEqual(0, results.Count);
+            Assert.Empty(results);
         }
         finally
         {
@@ -100,19 +105,19 @@ public sealed class SearchSchemaTests
         return client;
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_FindsByPropertyName()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
 
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("model");
 
-        Assert.IsTrue(results.Count > 0, "Searching 'model' must find the model property.");
-        Assert.IsTrue(results.Any(r => r.Name.Equals("model", StringComparison.OrdinalIgnoreCase)),
+        Assert.True(results.Count > 0, "Searching 'model' must find the model property.");
+        Assert.True(results.Any(r => r.Name.Equals("model", StringComparison.OrdinalIgnoreCase)),
             "At least one result should have Name == 'model'.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_FindsByTitle()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -121,9 +126,9 @@ public sealed class SearchSchemaTests
         // Use a general capitalized term that appears as a title in the schema.
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("Model");
 
-        Assert.IsTrue(results.Count > 0, "Title-based search must return results.");
+        Assert.True(results.Count > 0, "Title-based search must return results.");
         // Every result should have matched somewhere (not necessarily title).
-        Assert.IsTrue(results.All(r =>
+        Assert.True(results.All(r =>
                 r.Name.Contains("model", StringComparison.OrdinalIgnoreCase) ||
                 r.Title.Contains("model", StringComparison.OrdinalIgnoreCase) ||
                 r.Description.Contains("model", StringComparison.OrdinalIgnoreCase) ||
@@ -131,7 +136,7 @@ public sealed class SearchSchemaTests
             "Each result must contain 'model' in at least one field.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_FindsByDescription()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -139,11 +144,11 @@ public sealed class SearchSchemaTests
         // "permission" appears in descriptions of permission-related properties.
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("permission");
 
-        Assert.IsTrue(results.Count > 0,
+        Assert.True(results.Count > 0,
             "Description-based search for 'permission' must return results.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_FindsByJsonPath_DottedPath()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -153,13 +158,13 @@ public sealed class SearchSchemaTests
         // that expose fixed named properties (the "properties" JSON Schema keyword).
         // Dynamic bags like "mcpServers" (uses "additionalProperties") remain leaf nodes.
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("permissions.allow");
-        Assert.IsTrue(results.Count > 0,
+        Assert.True(results.Count > 0,
             "Searching 'permissions.allow' must return results after Complex-recursion fix.");
-        Assert.IsTrue(results.Any(r => r.JsonPath.Equals("permissions.allow", StringComparison.OrdinalIgnoreCase)),
+        Assert.True(results.Any(r => r.JsonPath.Equals("permissions.allow", StringComparison.OrdinalIgnoreCase)),
             "The exact node 'permissions.allow' must be found when searching for its path.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_PartialPath_MatchesAllNestedNodes()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -169,15 +174,15 @@ public sealed class SearchSchemaTests
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("permissions");
         List<string> paths = results.Select(r => r.JsonPath).ToList();
 
-        Assert.IsTrue(paths.Contains("permissions"),
+        Assert.True(paths.Contains("permissions"),
             "The 'permissions' top-level node must appear in results for 'permissions' query.");
-        Assert.IsTrue(paths.Contains("permissions.allow"),
+        Assert.True(paths.Contains("permissions.allow"),
             "'permissions.allow' must be reachable via the 'permissions' prefix query.");
-        Assert.IsTrue(paths.Contains("permissions.deny"),
+        Assert.True(paths.Contains("permissions.deny"),
             "'permissions.deny' must be reachable via the 'permissions' prefix query.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_CaseInsensitive()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -185,15 +190,15 @@ public sealed class SearchSchemaTests
         IReadOnlyList<SchemaSearchResult> lower = client.SearchSchema("model");
         IReadOnlyList<SchemaSearchResult> upper = client.SearchSchema("MODEL");
 
-        Assert.AreEqual(lower.Count, upper.Count,
+        MessageAssert.Equal(lower.Count, upper.Count,
             "Case should not affect result count — search is case-insensitive.");
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             lower.Select(r => r.JsonPath).ToArray(),
             upper.Select(r => r.JsonPath).ToArray(),
             "Case-insensitive search must return the same paths in the same order.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_MaxResults_Caps_At_Requested_Limit()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -201,26 +206,26 @@ public sealed class SearchSchemaTests
         // A two-letter query that matches many properties.
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("is", maxResults: 3);
 
-        Assert.IsTrue(results.Count <= 3,
+        Assert.True(results.Count <= 3,
             $"maxResults:3 must cap results to at most 3; got {results.Count}.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_ResultFields_AllPopulated()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
 
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("model");
 
-        Assert.IsTrue(results.Count > 0);
+        Assert.True(results.Count > 0);
         SchemaSearchResult first = results[0];
-        Assert.IsFalse(string.IsNullOrWhiteSpace(first.JsonPath), "JsonPath must not be empty.");
-        Assert.IsFalse(string.IsNullOrWhiteSpace(first.Name), "Name must not be empty.");
+        Assert.False(string.IsNullOrWhiteSpace(first.JsonPath), "JsonPath must not be empty.");
+        Assert.False(string.IsNullOrWhiteSpace(first.Name), "Name must not be empty.");
         // Title may fall back to Name; it should never be null/empty.
-        Assert.IsFalse(string.IsNullOrWhiteSpace(first.Title), "Title must not be empty.");
+        Assert.False(string.IsNullOrWhiteSpace(first.Title), "Title must not be empty.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_DenyNotReturnedFor_PermissionsAllow_Query()
     {
         using ClaudeCodeClient client = await OpenedClientAsync();
@@ -231,11 +236,11 @@ public sealed class SearchSchemaTests
         IReadOnlyList<SchemaSearchResult> results = client.SearchSchema("permissions.allow");
         List<string> paths = results.Select(r => r.JsonPath).ToList();
 
-        Assert.IsFalse(paths.Contains("permissions.deny"),
+        Assert.False(paths.Contains("permissions.deny"),
             "'permissions.deny' must not appear in results for 'permissions.allow' query.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SearchSchema_Dispose_DoesNotThrow()
     {
         // Dispose while client is idle must not throw.

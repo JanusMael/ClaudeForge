@@ -12,7 +12,6 @@ using StringPropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.S
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
-[TestClass]
 public partial class SettingsGroupEditorViewModelTests
 {
     private static SettingsWorkspace MakeWorkspace(params (ConfigScope Scope, string Json)[] entries)
@@ -31,7 +30,7 @@ public partial class SettingsGroupEditorViewModelTests
         return new SchemaNode(jsonPath, name) { ValueType = type };
     }
 
-    [TestMethod]
+    [Fact]
     public void RebuildEditors_PopulatesEditors()
     {
         List<SchemaNode> nodes =
@@ -44,20 +43,20 @@ public partial class SettingsGroupEditorViewModelTests
 
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(3, vm.Editors.Count);
+        Assert.Equal(3, vm.Editors.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectedTab_DefaultsToFirstTab()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
         SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.IsNotNull(vm.SelectedTab);
-        Assert.AreEqual(GroupTab.PropertiesId, vm.SelectedTab.Id);
+        Assert.NotNull(vm.SelectedTab);
+        Assert.Equal(GroupTab.PropertiesId, vm.SelectedTab.Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectTab_SelectsById()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
@@ -65,10 +64,10 @@ public partial class SettingsGroupEditorViewModelTests
 
         vm.SelectTab(GroupTab.JsonId);
 
-        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
+        Assert.Equal(GroupTab.JsonId, vm.SelectedTab?.Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectedTab_PreservedAcrossRebuild()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
@@ -80,10 +79,10 @@ public partial class SettingsGroupEditorViewModelTests
 
         // The remembered tab survives the rebuild (Tabs is rebuilt with fresh
         // instances, matched back by Id).
-        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
+        Assert.Equal(GroupTab.JsonId, vm.SelectedTab?.Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void FilterText_Empty_ReturnsAllEditors()
     {
         List<SchemaNode> nodes =
@@ -97,10 +96,10 @@ public partial class SettingsGroupEditorViewModelTests
         vm.FilterText = "";
 
         // Editors is now IReadOnlyList; CollectionAssert needs a concrete ICollection.
-        CollectionAssert.AreEqual(vm.Editors.ToList(), vm.FilteredEditors.ToList());
+        Assert.Equal(vm.Editors.ToList(), vm.FilteredEditors.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void FilterText_MatchesDisplayName_FiltersCorrectly()
     {
         List<SchemaNode> nodes =
@@ -114,11 +113,11 @@ public partial class SettingsGroupEditorViewModelTests
         vm.FilterText = "mod";
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
-        Assert.AreEqual(1, filtered.Count);
-        Assert.AreEqual("model", filtered[0].Path);
+        Assert.Single(filtered);
+        Assert.Equal("model", filtered[0].Path);
     }
 
-    [TestMethod]
+    [Fact]
     public void FilterText_MatchesJsonPath_FiltersCorrectly()
     {
         List<SchemaNode> nodes =
@@ -133,10 +132,10 @@ public partial class SettingsGroupEditorViewModelTests
         vm.FilterText = "permissions";
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
-        Assert.AreEqual(2, filtered.Count);
+        Assert.Equal(2, filtered.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void FilterText_NoMatch_ReturnsEmpty()
     {
         List<SchemaNode> nodes =
@@ -149,7 +148,7 @@ public partial class SettingsGroupEditorViewModelTests
 
         vm.FilterText = "zzznomatch";
 
-        Assert.AreEqual(0, vm.FilteredEditors.Count());
+        Assert.Empty(vm.FilteredEditors);
     }
 
     /// <summary>
@@ -161,7 +160,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// The fix added an "is sub-path of editor.Path" branch so a click on a
     /// search hit deep-links to the right page even for nested properties.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void FilterText_SubPathOfEditorPath_YieldsThatEditor()
     {
         // Single editor at path "model".  Filter "model.subProp" should match
@@ -180,16 +179,16 @@ public partial class SettingsGroupEditorViewModelTests
         vm.FilterText = "model.notARealSubProperty";
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
-        Assert.AreEqual(1, filtered.Count,
+        MessageAssert.Equal(1, filtered.Count,
             "Filter targeting a sub-path of a non-Object editor must yield that editor whole.");
-        Assert.AreEqual("model", filtered[0].Path);
+        Assert.Equal("model", filtered[0].Path);
     }
 
     /// <summary>
     /// Guard the inverse — a sub-path filter must NOT bring back a sibling
     /// editor.  Filter "model.x" should not yield "verbose".
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void FilterText_SubPathOfOneEditor_DoesNotMatchSiblings()
     {
         List<SchemaNode> nodes =
@@ -203,11 +202,11 @@ public partial class SettingsGroupEditorViewModelTests
         vm.FilterText = "model.something";
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
-        Assert.IsFalse(filtered.Any(e => e.Path == "verbose"),
+        Assert.False(filtered.Any(e => e.Path == "verbose"),
             "Sub-path filter must not yield unrelated sibling editors.");
     }
 
-    [TestMethod]
+    [Fact]
     public void OnEditingScopeChanged_RebuildsEditors()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -222,14 +221,14 @@ public partial class SettingsGroupEditorViewModelTests
         ctx.AvailableScopes = [ConfigScope.User, ConfigScope.Project];
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ctx,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual("sonnet", ((StringPropertyEditorViewModel)vm.Editors[0]).Value);
+        Assert.Equal("sonnet", ((StringPropertyEditorViewModel)vm.Editors[0]).Value);
 
         vm.EditingScope = ConfigScope.Project;
 
-        Assert.AreEqual("haiku", ((StringPropertyEditorViewModel)vm.Editors[0]).Value);
+        Assert.Equal("haiku", ((StringPropertyEditorViewModel)vm.Editors[0]).Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyToWorkspace_FlushesEditorValuesToWorkspace()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -240,7 +239,7 @@ public partial class SettingsGroupEditorViewModelTests
         vm.ApplyToWorkspace();
 
         LayeredValue layered = workspace.GetLayeredValue("model");
-        Assert.AreEqual("opus", layered.EffectiveValue!.GetValue<string>());
+        Assert.Equal("opus", layered.EffectiveValue!.GetValue<string>());
     }
 
     /// <summary>
@@ -265,7 +264,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// NOT flush its stale snapshot.
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ApplyToWorkspace_DoesNotClobberOutOfBandWrites_OnUntouchedEditors()
     {
         // Use "env" as the schema path with a Complex type so the factory
@@ -282,7 +281,7 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsGroupEditorViewModel vm = new("Environment", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         // Sanity: the editor loaded the existing env value.
-        Assert.AreEqual(1, vm.Editors.Count);
+        Assert.Single(vm.Editors);
 
         // Simulate an out-of-band SDK write (e.g. EssentialsViewModel
         // writing env.CLAUDE_CODE_MAX_OUTPUT_TOKENS while this group
@@ -303,13 +302,13 @@ public partial class SettingsGroupEditorViewModelTests
         // CLAUDE_CODE_MAX_OUTPUT_TOKENS.
         LayeredValue layered = workspace.GetLayeredValue("env");
         JsonObject? effective = layered.EffectiveValue as JsonObject;
-        Assert.IsNotNull(effective, "Effective env value should be a JsonObject.");
-        Assert.IsTrue(effective.ContainsKey("CLAUDE_CODE_MAX_OUTPUT_TOKENS"),
+        MessageAssert.NotNull(effective, "Effective env value should be a JsonObject.");
+        Assert.True(effective.ContainsKey("CLAUDE_CODE_MAX_OUTPUT_TOKENS"),
             "Out-of-band write to env.CLAUDE_CODE_MAX_OUTPUT_TOKENS was clobbered by " +
             "ApplyToWorkspace.  The group editor flushed its stale in-memory env snapshot " +
             "(which didn't include the out-of-band key) back over the workspace.  This is " +
             "to make sure the _userEditedPaths gate is intact.");
-        Assert.AreEqual("60000",
+        Assert.Equal("60000",
             effective["CLAUDE_CODE_MAX_OUTPUT_TOKENS"]!.GetValue<string>());
     }
 
@@ -324,7 +323,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// through, and which is where the keys were lost.
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ApplyToWorkspace_TouchedObjectEditor_KeepsEnvKeysTheSchemaDoesNotModel()
     {
         // env as a real object node with exactly one modelled child, mirroring the
@@ -343,7 +342,7 @@ public partial class SettingsGroupEditorViewModelTests
 
         ObjectPropertyEditorViewModel objectEditor =
             (ObjectPropertyEditorViewModel)vm.Editors[0];
-        Assert.AreEqual(1, objectEditor.Children.Count,
+        MessageAssert.Equal(1, objectEditor.Children.Count,
             "Premise: exactly one key is modelled, so the other two are the unmodelled ones "
             + "this test is about. Model them all and the test proves nothing.");
 
@@ -354,13 +353,13 @@ public partial class SettingsGroupEditorViewModelTests
         vm.ApplyToWorkspace();
 
         JsonObject? after = workspace.GetLayeredValue("env").EffectiveValue as JsonObject;
-        Assert.IsNotNull(after, "env must still be an object after the flush.");
-        Assert.AreEqual("new", after["ANTHROPIC_API_KEY"]!.GetValue<string>(),
+        MessageAssert.NotNull(after, "env must still be an object after the flush.");
+        MessageAssert.Equal("new", after["ANTHROPIC_API_KEY"]!.GetValue<string>(),
             "The edit must actually reach the workspace, or nothing below was measured.");
-        Assert.AreEqual("/opt/thing", after["MY_CUSTOM_TOOL_PATH"]?.GetValue<string>(),
+        MessageAssert.Equal("/opt/thing", after["MY_CUSTOM_TOOL_PATH"]?.GetValue<string>(),
             "An env key the schema does not model must survive an edit to one that it does. "
             + "This is F9: the user's own variables were deleted by editing a sibling.");
-        Assert.AreEqual("marker", after["RETEST_MARKER"]?.GetValue<string>(),
+        MessageAssert.Equal("marker", after["RETEST_MARKER"]?.GetValue<string>(),
             "Every unmodelled key survives, not just the first.");
     }
 
@@ -371,7 +370,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// User scope. Comparing effective ("opus") would see no diff and silently drop
     /// the legitimate User-scope pin; comparing the User scope (empty) writes it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void WriteEditorValue_SdkBranch_DoesNotDropShadowedScopePin()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -385,13 +384,13 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsGroupEditorViewModel vm = new("General", nodes, ws, ctx, ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create(),sdkClient: sdk);
 
         StringPropertyEditorViewModel editor = (StringPropertyEditorViewModel)vm.Editors[0];
-        Assert.AreEqual(string.Empty, editor.Value ?? string.Empty,
+        MessageAssert.Equal(string.Empty, editor.Value ?? string.Empty,
             "Precondition: the editor shows the empty User-scope value, not the shadowing Project value.");
 
         editor.Value = "opus"; // user pins the inherited value explicitly at User scope
         vm.ApplyToWorkspace();
 
-        Assert.AreEqual("opus", sdk.GetScopeValue("model", ConfigScope.User)?.GetValue<string>(),
+        MessageAssert.Equal("opus", sdk.GetScopeValue("model", ConfigScope.User)?.GetValue<string>(),
             "The explicit User-scope pin must survive even though Project shadows it with an equal value.");
     }
 
@@ -401,7 +400,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// end UNSET. Without the empty-string normalization in WriteEditorValue, the blank
     /// flush pinned model="" (the reported ghost, surfaced in the Save dialog).
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void WriteEditorValue_SdkBranch_BlankString_DoesNotPinEmptyValue()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -417,13 +416,13 @@ public partial class SettingsGroupEditorViewModelTests
         editor.Value = "";     // ...then clears it back to blank
         vm.ApplyToWorkspace();
 
-        Assert.IsNull(sdk.GetScopeValue("model", ConfigScope.User),
+        MessageAssert.Null(sdk.GetScopeValue("model", ConfigScope.User),
             "A blank selection must leave model unset, never pin model=\"\".");
     }
 
     // ── Shared scope synchronisation ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SharedScopeContext_ChangingScope_PropagatesFromContextToAllVMs()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -436,17 +435,17 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsGroupEditorViewModel vm2 = new("G2", nodes, workspace, ctx,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         // Both start at User scope
-        Assert.AreEqual(ConfigScope.User, vm1.EditingScope);
-        Assert.AreEqual(ConfigScope.User, vm2.EditingScope);
+        Assert.Equal(ConfigScope.User, vm1.EditingScope);
+        Assert.Equal(ConfigScope.User, vm2.EditingScope);
 
         // Changing the shared context should propagate to both VMs
         ctx.EditingScope = ConfigScope.Project;
 
-        Assert.AreEqual(ConfigScope.Project, vm1.EditingScope);
-        Assert.AreEqual(ConfigScope.Project, vm2.EditingScope);
+        Assert.Equal(ConfigScope.Project, vm1.EditingScope);
+        Assert.Equal(ConfigScope.Project, vm2.EditingScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void SharedScopeContext_ChangingVMScope_PropagatesToSiblingVM()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -465,11 +464,11 @@ public partial class SettingsGroupEditorViewModelTests
         // Changing scope on vm1 should sync vm2 and the shared context
         vm1.EditingScope = ConfigScope.Local;
 
-        Assert.AreEqual(ConfigScope.Local, vm2.EditingScope);
-        Assert.AreEqual(ConfigScope.Local, ctx.EditingScope);
+        Assert.Equal(ConfigScope.Local, vm2.EditingScope);
+        Assert.Equal(ConfigScope.Local, ctx.EditingScope);
     }
 
-    [TestMethod]
+    [Fact]
     public void SharedScopeContext_NewVMInheritsCurrentScope()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -478,7 +477,7 @@ public partial class SettingsGroupEditorViewModelTests
         SharedScopeContext ctx = new(ConfigScope.Project);
         SettingsGroupEditorViewModel vm = new("G1", nodes, workspace, ctx,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(ConfigScope.Project, vm.EditingScope);
+        Assert.Equal(ConfigScope.Project, vm.EditingScope);
     }
 
     // ── Cross-product scope-bleed regression ──────────────────────────────────
@@ -493,7 +492,7 @@ public partial class SettingsGroupEditorViewModelTests
     // to the NEW VM's EditingScope — setting a Desktop VM to Local and causing
     // "No document loaded for scope Local." on the next write.
 
-    [TestMethod]
+    [Fact]
     public void OnEditingScopeChanged_RejectsUnavailableScope_SnapsBackToValid()
     {
         // Simulate a Desktop-style context: only User scope is available.
@@ -510,15 +509,15 @@ public partial class SettingsGroupEditorViewModelTests
         vm.EditingScope = ConfigScope.Local;
 
         // The guard should have rejected Local and snapped back to User.
-        Assert.AreEqual(ConfigScope.User, vm.EditingScope,
+        MessageAssert.Equal(ConfigScope.User, vm.EditingScope,
             "EditingScope should be snapped back to User when Local is not available.");
 
         // The shared context must NOT have been contaminated.
-        Assert.AreEqual(ConfigScope.User, ctx.EditingScope,
+        MessageAssert.Equal(ConfigScope.User, ctx.EditingScope,
             "Shared context EditingScope must not be set to an unavailable scope.");
     }
 
-    [TestMethod]
+    [Fact]
     public void OnEditingScopeChanged_AcceptsValidScope_PropagatesNormally()
     {
         // Confirm that the guard does NOT block a legitimate scope change.
@@ -533,13 +532,13 @@ public partial class SettingsGroupEditorViewModelTests
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace, ctx,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
         vm.EditingScope = ConfigScope.Local;
 
-        Assert.AreEqual(ConfigScope.Local, vm.EditingScope);
-        Assert.AreEqual(ConfigScope.Local, ctx.EditingScope);
+        Assert.Equal(ConfigScope.Local, vm.EditingScope);
+        Assert.Equal(ConfigScope.Local, ctx.EditingScope);
     }
 
     // ── EffectiveRows: unset rows are filtered ────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EffectiveRows_HidesPropertiesWithNoValueAtAnyScope()
     {
         // Two schema nodes; only one has a value at any scope. The Effective
@@ -555,12 +554,12 @@ public partial class SettingsGroupEditorViewModelTests
 
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(1, vm.EffectiveRows.Count,
+        MessageAssert.Equal(1, vm.EffectiveRows.Count,
             "Only properties with at least one scope-set value should appear.");
-        Assert.AreEqual("model", vm.EffectiveRows[0].Property);
+        Assert.Equal("model", vm.EffectiveRows[0].Property);
     }
 
-    [TestMethod]
+    [Fact]
     public void EffectiveRows_AllUnset_RendersEmpty()
     {
         // Edge case: every schema node is unset → grid is empty (instead of
@@ -574,13 +573,13 @@ public partial class SettingsGroupEditorViewModelTests
 
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(0, vm.EffectiveRows.Count,
+        MessageAssert.Equal(0, vm.EffectiveRows.Count,
             "When nothing is set, the Effective grid should be empty.");
     }
 
     // ── GroupDescription wiring ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void GroupDescription_DefaultsToEmpty()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -588,11 +587,11 @@ public partial class SettingsGroupEditorViewModelTests
 
         SettingsGroupEditorViewModel vm = new("General", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(string.Empty, vm.GroupDescription,
+        MessageAssert.Equal(string.Empty, vm.GroupDescription,
             "Default constructor must leave description empty so the description TextBlock collapses.");
     }
 
-    [TestMethod]
+    [Fact]
     public void GroupDescription_RoundTripsThroughConstructor()
     {
         List<SchemaNode> nodes = [MakeNode("model", "model")];
@@ -603,7 +602,7 @@ public partial class SettingsGroupEditorViewModelTests
             "General", nodes, workspace, ctx, ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create(),
             browseDialog: null,            groupDescription: "Top-level toggles for the section.");
 
-        Assert.AreEqual("Top-level toggles for the section.", vm.GroupDescription);
+        Assert.Equal("Top-level toggles for the section.", vm.GroupDescription);
     }
 
     // ── JSON placeholder mode ─────────────────────────────────────────────────
@@ -615,7 +614,7 @@ public partial class SettingsGroupEditorViewModelTests
     // null for Object/Complex, dropping the key entirely. The fix recurses into
     // Object children and emits a key-specific shape (or empty {}) for Complex.
 
-    [TestMethod]
+    [Fact]
     public void JsonPreview_ShowAll_EmitsKeyForComplexNode()
     {
         // Mimics the "Plugins" page: one Complex schema node, no value set anywhere.
@@ -632,13 +631,13 @@ public partial class SettingsGroupEditorViewModelTests
             ShowJsonPlaceholders = true,
         };
 
-        StringAssert.Contains(vm.JsonPreview, "\"enabledPlugins\"",
+        MessageAssert.Contains("\"enabledPlugins\"", vm.JsonPreview,
             "Placeholder JSON must include the Complex node's key, not drop it.");
-        StringAssert.Contains(vm.JsonPreview, "{}",
+        MessageAssert.Contains("{}", vm.JsonPreview,
             "Open-ended Complex types render an empty object as the placeholder body.");
     }
 
-    [TestMethod]
+    [Fact]
     public void JsonPreview_ShowAll_EmitsRichShapeForPermissions()
     {
         // The "permissions" Complex node has a fixed, well-known sub-schema
@@ -655,14 +654,14 @@ public partial class SettingsGroupEditorViewModelTests
             ShowJsonPlaceholders = true,
         };
 
-        StringAssert.Contains(vm.JsonPreview, "\"permissions\"");
-        StringAssert.Contains(vm.JsonPreview, "\"defaultMode\"");
-        StringAssert.Contains(vm.JsonPreview, "\"allow\"");
-        StringAssert.Contains(vm.JsonPreview, "\"deny\"");
-        StringAssert.Contains(vm.JsonPreview, "\"ask\"");
+        OrdinalAssert.Contains("\"permissions\"", vm.JsonPreview);
+        OrdinalAssert.Contains("\"defaultMode\"", vm.JsonPreview);
+        OrdinalAssert.Contains("\"allow\"", vm.JsonPreview);
+        OrdinalAssert.Contains("\"deny\"", vm.JsonPreview);
+        OrdinalAssert.Contains("\"ask\"", vm.JsonPreview);
     }
 
-    [TestMethod]
+    [Fact]
     public void JsonPreview_ShowAll_RecursesIntoObjectProperties()
     {
         // An Object node with declared Properties must contribute its children
@@ -680,8 +679,8 @@ public partial class SettingsGroupEditorViewModelTests
             ShowJsonPlaceholders = true,
         };
 
-        StringAssert.Contains(vm.JsonPreview, "\"parent\"");
-        StringAssert.Contains(vm.JsonPreview, "\"flag\"",
+        OrdinalAssert.Contains("\"parent\"", vm.JsonPreview);
+        MessageAssert.Contains("\"flag\"", vm.JsonPreview,
             "Object placeholders must recurse into their schema children, not collapse to empty.");
     }
 
@@ -700,7 +699,7 @@ public partial class SettingsGroupEditorViewModelTests
     // constructing new ones for paths that didn't have an editor before
     // (i.e. genuine schema additions).
 
-    [TestMethod]
+    [Fact]
     public void RebuildEditors_ReusesExistingEditorInstances_ForSamePaths()
     {
         List<SchemaNode> nodes =
@@ -721,14 +720,14 @@ public partial class SettingsGroupEditorViewModelTests
         PropertyEditorViewModel secondModelEditor = vm.Editors.First(e => e.Path == "model");
         PropertyEditorViewModel secondVerboseEditor = vm.Editors.First(e => e.Path == "verbose");
 
-        Assert.AreSame(firstModelEditor, secondModelEditor,
+        MessageAssert.Same(firstModelEditor, secondModelEditor,
             "RebuildEditors must reuse the existing editor instance for an unchanged JsonPath. "
             + "Constructing a fresh instance loses internal UI state (selection, expansion, etc.).");
-        Assert.AreSame(firstVerboseEditor, secondVerboseEditor,
+        MessageAssert.Same(firstVerboseEditor, secondVerboseEditor,
             "Reuse must apply to every path that already had an editor.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RebuildEditors_PreservesEditorState_AcrossExternalReload()
     {
         // The user-level scenario: a compound editor with internal state
@@ -747,7 +746,7 @@ public partial class SettingsGroupEditorViewModelTests
         workspace.SetValue("model", "claude-sonnet-4-5", ConfigScope.User);
 
         PropertyEditorViewModel secondEditor = vm.Editors[0];
-        Assert.AreSame(firstEditor, secondEditor,
+        MessageAssert.Same(firstEditor, secondEditor,
             "External workspace.Changed must reuse the existing editor instance, not recreate it. "
             + "Recreation loses internal UI state — see HooksEditor SelectedGroup / "
             + "McpServersEditor SelectedServer drift bugs reported 2026-05-01.");
@@ -765,7 +764,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// and summarises (no contents) for compound values whose nested keys
     /// might also be secret-bearing.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void FormatValueForAuditLog_RedactsEnvPath()
     {
         JsonObject env = new()
@@ -774,14 +773,14 @@ public partial class SettingsGroupEditorViewModelTests
             ["MAX_THINKING_TOKENS"] = "32000",
         };
         string result = SettingsGroupEditorViewModel.FormatValueForAuditLog(env, "env");
-        Assert.AreEqual(SensitiveKeys.RedactedMarker, result,
+        MessageAssert.Equal(SensitiveKeys.RedactedMarker, result,
             "Sensitive top-level path (env) must produce only the redacted marker — " +
             "no inlined JSON, no nested keys, no values.");
-        StringAssert.DoesNotMatch(result, MyRegex(),
+        MessageAssert.DoesNotMatch(MyRegex(), result,
             "The redacted output must not contain any fragment of the secret value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void FormatValueForAuditLog_CompoundValue_ReturnsStructuralSummaryNotContents()
     {
         // mcpServers is NOT in SensitiveKeys segments — but its nested
@@ -799,16 +798,16 @@ public partial class SettingsGroupEditorViewModelTests
             },
         };
         string result = SettingsGroupEditorViewModel.FormatValueForAuditLog(mcp, "mcpServers");
-        StringAssert.StartsWith(result, "(JsonObject",
+        MessageAssert.StartsWith("(JsonObject", result,
             "Compound editor values must render as a shape+size summary, not their contents.");
-        StringAssert.DoesNotMatch(result, new Regex("leaked-token"),
+        MessageAssert.DoesNotMatch(new Regex("leaked-token"), result,
             "Nested secret values inside a compound editor must not appear in the audit log.");
-        StringAssert.DoesNotMatch(result, new Regex("Authorization"),
+        MessageAssert.DoesNotMatch(new Regex("Authorization"), result,
             "Nested key names inside a compound editor must not appear in the audit log either " +
             "(prevents the reader from inferring presence of specific auth schemes).");
     }
 
-    [TestMethod]
+    [Fact]
     public void FormatValueForAuditLog_LeafValue_LogsValueAsJson()
     {
         // Scalar leaf editors on non-sensitive paths log their value
@@ -816,20 +815,20 @@ public partial class SettingsGroupEditorViewModelTests
         // makes the trail useful for "what did the user actually
         // change?" forensics.
         JsonValue value = JsonValue.Create("haiku");
-        Assert.AreEqual("\"haiku\"",
+        Assert.Equal("\"haiku\"",
             SettingsGroupEditorViewModel.FormatValueForAuditLog(value, "model"));
     }
 
-    [TestMethod]
+    [Fact]
     public void FormatValueForAuditLog_NullValue_RendersExplicitNullToken()
     {
-        Assert.AreEqual("(null)",
+        Assert.Equal("(null)",
             SettingsGroupEditorViewModel.FormatValueForAuditLog(null, "anything"));
     }
 
     // ── Deep-link filter "navigated" frame (FilterFromNavigation) ──────────
 
-    [TestMethod]
+    [Fact]
     public void ApplyNavigationFilter_SetsFilterAndNavFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
@@ -837,24 +836,24 @@ public partial class SettingsGroupEditorViewModelTests
 
         vm.ApplyNavigationFilter("model");
 
-        Assert.AreEqual("model", vm.FilterText);
-        Assert.IsTrue(vm.FilterFromNavigation, "A deep-link filter must flag the orange nav frame.");
+        Assert.Equal("model", vm.FilterText);
+        Assert.True(vm.FilterFromNavigation, "A deep-link filter must flag the orange nav frame.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UserEditingFilter_DropsNavFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
         SettingsGroupEditorViewModel vm = new("General", [MakeNode("model", "model")], workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
         vm.ApplyNavigationFilter("model");
-        Assert.IsTrue(vm.FilterFromNavigation);
+        Assert.True(vm.FilterFromNavigation);
 
         vm.FilterText = "modelX"; // simulates the user typing into the filter box
 
-        Assert.IsFalse(vm.FilterFromNavigation, "A user edit must drop the nav frame.");
+        Assert.False(vm.FilterFromNavigation, "A user edit must drop the nav frame.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ClearingFilter_DropsNavFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
@@ -863,11 +862,11 @@ public partial class SettingsGroupEditorViewModelTests
 
         vm.ClearFilterCommand.Execute(null);
 
-        Assert.AreEqual(string.Empty, vm.FilterText);
-        Assert.IsFalse(vm.FilterFromNavigation);
+        Assert.Equal(string.Empty, vm.FilterText);
+        Assert.False(vm.FilterFromNavigation);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyNavigationFilter_NullOrEmpty_DoesNotFlag()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
@@ -875,8 +874,8 @@ public partial class SettingsGroupEditorViewModelTests
 
         vm.ApplyNavigationFilter(null);
 
-        Assert.AreEqual(string.Empty, vm.FilterText);
-        Assert.IsFalse(vm.FilterFromNavigation, "An empty nav filter must not draw the frame.");
+        Assert.Equal(string.Empty, vm.FilterText);
+        Assert.False(vm.FilterFromNavigation, "An empty nav filter must not draw the frame.");
     }
 
     [GeneratedRegex("sk-test-secret")]
@@ -898,7 +897,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// the object editors in play and silently stop descending into the other half. Removing the
     /// interface from the app's editor failed ZERO tests before this one existed.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void Filter_DescendsIntoObjectEditors_ViaTheChildHostInterface()
     {
         // ⚠ NOT a node name the product specialises (e.g. "permissions"): those produce a
@@ -921,12 +920,12 @@ public partial class SettingsGroupEditorViewModelTests
         vm.FilterText = "allowUnsandboxedCommands";
 
         List<string> shown = [.. vm.FilteredEditors.Select(e => e.Path)];
-        CollectionAssert.Contains(shown, "statusLine.allowUnsandboxedCommands",
+        MessageAssert.Contains("statusLine.allowUnsandboxedCommands", shown,
             "The filter must descend into the object and surface the matching child. If the "
             + "object editor no longer advertises IChildEditorHost, the descent stops and the "
             + "user sees the collapsed parent — or nothing — instead of the property they typed."
             + $" Shown: {string.Join(", ", shown)}");
-        CollectionAssert.DoesNotContain(shown, "statusLine.somethingElse",
+        MessageAssert.DoesNotContain("statusLine.somethingElse", shown,
             "Only matching descendants should surface, not every sibling in the object.");
     }
 
@@ -939,7 +938,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// implementation are separately breakable: making <c>DismissTransientHints</c> a no-op
     /// failed zero tests.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ClearingTheFilter_DismissesTransientHints()
     {
         SettingsWorkspace workspace = MakeWorkspace((ConfigScope.User, "{}"));
@@ -948,7 +947,7 @@ public partial class SettingsGroupEditorViewModelTests
             ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         List<ITransientHintHost> hosts = [.. vm.Editors.OfType<ITransientHintHost>()];
-        Assert.IsTrue(hosts.Count > 0,
+        Assert.True(hosts.Count > 0,
             "Precondition: the permissions node must produce an editor that carries transient "
             + "hints, or this test proves nothing.");
 
@@ -962,7 +961,7 @@ public partial class SettingsGroupEditorViewModelTests
 
         foreach (PermissionsEditorViewModel p in vm.Editors.OfType<PermissionsEditorViewModel>())
         {
-            Assert.IsFalse(p.ShowDangerCliHint,
+            Assert.False(p.ShowDangerCliHint,
                 "Clearing the filter must dismiss transient hints — a banner raised by what the "
                 + "filter surfaced would otherwise point at something no longer on screen.");
         }
@@ -976,7 +975,7 @@ public partial class SettingsGroupEditorViewModelTests
     /// Both headers were hardcoded English inline before the group editor became neutral.
     /// Inverting the two left the suite green.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void JsonTabHeader_TracksPlaceholderMode_FromSuppliedText()
     {
         SettingsGroupText text = new()
@@ -989,11 +988,11 @@ public partial class SettingsGroupEditorViewModelTests
             ClaudeEditorFactoryConfig.CreateDefault(), text);
 
         vm.ShowJsonPlaceholders = true;
-        Assert.AreEqual("ALL-marker", vm.JsonTabHeader);
-        Assert.AreEqual("ALL-marker", vm.Tabs.Single(t => t.Id == GroupTab.JsonId).Header,
+        Assert.Equal("ALL-marker", vm.JsonTabHeader);
+        MessageAssert.Equal("ALL-marker", vm.Tabs.Single(t => t.Id == GroupTab.JsonId).Header,
             "The seeded tab must carry the same header the property reports.");
 
         vm.ShowJsonPlaceholders = false;
-        Assert.AreEqual("ACTIVE-marker", vm.JsonTabHeader);
+        Assert.Equal("ACTIVE-marker", vm.JsonTabHeader);
     }
 }

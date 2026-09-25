@@ -29,7 +29,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// the input and output JSON so we can see exactly what mutated.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class HooksEditorLoadPathMutationTests
 {
     private static SchemaNode HooksSchema()
@@ -107,7 +106,7 @@ public sealed class HooksEditorLoadPathMutationTests
 
     // ── Concern A: load doesn't add phantom entries to the editor ─────────
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_UserShape_PreservesEntryCounts()
     {
         // Sanity check: after LoadFromLayered, the editor's in-memory state
@@ -121,17 +120,17 @@ public sealed class HooksEditorLoadPathMutationTests
         HookEventGroup stop = vm.EventGroups.First(g => g.EventName == "Stop");
         HookEventGroup sessionEnd = vm.EventGroups.First(g => g.EventName == "SessionEnd");
 
-        Assert.AreEqual(7, stop.Hooks.Count,
+        MessageAssert.Equal(7, stop.Hooks.Count,
             "Stop should hold 6 (matcher=*) + 1 (no-matcher) = 7 entries after load. " +
             $"Got {stop.Hooks.Count}. Inflated count means load-path is creating phantom entries.");
-        Assert.AreEqual(2, sessionEnd.Hooks.Count,
+        MessageAssert.Equal(2, sessionEnd.Hooks.Count,
             "SessionEnd should hold 1 (matcher=*) + 1 (no-matcher) = 2 entries after load. " +
             $"Got {sessionEnd.Hooks.Count}.");
     }
 
     // ── Concern B: ToJsonValue round-trip preserves on-disk shape ─────────
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_UserShape_StopArrayPreservesSixHooksAtIndexZero()
     {
         // The user's report flagged an error at hooks/Stop/0/hooks/6 — a
@@ -142,18 +141,18 @@ public sealed class HooksEditorLoadPathMutationTests
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
 
         JsonObject? output = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(output, "ToJsonValue must return a JsonObject when there are entries.");
+        MessageAssert.NotNull(output, "ToJsonValue must return a JsonObject when there are entries.");
 
         JsonArray stop = output!["Stop"]!.AsArray();
         JsonObject stopFirst = stop[0]!.AsObject();
         JsonArray stopHooks = stopFirst["hooks"]!.AsArray();
 
-        Assert.AreEqual(6, stopHooks.Count,
+        MessageAssert.Equal(6, stopHooks.Count,
             "Stop[0].hooks must have exactly 6 entries after round-trip. Got " +
             $"{stopHooks.Count}.\n\nInput JSON:\n{PrettyPrint(input)}\n\nOutput JSON:\n{PrettyPrint(output)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_UserShape_SessionEndArrayPreservesOneHookAtIndexZero()
     {
         JsonObject input = BuildUserStopAndSessionEnd();
@@ -161,18 +160,18 @@ public sealed class HooksEditorLoadPathMutationTests
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
 
         JsonObject? output = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(output);
+        Assert.NotNull(output);
 
         JsonArray sessionEnd = output!["SessionEnd"]!.AsArray();
         JsonObject sessionEndFirst = sessionEnd[0]!.AsObject();
         JsonArray sessionEndHooks = sessionEndFirst["hooks"]!.AsArray();
 
-        Assert.AreEqual(1, sessionEndHooks.Count,
+        MessageAssert.Equal(1, sessionEndHooks.Count,
             "SessionEnd[0].hooks must have exactly 1 entry after round-trip. Got " +
             $"{sessionEndHooks.Count}.\n\nInput:\n{PrettyPrint(input)}\n\nOutput:\n{PrettyPrint(output)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_UserShape_PreservesBothOuterGroupsForStop()
     {
         // Lock the matcher-vs-no-matcher distinction. Stop should round-trip
@@ -184,7 +183,7 @@ public sealed class HooksEditorLoadPathMutationTests
         JsonObject? output = vm.ToJsonValue() as JsonObject;
         JsonArray stop = output!["Stop"]!.AsArray();
 
-        Assert.AreEqual(2, stop.Count,
+        MessageAssert.Equal(2, stop.Count,
             $"Stop must round-trip to 2 outer groups. Got {stop.Count}.\n\n" +
             $"Output:\n{PrettyPrint(output)}");
 
@@ -192,13 +191,13 @@ public sealed class HooksEditorLoadPathMutationTests
         List<string?> matchers = stop.Select(g => g!.AsObject().ContainsKey("matcher")
             ? g.AsObject()["matcher"]!.GetValue<string>()
             : null).ToList();
-        Assert.IsTrue(matchers.Contains("*"), $"Expected matcher '*' group. Got: [{string.Join(", ", matchers)}]");
-        Assert.IsTrue(matchers.Contains(null), $"Expected no-matcher group. Got: [{string.Join(", ", matchers)}]");
+        Assert.True(matchers.Contains("*"), $"Expected matcher '*' group. Got: [{string.Join(", ", matchers)}]");
+        Assert.True(matchers.Contains(null), $"Expected no-matcher group. Got: [{string.Join(", ", matchers)}]");
     }
 
     // ── Concern C: full structural equality ─────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_UserShape_OutputDeepEqualsInput()
     {
         // The strongest contract: load and immediately round-trip must
@@ -210,7 +209,7 @@ public sealed class HooksEditorLoadPathMutationTests
 
         JsonObject? output = vm.ToJsonValue() as JsonObject;
 
-        Assert.IsTrue(JsonNode.DeepEquals(input, output),
+        Assert.True(JsonNode.DeepEquals(input, output),
             "Load+ToJsonValue must round-trip byte-equal for the user's hook shape.\n\n" +
             $"Input:\n{PrettyPrint(input)}\n\nOutput:\n{PrettyPrint(output)}");
     }
@@ -232,7 +231,7 @@ public sealed class HooksEditorLoadPathMutationTests
     /// (one with matcher="*", one without) get FLATTENED into a single outer
     /// group with all entries clustered under matcher="*".
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void SdkBackedRoundTrip_UserShape_PreservesTwoOuterGroupsForStop()
     {
         JsonObject input = BuildUserStopAndSessionEnd();
@@ -251,17 +250,17 @@ public sealed class HooksEditorLoadPathMutationTests
         vm.LoadFromLayered(LayeredWith(input), ConfigScope.User);
 
         JsonObject? output = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(output);
+        Assert.NotNull(output);
 
         JsonArray stop = output!["Stop"]!.AsArray();
-        Assert.AreEqual(2, stop.Count,
+        MessageAssert.Equal(2, stop.Count,
             $"SDK-backed round-trip must preserve BOTH outer groups for Stop " +
             $"(matcher=* with 6 hooks AND no-matcher with 1 hook). Got " +
             $"{stop.Count} outer group(s).\n\nInput:\n{PrettyPrint(input)}\n\n" +
             $"Output:\n{PrettyPrint(output)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void SdkBackedLoad_UserShape_DoesNotMutateWorkspaceRoot()
     {
         // Critical: LoadFromLayered alone (no ToJsonValue, no save) must
@@ -288,14 +287,14 @@ public sealed class HooksEditorLoadPathMutationTests
         // Snapshot AFTER editor construction + load.
         JsonObject after = doc.Root;
 
-        Assert.IsTrue(JsonNode.DeepEquals(before, after),
+        Assert.True(JsonNode.DeepEquals(before, after),
             "workspace.Root must not be mutated by HooksEditor construction or " +
             "LoadFromLayered. If this fails, the load path itself is writing " +
             "back to the workspace.\n\n" +
             $"Before:\n{PrettyPrint(before)}\n\nAfter:\n{PrettyPrint(after)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void SdkBackedLoad_UserShape_RoundTripFlushIsNoOp()
     {
         // HooksEditor.LoadFromLayered SETS IsModified=true on a clean
@@ -326,7 +325,7 @@ public sealed class HooksEditorLoadPathMutationTests
 
         // Confirm the parity contract is in effect (proves the test is
         // actually exercising the post-load flush case).
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "HooksEditor sets IsModified=true on clean load (parity contract). " +
             "If false, this test isn't covering the flush path — see line ~233 " +
             "of HooksEditorViewModel.cs.");
@@ -337,14 +336,14 @@ public sealed class HooksEditorLoadPathMutationTests
 
         // The SDK round-trip must preserve the on-disk shape exactly.
         JsonNode afterFlush = doc.Root["hooks"]!;
-        Assert.IsTrue(JsonNode.DeepEquals(input, afterFlush),
+        Assert.True(JsonNode.DeepEquals(input, afterFlush),
             "After load + ApplyToWorkspace flush, workspace.Root.hooks must be " +
             "byte-equal to the input. If not, phantom entries are being written " +
             "(this is the user's 18-error bug mechanism).\n\n" +
             $"Input:\n{PrettyPrint(input)}\n\nAfter flush:\n{PrettyPrint(afterFlush)}");
     }
 
-    [TestMethod]
+    [Fact]
     public void SdkBackedRoundTrip_UserShape_StopFirstGroupHasExactlySixHooks()
     {
         // The smoking-gun assertion. After SDK round-trip, Stop[0].hooks
@@ -366,7 +365,7 @@ public sealed class HooksEditorLoadPathMutationTests
         JsonObject stopFirst = output!["Stop"]!.AsArray()[0]!.AsObject();
         JsonArray hooks = stopFirst["hooks"]!.AsArray();
 
-        Assert.AreEqual(6, hooks.Count,
+        MessageAssert.Equal(6, hooks.Count,
             $"Stop[0].hooks must have 6 entries after SDK round-trip. Got " +
             $"{hooks.Count}. Inflation to 7 entries means HooksAccessor's " +
             $"matcher=* default has merged the no-matcher gk.exe hook into " +

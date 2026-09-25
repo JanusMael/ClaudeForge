@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// path traverses any anyOf site with a passing sibling. Tests below pin
 /// the contract.
 /// </summary>
-[TestClass]
 public sealed class HookAnyOfLeakageDiagnosticTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -38,14 +37,12 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         }
     }
 
-    public TestContext? TestContext { get; set; }
-
     private static SchemaRegistry CreateRegistry()
     {
         return new SchemaRegistry(new HttpClient(new FailingHttpHandler()));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UserReported_WorktreeCreateCommandHook_Plus_UnknownEventBaseline()
     {
         // Baseline: the user's actual config shape. Several known events with
@@ -90,14 +87,14 @@ public sealed class HookAnyOfLeakageDiagnosticTests
 
         if (errors.Count != 0)
         {
-            TestContext?.WriteLine($"Unexpected errors ({errors.Count}):");
+            TestContext.Current.TestOutputHelper?.WriteLine($"Unexpected errors ({errors.Count}):");
             foreach (SchemaValidationError err in errors)
             {
-                TestContext?.WriteLine($"  {err.InstancePath} | {err.Message}");
+                TestContext.Current.TestOutputHelper?.WriteLine($"  {err.InstancePath} | {err.Message}");
             }
         }
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             "Adding a valid command hook on WorktreeCreate should produce zero net-new "
             + "validation errors. Failure means JsonSchema.Net's anyOf-branch leakage is "
             + "no longer being suppressed by SchemaRegistry.CollectSchemaErrors — check "
@@ -119,7 +116,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task GenuineCommandHookFailure_StillEmitsRealErrors()
     {
         // Adversarial: ensure the suppression doesn't silently eat REAL
@@ -146,7 +143,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "A hook that matches no anyOf branch must still emit errors — the "
             + "leaked-branch suppression should only fire when at least one sibling matched.");
     }

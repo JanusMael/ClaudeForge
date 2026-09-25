@@ -1,5 +1,11 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
+// ⓘ xUnit1031 ("do not block on a task") is the POINT of this file: each test blocks the calling
+// thread on purpose, with a bounded Wait, to prove the reentrant lock does not deadlock a
+// synchronous caller. Awaiting instead would delete what is tested. Suppressed here only
+// (plans/00006, converted from MSTest, which has no such analyzer).
+#pragma warning disable xUnit1031
+
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
 /// <summary>
@@ -28,14 +34,14 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 ///   <item>Different threads still serialise (no shared-state corruption).</item>
 /// </list>
 /// </remarks>
-[TestClass]
-public sealed class AgentConfigClientCoreReentrancyTests
+public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
 {
     private string _tempDir = null!;
     private string? _previousOverride;
 
-    [TestInitialize]
-    public void Setup()
+    public AgentConfigClientCoreReentrancyTests() => Setup();
+
+    private void Setup()
     {
         // Isolate each test's filesystem so OpenAsync doesn't read the
         // real user's ~/.claude/ tree and so parallel tests don't trip
@@ -46,8 +52,7 @@ public sealed class AgentConfigClientCoreReentrancyTests
         PlatformPaths.TestUserProfileOverride = _tempDir;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = _previousOverride;
         try
@@ -63,7 +68,13 @@ public sealed class AgentConfigClientCoreReentrancyTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void Reentrancy_SetValueFromInsideChangedHandler_DoesNotDeadlock()
     {
         // Repro the user-hit pattern: a Changed handler that calls back
@@ -87,11 +98,11 @@ public sealed class AgentConfigClientCoreReentrancyTests
         bool done = Task.Run(() => { client.SetValue("model", "opus", ConfigScope.User); })
                         .Wait(TimeSpan.FromSeconds(5));
 
-        Assert.IsTrue(done, "SetValue must complete; reentrant lock is broken if this hangs.");
-        Assert.IsTrue(handlerRan, "Changed handler must have fired.");
+        Assert.True(done, "SetValue must complete; reentrant lock is broken if this hangs.");
+        Assert.True(handlerRan, "Changed handler must have fired.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Reentrancy_NestedReadInsideRead_DoesNotDeadlock()
     {
         // GetEffective from inside a Changed-fire-context that triggers
@@ -110,18 +121,18 @@ public sealed class AgentConfigClientCoreReentrancyTests
             // Second read — verifies depth counter unwinds correctly so
             // we don't release the lock between reads.
             string? second = client.GetEffective<string>("model");
-            Assert.AreEqual(first, second);
+            Assert.Equal(first, second);
             nestedRead = true;
         };
 
         bool done = Task.Run(() => { client.SetValue("model", "opus", ConfigScope.User); })
                         .Wait(TimeSpan.FromSeconds(5));
 
-        Assert.IsTrue(done);
-        Assert.IsTrue(nestedRead);
+        Assert.True(done);
+        Assert.True(nestedRead);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Reentrancy_DifferentThreads_StillSerialiseProperly()
     {
         // Thread isolation contract: even with re-entrancy on the same
@@ -150,11 +161,11 @@ public sealed class AgentConfigClientCoreReentrancyTests
         await Task.WhenAll(t1, t2).WaitAsync(TimeSpan.FromSeconds(15));
 
         // Final values reflect last iteration on each thread.
-        Assert.AreEqual($"t1-{iterations - 1}", client.GetEffective<string>("a"));
-        Assert.AreEqual($"t2-{iterations - 1}", client.GetEffective<string>("b"));
+        Assert.Equal($"t1-{iterations - 1}", client.GetEffective<string>("a"));
+        Assert.Equal($"t2-{iterations - 1}", client.GetEffective<string>("b"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Reentrancy_DepthThreeNesting_UnwindsCorrectly()
     {
         // Trigger a 3-deep nesting: SetValue -> Changed -> GetEffective
@@ -184,12 +195,12 @@ public sealed class AgentConfigClientCoreReentrancyTests
         bool done = Task.Run(() => { client.SetValue("model", "outer", ConfigScope.User); })
                         .Wait(TimeSpan.FromSeconds(5));
 
-        Assert.IsTrue(done, "Nested re-entry must not deadlock.");
-        Assert.IsTrue(handlerInvocations >= 2, "Outer + nested SetValue both fire Changed.");
+        Assert.True(done, "Nested re-entry must not deadlock.");
+        Assert.True(handlerInvocations >= 2, "Outer + nested SetValue both fire Changed.");
 
         // After full unwinding the lock must be free — verified by a
         // fresh write succeeding without hanging.
         Task.Run(() => client.SetValue("post", "x", ConfigScope.User)).Wait(TimeSpan.FromSeconds(5));
-        Assert.AreEqual("x", client.GetEffective<string>("post"));
+        Assert.Equal("x", client.GetEffective<string>("post"));
     }
 }

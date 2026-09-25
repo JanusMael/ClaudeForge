@@ -21,14 +21,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// home directory, so these exercise the wiring (Tier 1 grouping, Tier 2 row
 /// rebuild, viewer load) without needing a dialog renderer or shell launcher.
 /// </summary>
-[TestClass]
-public sealed class MemoryEditorViewModelTests
+public sealed class MemoryEditorViewModelTests : IDisposable
 {
     private string _fakeHome = null!;
     private string _claudeHome => Path.Combine(_fakeHome, ".claude");
 
-    [TestInitialize]
-    public void Setup()
+    public MemoryEditorViewModelTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(),
             "claudeforge-mem-vm-" + Path.GetRandomFileName());
@@ -36,8 +36,7 @@ public sealed class MemoryEditorViewModelTests
         PlatformPaths.TestUserProfileOverride = _fakeHome;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_fakeHome))
@@ -51,6 +50,12 @@ public sealed class MemoryEditorViewModelTests
                 /* leave on lock */
             }
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private void Write(string relPath, string content)
@@ -84,14 +89,14 @@ public sealed class MemoryEditorViewModelTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void NoClient_HasCodeMemory_False()
     {
         MemoryEditorViewModel vm = NewVm(client: null);
-        Assert.IsFalse(vm.HasCodeMemory);
+        Assert.False(vm.HasCodeMemory);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_RebuildsTier1Groups_OneEntryPerCategory()
     {
         Write("CLAUDE.md", "# top");
@@ -105,20 +110,20 @@ public sealed class MemoryEditorViewModelTests
         // One group per category, populated and empty alike. Derived from the enum rather
         // than a hardcoded count so adding a category (e.g. Configuration) doesn't fail
         // this assertion for a reason that has nothing to do with what it's testing.
-        Assert.AreEqual(Enum.GetValues<UserMemoryCategory>().Length, vm.Tier1Groups.Count);
+        Assert.Equal(Enum.GetValues<UserMemoryCategory>().Length, vm.Tier1Groups.Count);
         UserMemoryGroupViewModel primary = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.PrimaryMemory);
         UserMemoryGroupViewModel subagent = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent);
         UserMemoryGroupViewModel slash = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.SlashCommand);
 
-        Assert.AreEqual(1, primary.Files.Count);
-        Assert.AreEqual(1, subagent.Files.Count);
-        Assert.AreEqual(1, slash.Files.Count);
+        Assert.Single(primary.Files);
+        Assert.Single(subagent.Files);
+        Assert.Single(slash.Files);
 
         UserMemoryGroupViewModel emptyHook = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Hook);
-        Assert.IsTrue(emptyHook.IsEmpty);
+        Assert.True(emptyHook.IsEmpty);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_RebuildsFootprintRows_AllCategories()
     {
         Write("history.jsonl", "abcdef");
@@ -128,14 +133,14 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(client);
         await vm.RefreshAsync();
 
-        Assert.AreEqual(7, vm.FootprintRows.Count);
+        Assert.Equal(7, vm.FootprintRows.Count);
         FootprintRowViewModel hist = vm.FootprintRows.Single(r => r.Category == FootprintCategory.PromptHistory);
-        Assert.AreEqual(1, hist.FileCount);
-        Assert.AreEqual(6, hist.TotalBytes);
-        StringAssert.Contains(hist.HumanSize, "B");
+        Assert.Equal(1, hist.FileCount);
+        Assert.Equal(6, hist.TotalBytes);
+        OrdinalAssert.Contains("B", hist.HumanSize);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFile_PopulatesViewerContent()
     {
         Write("CLAUDE.md", "hello world");
@@ -149,13 +154,13 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.LoadFileAsync(primary);
 
-        Assert.IsTrue(vm.IsViewerVisible);
-        Assert.AreEqual("hello world", vm.ViewerContent);
-        Assert.AreSame(primary, vm.SelectedFile);
-        Assert.IsFalse(vm.HasViewerFrontMatter, "Plain content has no front-matter card.");
+        Assert.True(vm.IsViewerVisible);
+        Assert.Equal("hello world", vm.ViewerContent);
+        Assert.Same(primary, vm.SelectedFile);
+        Assert.False(vm.HasViewerFrontMatter, "Plain content has no front-matter card.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadFile_WithFrontMatter_SplitsCardFromBody()
     {
         Write("CLAUDE.md", "---\nname: Alpha\ndescription: does things\n---\n# Body\n\nHello.\n");
@@ -170,19 +175,19 @@ public sealed class MemoryEditorViewModelTests
         await vm.LoadFileAsync(primary);
 
         // Front-matter is surfaced as a structured card…
-        Assert.IsTrue(vm.HasViewerFrontMatter);
-        Assert.IsNotNull(vm.ViewerFrontMatter);
-        Assert.AreEqual("Alpha", vm.ViewerFrontMatter!.Single(r => r.Key == "name").Value);
+        Assert.True(vm.HasViewerFrontMatter);
+        Assert.NotNull(vm.ViewerFrontMatter);
+        Assert.Equal("Alpha", vm.ViewerFrontMatter!.Single(r => r.Key == "name").Value);
 
         // …and stripped from the rendered body.
-        StringAssert.Contains(vm.ViewerContent, "# Body");
-        Assert.IsFalse(vm.ViewerContent!.Contains("name:"),
+        OrdinalAssert.Contains("# Body", vm.ViewerContent);
+        Assert.False(vm.ViewerContent!.Contains("name:"),
             "Front-matter must not leak into the rendered markdown body.");
-        Assert.IsFalse(vm.ViewerContent!.TrimStart().StartsWith("---"),
+        Assert.False(vm.ViewerContent!.TrimStart().StartsWith("---"),
             "Body must not begin with the front-matter delimiter.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CloseViewer_ClearsSelection()
     {
         Write("CLAUDE.md", "x");
@@ -194,17 +199,17 @@ public sealed class MemoryEditorViewModelTests
                                    .Single(g => g.Category == UserMemoryCategory.PrimaryMemory)
                                    .Files[0];
         await vm.LoadFileAsync(primary);
-        Assert.IsTrue(vm.IsViewerVisible);
+        Assert.True(vm.IsViewerVisible);
 
         vm.CloseViewer();
-        Assert.IsFalse(vm.IsViewerVisible);
-        Assert.IsNull(vm.SelectedFile);
-        Assert.IsNull(vm.ViewerContent);
+        Assert.False(vm.IsViewerVisible);
+        Assert.Null(vm.SelectedFile);
+        Assert.Null(vm.ViewerContent);
     }
 
     // ── Per-project transcript drilldown ────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_PopulatesPerProjectBreakdown_FromSdk()
     {
         // Two projects on disk under ~/.claude/projects/.
@@ -216,19 +221,19 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(client);
         await vm.RefreshAsync();
 
-        Assert.AreEqual(2, vm.ProjectTranscripts.Count);
-        Assert.IsTrue(vm.HasProjectBreakdown);
+        Assert.Equal(2, vm.ProjectTranscripts.Count);
+        Assert.True(vm.HasProjectBreakdown);
 
         // Both projects appear (order is most-recent first; we don't assert
         // specific ordering since the temp files were written in a tight
         // window — assert SET equality instead).
         List<string> mangled = vm.ProjectTranscripts.Select(p => p.MangledName).ToList();
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "-Users-brian-foo", "-Users-brian-bar" },
             mangled);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_NoProjectsOnDisk_BreakdownHidden()
     {
         // No ~/.claude/projects/ directory at all.
@@ -236,12 +241,12 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(client);
         await vm.RefreshAsync();
 
-        Assert.AreEqual(0, vm.ProjectTranscripts.Count);
-        Assert.IsFalse(vm.HasProjectBreakdown,
+        Assert.Empty(vm.ProjectTranscripts);
+        Assert.False(vm.HasProjectBreakdown,
             "Empty projects directory must hide the breakdown Expander.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_ProjectsOrderedMostRecentFirst()
     {
         Write("projects/-old-project/s.jsonl", "x");
@@ -256,13 +261,13 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(client);
         await vm.RefreshAsync();
 
-        Assert.AreEqual("-new-project", vm.ProjectTranscripts[0].MangledName,
+        MessageAssert.Equal("-new-project", vm.ProjectTranscripts[0].MangledName,
             "Most-recently-active project must surface first; user mental model "
             + "is 'what was I just doing' so the active project should be on top.");
-        Assert.AreEqual("-old-project", vm.ProjectTranscripts[1].MangledName);
+        Assert.Equal("-old-project", vm.ProjectTranscripts[1].MangledName);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteProjectTranscripts_NoOpsWithNullRow()
     {
         // Defensive: passing null (e.g. from a misconfigured binding) must
@@ -272,19 +277,19 @@ public sealed class MemoryEditorViewModelTests
         // No assertion — the contract is "doesn't throw".
     }
 
-    [TestMethod]
+    [Fact]
     public void ToggleProjectBreakdown_FlipsExpandedFlag()
     {
         MemoryEditorViewModel vm = NewVm(NewFakeClient());
-        Assert.IsFalse(vm.IsProjectBreakdownExpanded,
+        Assert.False(vm.IsProjectBreakdownExpanded,
             "Per-project breakdown must start collapsed on every navigate-in.");
         vm.ToggleProjectBreakdownCommand.Execute(null);
-        Assert.IsTrue(vm.IsProjectBreakdownExpanded);
+        Assert.True(vm.IsProjectBreakdownExpanded);
         vm.ToggleProjectBreakdownCommand.Execute(null);
-        Assert.IsFalse(vm.IsProjectBreakdownExpanded);
+        Assert.False(vm.IsProjectBreakdownExpanded);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ProjectTranscriptRowViewModel_FormattingHelpers()
     {
         // Quick sanity for the row VM's formatting helpers — exercises the
@@ -297,18 +302,18 @@ public sealed class MemoryEditorViewModelTests
             TotalBytes: 2_500_000,
             LastWriteUtc: DateTime.UtcNow.AddDays(-3));
         ProjectTranscriptRowViewModel oldRow = new(oldStats);
-        StringAssert.Contains(oldRow.HumanSize, "MB");
-        StringAssert.Contains(oldRow.LastWriteDisplay, "days ago");
+        OrdinalAssert.Contains("MB", oldRow.HumanSize);
+        OrdinalAssert.Contains("days ago", oldRow.LastWriteDisplay);
 
         ProjectTranscriptStats minStats = oldStats with { LastWriteUtc = DateTime.MinValue };
         ProjectTranscriptRowViewModel minRow = new(minStats);
-        Assert.AreEqual("—", minRow.LastWriteDisplay,
+        MessageAssert.Equal("—", minRow.LastWriteDisplay,
             "DateTime.MinValue (empty husk) must render as em-dash, not a literal date.");
     }
 
     // ── Footprint size threshold banner (Phase 5 v2) ─────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task FootprintTotalBytes_SumsAllCategoryRows()
     {
         // Two non-zero categories; total should be the sum of their bytes.
@@ -318,11 +323,11 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(NewFakeClient());
         await vm.RefreshAsync();
 
-        Assert.AreEqual(1250, vm.FootprintTotalBytes);
-        Assert.AreEqual("1.2 KB", vm.FootprintTotalDisplay);
+        Assert.Equal(1250, vm.FootprintTotalBytes);
+        Assert.Equal("1.2 KB", vm.FootprintTotalDisplay);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task IsFootprintLarge_FalseBelowThreshold()
     {
         // Default footprint with tiny test files is far below the 5 GiB
@@ -332,7 +337,7 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = NewVm(NewFakeClient());
         await vm.RefreshAsync();
 
-        Assert.IsFalse(vm.IsFootprintLarge,
+        Assert.False(vm.IsFootprintLarge,
             "Footprint warning banner must not surface for normal-sized data.");
     }
 
@@ -347,7 +352,7 @@ public sealed class MemoryEditorViewModelTests
     /// thread.  This test fails if anyone removes the <c>Task.Run(...)</c>
     /// wrap around <c>SnapshotUserMemoryFiles</c>.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task RefreshAsync_RunsTier1ScanOnThreadPool()
     {
         // Capture the thread on which SnapshotUserMemoryFiles is invoked.
@@ -364,7 +369,7 @@ public sealed class MemoryEditorViewModelTests
         callerThread.Start();
         callerThread.Join();
 
-        Assert.IsTrue(snapshotThreadIsPool, "SnapshotUserMemoryFiles must run on a thread-pool thread — " +
+        Assert.True(snapshotThreadIsPool, "SnapshotUserMemoryFiles must run on a thread-pool thread — " +
             "did someone remove the Task.Run(...) wrap in MemoryEditorViewModel.RefreshAsync?");
     }
 
@@ -521,28 +526,28 @@ public sealed class MemoryEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void IsFootprintLarge_TrueAboveThreshold()
     {
         // Force the property directly; we don't need real disk to validate
         // the threshold predicate.  Threshold constant is 5 GiB.
         MemoryEditorViewModel vm = NewVm(client: null);
         vm.FootprintTotalBytes = MemoryEditorViewModel.FootprintWarningThresholdBytes + 1;
-        Assert.IsTrue(vm.IsFootprintLarge);
-        StringAssert.Contains(vm.FootprintTotalDisplay, "GB");
-        StringAssert.Contains(vm.FootprintWarningMessage, "5.0 GB");
+        Assert.True(vm.IsFootprintLarge);
+        OrdinalAssert.Contains("GB", vm.FootprintTotalDisplay);
+        OrdinalAssert.Contains("5.0 GB", vm.FootprintWarningMessage);
     }
 
-    [TestMethod]
+    [Fact]
     public void FootprintWarningMessage_ContainsHumanisedSize()
     {
         MemoryEditorViewModel vm = NewVm(client: null);
         vm.FootprintTotalBytes = 12L * 1024 * 1024 * 1024; // 12 GiB
-        StringAssert.Contains(vm.FootprintWarningMessage, "12.0 GB",
+        MessageAssert.Contains("12.0 GB", vm.FootprintWarningMessage,
             "Banner copy must include the humanised aggregate size for context.");
     }
 
-    [TestMethod]
+    [Fact]
     public void FootprintTotalBytes_PropertyChange_NotifiesDerivedProperties()
     {
         MemoryEditorViewModel vm = NewVm(client: null);
@@ -557,15 +562,15 @@ public sealed class MemoryEditorViewModelTests
 
         vm.FootprintTotalBytes = MemoryEditorViewModel.FootprintWarningThresholdBytes + 1;
 
-        Assert.IsTrue(fired.Contains(nameof(MemoryEditorViewModel.FootprintTotalBytes)));
-        Assert.IsTrue(fired.Contains(nameof(MemoryEditorViewModel.IsFootprintLarge)));
-        Assert.IsTrue(fired.Contains(nameof(MemoryEditorViewModel.FootprintTotalDisplay)));
-        Assert.IsTrue(fired.Contains(nameof(MemoryEditorViewModel.FootprintWarningMessage)),
+        OrdinalAssert.Contains(nameof(MemoryEditorViewModel.FootprintTotalBytes), fired);
+        OrdinalAssert.Contains(nameof(MemoryEditorViewModel.IsFootprintLarge), fired);
+        OrdinalAssert.Contains(nameof(MemoryEditorViewModel.FootprintTotalDisplay), fired);
+        Assert.True(fired.Contains(nameof(MemoryEditorViewModel.FootprintWarningMessage)),
             "All three derived properties must fire so the AXAML banner Visibility, "
             + "header text, and body text all update on threshold crossings.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryUserMemoryCategory_HasNonEmptyTooltip()
     {
         // Regression lock: adding a new UserMemoryCategory enum value
@@ -574,12 +579,12 @@ public sealed class MemoryEditorViewModelTests
         foreach (UserMemoryCategory cat in Enum.GetValues(typeof(UserMemoryCategory)))
         {
             UserMemoryGroupViewModel vm = new(cat, []);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(vm.Tooltip),
+            Assert.False(string.IsNullOrWhiteSpace(vm.Tooltip),
                 $"UserMemoryCategory.{cat} has no Tooltip mapping in UserMemoryGroupViewModel.Tooltip.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryFootprintCategory_HasNonEmptyTooltip()
     {
         // Same regression lock for FootprintRowViewModel.Tooltip.
@@ -597,7 +602,7 @@ public sealed class MemoryEditorViewModelTests
                 TotalBytes: 0,
                 IsInStandardBackup: true);
             FootprintRowViewModel row = new(stats);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(row.Tooltip),
+            Assert.False(string.IsNullOrWhiteSpace(row.Tooltip),
                 $"FootprintCategory.{cat} has no Tooltip mapping in FootprintRowViewModel.Tooltip.");
         }
     }
@@ -608,7 +613,7 @@ public sealed class MemoryEditorViewModelTests
     // until this commit).  Each isolates one branch of the method's decision
     // tree: null guards, dialog confirm/decline/X-dismiss, no-dialog fast-path.
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteFootprintAsync_NullRow_NoOp()
     {
         // First guard: row is null → return immediately, no dialog, no delete.
@@ -618,11 +623,11 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteFootprintAsync(null);
 
-        Assert.AreEqual(0, dlg.ConfirmCalls,
+        MessageAssert.Equal(0, dlg.ConfirmCalls,
             "Null row must short-circuit before any dialog appears.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteFootprintAsync_NullCodeClient_NoOp()
     {
         // Second guard: _codeClient is null → return immediately, no dialog.
@@ -633,17 +638,17 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteFootprintAsync(row);
 
-        Assert.AreEqual(0, dlg.ConfirmCalls,
+        MessageAssert.Equal(0, dlg.ConfirmCalls,
             "Null code client must short-circuit before any dialog appears.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteFootprintAsync_UserDeclinesConfirm_NoDelete()
     {
         // Pre-populate a PromptHistory file; user clicks Cancel → file survives.
         Write("history.jsonl", "{\"prompt\":\"hello\"}");
         string historyPath = Path.Combine(_claudeHome, "history.jsonl");
-        Assert.IsTrue(File.Exists(historyPath));
+        Assert.True(File.Exists(historyPath));
 
         StubDialogService dlg = new() { ConfirmReturns = false };
         FakeClaudeCodeClient client = NewFakeClient();
@@ -652,12 +657,12 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteFootprintAsync(row);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls, "Confirm dialog must have appeared once.");
-        Assert.IsTrue(File.Exists(historyPath),
+        MessageAssert.Equal(1, dlg.ConfirmCalls, "Confirm dialog must have appeared once.");
+        Assert.True(File.Exists(historyPath),
             "User declined → file must survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteFootprintAsync_UserDismissesViaX_NoDelete()
     {
         // Pre-populate; dialog returns null (X-close) → file survives.
@@ -673,12 +678,12 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteFootprintAsync(row);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.IsTrue(File.Exists(historyPath),
+        Assert.Equal(1, dlg.ConfirmCalls);
+        Assert.True(File.Exists(historyPath),
             "X-dismissed dialog → file must survive (universal X-close-aborts contract).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteFootprintAsync_UserConfirms_DeletesFileAndRebuildsRows()
     {
         // Pre-populate; user clicks Confirm → file deleted, FootprintRows refreshed.
@@ -692,13 +697,13 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteFootprintAsync(row);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.IsFalse(File.Exists(historyPath),
+        Assert.Equal(1, dlg.ConfirmCalls);
+        Assert.False(File.Exists(historyPath),
             "User confirmed → file must be deleted.");
-        Assert.IsFalse(vm.IsBusy, "IsBusy must reset to false in the finally block.");
+        Assert.False(vm.IsBusy, "IsBusy must reset to false in the finally block.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteFootprintAsync_NoDialogService_DeletesImmediately()
     {
         // Headless / scripted scenario: no IDialogService injected → no
@@ -714,7 +719,7 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteFootprintAsync(row);
 
-        Assert.IsFalse(File.Exists(historyPath),
+        Assert.False(File.Exists(historyPath),
             "No dialog service → delete proceeds without confirmation.");
     }
 
@@ -724,16 +729,16 @@ public sealed class MemoryEditorViewModelTests
     // guard, the cross-tool non-deletable guard, dialog decline, confirm-deletes,
     // the no-dialog fast path, and skill = whole-directory delete.
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteUserMemoryFileAsync_NullFile_NoOp()
     {
         StubDialogService dlg = new();
         MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
         await vm.DeleteUserMemoryFileAsync(null);
-        Assert.AreEqual(0, dlg.ConfirmCalls);
+        Assert.Equal(0, dlg.ConfirmCalls);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteUserMemoryFileAsync_CrossToolFile_NotDeletable_NoOp()
     {
         // Cross-tool memory (Codex/Gemini/OpenCode) is owned by another tool — the
@@ -749,18 +754,18 @@ public sealed class MemoryEditorViewModelTests
             SizeBytes: 12,
             LastWriteUtc: DateTime.UtcNow,
             Subtitle: null);
-        Assert.IsFalse(crossTool.IsDeletable, "Cross-tool memory must report as non-deletable.");
+        Assert.False(crossTool.IsDeletable, "Cross-tool memory must report as non-deletable.");
 
         StubDialogService dlg = new() { ConfirmReturns = true };
         MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
 
         await vm.DeleteUserMemoryFileAsync(crossTool);
 
-        Assert.AreEqual(0, dlg.ConfirmCalls, "Non-deletable cross-tool row must not even prompt.");
-        Assert.IsTrue(File.Exists(crossPath), "Another tool's file must never be deleted.");
+        MessageAssert.Equal(0, dlg.ConfirmCalls, "Non-deletable cross-tool row must not even prompt.");
+        Assert.True(File.Exists(crossPath), "Another tool's file must never be deleted.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteUserMemoryFileAsync_UserDeclines_NoDelete()
     {
         Write("agents/reviewer.md", "# reviewer");
@@ -773,11 +778,11 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteUserMemoryFileAsync(file);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.IsTrue(File.Exists(path), "Declined confirm → file survives.");
+        Assert.Equal(1, dlg.ConfirmCalls);
+        Assert.True(File.Exists(path), "Declined confirm → file survives.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteUserMemoryFileAsync_UserConfirms_DeletesFileAndRebuilds()
     {
         Write("agents/reviewer.md", "# reviewer");
@@ -790,13 +795,13 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteUserMemoryFileAsync(file);
 
-        Assert.IsFalse(File.Exists(path), "Confirmed → file deleted.");
-        Assert.IsTrue(vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent).IsEmpty,
+        Assert.False(File.Exists(path), "Confirmed → file deleted.");
+        Assert.True(vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Subagent).IsEmpty,
             "Tier 1 group must rebuild empty after the delete.");
-        Assert.IsFalse(vm.IsBusy, "IsBusy must reset in the finally block.");
+        Assert.False(vm.IsBusy, "IsBusy must reset in the finally block.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteUserMemoryFileAsync_Skill_DeletesWholeDirectory()
     {
         Write("skills/pdf/SKILL.md", "---\nname: pdf\n---\n");
@@ -807,15 +812,15 @@ public sealed class MemoryEditorViewModelTests
         MemoryEditorViewModel vm = new(NewFakeClient(), projectRoot: null, dialogService: dlg, shellLauncher: null);
         await vm.RefreshAsync();
         UserMemoryFile skill = vm.Tier1Groups.Single(g => g.Category == UserMemoryCategory.Skill).Files[0];
-        Assert.IsTrue(skill.IsSkill);
+        Assert.True(skill.IsSkill);
 
         await vm.DeleteUserMemoryFileAsync(skill);
 
-        Assert.IsFalse(Directory.Exists(skillDir),
+        Assert.False(Directory.Exists(skillDir),
             "Deleting a skill removes its whole directory, not just SKILL.md.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteUserMemoryFileAsync_NoDialogService_DeletesImmediately()
     {
         Write("commands/summarise.md", "# summarise");
@@ -827,17 +832,17 @@ public sealed class MemoryEditorViewModelTests
 
         await vm.DeleteUserMemoryFileAsync(file);
 
-        Assert.IsFalse(File.Exists(path), "No dialog service → delete proceeds without confirmation.");
+        Assert.False(File.Exists(path), "No dialog service → delete proceeds without confirmation.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UserMemoryFile_IsDeletable_FalseOnlyForCrossTool()
     {
         foreach (UserMemoryCategory cat in Enum.GetValues<UserMemoryCategory>())
         {
             UserMemoryFile f = new("/p/x.md", cat, "x", 1, DateTime.UtcNow, null);
             bool expected = cat != UserMemoryCategory.CrossToolMemory;
-            Assert.AreEqual(expected, f.IsDeletable, $"IsDeletable wrong for {cat}.");
+            MessageAssert.Equal(expected, f.IsDeletable, $"IsDeletable wrong for {cat}.");
         }
     }
 

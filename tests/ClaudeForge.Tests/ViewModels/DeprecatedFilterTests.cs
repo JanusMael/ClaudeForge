@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// <see cref="SettingsGroupEditorViewModel.FilteredEditors"/> unless a value is
 /// already set at some scope (so the user can still unset it).
 /// </summary>
-[TestClass]
 public sealed class DeprecatedFilterTests
 {
     private static SettingsWorkspace MakeWorkspace(params (ConfigScope Scope, string Json)[] entries)
@@ -23,7 +22,7 @@ public sealed class DeprecatedFilterTests
         return new SettingsWorkspace(docs, ClaudeMergePolicy.Instance);
     }
 
-    [TestMethod]
+    [Fact]
     public void DeprecatedUnset_IsHiddenFromFilteredEditors()
     {
         List<SchemaNode> nodes =
@@ -42,12 +41,12 @@ public sealed class DeprecatedFilterTests
         SettingsGroupEditorViewModel vm = new("Git", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
-        Assert.AreEqual(1, filtered.Count,
+        MessageAssert.Equal(1, filtered.Count,
             "Deprecated+unset property must not appear in the filtered list.");
-        Assert.AreEqual("model", filtered[0].Path);
+        Assert.Equal("model", filtered[0].Path);
     }
 
-    [TestMethod]
+    [Fact]
     public void DeprecatedSet_IsVisibleSoUserCanUnsetIt()
     {
         List<SchemaNode> nodes =
@@ -65,12 +64,12 @@ public sealed class DeprecatedFilterTests
         SettingsGroupEditorViewModel vm = new("Git", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
         List<PropertyEditorViewModel> filtered = vm.FilteredEditors.ToList();
-        Assert.AreEqual(1, filtered.Count,
+        MessageAssert.Equal(1, filtered.Count,
             "Deprecated property that is set at a scope must still be visible so the user can remove it.");
-        Assert.AreEqual("includeCoAuthoredBy", filtered[0].Path);
+        Assert.Equal("includeCoAuthoredBy", filtered[0].Path);
     }
 
-    [TestMethod]
+    [Fact]
     public void NonDeprecated_IsAlwaysVisible()
     {
         List<SchemaNode> nodes =
@@ -81,6 +80,6 @@ public sealed class DeprecatedFilterTests
 
         SettingsGroupEditorViewModel vm = new("Models", nodes, workspace,ClaudeEditorFactoryConfig.CreateDefault(), ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(1, vm.FilteredEditors.Count());
+        Assert.Single(vm.FilteredEditors);
     }
 }

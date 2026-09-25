@@ -21,7 +21,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// without the fallback, which is what shows the fallback did not change the normal path.
 /// </para>
 /// </remarks>
-[TestClass]
 public class RootRefSchemaTreeTests
 {
     /// <summary>
@@ -38,7 +37,7 @@ public class RootRefSchemaTreeTests
     private static List<SchemaNode> TopLevel(string fileName)
     {
         byte[]? bytes = BundledResource.TryRead("Schemas", fileName);
-        Assert.IsNotNull(bytes, $"'{fileName}' is not embedded.");
+        MessageAssert.NotNull(bytes, $"'{fileName}' is not embedded.");
         return SchemaTreeBuilder.BuildTopLevel(ParseNode(Encoding.UTF8.GetString(bytes))).ToList();
     }
 
@@ -48,17 +47,17 @@ public class RootRefSchemaTreeTests
     /// edit. A drop to 0 means the fallback stopped firing; any other change means upstream
     /// altered the schema and the count should be updated deliberately.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void OpenCodeConfig_RootRefIsFollowed_SoTheTreeIsNotEmpty()
     {
         List<SchemaNode> nodes = TopLevel("opencode-config.json");
 
-        Assert.AreNotEqual(0, nodes.Count,
+        MessageAssert.NotEqual(0, nodes.Count,
             "opencode-config.json has no root `properties` — everything hangs off "
             + "\"$ref\": \"#/$defs/Config\". An empty tree here is the exact silent failure "
             + "the fallback exists to prevent: the editor renders a page with nothing on it.");
 
-        Assert.AreEqual(36, nodes.Count,
+        MessageAssert.Equal(36, nodes.Count,
             "Expected the 36 top-level properties of $defs/Config (spike S4). A different "
             + "count means upstream changed the schema; confirm the new shape and update "
             + "this number deliberately.");
@@ -67,7 +66,7 @@ public class RootRefSchemaTreeTests
         // could still yield 36 of something else.
         foreach (string expected in new[] { "model", "permission", "provider", "agent" })
         {
-            Assert.IsTrue(
+            Assert.True(
                 nodes.Any(n => n.Name == expected),
                 $"Expected a top-level '{expected}' node. Got: "
                 + string.Join(", ", nodes.Select(n => n.Name).Order(StringComparer.Ordinal)));
@@ -79,12 +78,12 @@ public class RootRefSchemaTreeTests
     /// <c>$ref</c> anywhere, so it exercises the path that already worked — proving the
     /// fallback is reached only when it should be.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void OpenCodeTui_OrdinaryObjectSchema_IsUnaffectedByTheFallback()
     {
         List<SchemaNode> nodes = TopLevel("opencode-tui.json");
 
-        Assert.AreEqual(13, nodes.Count,
+        MessageAssert.Equal(13, nodes.Count,
             "Expected tui.json's 13 top-level properties (spike S4). This schema needs no "
             + "$ref following at all, so a change here means the fallback altered the "
             + "ordinary path.");
@@ -96,7 +95,7 @@ public class RootRefSchemaTreeTests
     /// constraint, not a replacement, so merging the target's properties in would invent
     /// fields the author never declared at that level.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ARefBesideProperties_IsNotFollowed()
     {
         JsonSchemaNode root = ParseNode(
@@ -116,7 +115,7 @@ public class RootRefSchemaTreeTests
 
         List<SchemaNode> nodes = SchemaTreeBuilder.BuildTopLevel(root).ToList();
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "declaredHere" },
             nodes.Select(n => n.Name).ToArray(),
             "Following $ref when `properties` is present would surface 'fromTheRef' as a "
@@ -135,10 +134,10 @@ public class RootRefSchemaTreeTests
     /// <c>JsonSchema.FromText</c>, not the primary defence. If this test ever starts
     /// failing, the library stopped rejecting cycles and that bound became load-bearing.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ARefCycle_IsRejectedWhenTheSchemaIsBuilt_NotWhenItIsWalked()
     {
-        JsonSchemaException ex = Assert.ThrowsExactly<JsonSchemaException>(() => ParseNode(
+        JsonSchemaException ex = Assert.Throws<JsonSchemaException>(() => ParseNode(
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -150,7 +149,7 @@ public class RootRefSchemaTreeTests
             }
             """));
 
-        StringAssert.Contains(ex.Message, "Cycle",
+        MessageAssert.Contains("Cycle", ex.Message,
             "Expected the schema library's own cycle detection to reject this.");
     }
 }

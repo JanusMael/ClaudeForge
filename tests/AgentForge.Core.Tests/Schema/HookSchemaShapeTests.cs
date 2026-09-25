@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// edits don't touch the offending subtree.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class HookSchemaShapeTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -74,7 +73,7 @@ public sealed class HookSchemaShapeTests
 
     // ── Concern A: each documented hook type is accepted ───────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Command_Hook_PassesValidation()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -86,11 +85,11 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"Valid command hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Prompt_Hook_PassesValidation()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -102,11 +101,11 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"Valid prompt hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Agent_Hook_PassesValidation()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -118,11 +117,11 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"Valid agent hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Http_Hook_PassesValidation()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -134,13 +133,13 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"Valid http hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
     }
 
     // ── Concern B: malformed hooks are correctly flagged (when introduced) ──
 
-    [TestMethod]
+    [Fact]
     public async Task Command_Hook_MissingCommand_IsFlagged()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -152,11 +151,11 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "A command hook with no command field MUST fail validation when introduced as a new entry.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Hook_WithUnknownType_IsFlagged()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -168,11 +167,11 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "A hook with an unknown type MUST fail validation (no anyOf branch matches).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PromptType_WithCommandField_IsFlagged()
     {
         // additionalProperties:false on each branch means a `prompt` hook
@@ -187,13 +186,13 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "A prompt hook with a command field MUST fail validation.");
     }
 
     // ── Concern C: anyOf branch noise stays out of validation results ─────
 
-    [TestMethod]
+    [Fact]
     public async Task ValidCommandHook_DoesNotLeakBranchFailureNoise()
     {
         // The user's reported 18 errors looked like JsonSchema.Net leakage
@@ -211,7 +210,7 @@ public sealed class HookSchemaShapeTests
 
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             "A valid command hook must not leak anyOf branch failures into the user-visible error list.");
     }
 }

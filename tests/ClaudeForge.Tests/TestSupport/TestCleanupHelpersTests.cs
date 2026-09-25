@@ -6,20 +6,19 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 /// unrelated tests turning red on the Windows runner — which is exactly what it is here to
 /// prevent.
 /// </summary>
-[TestClass]
-public sealed class TestCleanupHelpersTests
+public sealed class TestCleanupHelpersTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public TestCleanupHelpersTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         // Deliberately the plain call: by now nothing in this class holds a handle, and using
         // the helper under test to clean up after the helper under test would hide a failure.
@@ -29,7 +28,13 @@ public sealed class TestCleanupHelpersTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void DeleteDirectoryWithRetry_HandleHeldThroughout_DoesNotThrow()
     {
         // The CI flake this helper exists for: a writer still holds a file in the sandbox when
@@ -45,19 +50,19 @@ public sealed class TestCleanupHelpersTests
         {
             // Windows refuses to unlink a file with an open exclusive handle, so the tree
             // survives — the point is that the helper returned rather than threw.
-            Assert.IsTrue(Directory.Exists(_sandbox),
+            Assert.True(Directory.Exists(_sandbox),
                 "Precondition for this platform: the open handle should have blocked the delete.");
         }
         else
         {
             // POSIX unlink succeeds against an open file, so the tree is gone. Either outcome
             // is fine; not throwing is the contract.
-            Assert.IsFalse(Directory.Exists(_sandbox),
+            Assert.False(Directory.Exists(_sandbox),
                 "On POSIX an open handle does not block unlink, so the tree should be gone.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void DeleteDirectoryWithRetry_NothingHoldingIt_DeletesTheTree()
     {
         Directory.CreateDirectory(Path.Combine(_sandbox, "nested", "deeper"));
@@ -65,26 +70,26 @@ public sealed class TestCleanupHelpersTests
 
         TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox);
 
-        Assert.IsFalse(Directory.Exists(_sandbox), "A tree nothing holds must be removed.");
+        Assert.False(Directory.Exists(_sandbox), "A tree nothing holds must be removed.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DeleteDirectoryWithRetry_MissingDirectory_IsNoOp()
     {
         string absent = Path.Combine(_sandbox, "never-created");
 
         TestCleanupHelpers.DeleteDirectoryWithRetry(absent);
 
-        Assert.IsFalse(Directory.Exists(absent));
+        Assert.False(Directory.Exists(absent));
     }
 
-    [TestMethod]
+    [Fact]
     public void DeleteDirectoryWithRetry_RejectsUnusableArguments()
     {
         // Absorbing IO failures must not extend to swallowing caller mistakes.
-        Assert.ThrowsExactly<ArgumentException>(
+        Assert.Throws<ArgumentException>(
             () => TestCleanupHelpers.DeleteDirectoryWithRetry("   "));
-        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+        Assert.Throws<ArgumentOutOfRangeException>(
             () => TestCleanupHelpers.DeleteDirectoryWithRetry(_sandbox, maxAttempts: 0));
     }
 }

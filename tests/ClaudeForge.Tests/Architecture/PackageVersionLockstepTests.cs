@@ -26,7 +26,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// See <c>plans/00001-shared-libraries-as-private-nuget-packages.md</c>, work item 3.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class PackageVersionLockstepTests
 {
     /// <summary>The prefix every package published from this repo carries.</summary>
@@ -44,13 +43,13 @@ public sealed class PackageVersionLockstepTests
     /// reporting anything. The rest of the package identity lives in that file, which is exactly
     /// why someone will try.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void PackageVersionIsAssignedFromTheAutoVersioningProperty()
     {
         string repoRoot = FindRepoRoot();
         string targetsPath = Path.Combine(repoRoot, "Directory.Build.targets");
 
-        Assert.IsTrue(File.Exists(targetsPath),
+        Assert.True(File.Exists(targetsPath),
             $"The root Directory.Build.targets is missing ('{targetsPath}'). It carries the package "
             + "version assignment, the shared-library reference switch and the publish strip; this "
             + "guard's subject is gone, not merely renamed.");
@@ -60,12 +59,12 @@ public sealed class PackageVersionLockstepTests
             .Select(e => e.Value.Trim())
             .ToArray();
 
-        Assert.AreNotEqual(0, assignments.Length,
+        MessageAssert.NotEqual(0, assignments.Length,
             "The root Directory.Build.targets no longer assigns <PackageVersion>. Without it the "
             + "SDK's default applies and all eleven packages pack at 1.0.0 — pack still succeeds, "
             + "and a release would publish that version immutably. See plans/00001 work item 3.");
 
-        Assert.IsTrue(
+        Assert.True(
             assignments.Any(v => v.Contains("$(AutoPackageVersion)", StringComparison.Ordinal)),
             "The root Directory.Build.targets assigns <PackageVersion> from something other than "
             + "$(AutoPackageVersion) (it reads: " + string.Join(" / ", assignments) + "). That "
@@ -76,7 +75,7 @@ public sealed class PackageVersionLockstepTests
         // The same mistake, stated where it would be made. A value here evaluates empty.
         XDocument srcProps = XDocument.Load(Path.Combine(repoRoot, "src", "Directory.Build.props"));
 
-        Assert.IsFalse(
+        Assert.False(
             srcProps.Descendants().Any(e => e.Name.LocalName == "PackageVersion"),
             "src/Directory.Build.props assigns <PackageVersion>. That file is imported BEFORE the "
             + "NuGet-generated props that define $(AutoPackageVersion), so the assignment "
@@ -115,13 +114,13 @@ public sealed class PackageVersionLockstepTests
     /// stamp rather than a defect. The first three parts are what becomes the package version.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryPackableAssemblyCarriesTheSameThreePartStamp()
     {
         string repoRoot = FindRepoRoot();
         string[] packable = PackableProjectNames(repoRoot);
 
-        Assert.AreNotEqual(0, packable.Length,
+        MessageAssert.NotEqual(0, packable.Length,
             "Found no packable project under src/, so this guard is measuring nothing. "
             + "PackageMetadataTests explains what <IsPackable> is doing here.");
 
@@ -151,13 +150,13 @@ public sealed class PackageVersionLockstepTests
             }
         }
 
-        Assert.AreEqual(0, missing.Count,
+        MessageAssert.Equal(0, missing.Count,
             "These packable assemblies are not in this test's output directory, so their stamp was "
             + "never read and this guard covers less than it claims. They arrive transitively "
             + "through the app reference; if one has been dropped from the graph, say so here "
             + "rather than letting the scan quietly shrink. Missing: " + string.Join(", ", missing));
 
-        Assert.AreEqual(0, identityMismatches.Count,
+        MessageAssert.Equal(0, identityMismatches.Count,
             "These packable assemblies' IDENTITY does not match their file version, so the package "
             + "version would name something a consumer never binds to: the assembly loads under a "
             + "different version than the package it came from, and every build looks like the "
@@ -167,12 +166,12 @@ public sealed class PackageVersionLockstepTests
 
         string[] distinct = stamps.Values.Distinct(StringComparer.Ordinal).ToArray();
 
-        Assert.AreEqual(1, distinct.Length,
+        MessageAssert.Equal(1, distinct.Length,
             "The packable assemblies do not agree on one version stamp, so the eleven packages "
             + "built from them would claim a version at least one of them does not carry: "
             + string.Join(", ", stamps.Select(kv => kv.Key + " = " + kv.Value)));
 
-        Assert.AreNotEqual("1.0.0", distinct[0],
+        MessageAssert.NotEqual("1.0.0", distinct[0],
             "Every packable assembly is stamped 1.0.0, which is the SDK's default rather than a "
             + "computed version. Either AutoVersioning is no longer running "
             + "(GenerateAutoVersionedAssemblyInfo, root Directory.Build.props) or its stamp is "
@@ -204,7 +203,7 @@ public sealed class PackageVersionLockstepTests
     /// restore. The rule is unchanged for what this repository packs.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryPackageInTheLocalFeedNamesOneVersion()
     {
         string feed = Path.Combine(FindRepoRoot(), "artifacts", "localfeed");
@@ -216,7 +215,7 @@ public sealed class PackageVersionLockstepTests
 
         if (packages.Length == 0)
         {
-            Assert.Inconclusive(
+            Assert.Skip(
                 $"No packages under '{feed}', so the version agreement between them was not "
                 + "measured. Produce them with: "
                 + "pwsh -NoProfile -File scripts/package-canary.ps1 -PackOnly");
@@ -252,7 +251,7 @@ public sealed class PackageVersionLockstepTests
 
         string[] distinct = versions.Values.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
-        Assert.AreEqual(1, distinct.Length,
+        MessageAssert.Equal(1, distinct.Length,
             "The local feed holds more than one version of the shared packages, so a consumer can "
             + "resolve a mixed set: "
             + string.Join(", ", versions.Select(kv => kv.Key + " = " + kv.Value))
@@ -261,11 +260,11 @@ public sealed class PackageVersionLockstepTests
         // Premise: the packed set does depend on itself (AgentForge.Sdk on AgentForge.Core, and so
         // on). Zero would mean the sibling set or the nuspec reader broke, and the check below
         // would pass having compared nothing.
-        Assert.IsTrue(siblingDependencies > 0,
+        Assert.True(siblingDependencies > 0,
             $"No package in '{feed}' depends on another package in it, so no version agreement "
             + "was checked. The nuspec reader or the sibling set is broken.");
 
-        Assert.AreEqual(0, mismatchedDependencies.Count,
+        MessageAssert.Equal(0, mismatchedDependencies.Count,
             "These packages depend on a sibling at a version other than their own, which is what "
             + "lets two copies of a shared library into one graph: "
             + string.Join("; ", mismatchedDependencies));

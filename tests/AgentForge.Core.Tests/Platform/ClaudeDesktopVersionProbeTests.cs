@@ -10,43 +10,48 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 /// require injecting fake registry/file readers — out of scope for this polish
 /// round.
 /// </summary>
-[TestClass]
-public sealed class ClaudeDesktopVersionProbeTests
+public sealed class ClaudeDesktopVersionProbeTests : IDisposable
 {
-    [TestInitialize]
-    public void Init()
+    public ClaudeDesktopVersionProbeTests() => Init();
+
+    private void Init()
     {
         // TryGetVersion is process-lifetime cached; reset before each test so
         // a previous test (or a previous test class) cannot leak a result.
         ClaudeDesktopVersionProbe.ResetCache();
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         ClaudeDesktopVersionProbe.ResetCache();
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void TryGetVersion_OnNonWindows_ReturnsNull()
     {
         if (OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Test is only meaningful on macOS/Linux.");
+            Assert.Skip("Test is only meaningful on macOS/Linux.");
             return;
         }
 
         string? v = ClaudeDesktopVersionProbe.TryGetVersion();
-        Assert.IsNull(v,
+        MessageAssert.Null(v,
             "On non-Windows platforms the probe must return null so macOS/Linux fall through to the plist reader.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryGetVersion_OnWindows_DoesNotThrow()
     {
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Test only runs on Windows.");
+            Assert.Skip("Test only runs on Windows.");
             return;
         }
 
@@ -61,7 +66,7 @@ public sealed class ClaudeDesktopVersionProbeTests
     // Pure-function tests exercise the regex without touching the filesystem.
     // These run on every platform because the helper is OS-agnostic.
 
-    [TestMethod]
+    [Fact]
     public void TryExtractWindowsAppsVersion_PicksHighestVersion()
     {
         string[] folders =
@@ -72,18 +77,18 @@ public sealed class ClaudeDesktopVersionProbeTests
         ];
 
         string? v = ClaudeDesktopVersionProbe.TryExtractWindowsAppsVersion(folders);
-        Assert.AreEqual("1.3109.0.0", v);
+        Assert.Equal("1.3109.0.0", v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryExtractWindowsAppsVersion_SingleEntry_ReturnsItsVersion()
     {
         string[] folders = ["Claude_1.3109.0.0_x64__pzs8sxrjxfjjc"];
         string? v = ClaudeDesktopVersionProbe.TryExtractWindowsAppsVersion(folders);
-        Assert.AreEqual("1.3109.0.0", v);
+        Assert.Equal("1.3109.0.0", v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryExtractWindowsAppsVersion_ReturnsNull_WhenNoMatches()
     {
         string[] folders =
@@ -93,17 +98,17 @@ public sealed class ClaudeDesktopVersionProbeTests
             "",
         ];
         string? v = ClaudeDesktopVersionProbe.TryExtractWindowsAppsVersion(folders);
-        Assert.IsNull(v);
+        Assert.Null(v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryExtractWindowsAppsVersion_EmptyInput_ReturnsNull()
     {
         string? v = ClaudeDesktopVersionProbe.TryExtractWindowsAppsVersion([]);
-        Assert.IsNull(v);
+        Assert.Null(v);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryGetVersionFromSquirrel_ReturnsNull_WhenNotInstalled()
     {
         // The Squirrel probe is platform-agnostic (it just reads a LOCALAPPDATA
@@ -114,11 +119,11 @@ public sealed class ClaudeDesktopVersionProbeTests
         string claudeDir = Path.Combine(localAppData, "AnthropicClaude");
         if (Directory.Exists(claudeDir))
         {
-            Assert.Inconclusive("AnthropicClaude directory exists on this host; test is inconclusive.");
+            Assert.Skip("AnthropicClaude directory exists on this host; test is inconclusive.");
             return;
         }
 
         string? v = ClaudeDesktopVersionProbe.TryGetVersionFromSquirrel();
-        Assert.IsNull(v);
+        Assert.Null(v);
     }
 }

@@ -17,48 +17,47 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// This file focuses on the redactor's behaviour against representative
 /// config shapes.
 /// </remarks>
-[TestClass]
 public sealed class JsonRedactorTests
 {
-    [TestMethod]
+    [Fact]
     public void IsSensitiveKey_FlagsSegmentExactKeys()
     {
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("env"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("headers"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("credentials"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("auth"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("authorization"));
+        Assert.True(JsonRedactor.IsSensitiveKey("env"));
+        Assert.True(JsonRedactor.IsSensitiveKey("headers"));
+        Assert.True(JsonRedactor.IsSensitiveKey("credentials"));
+        Assert.True(JsonRedactor.IsSensitiveKey("auth"));
+        Assert.True(JsonRedactor.IsSensitiveKey("authorization"));
         // Case-insensitive
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("ENV"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("Headers"));
+        Assert.True(JsonRedactor.IsSensitiveKey("ENV"));
+        Assert.True(JsonRedactor.IsSensitiveKey("Headers"));
     }
 
-    [TestMethod]
+    [Fact]
     public void IsSensitiveKey_FlagsSubstringTokens()
     {
         // Substring matches — designed to catch schema additions named e.g.
         // githubAccessToken, clientSecret, password without an allowlist update.
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("githubAccessToken"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("clientSecret"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("password"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("apiKey"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("api_key"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("api-key"));
-        Assert.IsTrue(JsonRedactor.IsSensitiveKey("BearerToken"));
+        Assert.True(JsonRedactor.IsSensitiveKey("githubAccessToken"));
+        Assert.True(JsonRedactor.IsSensitiveKey("clientSecret"));
+        Assert.True(JsonRedactor.IsSensitiveKey("password"));
+        Assert.True(JsonRedactor.IsSensitiveKey("apiKey"));
+        Assert.True(JsonRedactor.IsSensitiveKey("api_key"));
+        Assert.True(JsonRedactor.IsSensitiveKey("api-key"));
+        Assert.True(JsonRedactor.IsSensitiveKey("BearerToken"));
     }
 
-    [TestMethod]
+    [Fact]
     public void IsSensitiveKey_DoesNotOverMatchInnocentKeys()
     {
         // Conservative — won't mask innocent fields that merely contain "key".
-        Assert.IsFalse(JsonRedactor.IsSensitiveKey("uniqueKey"));
-        Assert.IsFalse(JsonRedactor.IsSensitiveKey("locKey"));
-        Assert.IsFalse(JsonRedactor.IsSensitiveKey("theme"));
-        Assert.IsFalse(JsonRedactor.IsSensitiveKey("model"));
-        Assert.IsFalse(JsonRedactor.IsSensitiveKey(""));
+        Assert.False(JsonRedactor.IsSensitiveKey("uniqueKey"));
+        Assert.False(JsonRedactor.IsSensitiveKey("locKey"));
+        Assert.False(JsonRedactor.IsSensitiveKey("theme"));
+        Assert.False(JsonRedactor.IsSensitiveKey("model"));
+        Assert.False(JsonRedactor.IsSensitiveKey(""));
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_ScrubsEnvVarMapAtAnyDepth()
     {
         // Matches the typical Claude Code settings.json shape with an
@@ -79,12 +78,12 @@ public sealed class JsonRedactorTests
 
         // The whole `env` subtree is replaced with the marker — segment-exact
         // matches don't recurse, the top-level value is the placeholder.
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)parsed["env"]);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)parsed["env"]);
         // Non-sensitive sibling is preserved verbatim.
-        Assert.AreEqual("dark", (string?)parsed["theme"]);
+        Assert.Equal("dark", (string?)parsed["theme"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_ScrubsHeadersUnderNestedMcpServer()
     {
         // Matches the structure that motivated the segment-match upgrade:
@@ -109,13 +108,13 @@ public sealed class JsonRedactorTests
         JsonNode? headers = parsed["mcpServers"]!["github"]!["headers"];
         // The whole `headers` subtree is the redacted marker — the segment
         // classifier triggers on `headers` and we replace the value wholesale.
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)headers);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)headers);
         // Non-sensitive sibling under the same mcp server survives.
-        Assert.AreEqual("https://api.github.com/mcp",
+        Assert.Equal("https://api.github.com/mcp",
             (string?)parsed["mcpServers"]!["github"]!["url"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_ScrubsSubstringMatchedScalarLeaves()
     {
         // Schema additions named e.g. `githubAccessToken` aren't covered by
@@ -131,12 +130,12 @@ public sealed class JsonRedactorTests
         string redacted = JsonRedactor.Redact(json);
         JsonObject parsed = JsonNode.Parse(redacted)!.AsObject();
 
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)parsed["githubAccessToken"]);
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)parsed["clientSecret"]);
-        Assert.AreEqual("ok", (string?)parsed["regularField"]);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)parsed["githubAccessToken"]);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)parsed["clientSecret"]);
+        Assert.Equal("ok", (string?)parsed["regularField"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_PreservesArrayStructureButRedactsObjectsInside()
     {
         // Arrays of objects must be walked so nested headers / env / etc. land
@@ -154,14 +153,14 @@ public sealed class JsonRedactorTests
         JsonObject parsed = JsonNode.Parse(redacted)!.AsObject();
         JsonArray arr = parsed["servers"]!.AsArray();
 
-        Assert.AreEqual(2, arr.Count);
-        Assert.AreEqual("a", (string?)arr[0]!["name"]);
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)arr[0]!["auth"]);
-        Assert.AreEqual("b", (string?)arr[1]!["name"]);
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)arr[1]!["auth"]);
+        Assert.Equal(2, arr.Count);
+        Assert.Equal("a", (string?)arr[0]!["name"]);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)arr[0]!["auth"]);
+        Assert.Equal("b", (string?)arr[1]!["name"]);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)arr[1]!["auth"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_AcceptsCommentsAndTrailingCommas()
     {
         // settings.json files occasionally contain JSONC-style comments; the
@@ -177,18 +176,18 @@ public sealed class JsonRedactorTests
 
         string redacted = JsonRedactor.Redact(json);
         JsonObject parsed = JsonNode.Parse(redacted)!.AsObject();
-        Assert.AreEqual(JsonRedactor.RedactedMarker, (string?)parsed["env"]);
-        Assert.AreEqual("dark", (string?)parsed["theme"]);
+        Assert.Equal(JsonRedactor.RedactedMarker, (string?)parsed["env"]);
+        Assert.Equal("dark", (string?)parsed["theme"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_NullOrEmptyInput_ReturnsInputUnchanged()
     {
-        Assert.AreEqual(string.Empty, JsonRedactor.Redact(string.Empty));
-        Assert.AreEqual(string.Empty, JsonRedactor.Redact(null!));
+        Assert.Equal(string.Empty, JsonRedactor.Redact(string.Empty));
+        Assert.Equal(string.Empty, JsonRedactor.Redact(null!));
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_MalformedJson_ThrowsJsonException()
     {
         // The redactor surfaces parse errors to the caller — BackupEngine
@@ -208,10 +207,10 @@ public sealed class JsonRedactorTests
             thrown = true;
         }
 
-        Assert.IsTrue(thrown, "Redact() must surface a JsonException on malformed input.");
+        Assert.True(thrown, "Redact() must surface a JsonException on malformed input.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_NonObjectRoot_LeavesItAlone()
     {
         // Root-level arrays and bare scalars are valid JSON but have no
@@ -219,7 +218,7 @@ public sealed class JsonRedactorTests
         // re-serialised, unchanged in content.
         string arrayResult = JsonRedactor.Redact("[1, 2, 3]");
         JsonArray arr = JsonNode.Parse(arrayResult)!.AsArray();
-        Assert.AreEqual(3, arr.Count);
+        Assert.Equal(3, arr.Count);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -233,7 +232,7 @@ public sealed class JsonRedactorTests
     //  is eating my comments" issue.
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_PreservesNonComment_NonTrailingCommaContent()
     {
         // Strict-JSON input (no comments, no trailing commas) round-
@@ -248,13 +247,13 @@ public sealed class JsonRedactorTests
         string redacted = JsonRedactor.Redact(json);
         JsonObject parsed = JsonNode.Parse(redacted)!.AsObject();
 
-        Assert.AreEqual("dark", (string?)parsed["theme"]);
+        Assert.Equal("dark", (string?)parsed["theme"]);
         JsonArray allow = parsed["permissions"]!["allow"]!.AsArray();
-        Assert.AreEqual(1, allow.Count);
-        Assert.AreEqual("Bash", (string?)allow[0]);
+        Assert.Single(allow);
+        Assert.Equal("Bash", (string?)allow[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_StripsLineComments_DocumentedBehaviour()
     {
         // Input WITH a line comment — by design, the comment does not
@@ -267,13 +266,13 @@ public sealed class JsonRedactorTests
                             """;
         string redacted = JsonRedactor.Redact(json);
 
-        Assert.IsFalse(redacted.Contains("// user-edited", StringComparison.Ordinal),
+        Assert.False(redacted.Contains("// user-edited", StringComparison.Ordinal),
             "Line comment must be stripped by Redact (documented L4 behaviour).");
-        Assert.IsTrue(redacted.Contains("\"theme\""),
+        Assert.True(redacted.Contains("\"theme\""),
             "Non-comment content (theme key) must survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_StripsTrailingCommas_DocumentedBehaviour()
     {
         // Trailing comma tolerated on parse, dropped on serialise.
@@ -283,7 +282,7 @@ public sealed class JsonRedactorTests
         // Parse the output as STRICT JSON (no AllowTrailingCommas) to
         // confirm the trailing comma was dropped — would throw if not.
         JsonNode? parsed = JsonNode.Parse(redacted);
-        Assert.IsNotNull(parsed,
+        MessageAssert.NotNull(parsed,
             "Redact output must be strict JSON (no trailing comma).");
     }
 }

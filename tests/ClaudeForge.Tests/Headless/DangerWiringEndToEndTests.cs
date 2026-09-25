@@ -30,16 +30,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// exists to prevent.
 /// </para>
 /// </remarks>
-[TestClass]
-public sealed class DangerWiringEndToEndTests
+public sealed class DangerWiringEndToEndTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public DangerWiringEndToEndTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_dangerwiring_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -54,8 +54,7 @@ public sealed class DangerWiringEndToEndTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         DebugFlags.ResetForTesting();
         PlatformPaths.TestUserProfileOverride = null;
@@ -72,13 +71,19 @@ public sealed class DangerWiringEndToEndTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     /// <summary>Every settings-group editor beneath the nav node titled <paramref name="header"/>.</summary>
     private static List<SettingsGroupEditorViewModel> GroupsUnder(
         MainWindowViewModel vm, string header)
     {
         NavigationNodeViewModel? section = vm.NavigationTree.FirstOrDefault(
             n => string.Equals(n.Title, header, StringComparison.Ordinal));
-        Assert.IsNotNull(section, $"no navigation header titled '{header}'");
+        MessageAssert.NotNull(section, $"no navigation header titled '{header}'");
         NavigationNodeViewModel root = section!;
 
         List<SettingsGroupEditorViewModel> found = [];
@@ -99,47 +104,47 @@ public sealed class DangerWiringEndToEndTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ClaudeCodesSettingsPages_CarryItsDangerTable()
     {
         using MainWindowViewModel vm = BuildViewModel();
         await vm.LoadAllWorkspacesAsync();
 
         List<SettingsGroupEditorViewModel> groups = GroupsUnder(vm, "Claude Code");
-        Assert.IsTrue(groups.Count > 0,
+        Assert.True(groups.Count > 0,
             "no Claude Code settings pages were built — the scan has lost its subject and would "
             + "pass without checking anything");
 
         List<LibVm.PropertyEditorViewModel> editors = [.. groups.SelectMany(g => g.Editors)];
-        Assert.IsTrue(editors.Count > 0, "the pages built no editors");
+        Assert.True(editors.Count > 0, "the pages built no editors");
 
         List<string> unwired = [.. editors
             .Where(e => e.DangerClassifier is null)
             .Select(e => e.Path)];
 
-        Assert.IsTrue(unwired.Count == 0,
+        Assert.True(unwired.Count == 0,
             $"{unwired.Count} of {editors.Count} Claude Code editor(s) reached the window without a "
             + $"danger classifier: {string.Join(", ", unwired.Take(10))}. The rows render with no "
             + "severity at all, which looks exactly like a product with nothing dangerous in it.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ClaudeDesktopsSettingsPages_CarryNoTable()
     {
         using MainWindowViewModel vm = BuildViewModel();
         await vm.LoadAllWorkspacesAsync();
 
         List<SettingsGroupEditorViewModel> groups = GroupsUnder(vm, "Claude Desktop");
-        Assert.IsTrue(groups.Count > 0, "no Claude Desktop settings pages were built");
+        Assert.True(groups.Count > 0, "no Claude Desktop settings pages were built");
 
         List<LibVm.PropertyEditorViewModel> editors = [.. groups.SelectMany(g => g.Editors)];
-        Assert.IsTrue(editors.Count > 0, "the pages built no editors");
+        Assert.True(editors.Count > 0, "the pages built no editors");
 
         List<string> wired = [.. editors
             .Where(e => e.DangerClassifier is not null)
             .Select(e => e.Path)];
 
-        Assert.IsTrue(wired.Count == 0,
+        Assert.True(wired.Count == 0,
             $"{wired.Count} Claude Desktop editor(s) carry a danger classifier: "
             + $"{string.Join(", ", wired.Take(10))}. Nobody has triaged this product's keys, so a "
             + "table here can only be another product's — silent on most rows and confidently "

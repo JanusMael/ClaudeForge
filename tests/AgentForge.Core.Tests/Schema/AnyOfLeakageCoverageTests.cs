@@ -39,7 +39,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// covered by the path-shape-agnostic
 /// <c>HookAnyOfLeakageDiagnosticTests</c>.
 /// </summary>
-[TestClass]
 public sealed class AnyOfLeakageCoverageTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -91,8 +90,6 @@ public sealed class AnyOfLeakageCoverageTests
         return ws;
     }
 
-    public TestContext? TestContext { get; set; }
-
     private static string FormatErrors(IReadOnlyList<SchemaValidationError> errors)
     {
         return string.Join("\n", errors.Select(e => $"  {e.InstancePath} | {e.Message}"));
@@ -104,7 +101,7 @@ public sealed class AnyOfLeakageCoverageTests
     // Each pick triggers an anyOf evaluation where 6 branches fail; pre-fix
     // those 6 failures leaked into the save dialog.
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_GitHubSource_MatchesOneBranch_ZeroNetNewErrors()
     {
         SettingsWorkspace ws = WorkspaceFromBaselineWithEdit(
@@ -125,12 +122,12 @@ public sealed class AnyOfLeakageCoverageTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"GitHub-source marketplace matches exactly one anyOf branch; "
             + $"failures of the other 6 branches must be suppressed. Got:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_UrlSource_MatchesOneBranch_ZeroNetNewErrors()
     {
         SettingsWorkspace ws = WorkspaceFromBaselineWithEdit(
@@ -151,11 +148,11 @@ public sealed class AnyOfLeakageCoverageTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"URL-source marketplace matches exactly one anyOf branch. Got:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_BogusSourceKind_StillEmitsRealError()
     {
         // Adversarial counter-test: a source with an unknown kind matches
@@ -178,7 +175,7 @@ public sealed class AnyOfLeakageCoverageTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "An unknown source kind matches no anyOf branch — the failure must come through, "
             + "or the suppressor is too aggressive and eating real user mistakes.");
     }
@@ -188,7 +185,7 @@ public sealed class AnyOfLeakageCoverageTests
     // specific plugins) or a boolean (enable-all / disable-all). Both
     // forms must validate clean.
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_ArrayForm_MatchesOneBranch_ZeroNetNewErrors()
     {
         SettingsWorkspace ws = WorkspaceFromBaselineWithEdit(
@@ -202,12 +199,12 @@ public sealed class AnyOfLeakageCoverageTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"enabledPlugins array form matches exactly one anyOf branch; "
             + $"failures of the boolean and not-{{}} branches must be suppressed. Got:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_BooleanForm_MatchesOneBranch_ZeroNetNewErrors()
     {
         SettingsWorkspace ws = WorkspaceFromBaselineWithEdit(
@@ -221,11 +218,11 @@ public sealed class AnyOfLeakageCoverageTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.AreEqual(0, errors.Count,
+        MessageAssert.Equal(0, errors.Count,
             $"enabledPlugins boolean form matches exactly one anyOf branch. Got:\n{FormatErrors(errors)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EnabledPlugins_NumberForm_StillEmitsRealError()
     {
         // Adversarial: a number value matches none of the 3 branches
@@ -241,7 +238,7 @@ public sealed class AnyOfLeakageCoverageTests
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
 
-        Assert.IsTrue(errors.Count > 0,
+        Assert.True(errors.Count > 0,
             "A number value matches none of enabledPlugins' anyOf branches — must error.");
     }
 
@@ -256,7 +253,7 @@ public sealed class AnyOfLeakageCoverageTests
     // the post-reload banner's path) — `ValidateWorkspaceAsync` reaches
     // it too via the same CollectSchemaErrors helper.
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_SourceMatchesNoBranch_ErrorsCollapseToOnePerPath()
     {
         // A `source` object whose shape matches no anyOf branch — missing
@@ -290,13 +287,13 @@ public sealed class AnyOfLeakageCoverageTests
                                                                                                     .GroupBy(e => (e.FilePath, e.InstancePath))
                                                                                                     .Where(g => g.Count() > 1)
                                                                                                     .ToList();
-        Assert.AreEqual(0, duplicates.Count,
+        MessageAssert.Equal(0, duplicates.Count,
             "Errors at the same instance path must be collapsed to one. Found duplicates:\n"
             + string.Join("\n", duplicates.Select(g =>
                 $"  {g.Key.InstancePath} ({g.Count()} entries)")));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Marketplaces_SourceMatchesNoBranch_CombinedMessageListsVariants()
     {
         // The collapsed message must still be informative — the user needs
@@ -324,16 +321,16 @@ public sealed class AnyOfLeakageCoverageTests
         List<SchemaValidationError> sourceErrors = errors
                                                    .Where(e => e.InstancePath.EndsWith("/source", StringComparison.Ordinal))
                                                    .ToList();
-        Assert.IsTrue(sourceErrors.Count > 0,
+        Assert.True(sourceErrors.Count > 0,
             $"Expected at least one error at .../source. Got:\n{FormatErrors(errors)}");
-        Assert.IsTrue(sourceErrors.Any(e =>
+        Assert.True(sourceErrors.Any(e =>
                 e.Message.Contains("matches none", StringComparison.OrdinalIgnoreCase) ||
                 e.Message.Contains("permitted variants", StringComparison.OrdinalIgnoreCase)),
             "Collapsed message must signal 'matches none of N variants' for clarity. Got:\n"
             + FormatErrors(sourceErrors));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Collapse_SingleErrorPerPath_LeavesMessageUntouched()
     {
         // Negative case: when only ONE error exists at an instance path
@@ -354,8 +351,8 @@ public sealed class AnyOfLeakageCoverageTests
         List<SchemaValidationError> modelErrors = errors
                                                   .Where(e => e.InstancePath == "/model")
                                                   .ToList();
-        Assert.IsTrue(modelErrors.Count > 0, "Model type-mismatch must produce at least one error.");
-        Assert.IsFalse(modelErrors.Any(e => e.Message.Contains("matches none", StringComparison.OrdinalIgnoreCase)),
+        Assert.True(modelErrors.Count > 0, "Model type-mismatch must produce at least one error.");
+        Assert.False(modelErrors.Any(e => e.Message.Contains("matches none", StringComparison.OrdinalIgnoreCase)),
             "Single-error paths must not be wrapped in the multi-variant collapse message.");
     }
 }

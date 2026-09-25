@@ -18,14 +18,13 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// and a negative case (an innocent string that resembles the shape
 /// but should NOT match — confirms the patterns aren't over-greedy).
 /// </remarks>
-[TestClass]
 public sealed class TextRedactorTests
 {
     // ─────────────────────────────────────────────────────────────────
     //  Anthropic
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_AnthropicKey_MatchesAndReplaces()
     {
         // Real Anthropic keys are `sk-ant-api03-<93 chars>AA`; 40 chars
@@ -34,13 +33,13 @@ public sealed class TextRedactorTests
         // strings.
         string input = "ANTHROPIC_API_KEY=sk-ant-api03-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA after the key";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("sk-ant-api03"),
+        Assert.False(output.Contains("sk-ant-api03"),
             "Raw Anthropic key prefix must not survive the redaction pass.");
-        Assert.IsTrue(output.Contains(JsonRedactor.RedactedMarker),
+        Assert.True(output.Contains(JsonRedactor.RedactedMarker),
             "Output must contain the [redacted] marker.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_AnthropicShortLookalike_DoesNotMatch()
     {
         // `sk-ant-help` is too short to be a real key — must NOT match
@@ -48,7 +47,7 @@ public sealed class TextRedactorTests
         // SDK by name).
         string input = "See the `sk-ant-help` docs for setup instructions.";
         string output = TextRedactor.Redact(input);
-        Assert.AreEqual(input, output,
+        MessageAssert.Equal(input, output,
             "A short sk-ant-… lookalike must not match the Anthropic pattern.");
     }
 
@@ -56,38 +55,38 @@ public sealed class TextRedactorTests
     //  OpenAI (legacy + project + OpenRouter)
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_OpenAiProjectKey_MatchesAndReplaces()
     {
         string input = "OPENAI_API_KEY=sk-proj-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("sk-proj-AAA"),
+        Assert.False(output.Contains("sk-proj-AAA"),
             "Raw OpenAI project key must not survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_OpenRouterKey_MatchesAndReplaces()
     {
         string input = "OPENROUTER_KEY=sk-or-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("sk-or-AAA"));
+        OrdinalAssert.DoesNotContain("sk-or-AAA", output);
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  GitHub
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_GitHubClassicPat_MatchesAndReplaces()
     {
         // Classic PATs are `ghp_` + 36 alphanumerics.
         string input = "GH_TOKEN=ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("ghp_AAA"),
+        Assert.False(output.Contains("ghp_AAA"),
             "Raw GitHub classic PAT must not survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_GitHubFineGrainedPat_MatchesAndReplaces()
     {
         // Fine-grained PATs have the `github_pat_` prefix and a much
@@ -95,93 +94,93 @@ public sealed class TextRedactorTests
         string body = new string('A', 22) + "_" + new string('B', 59);
         string input = $"GH_PAT=github_pat_{body}";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("github_pat_AA"));
+        OrdinalAssert.DoesNotContain("github_pat_AA", output);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_GitHubShortLookalike_DoesNotMatch()
     {
         // `ghp_short` is too short; must NOT match.
         string input = "Sample: ghp_short";
         string output = TextRedactor.Redact(input);
-        Assert.AreEqual(input, output);
+        Assert.Equal(input, output);
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  AWS
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_AwsAccessKeyId_MatchesAndReplaces()
     {
         string input = "export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("AKIAIOSFODNN7EXAMPLE"),
+        Assert.False(output.Contains("AKIAIOSFODNN7EXAMPLE"),
             "AWS access key ID must not survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_AkiaShortLookalike_DoesNotMatch()
     {
         // Exactly 15 chars after AKIA — wrong length, must not match.
         string input = "AKIA123456789012"; // 12 chars after AKIA
         string output = TextRedactor.Redact(input);
-        Assert.AreEqual(input, output);
+        Assert.Equal(input, output);
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  Slack
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_SlackBotToken_MatchesAndReplaces()
     {
         string input = "SLACK_BOT_TOKEN=xoxb-AAAAAAAAAAAAAAAA-real-bot-token";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("xoxb-AAAAAAA"));
+        OrdinalAssert.DoesNotContain("xoxb-AAAAAAA", output);
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  JWT
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_JwtShape_MatchesAndReplaces()
     {
         string input = "auth_token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature-part-here";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("eyJhbGciOiJIUzI1NiJ9"),
+        Assert.False(output.Contains("eyJhbGciOiJIUzI1NiJ9"),
             "JWT header segment must not survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_NonJwtBase64WithDots_DoesNotMatch()
     {
         // A base64 string with a single dot is NOT a JWT (JWT requires
         // exactly two dots + the eyJ-prefixed header).
         string input = "config_hash: dGhpcy1pcy1ub3QtYS1qd3Q.signature";
         string output = TextRedactor.Redact(input);
-        Assert.AreEqual(input, output);
+        Assert.Equal(input, output);
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  HTTP Bearer (case-insensitive)
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_BearerHeaderValue_MatchesCaseInsensitive()
     {
         string input1 = "Authorization: Bearer abc123XYZ_def-456+ghi/789=jkl";
         string input2 = "authorization: bearer abc123XYZ_def-456+ghi/789=jkl";
-        Assert.IsFalse(TextRedactor.Redact(input1).Contains("abc123XYZ"));
-        Assert.IsFalse(TextRedactor.Redact(input2).Contains("abc123XYZ"));
+        OrdinalAssert.DoesNotContain("abc123XYZ", TextRedactor.Redact(input1));
+        OrdinalAssert.DoesNotContain("abc123XYZ", TextRedactor.Redact(input2));
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  Shell-style sensitive assignment (preserves key name)
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_ShellExportSensitive_PreservesKeyName()
     {
         // The shell-style pass should preserve the variable name so
@@ -191,59 +190,59 @@ public sealed class TextRedactorTests
         // assignment regex's MatchEvaluator path specifically.
         string input = "export MY_CUSTOM_TOKEN=plaintextvaluewithoutprefix";
         string output = TextRedactor.Redact(input);
-        Assert.IsTrue(output.Contains("MY_CUSTOM_TOKEN="),
+        Assert.True(output.Contains("MY_CUSTOM_TOKEN="),
             "Shell-style redaction must preserve the variable name.");
-        Assert.IsTrue(output.Contains(JsonRedactor.RedactedMarker),
+        Assert.True(output.Contains(JsonRedactor.RedactedMarker),
             "Shell-style redaction must substitute the value with [redacted].");
-        Assert.IsFalse(output.Contains("plaintextvaluewithoutprefix"),
+        Assert.False(output.Contains("plaintextvaluewithoutprefix"),
             "Raw value must not survive.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_ShellNonSensitiveAssignment_DoesNotMatch()
     {
         // `PATH` doesn't contain TOKEN/SECRET/PASSWORD/KEY/etc. — must
         // pass through unchanged.
         string input = "export PATH=/usr/local/bin:/usr/bin";
         string output = TextRedactor.Redact(input);
-        Assert.AreEqual(input, output,
+        MessageAssert.Equal(input, output,
             "Non-sensitive shell assignments must not be touched.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_BashAssignment_WithoutExport_AlsoMatches()
     {
         // The `export` keyword is optional in the regex — covers
         // plain `VAR=value` in bash / .env files.
         string input = "ANTHROPIC_API_KEY=plaintext";
         string output = TextRedactor.Redact(input);
-        Assert.IsFalse(output.Contains("plaintext"),
+        Assert.False(output.Contains("plaintext"),
             "Plain VAR=value assignments (no export prefix) must also redact.");
-        Assert.IsTrue(output.Contains("ANTHROPIC_API_KEY="));
+        OrdinalAssert.Contains("ANTHROPIC_API_KEY=", output);
     }
 
     // ─────────────────────────────────────────────────────────────────
     //  Edge cases
     // ─────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Redact_EmptyInput_ReturnsEmpty()
     {
-        Assert.AreEqual(string.Empty, TextRedactor.Redact(string.Empty));
-        Assert.AreEqual(string.Empty, TextRedactor.Redact(null!));
+        Assert.Equal(string.Empty, TextRedactor.Redact(string.Empty));
+        Assert.Equal(string.Empty, TextRedactor.Redact(null!));
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_NoSecretShapes_PreservesContent()
     {
         // An innocuous markdown paragraph with no token-shaped content
         // must round-trip byte-for-byte.
         string input = "# Agent: code-reviewer\n\nReviews TypeScript code for bugs.";
         string output = TextRedactor.Redact(input);
-        Assert.AreEqual(input, output);
+        Assert.Equal(input, output);
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_IsIdempotent()
     {
         // Running the redactor twice on the same input produces the
@@ -252,11 +251,11 @@ public sealed class TextRedactorTests
         string input = "export GH_TOKEN=ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         string once = TextRedactor.Redact(input);
         string twice = TextRedactor.Redact(once);
-        Assert.AreEqual(once, twice,
+        MessageAssert.Equal(once, twice,
             "Redact must be idempotent: a second pass must produce identical output.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Redact_MultiplePatternsInOneFile_AllMatch()
     {
         // A realistic hook script containing multiple secret shapes.
@@ -269,11 +268,11 @@ public sealed class TextRedactorTests
                        """;
         string output = TextRedactor.Redact(input);
 
-        Assert.IsFalse(output.Contains("sk-ant-AAA"), "Anthropic key not redacted");
-        Assert.IsFalse(output.Contains("AKIAIOSFODNN7"), "AWS access key not redacted");
-        Assert.IsFalse(output.Contains("xyzabc123def"), "Bearer token not redacted");
+        Assert.False(output.Contains("sk-ant-AAA"), "Anthropic key not redacted");
+        Assert.False(output.Contains("AKIAIOSFODNN7"), "AWS access key not redacted");
+        Assert.False(output.Contains("xyzabc123def"), "Bearer token not redacted");
         // Bash structure preserved
-        Assert.IsTrue(output.Contains("#!/bin/bash"));
-        Assert.IsTrue(output.Contains("export ANTHROPIC_API_KEY"));
+        OrdinalAssert.Contains("#!/bin/bash", output);
+        OrdinalAssert.Contains("export ANTHROPIC_API_KEY", output);
     }
 }

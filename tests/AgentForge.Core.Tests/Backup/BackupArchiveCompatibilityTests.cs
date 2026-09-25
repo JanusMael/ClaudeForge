@@ -31,16 +31,16 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// protects, so it can never be written to match what the change happened to produce.
 /// </para>
 /// </remarks>
-[TestClass]
-public sealed class BackupArchiveCompatibilityTests
+public sealed class BackupArchiveCompatibilityTests : IDisposable
 {
     /// <summary>The frozen archive, copied beside the test assembly by the csproj.</summary>
     private const string FixtureName = "backup-v1-claudeforge.zip";
 
     private string _fakeHome = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public BackupArchiveCompatibilityTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(), "bac-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_fakeHome);
@@ -48,8 +48,7 @@ public sealed class BackupArchiveCompatibilityTests
         PlatformPaths.TestUserProfileOverride = _fakeHome;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -65,9 +64,15 @@ public sealed class BackupArchiveCompatibilityTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // ── What the frozen archive contains ───────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void TheFixture_StillCarriesTheShippedProductPrefixes()
     {
         // ⚠ Asserted on the FIXTURE, not on a freshly-created archive. This is the statement
@@ -75,19 +80,19 @@ public sealed class BackupArchiveCompatibilityTests
         // writer produces today — that is the drift this whole suite exists to catch.
         List<string> entries = Entries();
 
-        CollectionAssert.Contains(entries, "ClaudeCode/claude.json");
-        CollectionAssert.Contains(entries, "ClaudeCode/claude-dir/settings.json");
-        CollectionAssert.Contains(entries, "ClaudeCode/claude-dir/agents/reviewer.md");
-        CollectionAssert.Contains(entries, "ClaudeDesktop/claude_desktop_config.json");
-        CollectionAssert.Contains(entries, "manifest.json");
+        Assert.Contains("ClaudeCode/claude.json", entries);
+        Assert.Contains("ClaudeCode/claude-dir/settings.json", entries);
+        Assert.Contains("ClaudeCode/claude-dir/agents/reviewer.md", entries);
+        Assert.Contains("ClaudeDesktop/claude_desktop_config.json", entries);
+        Assert.Contains("manifest.json", entries);
 
-        Assert.IsTrue(
+        Assert.True(
             entries.Any(e => e.StartsWith("Schemas/", StringComparison.Ordinal)),
             "The archive carries the schemas that were current when it was made, so restore "
             + "validates against those rather than today's.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TheFixture_IsAtManifestSchemaVersionOne()
     {
         // When the layout change bumps BackupManifest.CurrentSchemaVersion, this test does NOT
@@ -95,49 +100,49 @@ public sealed class BackupArchiveCompatibilityTests
         // must keep understanding version 1 after the writer has moved on.
         using ZipArchive zip = ZipFile.OpenRead(FixturePath());
         ZipArchiveEntry manifest = zip.GetEntry("manifest.json")
-            ?? throw new AssertFailedException("The fixture has no manifest.json.");
+            ?? throw new Xunit.Sdk.XunitException("The fixture has no manifest.json.");
 
         using Stream stream = manifest.Open();
         using StreamReader reader = new(stream);
         string json = reader.ReadToEnd();
 
-        StringAssert.Contains(json, "\"schemaVersion\": 1",
+        MessageAssert.Contains("\"schemaVersion\": 1", json,
             "The frozen archive is a v1 manifest. If this fails, the fixture was regenerated — "
             + "restore it from git rather than updating this assertion.");
-        StringAssert.Contains(json, "\"ClaudeCode\"");
-        StringAssert.Contains(json, "\"ClaudeDesktop\"");
+        OrdinalAssert.Contains("\"ClaudeCode\"", json);
+        OrdinalAssert.Contains("\"ClaudeDesktop\"", json);
     }
 
     // ── That it still restores ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task AShippedArchive_StillRestoresEveryFileToItsRealPath()
     {
         BackupEntry entry = StageFixture();
 
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry);
 
-        Assert.IsTrue(restore.Succeeded,
+        Assert.True(restore.Succeeded,
             "A backup written by a shipped build must keep restoring. " + restore.Message);
 
         // ~/.claude.json — the product root file.
         string claudeJson = Path.Combine(_fakeHome, ".claude.json");
-        Assert.IsTrue(File.Exists(claudeJson), "ClaudeCode/claude.json must land at ~/.claude.json.");
-        StringAssert.Contains(await File.ReadAllTextAsync(claudeJson), "\"fixture\"");
+        Assert.True(File.Exists(claudeJson), "ClaudeCode/claude.json must land at ~/.claude.json.");
+        OrdinalAssert.Contains("\"fixture\"", await File.ReadAllTextAsync(claudeJson));
 
         // ~/.claude/settings.json — the claude-dir subtree.
         string settings = Path.Combine(_fakeHome, ".claude", "settings.json");
-        Assert.IsTrue(File.Exists(settings),
+        Assert.True(File.Exists(settings),
             "ClaudeCode/claude-dir/settings.json must land at ~/.claude/settings.json.");
-        StringAssert.Contains(await File.ReadAllTextAsync(settings), "\"opus\"");
+        OrdinalAssert.Contains("\"opus\"", await File.ReadAllTextAsync(settings));
 
         // A nested file under claude-dir, to prove the subtree is walked rather than one level.
-        Assert.IsTrue(
+        Assert.True(
             File.Exists(Path.Combine(_fakeHome, ".claude", "agents", "reviewer.md")),
             "Nested claude-dir entries must restore, not just top-level ones.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AShippedArchive_RestoresTheDesktopPrefixToo()
     {
         // ⚠ The second prefix is the one a per-product dispatch is most likely to drop: the Claude
@@ -146,13 +151,13 @@ public sealed class BackupArchiveCompatibilityTests
         BackupEntry entry = StageFixture();
 
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry);
-        Assert.IsTrue(restore.Succeeded, restore.Message);
+        Assert.True(restore.Succeeded, restore.Message);
 
-        Assert.IsTrue(File.Exists(PlatformPaths.DesktopConfigPath),
+        Assert.True(File.Exists(PlatformPaths.DesktopConfigPath),
             "ClaudeDesktop/claude_desktop_config.json must restore to the Desktop config path.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AShippedArchive_IsListedAsRestorable()
     {
         // The list path parses manifest.json and filters on `kind`. A v1 manifest must still be
@@ -162,7 +167,7 @@ public sealed class BackupArchiveCompatibilityTests
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
 
-        Assert.AreEqual(1, entries.Count, "The frozen archive must appear in the restorable list.");
+        MessageAssert.Equal(1, entries.Count, "The frozen archive must appear in the restorable list.");
         await Task.CompletedTask;
     }
 
@@ -171,7 +176,7 @@ public sealed class BackupArchiveCompatibilityTests
     private static string FixturePath()
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Fixtures", FixtureName);
-        Assert.IsTrue(File.Exists(path),
+        Assert.True(File.Exists(path),
             $"Fixture '{FixtureName}' was not copied to the output directory. Check the "
             + "Content item in AgentForge.Core.Tests.csproj.");
         return path;
@@ -194,7 +199,7 @@ public sealed class BackupArchiveCompatibilityTests
         File.Copy(FixturePath(), staged, overwrite: true);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, entries.Count, "Expected exactly the staged fixture in the sandbox.");
+        MessageAssert.Equal(1, entries.Count, "Expected exactly the staged fixture in the sandbox.");
         return entries[0];
     }
 }

@@ -9,7 +9,6 @@
 /// tool-suffixed pseudo-events (<c>PreBashToolUse</c>, <c>PostFileEditToolUse</c>,
 /// ...) the schema rejects — from creeping back in via the curated overlay.
 /// </summary>
-[TestClass]
 public sealed class HooksKnownEventTypesParityTests
 {
     private sealed class FailingHttpHandler : HttpMessageHandler
@@ -45,7 +44,7 @@ public sealed class HooksKnownEventTypesParityTests
         return ws;
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EveryKnownEventType_IsSchemaAccepted()
     {
         using SchemaRegistry registry = CreateRegistry();
@@ -66,7 +65,7 @@ public sealed class HooksKnownEventTypesParityTests
             }
         }
 
-        Assert.AreEqual(0, rejected.Count,
+        MessageAssert.Equal(0, rejected.Count,
             "HookEventCatalog.CuratedOrder contains events the schema rejects (stale overlay entry):\n"
             + string.Join("\n", rejected.Select(r => $"  {r.Event}: {r.Path} — {r.Message}")));
     }

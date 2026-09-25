@@ -16,13 +16,13 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// own fake <c>$HOME</c> via the <c>USERPROFILE</c> (Windows) or <c>HOME</c> (Unix)
 /// environment variable so the real user's Claude data is never touched.
 /// </summary>
-[TestClass]
-public sealed class BackupEngineTests
+public sealed class BackupEngineTests : IDisposable
 {
     private string _fakeHome = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public BackupEngineTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(), "be-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_fakeHome);
@@ -47,8 +47,7 @@ public sealed class BackupEngineTests
         File.WriteAllText(Path.Combine(projectsDir, "session.jsonl"), """{"role":"user"}""");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -64,7 +63,13 @@ public sealed class BackupEngineTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task CreateAsync_SettingsOnly_ExcludesProjectsDirectory()
     {
         string dest = Path.Combine(_fakeHome, "backup.zip");
@@ -75,19 +80,19 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
-        Assert.IsTrue(File.Exists(dest));
+        Assert.True(result.Succeeded, result.Message);
+        Assert.True(File.Exists(dest));
 
         List<string> entries = ListEntries(dest);
-        Assert.IsTrue(entries.Any(e => e.EndsWith("claude.json", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.EndsWith("claude.json", StringComparison.Ordinal)),
             "claude.json should always be present.");
-        Assert.IsTrue(entries.Any(e => e.Contains("claude-dir/settings.json", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.Contains("claude-dir/settings.json", StringComparison.Ordinal)),
             "settings.json should be included under claude-dir/.");
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/projects/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/projects/", StringComparison.Ordinal)),
             "Settings-only mode must skip ~/.claude/projects/.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_Full_IncludesProjectsDirectory()
     {
         string dest = Path.Combine(_fakeHome, "full.zip");
@@ -98,13 +103,13 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
-        Assert.IsTrue(entries.Any(e => e.Contains("claude-dir/projects/session.jsonl", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.Contains("claude-dir/projects/session.jsonl", StringComparison.Ordinal)),
             "Full mode must include ~/.claude/projects/.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_ManifestIsReadableAndCorrect()
     {
         string dest = Path.Combine(_fakeHome, "manifest-check.zip");
@@ -114,23 +119,23 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded);
+        Assert.True(result.Succeeded);
 
         // Independently re-open and parse the manifest to confirm on-disk shape.
         await using FileStream fs = File.OpenRead(dest);
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
         ZipArchiveEntry? manifestEntry = archive.GetEntry("manifest.json");
-        Assert.IsNotNull(manifestEntry);
+        Assert.NotNull(manifestEntry);
 
         await using Stream ms = await manifestEntry!.OpenAsync();
         BackupManifest? manifest = JsonSerializer.Deserialize(ms, BackupJsonContext.Default.BackupManifest);
-        Assert.IsNotNull(manifest);
-        Assert.AreEqual("backup", manifest!.Kind);
-        Assert.AreEqual(BackupMode.SettingsOnly, manifest.Mode);
-        Assert.IsTrue(manifest.SizeBytes > 0, "SizeBytes should be finalised after the rewrite pass.");
+        Assert.NotNull(manifest);
+        Assert.Equal("backup", manifest!.Kind);
+        Assert.Equal(BackupMode.SettingsOnly, manifest.Mode);
+        Assert.True(manifest.SizeBytes > 0, "SizeBytes should be finalised after the rewrite pass.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task List_SortsNewestFirst()
     {
         // Create two backups a moment apart.
@@ -157,12 +162,12 @@ public sealed class BackupEngineTests
         File.SetLastWriteTimeUtc(second, DateTime.UtcNow);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(2, entries.Count);
-        Assert.AreEqual(Path.GetFileName(second), entries[0].FileName);
-        Assert.AreEqual(Path.GetFileName(first), entries[1].FileName);
+        Assert.Equal(2, entries.Count);
+        Assert.Equal(Path.GetFileName(second), entries[0].FileName);
+        Assert.Equal(Path.GetFileName(first), entries[1].FileName);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Retention_DeletesOldBackupsBeyondKeepLast()
     {
         string backupDir = Path.Combine(_fakeHome, "retention");
@@ -190,11 +195,11 @@ public sealed class BackupEngineTests
         });
 
         int remaining = Directory.GetFiles(backupDir, "backup-*.zip").Length;
-        Assert.AreEqual(2, remaining,
+        MessageAssert.Equal(2, remaining,
             "Retention should have pruned every backup except the 2 newest.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RoundTrip_RestoreWritesFilesBackAndSweepsItsOwnSidecars()
     {
         // Name it with the "backup-*" prefix so BackupEngine.List() finds it.
@@ -206,19 +211,19 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.True(create.Succeeded, create.Message);
 
         // Mutate the live settings — restore should roll it back.
         await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"), "{\"theme\":\"light\"}");
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, entries.Count);
+        Assert.Single(entries);
 
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded, restore.Message);
+        Assert.True(restore.Succeeded, restore.Message);
 
         string restored = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"));
-        Assert.AreEqual(original, restored);
+        Assert.Equal(original, restored);
 
         // ⚠ This assertion was INVERTED for F8, deliberately. It used to require exactly one
         // surviving `.pre-restore-*.bak`; a clean restore now sweeps the sidecars it wrote,
@@ -226,7 +231,7 @@ public sealed class BackupEngineTests
         // leaving them roughly doubles the directory on every restore.
         List<string> baks = Directory.EnumerateFiles(Path.Combine(_fakeHome, ".claude"),
             "settings.json.pre-restore-*.bak").ToList();
-        Assert.AreEqual(0, baks.Count,
+        MessageAssert.Equal(0, baks.Count,
             "F8: a restore that completed without a single file failure must leave no sidecars.");
 
         // ⛔ Zero on its own is NOT evidence of a sweep — an engine that stopped writing
@@ -236,25 +241,25 @@ public sealed class BackupEngineTests
         // Two, because the fixture has two live files the restore overwrote — the same number
         // it reports as restored. An exact count rather than "some", so a sweep that silently
         // started missing files would show up here.
-        StringAssert.Contains(restore.Message, "Cleaned up 2 ",
+        MessageAssert.Contains("Cleaned up 2 ", restore.Message,
             "The result must report the sweep, which is the only evidence distinguishing "
             + $"'written then removed' from 'never written': {restore.Message}");
     }
 
-    [TestMethod]
+    [Fact]
     public void ResolveSafeExtractPath_RejectsZipSlip()
     {
         string baseDir = _fakeHome;
         string? safe = RestoreEngine.ResolveSafeExtractPath(baseDir, "ClaudeCode/claude.json");
-        Assert.IsNotNull(safe);
+        Assert.NotNull(safe);
 
         string? unsafe1 = RestoreEngine.ResolveSafeExtractPath(baseDir, "../../etc/passwd");
         string? unsafe2 = RestoreEngine.ResolveSafeExtractPath(baseDir, "/etc/passwd");
-        Assert.IsNull(unsafe1, "Relative traversal must be rejected.");
-        Assert.IsNull(unsafe2, "Absolute paths must be rejected.");
+        MessageAssert.Null(unsafe1, "Relative traversal must be rejected.");
+        MessageAssert.Null(unsafe2, "Absolute paths must be rejected.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_SkipsBackupsSubdirectoryToAvoidNesting()
     {
         // Create a nested backup that would be included if the engine weren't smart.
@@ -269,14 +274,14 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded);
+        Assert.True(result.Succeeded);
 
         List<string> entries = ListEntries(dest);
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/backups/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/backups/", StringComparison.Ordinal)),
             "The engine must not bundle its own output directory into a backup.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_NeverIncludesCacheDirectory()
     {
         // ClaudeForge-gui-state.json lives at ~/.claude/cache/ClaudeForge-gui-state.json
@@ -294,10 +299,10 @@ public sealed class BackupEngineTests
             Mode = BackupMode.Full,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
-        Assert.IsFalse(entries.Any(e => e.Contains("cache/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("cache/", StringComparison.Ordinal)),
             "The cache/ directory must never appear in the archive.");
     }
 
@@ -310,7 +315,7 @@ public sealed class BackupEngineTests
     /// <c>BackupEngine.ShouldSkipHomeFile</c>, and nested files via
     /// <c>ZipArchiveWriter.EnumerateRecursive</c>).
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_ExcludesBakSidecarsAtAllDepths()
     {
         string home = Path.Combine(_fakeHome, ".claude");
@@ -340,21 +345,21 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
 
         // The real agent must be in the archive.
-        Assert.IsTrue(entries.Any(e => e.EndsWith("my-agent.md", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.EndsWith("my-agent.md", StringComparison.Ordinal)),
             "The real agent file must be present in the archive.");
 
         // No .bak files at any depth.
         List<string> bakEntries = entries.Where(e => e.EndsWith(".bak", StringComparison.OrdinalIgnoreCase)).ToList();
-        Assert.AreEqual(0, bakEntries.Count,
+        MessageAssert.Equal(0, bakEntries.Count,
             $"No .bak files should be archived.  Found: {string.Join(", ", bakEntries)}");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_ReportsProgressDuringApplyPhase()
     {
         // Use the naming convention BackupEngine.List expects: backup-<stamp>.zip
@@ -369,10 +374,10 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(createResult.Succeeded, createResult.Message);
+        Assert.True(createResult.Succeeded, createResult.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(backupDir);
-        Assert.AreEqual(1, entries.Count);
+        Assert.Single(entries);
 
         // Collect all progress reports emitted during restore.
         //
@@ -389,15 +394,15 @@ public sealed class BackupEngineTests
         SyncProgress<BackupProgress> progress = new(p => reports.Add(p));
 
         RestoreResult restoreResult = await TestBackupEngine.Default.RestoreAsync(entries[0], progress);
-        Assert.IsTrue(restoreResult.Succeeded, restoreResult.Message);
+        Assert.True(restoreResult.Succeeded, restoreResult.Message);
 
         // Find "Applying restore…" and count distinct reports that come after it.
         int applyIndex = reports.FindIndex(r =>
             r.CurrentItem.Equals("Applying restore…", StringComparison.Ordinal));
-        Assert.IsTrue(applyIndex >= 0, "At least one 'Applying restore…' progress report must be emitted.");
+        Assert.True(applyIndex >= 0, "At least one 'Applying restore…' progress report must be emitted.");
 
         List<BackupProgress> applyPhaseReports = reports.Skip(applyIndex + 1).ToList();
-        Assert.IsTrue(applyPhaseReports.Count >= 2,
+        Assert.True(applyPhaseReports.Count >= 2,
             $"Expected at least 2 progress reports after 'Applying restore…'; got {applyPhaseReports.Count}.");
     }
 
@@ -415,7 +420,7 @@ public sealed class BackupEngineTests
         public void Report(T value) => _action(value);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_ExcludesRuntimeAndBinarySubdirectories()
     {
         // Populate the runtime / binary directories that must never appear in backups.
@@ -455,23 +460,23 @@ public sealed class BackupEngineTests
             Mode = BackupMode.Full,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
 
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/downloads/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/downloads/", StringComparison.Ordinal)),
             "downloads/ must be excluded (update binaries are not config data).");
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/statsig/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/statsig/", StringComparison.Ordinal)),
             "statsig/ must be excluded (telemetry data is not config data).");
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/shell-snapshots/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/shell-snapshots/", StringComparison.Ordinal)),
             "shell-snapshots/ must be excluded (runtime snapshots are not config data).");
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/local/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/local/", StringComparison.Ordinal)),
             "local/ must be excluded (binary install directory is not config data).");
-        Assert.IsFalse(entries.Any(e => e.Contains("claude-dir/cache/", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.Contains("claude-dir/cache/", StringComparison.Ordinal)),
             "cache/ must be excluded (regenerated on demand; not config data).");
 
         // Sanity: the regular settings file should still be present.
-        Assert.IsTrue(entries.Any(e => e.Contains("claude-dir/settings.json", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.Contains("claude-dir/settings.json", StringComparison.Ordinal)),
             "settings.json must still be present in the archive.");
     }
 
@@ -487,16 +492,16 @@ public sealed class BackupEngineTests
     //  seam.
     // ───────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_NullRequest_ThrowsArgumentNull()
     {
         // Argument validation is contract — null request is a programmer
         // error, not a runtime "expected failure", and is allowed to throw.
-        await Assert.ThrowsExactlyAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             TestBackupEngine.Default.CreateAsync(null!));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_ClaudeDesktopOnly_BundlesDesktopConfigFile()
     {
         // Setup() seeds Code data only.  Add a Desktop config file so the
@@ -514,17 +519,17 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeDesktopProduct],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
-        Assert.IsTrue(
+        Assert.True(
             entries.Any(e => e.EndsWith("ClaudeDesktop/claude_desktop_config.json", StringComparison.Ordinal)),
             "Desktop config file must be bundled when its product is in the requested set.");
-        Assert.IsFalse(entries.Any(e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal)
+        Assert.False(entries.Any(e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal)
                                         && e != "ClaudeCode/claude.json"),
             "When Claude Code is absent from the requested set, no ClaudeCode/* files should be bundled.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_DesktopProfilesAndPointer_BundledWhenPresent()
     {
         string desktopDir = PlatformPaths.DesktopConfigDir;
@@ -548,17 +553,17 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeDesktopProduct],
         });
 
-        Assert.IsTrue(result.Succeeded);
+        Assert.True(result.Succeeded);
         List<string> entries = ListEntries(dest);
-        Assert.IsTrue(
+        Assert.True(
             entries.Any(e =>
                 e.Contains("ClaudeDesktop/profiles/work/claude_desktop_config.json", StringComparison.Ordinal)),
             "Desktop profiles directory must be bundled when present.");
-        Assert.IsTrue(entries.Any(e => e.EndsWith("ClaudeDesktop/.desktop-current", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.EndsWith("ClaudeDesktop/.desktop-current", StringComparison.Ordinal)),
             ".desktop-current pointer must be bundled when present.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RoundTrip_DesktopProfilesAndPointer_RestoreToTheirRealPaths()
     {
         // ⚠ The sibling above covers only the WRITE side. Restoring these two sections was
@@ -584,27 +589,27 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeDesktopProduct],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.True(create.Succeeded, create.Message);
 
         // Mutate both so a no-op restore cannot pass.
         await File.WriteAllTextAsync(profileConfig, """{"profile":"CLOBBERED"}""");
         await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "clobbered");
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, entries.Count);
+        Assert.Single(entries);
 
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded, restore.Message);
+        Assert.True(restore.Succeeded, restore.Message);
 
-        StringAssert.Contains(await File.ReadAllTextAsync(profileConfig), "\"work\"",
+        MessageAssert.Contains("\"work\"", await File.ReadAllTextAsync(profileConfig),
             "The profiles subtree must restore, not just the top-level Desktop config.");
-        Assert.AreEqual("work",
+        MessageAssert.Equal("work",
             await File.ReadAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath),
             "The .desktop-current pointer is a single file, not a directory — a row that gets that "
             + "wrong restores nothing and still succeeds.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_NoOnDiskData_ProducesArchiveWithJustManifestAndSchemas()
     {
         // Wipe everything Setup() seeded so the engine has nothing to
@@ -621,19 +626,19 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
-        Assert.IsTrue(entries.Any(e => e == "manifest.json"),
+        Assert.True(entries.Any(e => e == "manifest.json"),
             "Manifest must be present even in an empty backup.");
         // Schemas are always bundled regardless of user data.
-        Assert.IsTrue(entries.Any(e => e.StartsWith("Schemas/", StringComparison.Ordinal)),
+        Assert.True(entries.Any(e => e.StartsWith("Schemas/", StringComparison.Ordinal)),
             "Bundled schemas must be present even in an empty backup.");
         // Zero ClaudeCode / ClaudeDesktop entries (nothing on disk to bundle).
-        Assert.IsFalse(entries.Any(e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal)));
-        Assert.IsFalse(entries.Any(e => e.StartsWith("ClaudeDesktop/", StringComparison.Ordinal)));
+        Assert.DoesNotContain(entries, e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, e => e.StartsWith("ClaudeDesktop/", StringComparison.Ordinal));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_BothProductsExcluded_StillProducesValidArchive()
     {
         // Edge case: caller requests an EMPTY product set.
@@ -648,14 +653,14 @@ public sealed class BackupEngineTests
             Products = [],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
-        Assert.IsTrue(entries.Any(e => e == "manifest.json"));
-        Assert.IsFalse(entries.Any(e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal)));
-        Assert.IsFalse(entries.Any(e => e.StartsWith("ClaudeDesktop/", StringComparison.Ordinal)));
+        Assert.Contains(entries, e => e == "manifest.json");
+        Assert.DoesNotContain(entries, e => e.StartsWith("ClaudeCode/", StringComparison.Ordinal));
+        Assert.DoesNotContain(entries, e => e.StartsWith("ClaudeDesktop/", StringComparison.Ordinal));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_DestinationDirDoesNotExist_AutoCreatesParents()
     {
         // BackupEngine auto-creates parent directories for the destination
@@ -670,13 +675,13 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
-        Assert.IsTrue(File.Exists(dest));
-        Assert.IsTrue(Directory.Exists(Path.GetDirectoryName(dest)),
+        Assert.True(result.Succeeded, result.Message);
+        Assert.True(File.Exists(dest));
+        Assert.True(Directory.Exists(Path.GetDirectoryName(dest)),
             "Parent directories must have been auto-created.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_AlreadyCancelledToken_DoesNotProduceFinalArchive()
     {
         // Exercise the cancellation contract: a pre-cancelled token
@@ -702,15 +707,15 @@ public sealed class BackupEngineTests
                 ct: ct);
 
             // Path (a): caught and returned as a failure result.
-            Assert.IsFalse(result.Succeeded);
-            StringAssert.Contains(result.Message, "cancelled", StringComparison.OrdinalIgnoreCase);
+            Assert.False(result.Succeeded);
+            Assert.Contains("cancelled", result.Message, StringComparison.OrdinalIgnoreCase);
         }
         catch (OperationCanceledException)
         {
             // Path (b): propagated out. Also acceptable.
         }
 
-        Assert.IsFalse(File.Exists(dest),
+        Assert.False(File.Exists(dest),
             "Cancellation must not leave a final backup archive on disk; "
             + "the temp file is cleaned up either by the OCE catch's writer "
             + "Dispose or by the early-throw before CommitAsync renames temp -> dest.");
@@ -728,7 +733,7 @@ public sealed class BackupEngineTests
     //  backup is silently dropped from the validation set.
     // ───────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_ValidationWarnings_PopulatedForSchemaViolatingSettings()
     {
         // cleanupPeriodDays must be type=integer per the bundled schema.
@@ -744,24 +749,24 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.True(create.Succeeded, create.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, entries.Count);
+        Assert.Single(entries);
 
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded,
+        Assert.True(restore.Succeeded,
             "Restore must succeed even when validation finds violations — "
             + "validation is informational, not gating.");
-        Assert.IsNotNull(restore.ValidationWarnings,
+        MessageAssert.NotNull(restore.ValidationWarnings,
             "ValidationWarnings must be populated when a settings file violates the schema.");
-        Assert.IsTrue(restore.ValidationWarnings!.Count > 0);
-        Assert.IsTrue(
+        Assert.True(restore.ValidationWarnings!.Count > 0);
+        Assert.True(
             restore.ValidationWarnings!.Any(w => w.Contains("cleanupPeriodDays", StringComparison.Ordinal)),
             "Warning text must surface the violating property name (cleanupPeriodDays).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_NoValidationWarnings_WhenAllSettingsAreValid()
     {
         // Setup() already wrote {"theme":"dark"} as settings.json — that's
@@ -773,23 +778,23 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded);
+        Assert.True(create.Succeeded);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
 
-        Assert.IsTrue(restore.Succeeded);
+        Assert.True(restore.Succeeded);
         // ValidationWarnings is null OR empty when nothing violates.
         // The implementation returns null when the warnings list is empty
         // (RestoreResult ctor argument), so prefer the IsNull check; fall
         // back to Count == 0 for resilience to a future shape change.
         if (restore.ValidationWarnings is not null)
         {
-            Assert.AreEqual(0, restore.ValidationWarnings.Count);
+            Assert.Empty(restore.ValidationWarnings);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_SchemasDirectoryStripped_GracefullySkipsValidation()
     {
         // Old backups (pre-Schemas-bundle) didn't include a Schemas/
@@ -805,25 +810,25 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded);
+        Assert.True(create.Succeeded);
 
         // Strip every Schemas/ entry from the zip after creation.
         StripZipEntries(dest, e => e.FullName.StartsWith("Schemas/", StringComparison.Ordinal));
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded,
+        Assert.True(restore.Succeeded,
             "Restore from a pre-Schemas backup must still succeed — old backups are valid.");
 
         // No schemas → no warnings, even though the settings file would
         // have violated had a schema been present.
         if (restore.ValidationWarnings is not null)
         {
-            Assert.AreEqual(0, restore.ValidationWarnings.Count);
+            Assert.Empty(restore.ValidationWarnings);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_CorruptSchemaEntryInBackup_DoesNotCrash()
     {
         // The validator catches per-schema parse failures inside the
@@ -835,7 +840,7 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded);
+        Assert.True(create.Succeeded);
 
         // Mangle one schema entry's content to be unparseable.
         OverwriteZipEntry(dest, "Schemas/claude-code-settings.json",
@@ -843,11 +848,11 @@ public sealed class BackupEngineTests
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded,
+        Assert.True(restore.Succeeded,
             "A corrupt bundled schema must not abort the restore — validation is informational.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_InvalidSchemaEntryInBackup_DoesNotCrash()
     {
         // Sibling of RestoreAsync_CorruptSchemaEntryInBackup_DoesNotCrash, for the OTHER failure
@@ -862,7 +867,7 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded);
+        Assert.True(create.Succeeded);
 
         // Valid JSON, invalid schema: `type` must be a string or array of strings, not a number,
         // so JsonSchema.FromText throws JsonSchemaException while building the node.
@@ -871,11 +876,11 @@ public sealed class BackupEngineTests
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded,
+        Assert.True(restore.Succeeded,
             "A bundled schema that is valid JSON but an invalid JSON-Schema must not abort the restore.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_CorruptSettingsFileInBackup_SkippedFromValidation()
     {
         // The validator's per-file try/catch around JsonNode.Parse silently
@@ -888,7 +893,7 @@ public sealed class BackupEngineTests
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded);
+        Assert.True(create.Succeeded);
 
         // The bundled archive's settings.json appears under
         // ClaudeCode/claude-dir/settings.json. Mangle it.
@@ -897,20 +902,20 @@ public sealed class BackupEngineTests
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded,
+        Assert.True(restore.Succeeded,
             "Restore must tolerate a corrupt settings file in the backup — validation skips it silently.");
 
         // Validation should produce no warnings for the unparseable file
         // (the catch silently skips it; nothing to report).
         if (restore.ValidationWarnings is not null)
         {
-            Assert.IsFalse(
+            Assert.False(
                 restore.ValidationWarnings.Any(w => w.Contains("settings.json", StringComparison.Ordinal)),
                 "Corrupt settings file must NOT produce a warning — the validator skips it before evaluation.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_ValidatesEveryConfigLocationAgainstItsOwnProductsSchema()
     {
         // Written because nothing covered this. Every pre-existing validation test above
@@ -953,12 +958,12 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.True(create.Succeeded, create.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
-        Assert.IsTrue(restore.Succeeded, "Validation is informational — restore must still succeed.");
-        Assert.IsNotNull(restore.ValidationWarnings, "Five violating config files must produce warnings.");
+        Assert.True(restore.Succeeded, "Validation is informational — restore must still succeed.");
+        MessageAssert.NotNull(restore.ValidationWarnings, "Five violating config files must produce warnings.");
 
         // Warnings are formatted "<archive-relative path>: <instance path>: <message>", so
         // each row of the layout table is attributable by path.
@@ -973,7 +978,7 @@ public sealed class BackupEngineTests
 
         foreach ((string archivePath, string property) in cases)
         {
-            Assert.IsTrue(
+            Assert.True(
                 restore.ValidationWarnings!.Any(w =>
                     w.Contains(archivePath, StringComparison.Ordinal)
                     && w.Contains(property, StringComparison.Ordinal)),
@@ -1000,25 +1005,25 @@ public sealed class BackupEngineTests
     //  assertions — and NOTHING asserted the value the engine writes into `clients`.
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void ArchiveFolderNames_AreTheValuesAlreadyOnUsersDisks()
     {
         // Deliberately a value-pinning test. These two strings are baked into every archive
         // ClaudeForge has ever written; they are not free to change, and the only way to say
         // so is to write them down somewhere a change has to walk past.
-        Assert.AreEqual("ClaudeCode", SchemaRegistry.ClaudeCodeArchiveFolder);
-        Assert.AreEqual("ClaudeDesktop", SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
+        Assert.Equal("ClaudeCode", SchemaRegistry.ClaudeCodeArchiveFolder);
+        Assert.Equal("ClaudeDesktop", SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
 
         // Not derived from Id, and must not be "fixed" to match it: the ids were chosen for
         // code, the folder names were already on disk.
-        Assert.AreNotEqual(
+        MessageAssert.NotEqual(
             SchemaRegistry.ClaudeCodeProductId,
             SchemaRegistry.ClaudeCodeArchiveFolder,
             "The two vocabularies differ on purpose — claude-code vs ClaudeCode. Collapsing "
             + "them would orphan every existing archive.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_WritesEachRequestedProductsArchiveFolderIntoTheManifest()
     {
         // The writer side of the same contract, and the gap the folder-rename canary exposed:
@@ -1035,10 +1040,10 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
-        Assert.IsNotNull(create.Manifest);
+        Assert.True(create.Succeeded, create.Message);
+        Assert.NotNull(create.Manifest);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "ClaudeCode", "ClaudeDesktop" },
             create.Manifest!.Clients.ToArray(),
             "The manifest's clients array must carry each requested product's ArchiveFolder, "
@@ -1050,13 +1055,13 @@ public sealed class BackupEngineTests
         List<string> entries = ListEntries(dest);
         foreach (string folder in create.Manifest!.Clients)
         {
-            Assert.IsTrue(
+            Assert.True(
                 entries.Any(e => e.StartsWith(folder + "/", StringComparison.Ordinal)),
                 $"Manifest lists '{folder}' but no archive entry lives under '{folder}/'.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_OmittedProduct_IsAbsentFromTheManifestClientsArray()
     {
         // Counter-direction: without this, a BuildClientList that ignored the request and
@@ -1068,9 +1073,9 @@ public sealed class BackupEngineTests
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.True(create.Succeeded, create.Message);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "ClaudeCode" },
             create.Manifest!.Clients.ToArray(),
             "Only the requested product may appear in the manifest.");
@@ -1102,7 +1107,7 @@ public sealed class BackupEngineTests
     /// OpenCode schema has, and the reason this test is not tautological.
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_BundlesOnlyTheRequestedProductsSchemas()
     {
         string dest = Path.Combine(_fakeHome, "one-product.zip");
@@ -1113,13 +1118,13 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         List<string> schemas = ListBundledSchemas(dest);
 
-        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName,
+        MessageAssert.Contains(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName, schemas,
             "A backup must carry the schema its own config is validated against.");
-        CollectionAssert.DoesNotContain(schemas, SchemaRegistry.ClaudeDesktopProduct.SchemaFileName,
+        MessageAssert.DoesNotContain(SchemaRegistry.ClaudeDesktopProduct.SchemaFileName, schemas,
             "A Claude Code-only archive must not carry another product's schema. That file "
             + "can never match anything RestoreEngine routes, so it is pure weight — and the "
             + "same rule is what keeps a second agent's schemas out of this app's backups.");
@@ -1131,7 +1136,7 @@ public sealed class BackupEngineTests
     /// the base without the overlay would validate on restore against rules the running app
     /// never uses — and nothing would report a difference.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_BundlesEachSchemasOverlayAlongsideIt()
     {
         string dest = Path.Combine(_fakeHome, "overlay.zip");
@@ -1142,13 +1147,13 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         // Claude Code is the product that actually has an overlay resource; asserting the
         // pairing on a product without one would prove nothing.
         string overlay = SchemaRegistry.OverlayFileNameFor(
             SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName);
-        CollectionAssert.Contains(ListBundledSchemas(dest), overlay,
+        MessageAssert.Contains(overlay, ListBundledSchemas(dest),
             $"'{overlay}' is merged onto the base schema at load time, so it has to be in "
             + "the archive too or restore validates against rules the app does not use.");
     }
@@ -1158,7 +1163,7 @@ public sealed class BackupEngineTests
     /// exercises one product at a time, which is how a filter that silently keeps only the
     /// first would survive — so this constructs two deliberately.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_BundlesEveryRequestedProductsSchema_NotJustTheFirst()
     {
         string dest = Path.Combine(_fakeHome, "two-products.zip");
@@ -1169,11 +1174,11 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
         });
 
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         List<string> schemas = ListBundledSchemas(dest);
-        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName);
-        CollectionAssert.Contains(schemas, SchemaRegistry.ClaudeDesktopProduct.SchemaFileName,
+        Assert.Contains(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName, schemas);
+        MessageAssert.Contains(SchemaRegistry.ClaudeDesktopProduct.SchemaFileName, schemas,
             "The second requested product's schema is missing — a loop that stops after the "
             + "first product looks identical to a correct one in every single-product test.");
     }
@@ -1208,7 +1213,7 @@ public sealed class BackupEngineTests
     //      mode is sharing-only.
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_Sanitized_RedactsSecretsInJsonFiles()
     {
         // Seed a settings.json with a secret-bearing env entry and an mcpServers
@@ -1234,7 +1239,7 @@ public sealed class BackupEngineTests
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         // The settings.json entry in the archive must NOT contain the raw
         // secret strings (case-sensitive substring check), and must contain
@@ -1243,18 +1248,18 @@ public sealed class BackupEngineTests
             .Single(e => e.EndsWith("claude-dir/settings.json", StringComparison.Ordinal));
         string text = ReadEntryText(dest, settingsEntry);
 
-        Assert.IsFalse(text.Contains("sk-ant-real", StringComparison.Ordinal),
+        Assert.False(text.Contains("sk-ant-real", StringComparison.Ordinal),
             "Raw env-var secret must not appear in a Sanitized archive.");
-        Assert.IsFalse(text.Contains("ghp_xyz", StringComparison.Ordinal),
+        Assert.False(text.Contains("ghp_xyz", StringComparison.Ordinal),
             "Raw MCP Authorization header must not appear in a Sanitized archive.");
-        Assert.IsTrue(text.Contains("[redacted]", StringComparison.Ordinal),
+        Assert.True(text.Contains("[redacted]", StringComparison.Ordinal),
             "Redaction marker must appear in the sanitized settings.json.");
         // Non-sensitive sibling is preserved.
-        Assert.IsTrue(text.Contains("\"theme\"", StringComparison.Ordinal),
+        Assert.True(text.Contains("\"theme\"", StringComparison.Ordinal),
             "Non-sensitive keys must round-trip through the redactor unchanged.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_Sanitized_SkipsCredentialsFileEvenWhenIncludeCredentialsTrue()
     {
         // Seed a credentials file under ~/.claude — in non-sanitized backups
@@ -1272,10 +1277,10 @@ public sealed class BackupEngineTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             IncludeCredentials = true, // user opted in — sanitized still wins
         });
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
-        Assert.IsFalse(entries.Any(e => e.EndsWith(".credentials.json", StringComparison.Ordinal)),
+        Assert.False(entries.Any(e => e.EndsWith(".credentials.json", StringComparison.Ordinal)),
             "Credentials file must be hard-skipped in Sanitized mode regardless of the flag.");
 
         // Manifest must agree — IncludedCredentials=false records that the
@@ -1285,12 +1290,12 @@ public sealed class BackupEngineTests
         ZipArchiveEntry manifestEntry = archive.GetEntry("manifest.json")!;
         await using Stream ms = await manifestEntry.OpenAsync();
         BackupManifest manifest = JsonSerializer.Deserialize(ms, BackupJsonContext.Default.BackupManifest)!;
-        Assert.IsFalse(manifest.IncludedCredentials,
+        Assert.False(manifest.IncludedCredentials,
             "Manifest must declare credentials excluded in Sanitized mode.");
-        Assert.AreEqual(BackupMode.Sanitized, manifest.Mode);
+        Assert.Equal(BackupMode.Sanitized, manifest.Mode);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_Sanitized_AddsManifestSharingWarning()
     {
         string dest = Path.Combine(_fakeHome, "sanitized-warning.zip");
@@ -1300,7 +1305,7 @@ public sealed class BackupEngineTests
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded);
+        Assert.True(result.Succeeded);
 
         await using FileStream fs = File.OpenRead(dest);
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
@@ -1308,14 +1313,14 @@ public sealed class BackupEngineTests
         await using Stream ms = await manifestEntry.OpenAsync();
         BackupManifest manifest = JsonSerializer.Deserialize(ms, BackupJsonContext.Default.BackupManifest)!;
 
-        Assert.IsTrue(manifest.Warnings.Any(w =>
+        Assert.True(manifest.Warnings.Any(w =>
                 w.Contains("Sanitized backup", StringComparison.OrdinalIgnoreCase) &&
                 w.Contains("Not restorable", StringComparison.OrdinalIgnoreCase)),
             "Sanitized backups must carry a manifest warning naming the contract " +
             "(redaction + non-restorable).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreAsync_SanitizedBackup_IsRefusedWithClearMessage()
     {
         // Build a sanitized backup, then attempt to restore it — the engine
@@ -1334,18 +1339,18 @@ public sealed class BackupEngineTests
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(create.Succeeded, create.Message);
+        Assert.True(create.Succeeded, create.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(backupDir);
-        Assert.AreEqual(1, entries.Count);
-        Assert.AreEqual(BackupMode.Sanitized, entries[0].Manifest!.Mode);
+        Assert.Single(entries);
+        Assert.Equal(BackupMode.Sanitized, entries[0].Manifest!.Mode);
 
         RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
 
-        Assert.IsFalse(restore.Succeeded, "Sanitized backups must not be restorable.");
-        Assert.IsTrue(restore.Message.Contains("sanitized", StringComparison.OrdinalIgnoreCase),
+        Assert.False(restore.Succeeded, "Sanitized backups must not be restorable.");
+        Assert.True(restore.Message.Contains("sanitized", StringComparison.OrdinalIgnoreCase),
             $"Refusal message should name the sanitized contract; got: {restore.Message}");
-        Assert.AreEqual(0, restore.ItemsRestored);
+        Assert.Equal(0, restore.ItemsRestored);
     }
 
     /// <summary>Removes every entry matching <paramref name="predicate"/> from the zip in-place.</summary>
@@ -1379,7 +1384,7 @@ public sealed class BackupEngineTests
     //  H1 — Expanded sanitized redaction (text + JSON, parallel precompute)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_Sanitized_RedactsHookScriptShellAssignment()
     {
         // Plant a hook script (non-JSON) with a hard-coded Anthropic
@@ -1399,27 +1404,26 @@ public sealed class BackupEngineTests
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
-        Assert.IsTrue(result.Succeeded, result.Message);
+        Assert.True(result.Succeeded, result.Message);
 
         string hookEntryName = ListEntries(dest)
             .Single(e => e.EndsWith("hooks/post-prompt.sh", StringComparison.Ordinal));
         string text = ReadEntryText(dest, hookEntryName);
 
-        Assert.IsFalse(text.Contains("sk-ant-AAA", StringComparison.Ordinal),
+        Assert.False(text.Contains("sk-ant-AAA", StringComparison.Ordinal),
             "Raw Anthropic key inside a hook .sh must not survive Sanitized backup.");
-        Assert.IsTrue(text.Contains("[redacted]", StringComparison.Ordinal),
+        Assert.True(text.Contains("[redacted]", StringComparison.Ordinal),
             "Redaction marker must appear in the sanitized hook script.");
-        Assert.IsTrue(text.Contains("ANTHROPIC_API_KEY"),
+        Assert.True(text.Contains("ANTHROPIC_API_KEY"),
             "Shell-style redaction must preserve the variable name (diagnostic value).");
-        Assert.IsTrue(text.Contains("#!/bin/bash"),
+        Assert.True(text.Contains("#!/bin/bash"),
             "Non-secret content (shebang) must round-trip unchanged.");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  H1 — PrecomputeTransformsAsync (parallel pre-commit transform)
     // ═══════════════════════════════════════════════════════════════════════
-    [Ignore("Flaky test")]
-    [TestMethod]
+    [Fact(Skip = "Flaky test")]
     public async Task PrecomputeTransformsAsync_RunsInParallel_AcrossMultipleEntries()
     {
         // Probe the parallel path directly via ZipArchiveWriter so the
@@ -1464,18 +1468,18 @@ public sealed class BackupEngineTests
         await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: parallel);
         sw.Stop();
 
-        Assert.AreEqual(fileCount, hits, "Every queued source entry must be transformed.");
-        Assert.IsTrue(sw.ElapsedMilliseconds < worstCaseMs * 3 / 4,
+        MessageAssert.Equal(fileCount, hits, "Every queued source entry must be transformed.");
+        Assert.True(sw.ElapsedMilliseconds < worstCaseMs * 3 / 4,
             $"Parallel precompute should run far faster than serial worst case ({worstCaseMs} ms). " +
             $"Actual: {sw.ElapsedMilliseconds} ms; serial floor would be {worstCaseMs} ms.");
 
         // Sanity: the precomputed strings actually land in the archive.
         await writer.CommitAsync();
         string sample = ReadEntryText(dest, "x/f0.txt");
-        Assert.AreEqual("transformed:f0.txt", sample);
+        Assert.Equal("transformed:f0.txt", sample);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PrecomputeTransformsAsync_ExceptionPerFile_SkipsThatEntryOnly()
     {
         // A transformer that throws for one specific file: that file
@@ -1498,21 +1502,21 @@ public sealed class BackupEngineTests
 
         await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: 2);
 
-        Assert.IsTrue(writer.SkippedFiles.Any(p => p.EndsWith("bad.txt", StringComparison.Ordinal)),
+        Assert.True(writer.SkippedFiles.Any(p => p.EndsWith("bad.txt", StringComparison.Ordinal)),
             "Failed transformer file must appear in SkippedFiles.");
 
         // The commit must still succeed (and bad.txt will fail again on
         // the synchronous fallback path, adding to SkippedFiles a 2nd
         // time — that's expected mirroring of the non-precompute path).
         await writer.CommitAsync();
-        Assert.IsTrue(File.Exists(dest));
+        Assert.True(File.Exists(dest));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  M2 — BuildSanitizationPlaceholder uses JsonSerializer (escape correctness)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public void BuildSanitizationPlaceholder_ControlCharsInFilename_ProducesValidJson()
     {
         // Pre-fix, hand-rolled escaping only handled \ and " — a control
@@ -1527,11 +1531,11 @@ public sealed class BackupEngineTests
         // Round-trip: both must parse cleanly as JSON.
         JsonNode? doc1 = JsonNode.Parse(placeholder1);
         JsonNode? doc2 = JsonNode.Parse(placeholder2);
-        Assert.IsNotNull(doc1);
-        Assert.IsNotNull(doc2);
+        Assert.NotNull(doc1);
+        Assert.NotNull(doc2);
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildSanitizationPlaceholder_FilenameOnly_DoesNotLeakFullPath()
     {
         // Path.GetFileName strips the directory; placeholder must not
@@ -1540,30 +1544,30 @@ public sealed class BackupEngineTests
         string fullPath = Path.Combine("C:\\Users\\someone\\.claude", "settings.json");
         string placeholder = BackupEngine.BuildSanitizationPlaceholder(fullPath, "io-failure");
 
-        Assert.IsFalse(placeholder.Contains("someone", StringComparison.Ordinal),
+        Assert.False(placeholder.Contains("someone", StringComparison.Ordinal),
             "Username from the source path must not appear in the placeholder.");
-        Assert.IsFalse(placeholder.Contains(".claude", StringComparison.Ordinal),
+        Assert.False(placeholder.Contains(".claude", StringComparison.Ordinal),
             "Directory components must not appear in the placeholder.");
 
         JsonObject parsed = JsonNode.Parse(placeholder)!.AsObject();
-        Assert.AreEqual("settings.json", (string?)parsed["_file"]);
+        Assert.Equal("settings.json", (string?)parsed["_file"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void BuildSanitizationPlaceholder_ReasonWithQuotes_RoundTrips()
     {
         string reason = "redaction-failed: \"unexpected token\" at line 1";
         string placeholder = BackupEngine.BuildSanitizationPlaceholder("foo.json", reason);
 
         JsonObject parsed = JsonNode.Parse(placeholder)!.AsObject();
-        Assert.AreEqual(reason, (string?)parsed["_claudeforge_sanitization_error"]);
+        Assert.Equal(reason, (string?)parsed["_claudeforge_sanitization_error"]);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  MOutOfMemoryException in transformer is caught + skipped (proxy)
     // ═══════════════════════════════════════════════════════════════════════
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_TransformerThrowsOutOfMemory_SkipsFileAndSucceeds()
     {
         // Throwing a real OOM is impractical and would crash the test
@@ -1592,13 +1596,13 @@ public sealed class BackupEngineTests
 
         // Precompute should record the failure without throwing.
         await writer.PrecomputeTransformsAsync();
-        Assert.IsTrue(writer.SkippedFiles.Any(p => p.EndsWith("oom.json", StringComparison.Ordinal)),
+        Assert.True(writer.SkippedFiles.Any(p => p.EndsWith("oom.json", StringComparison.Ordinal)),
             "OOM during transform must add the file to SkippedFiles.");
 
         // Commit must still succeed for the other file.
         long bytes = await writer.CommitAsync();
-        Assert.IsTrue(bytes > 0);
-        Assert.IsTrue(File.Exists(dest));
+        Assert.True(bytes > 0);
+        Assert.True(File.Exists(dest));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1614,7 +1618,7 @@ public sealed class BackupEngineTests
     // additionalDirectories declarations).
     // ─────────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_WithExplicitProjectDir_IncludesProjectClaudeDirectory()
     {
         // Build a sandboxed project root SEPARATE from _fakeHome so the engine
@@ -1642,18 +1646,18 @@ public sealed class BackupEngineTests
                 ExplicitProjectDirs = new[] { projectRoot },
             });
 
-            Assert.IsTrue(result.Succeeded, result.Message);
-            Assert.IsTrue(File.Exists(dest));
+            Assert.True(result.Succeeded, result.Message);
+            Assert.True(File.Exists(dest));
 
             List<string> entries = ListEntries(dest);
             string expectedSettingsEntry = $"ClaudeCode/projects/{projectName}/.claude/settings.json";
             string expectedClaudeMdEntry = $"ClaudeCode/projects/{projectName}/CLAUDE.md";
 
-            Assert.IsTrue(entries.Any(e => e.EndsWith(expectedSettingsEntry, StringComparison.Ordinal)),
+            Assert.True(entries.Any(e => e.EndsWith(expectedSettingsEntry, StringComparison.Ordinal)),
                 $"Archive must contain '{expectedSettingsEntry}' — the project's `.claude/settings.json` " +
                 "is the primary file ExplicitProjectDirs exists to surface.  " +
                 $"Archive contained {entries.Count} entries.");
-            Assert.IsTrue(entries.Any(e => e.EndsWith(expectedClaudeMdEntry, StringComparison.Ordinal)),
+            Assert.True(entries.Any(e => e.EndsWith(expectedClaudeMdEntry, StringComparison.Ordinal)),
                 $"Archive must contain '{expectedClaudeMdEntry}' — project-level CLAUDE.md " +
                 "is added by the same code path as the `.claude` directory.");
         }
@@ -1700,7 +1704,7 @@ public sealed class BackupEngineTests
     //      premise).
     // ─────────────────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_FullMode_IncludesAllKnownProjectsClaudeDirectories()
     {
         // Two project roots on disk, both registered in ~/.claude.json.
@@ -1734,22 +1738,22 @@ public sealed class BackupEngineTests
                 // project selected" path the user asked about.
             });
 
-            Assert.IsTrue(result.Succeeded, result.Message);
+            Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
 
-            Assert.IsTrue(entries.Any(e =>
+            Assert.True(entries.Any(e =>
                 e.EndsWith($"ClaudeCode/projects/{nameA}/.claude/settings.json", StringComparison.Ordinal)),
                 $"Full mode must include project A's `.claude/settings.json`. " +
                 $"Archive contained {entries.Count} entries.");
-            Assert.IsTrue(entries.Any(e =>
+            Assert.True(entries.Any(e =>
                 e.EndsWith($"ClaudeCode/projects/{nameA}/CLAUDE.md", StringComparison.Ordinal)),
                 "Full mode must include project A's CLAUDE.md.");
 
-            Assert.IsTrue(entries.Any(e =>
+            Assert.True(entries.Any(e =>
                 e.EndsWith($"ClaudeCode/projects/{nameB}/.claude/settings.json", StringComparison.Ordinal)),
                 "Full mode must include project B's `.claude/settings.json` " +
                 "(known via ~/.claude.json — pre-fix this was silently absent).");
-            Assert.IsTrue(entries.Any(e =>
+            Assert.True(entries.Any(e =>
                 e.EndsWith($"ClaudeCode/projects/{nameB}/CLAUDE.md", StringComparison.Ordinal)),
                 "Full mode must include project B's CLAUDE.md.");
         }
@@ -1763,7 +1767,7 @@ public sealed class BackupEngineTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_FullMode_SilentlySkipsNonExistentKnownProjects_WithManifestWarning()
     {
         // ~/.claude.json lists two paths: one exists on disk, one doesn't.
@@ -1788,21 +1792,21 @@ public sealed class BackupEngineTests
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
 
-            Assert.IsTrue(result.Succeeded, result.Message);
-            Assert.IsNotNull(result.Manifest);
-            Assert.IsTrue(result.Manifest!.Warnings.Any(w => w.Contains("skipped 1 known project", StringComparison.OrdinalIgnoreCase)),
+            Assert.True(result.Succeeded, result.Message);
+            Assert.NotNull(result.Manifest);
+            Assert.True(result.Manifest!.Warnings.Any(w => w.Contains("skipped 1 known project", StringComparison.OrdinalIgnoreCase)),
                 "Manifest.Warnings must carry the stale-project count.  Found: [" +
                 string.Join(", ", result.Manifest.Warnings) + "]");
 
             // The existing project's content IS in the archive.
             List<string> entries = ListEntries(dest);
-            Assert.IsTrue(entries.Any(e =>
+            Assert.True(entries.Any(e =>
                 e.EndsWith($"ClaudeCode/projects/{nameExisting}/.claude/settings.json", StringComparison.Ordinal)),
                 "The existing project's settings.json must still appear in the archive.");
 
             // The ghost project's name must NOT appear anywhere.
             string ghostName = Path.GetFileName(projGhost);
-            Assert.IsFalse(entries.Any(e => e.Contains($"projects/{ghostName}/", StringComparison.Ordinal)),
+            Assert.False(entries.Any(e => e.Contains($"projects/{ghostName}/", StringComparison.Ordinal)),
                 "The non-existent project must be silently dropped from the archive.");
         }
         finally
@@ -1812,7 +1816,7 @@ public sealed class BackupEngineTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_SettingsOnly_DoesNotExpandToKnownProjects()
     {
         // Same ~/.claude.json fixture as Full-mode test, but with
@@ -1834,10 +1838,10 @@ public sealed class BackupEngineTests
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             });
 
-            Assert.IsTrue(result.Succeeded, result.Message);
+            Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
 
-            Assert.IsFalse(entries.Any(e =>
+            Assert.False(entries.Any(e =>
                 e.Contains($"projects/{nameKnown}/", StringComparison.Ordinal)),
                 "SettingsOnly mode must NOT expand to known projects from ~/.claude.json — " +
                 "that's a Full-mode-only behaviour by design.  Found unexpected project entries.");
@@ -1849,7 +1853,7 @@ public sealed class BackupEngineTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_FullMode_DedupesExplicitProjectAgainstKnownProjects()
     {
         // A single project is both explicitly selected AND listed in
@@ -1875,7 +1879,7 @@ public sealed class BackupEngineTests
                 ExplicitProjectDirs = new[] { projShared },  // same path also in .claude.json
             });
 
-            Assert.IsTrue(result.Succeeded, result.Message);
+            Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
 
             // The project's settings.json + CLAUDE.md appear exactly once.
@@ -1884,10 +1888,10 @@ public sealed class BackupEngineTests
             int memoryCount = entries.Count(e =>
                 e.EndsWith($"ClaudeCode/projects/{nameShared}/CLAUDE.md", StringComparison.Ordinal));
 
-            Assert.AreEqual(1, settingsCount,
+            MessageAssert.Equal(1, settingsCount,
                 $"Explicit-project + same-path-in-.claude.json must dedup to one settings.json " +
                 $"entry.  Got {settingsCount}.");
-            Assert.AreEqual(1, memoryCount,
+            MessageAssert.Equal(1, memoryCount,
                 $"Same dedup contract applies to CLAUDE.md.  Got {memoryCount}.");
         }
         finally
@@ -1897,7 +1901,7 @@ public sealed class BackupEngineTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CreateAsync_WithExplicitProjectDir_DiscoversAdditionalDirectories()
     {
         // The project declares `additionalDirectories` in its settings.json
@@ -1938,11 +1942,11 @@ public sealed class BackupEngineTests
                 ExplicitProjectDirs = new[] { projectRoot },
             });
 
-            Assert.IsTrue(result.Succeeded, result.Message);
+            Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
 
             // Primary archive entry for the project remains present.
-            Assert.IsTrue(entries.Any(e =>
+            Assert.True(entries.Any(e =>
                 e.EndsWith($"ClaudeCode/projects/{projectName}/.claude/settings.json", StringComparison.Ordinal)),
                 "Primary project settings entry must still appear (sanity check on the additionalDirs test).");
 
@@ -1953,7 +1957,7 @@ public sealed class BackupEngineTests
             // settings file was missing from its input list), so this
             // CLAUDE.md was silently absent from the archive.
             string expectedSiblingClaude = $"ClaudeCode/projects/{siblingName}/CLAUDE.md";
-            Assert.IsTrue(entries.Any(e => e.EndsWith(expectedSiblingClaude, StringComparison.Ordinal)),
+            Assert.True(entries.Any(e => e.EndsWith(expectedSiblingClaude, StringComparison.Ordinal)),
                 $"Archive must contain '{expectedSiblingClaude}' — the sibling's CLAUDE.md.  " +
                 $"AdditionalDirectoriesResolver receives the project's `.claude/settings.json` " +
                 $"via CollectSettingsFilesForDiscovery, picks up the absolute path declaration, " +

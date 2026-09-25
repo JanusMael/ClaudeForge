@@ -11,12 +11,11 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// and the guarantee that projecting NEVER loses un-modelled keys from the
 /// underlying <see cref="FrontMatter"/>.
 /// </summary>
-[TestClass]
 public sealed class FrontMatterProjectionTests
 {
     // ── AgentFrontMatter ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Agent_From_ReadsAllCanonicalScalars()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -29,13 +28,13 @@ public sealed class FrontMatterProjectionTests
 
         AgentFrontMatter agent = AgentFrontMatter.From(fm);
 
-        Assert.AreEqual("code-reviewer", agent.Name);
-        Assert.AreEqual("Expert reviewer", agent.Description);
-        Assert.AreEqual("sonnet", agent.Model);
-        CollectionAssert.AreEqual(new[] { "Read", "Grep", "Bash" }, agent.Tools.ToArray());
+        Assert.Equal("code-reviewer", agent.Name);
+        Assert.Equal("Expert reviewer", agent.Description);
+        Assert.Equal("sonnet", agent.Model);
+        Assert.Equal(new[] { "Read", "Grep", "Bash" }, agent.Tools.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_From_CommaScalarTools_SplitToList()
     {
         // Claude Code's native form: tools is a comma-separated scalar.
@@ -44,11 +43,11 @@ public sealed class FrontMatterProjectionTests
 
         AgentFrontMatter agent = AgentFrontMatter.From(fm);
 
-        CollectionAssert.AreEqual(new[] { "Read", "Grep", "Glob", "Bash" }, agent.Tools.ToArray(),
+        MessageAssert.SequenceEqual(new[] { "Read", "Grep", "Glob", "Bash" }, agent.Tools.ToArray(),
             "A comma-separated scalar tools value must split into a trimmed list.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_From_YamlListTools_ReadAsList()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -56,32 +55,32 @@ public sealed class FrontMatterProjectionTests
 
         AgentFrontMatter agent = AgentFrontMatter.From(fm);
 
-        CollectionAssert.AreEqual(new[] { "Read", "Grep" }, agent.Tools.ToArray(),
+        MessageAssert.SequenceEqual(new[] { "Read", "Grep" }, agent.Tools.ToArray(),
             "A YAML block-list tools value must read as a list directly.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_From_AbsentKeys_AreNullOrEmpty()
     {
         FrontMatter fm = YamlFrontMatter.Parse("---\nname: only-name\n---\n\nBody.\n");
 
         AgentFrontMatter agent = AgentFrontMatter.From(fm);
 
-        Assert.AreEqual("only-name", agent.Name);
-        Assert.IsNull(agent.Description);
-        Assert.IsNull(agent.Model);
-        Assert.AreEqual(0, agent.Tools.Count, "Absent tools key projects to an empty list, not null.");
+        Assert.Equal("only-name", agent.Name);
+        Assert.Null(agent.Description);
+        Assert.Null(agent.Model);
+        MessageAssert.Equal(0, agent.Tools.Count, "Absent tools key projects to an empty list, not null.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_KnownKeys_AreNameDescriptionToolsModel()
     {
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "name", "description", "tools", "model" },
             AgentFrontMatter.KnownKeys.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Agent_Projection_DoesNotLoseExtraKeys()
     {
         // The projection is read-only over FrontMatter; an unknown key it
@@ -92,14 +91,14 @@ public sealed class FrontMatterProjectionTests
 
         _ = AgentFrontMatter.From(fm);
 
-        Assert.AreEqual("blue", fm.FindScalar("color"),
+        MessageAssert.Equal("blue", fm.FindScalar("color"),
             "Projecting to AgentFrontMatter must not mutate or lose un-modelled keys.");
-        StringAssert.Contains(YamlFrontMatter.Compose(fm), "color: blue");
+        OrdinalAssert.Contains("color: blue", YamlFrontMatter.Compose(fm));
     }
 
     // ── SkillFrontMatter ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Skill_From_ReadsNameAndDescription()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -107,19 +106,19 @@ public sealed class FrontMatterProjectionTests
 
         SkillFrontMatter skill = SkillFrontMatter.From(fm);
 
-        Assert.AreEqual("pdf-tools", skill.Name);
-        Assert.AreEqual("Work with PDFs", skill.Description);
+        Assert.Equal("pdf-tools", skill.Name);
+        Assert.Equal("Work with PDFs", skill.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void Skill_KnownKeys_AreNameAndDescription()
     {
-        CollectionAssert.AreEqual(new[] { "name", "description" }, SkillFrontMatter.KnownKeys.ToArray());
+        Assert.Equal(new[] { "name", "description" }, SkillFrontMatter.KnownKeys.ToArray());
     }
 
     // ── SlashCommandFrontMatter ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SlashCommand_From_ReadsDescription()
     {
         FrontMatter fm = YamlFrontMatter.Parse(
@@ -127,16 +126,16 @@ public sealed class FrontMatterProjectionTests
 
         SlashCommandFrontMatter cmd = SlashCommandFrontMatter.From(fm);
 
-        Assert.AreEqual("Summarise the current PR", cmd.Description);
+        Assert.Equal("Summarise the current PR", cmd.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void SlashCommand_KnownKeys_AreDescriptionOnly()
     {
-        CollectionAssert.AreEqual(new[] { "description" }, SlashCommandFrontMatter.KnownKeys.ToArray());
+        Assert.Equal(new[] { "description" }, SlashCommandFrontMatter.KnownKeys.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void SlashCommand_From_NoFrontMatter_DescriptionIsNull()
     {
         // A command file may be just a prompt body with no front-matter.
@@ -144,7 +143,7 @@ public sealed class FrontMatterProjectionTests
 
         SlashCommandFrontMatter cmd = SlashCommandFrontMatter.From(fm);
 
-        Assert.IsNull(cmd.Description);
+        Assert.Null(cmd.Description);
     }
 
     // ── Block-scalar descriptions, across all three projections ──────────
@@ -156,7 +155,7 @@ public sealed class FrontMatterProjectionTests
     /// ClaudeForge's editor.  Each is asserted separately because each is a separate call site
     /// that could regress on its own.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AllThreeProjections_ReadAFoldedDescription_NotTheMarker()
     {
         const string Folded =
@@ -172,16 +171,16 @@ public sealed class FrontMatterProjectionTests
         SlashCommandFrontMatter command = SlashCommandFrontMatter.From(
             YamlFrontMatter.Parse($"---\n{Folded}---\n\nBody.\n"));
 
-        Assert.AreEqual(Expected, skill.Description, "SkillFrontMatter reads the folded text.");
-        Assert.AreEqual(Expected, agent.Description, "AgentFrontMatter reads the folded text.");
-        Assert.AreEqual(Expected, command.Description, "SlashCommandFrontMatter reads the folded text.");
+        MessageAssert.Equal(Expected, skill.Description, "SkillFrontMatter reads the folded text.");
+        MessageAssert.Equal(Expected, agent.Description, "AgentFrontMatter reads the folded text.");
+        MessageAssert.Equal(Expected, command.Description, "SlashCommandFrontMatter reads the folded text.");
     }
 
     /// <summary>
     /// The block scalar must not swallow the keys under it — an agent that lost its
     /// <c>model</c> / <c>tools</c> would be a worse bug than the one being fixed.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Agent_FoldedDescription_DoesNotSwallowTheKeysBelowIt()
     {
         AgentFrontMatter agent = AgentFrontMatter.From(YamlFrontMatter.Parse(
@@ -193,23 +192,23 @@ public sealed class FrontMatterProjectionTests
             "tools: Read, Grep\n" +
             "---\n\nBody.\n"));
 
-        Assert.AreEqual("code-reviewer", agent.Name);
-        Assert.AreEqual("Reviews code.", agent.Description);
-        Assert.AreEqual("sonnet", agent.Model);
-        CollectionAssert.AreEqual(new[] { "Read", "Grep" }, agent.Tools.ToArray());
+        Assert.Equal("code-reviewer", agent.Name);
+        Assert.Equal("Reviews code.", agent.Description);
+        Assert.Equal("sonnet", agent.Model);
+        Assert.Equal(new[] { "Read", "Grep" }, agent.Tools.ToArray());
     }
 
     /// <summary>
     /// ⚠ <c>tools</c> is read as a comma-separated scalar, so a folded one has to split the same
     /// way — otherwise the whole allow-list arrives as a single bogus tool name.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Agent_FoldedToolsScalar_StillSplitsOnCommas()
     {
         AgentFrontMatter agent = AgentFrontMatter.From(YamlFrontMatter.Parse(
             "---\ntools: >-\n  Read, Grep,\n  Bash\n---\n\nBody.\n"));
 
-        CollectionAssert.AreEqual(new[] { "Read", "Grep", "Bash" }, agent.Tools.ToArray(),
+        MessageAssert.SequenceEqual(new[] { "Read", "Grep", "Bash" }, agent.Tools.ToArray(),
             "Folding happens first, then the comma split — a wrapped tools list is one value.");
     }
 }

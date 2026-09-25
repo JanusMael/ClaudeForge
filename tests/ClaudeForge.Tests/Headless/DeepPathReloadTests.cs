@@ -30,13 +30,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// failing and no error logged.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class DeepPathReloadTests
+public sealed class DeepPathReloadTests : IDisposable
 {
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public DeepPathReloadTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_deeppath_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -57,8 +57,7 @@ public sealed class DeepPathReloadTests
             "---\nname: other\ndescription: Something else\n---\n\nB.\n");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         DebugFlags.ResetForTesting();
         PlatformPaths.TestUserProfileOverride = null;
@@ -73,6 +72,12 @@ public sealed class DeepPathReloadTests
         {
             _ = ex;
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private static void WriteArtifact(string path, string content)
@@ -121,7 +126,7 @@ public sealed class DeepPathReloadTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Reload_RestoresSegmentArtifactAndTheUnsavedEditBuffer()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -143,24 +148,24 @@ public sealed class DeepPathReloadTests
         await SettleRestoreAsync(vm);
 
         AgentsSkillsEditorViewModel after = CurrentAgentsSkills(vm);
-        Assert.AreNotSame(before, after, "Precondition: reload must rebuild the editor VM.");
+        MessageAssert.NotSame(before, after, "Precondition: reload must rebuild the editor VM.");
 
-        Assert.AreEqual(1, after.SelectedSegmentIndex, "The Skills segment must come back selected.");
-        Assert.AreEqual("pdf", after.SelectedArtifact?.DisplayName, "The open artifact must come back.");
-        Assert.IsTrue(after.IsEditing, "The editing experience must come back.");
-        Assert.AreEqual("typed but never saved", after.EditDescription,
+        MessageAssert.Equal(1, after.SelectedSegmentIndex, "The Skills segment must come back selected.");
+        MessageAssert.Equal("pdf", after.SelectedArtifact?.DisplayName, "The open artifact must come back.");
+        Assert.True(after.IsEditing, "The editing experience must come back.");
+        MessageAssert.Equal("typed but never saved", after.EditDescription,
             "The user's UNSAVED text must survive the reload — not the value re-read from disk.");
-        Assert.AreEqual("half-written body", after.EditBody);
+        Assert.Equal("half-written body", after.EditBody);
 
         // Nothing was saved, so the file is untouched.
         string onDisk = await File.ReadAllTextAsync(
             Path.Combine(_sandbox, ".claude", "skills", "pdf", "SKILL.md"));
-        StringAssert.Contains(onDisk, "description: PDF tools");
+        OrdinalAssert.Contains("description: PDF tools", onDisk);
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Reload_RevealsTheRestoredItemByFiltering_WithTheNavigatedFrame()
     {
         MainWindowViewModel vm = BuildViewModel();
@@ -176,21 +181,21 @@ public sealed class DeepPathReloadTests
 
         AgentsSkillsEditorViewModel after = CurrentAgentsSkills(vm);
 
-        Assert.AreEqual("pdf", after.FilterText, "The item is revealed by filtering to it.");
-        Assert.IsTrue(after.FilterFromNavigation,
+        MessageAssert.Equal("pdf", after.FilterText, "The item is revealed by filtering to it.");
+        Assert.True(after.FilterFromNavigation,
             "The filter came from navigation, so the orange navigated frame must show.");
-        Assert.AreEqual(1, after.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count(),
+        MessageAssert.Equal(1, after.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count(),
             "The list should be narrowed to the restored item.");
 
         // Clearing returns the full list AND drops the frame.
         after.ClearFilterCommand.Execute(null);
-        Assert.AreEqual(2, after.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count());
-        Assert.IsFalse(after.FilterFromNavigation);
+        Assert.Equal(2, after.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count());
+        Assert.False(after.FilterFromNavigation);
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Reload_DoesNotBlankAPersistedDeepPath()
     {
         // THE regression guard. During a reload, RestoreSelectedNode sets
@@ -216,16 +221,16 @@ public sealed class DeepPathReloadTests
         await SettleRestoreAsync(vm);
 
         string? afterReload = ReadPersistedDeepPath();
-        Assert.IsFalse(string.IsNullOrEmpty(afterReload),
+        Assert.False(string.IsNullOrEmpty(afterReload),
             "A reload must never blank the persisted deep path.");
-        StringAssert.Contains(afterReload!, "agents-skills");
-        StringAssert.Contains(afterReload!, "pdf",
+        OrdinalAssert.Contains("agents-skills", afterReload!);
+        MessageAssert.Contains("pdf", afterReload!,
             "The persisted path must still name the artifact after a reload.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task NavigatingAway_PersistsTheDeepPath_ThenLeavingForAPlainPageReplacesIt()
     {
         // `_lastDeepPath` must describe where the user ACTUALLY is, not merely the
@@ -245,22 +250,22 @@ public sealed class DeepPathReloadTests
             n => n.NodeId == MainWindowViewModel.NavIdEssentials);
 
         string? captured = ReadPersistedDeepPath();
-        Assert.IsNotNull(captured, "Navigating away from the page must persist a deep path.");
-        StringAssert.Contains(captured!, "agents-skills");
-        StringAssert.Contains(captured!, "pdf");
+        MessageAssert.NotNull(captured, "Navigating away from the page must persist a deep path.");
+        OrdinalAssert.Contains("agents-skills", captured!);
+        OrdinalAssert.Contains("pdf", captured!);
 
         // Now leave Essentials too: the path must follow the user, not stay stale.
         vm.SelectedNode = vm.NavigationTree.First(
             n => n.NodeId == MainWindowViewModel.NavIdBackupRestore);
 
         string? moved = ReadPersistedDeepPath();
-        Assert.AreEqual(MainWindowViewModel.NavIdEssentials, moved,
+        MessageAssert.Equal(MainWindowViewModel.NavIdEssentials, moved,
             "Leaving a plain page must replace the stale artifact path with that page.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task QuittingWithAnItemOpen_PersistsThatItem()
     {
         // Quitting straight from an open artifact never fires the navigate-away
@@ -279,15 +284,15 @@ public sealed class DeepPathReloadTests
         vm.SaveWindowState();
 
         string? persisted = ReadPersistedDeepPath();
-        Assert.IsNotNull(persisted, "Shutdown must persist the in-page position.");
-        StringAssert.Contains(persisted!, "agents-skills");
-        StringAssert.Contains(persisted!, "skills");
-        StringAssert.Contains(persisted!, "pdf");
+        MessageAssert.NotNull(persisted, "Shutdown must persist the in-page position.");
+        OrdinalAssert.Contains("agents-skills", persisted!);
+        OrdinalAssert.Contains("skills", persisted!);
+        OrdinalAssert.Contains("pdf", persisted!);
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ColdLaunch_RestoresTheItemButNotEditMode()
     {
         // The agreed cold-launch behaviour: locate the item, don't re-enter the
@@ -312,16 +317,16 @@ public sealed class DeepPathReloadTests
         await second.LoadAllWorkspacesAsync();
         await SettleRestoreAsync(second);
 
-        Assert.AreEqual(MainWindowViewModel.NavIdAgentsSkills, second.SelectedNode?.NodeId);
+        Assert.Equal(MainWindowViewModel.NavIdAgentsSkills, second.SelectedNode?.NodeId);
         AgentsSkillsEditorViewModel restored = CurrentAgentsSkills(second);
-        Assert.AreEqual(1, restored.SelectedSegmentIndex);
-        Assert.AreEqual("pdf", restored.SelectedArtifact?.DisplayName, "The item must be located…");
-        Assert.IsFalse(restored.IsEditing, "…but edit mode must NOT be re-entered on a cold launch.");
+        Assert.Equal(1, restored.SelectedSegmentIndex);
+        MessageAssert.Equal("pdf", restored.SelectedArtifact?.DisplayName, "The item must be located…");
+        Assert.False(restored.IsEditing, "…but edit mode must NOT be re-entered on a cold launch.");
 
         second.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Reload_DoesNotPersistTheUnsavedEditBuffer()
     {
         // The transient payload is contractually in-memory-only. An unsaved
@@ -344,14 +349,14 @@ public sealed class DeepPathReloadTests
         if (File.Exists(statePath))
         {
             string json = await File.ReadAllTextAsync(statePath);
-            Assert.IsFalse(json.Contains("SENTINEL-UNSAVED-TEXT", StringComparison.Ordinal),
+            Assert.False(json.Contains("SENTINEL-UNSAVED-TEXT", StringComparison.Ordinal),
                 "The unsaved edit buffer must never be written to the UI-state file.");
         }
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Reload_LeavesTheBackStackAlone()
     {
         // A restore is not a user navigation, so it must not offer a Back
@@ -365,12 +370,12 @@ public sealed class DeepPathReloadTests
         await vm.ReloadCommand.ExecuteAsync(null);
         await SettleRestoreAsync(vm);
 
-        Assert.IsFalse(vm.CanGoBack, "A deep-path restore must not populate the deep-link back stack.");
+        Assert.False(vm.CanGoBack, "A deep-path restore must not populate the deep-link back stack.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeepLinkArgument_LandsOnTheTargetItem()
     {
         DebugFlags.Initialize(["--deep-link", "agents-skills/skills/pdf"]);
@@ -379,17 +384,17 @@ public sealed class DeepPathReloadTests
         await vm.LoadAllWorkspacesAsync();
         await SettleRestoreAsync(vm);
 
-        Assert.AreEqual(MainWindowViewModel.NavIdAgentsSkills, vm.SelectedNode?.NodeId,
+        MessageAssert.Equal(MainWindowViewModel.NavIdAgentsSkills, vm.SelectedNode?.NodeId,
             "--deep-link must select the addressed page.");
 
         AgentsSkillsEditorViewModel editor = CurrentAgentsSkills(vm);
-        Assert.AreEqual(1, editor.SelectedSegmentIndex);
-        Assert.AreEqual("pdf", editor.SelectedArtifact?.DisplayName);
+        Assert.Equal(1, editor.SelectedSegmentIndex);
+        Assert.Equal("pdf", editor.SelectedArtifact?.DisplayName);
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CopyDeepLink_RaisesTheShellStatusPill()
     {
         // The page-local line under the toolbar is easy to miss (11px grey), so the
@@ -405,23 +410,23 @@ public sealed class DeepPathReloadTests
         await editor.LoadArtifactAsync(
             editor.SkillItems.OfType<ArtifactRowViewModel>().First(r => r.DisplayName == "pdf"));
 
-        Assert.IsTrue(editor.CanCopyDeepLink,
+        Assert.True(editor.CanCopyDeepLink,
             "Precondition: the host must have supplied DeepLinkNodeId.");
 
         editor.CopyDeepLinkCommand.Execute(null);
 
-        Assert.IsTrue(vm.Status.IsSuccess,
+        Assert.True(vm.Status.IsSuccess,
             "Copying a deep link must raise the shell status pill "
             + $"(kind was {vm.Status.Kind}, text '{vm.Status.Text}').");
-        StringAssert.Contains(vm.Status.Text, "pdf");
+        OrdinalAssert.Contains("pdf", vm.Status.Text);
 
         // And the page-local line still carries it too.
-        StringAssert.Contains(editor.LastActionMessage, "pdf");
+        OrdinalAssert.Contains("pdf", editor.LastActionMessage);
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeepLinkArgument_UnresolvablePath_LeavesAVisibleStatusWarning()
     {
         // Regression: the warning is raised inside the nav-tree build, and
@@ -436,16 +441,16 @@ public sealed class DeepPathReloadTests
         await vm.InitializeCommand.ExecuteAsync(null);
         await SettleRestoreAsync(vm);
 
-        Assert.IsTrue(vm.Status.IsWarning,
+        Assert.True(vm.Status.IsWarning,
             "An explicitly-typed --deep-link that resolves to nothing must leave a VISIBLE warning "
             + $"(kind was {vm.Status.Kind}, text '{vm.Status.Text}').");
-        StringAssert.Contains(vm.Status.Text, "no-such-page",
+        MessageAssert.Contains("no-such-page", vm.Status.Text,
             "The warning should name the path the user actually typed.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeepLinkArgument_RealPageButUnknownItem_LeavesAVisibleStatusWarning()
     {
         // Regression, found by the maintainer testing the actual shipped feature: the
@@ -468,16 +473,16 @@ public sealed class DeepPathReloadTests
         await vm.InitializeCommand.ExecuteAsync(null);
         await SettleRestoreAsync(vm);
 
-        Assert.IsTrue(vm.Status.IsWarning,
+        Assert.True(vm.Status.IsWarning,
             "A --deep-link naming a real page but a nonexistent item must leave a VISIBLE warning "
             + $"(kind was {vm.Status.Kind}, text '{vm.Status.Text}').");
-        StringAssert.Contains(vm.Status.Text, "definitely-not-a-skill",
+        MessageAssert.Contains("definitely-not-a-skill", vm.Status.Text,
             "The warning should name the path the user actually typed.");
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PersistedPathThatNoLongerResolves_StaysSilent()
     {
         // The other half of the contract: a persisted path failing is routine (the
@@ -500,14 +505,14 @@ public sealed class DeepPathReloadTests
         await second.InitializeCommand.ExecuteAsync(null);
         await SettleRestoreAsync(second);
 
-        Assert.IsFalse(second.Status.IsWarning,
+        Assert.False(second.Status.IsWarning,
             "A stale PERSISTED path must not raise a warning — only an explicit --deep-link does "
             + $"(kind was {second.Status.Kind}, text '{second.Status.Text}').");
 
         second.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeepLinkArgument_UnresolvablePath_StillLaunchesNormally()
     {
         // A stale shortcut must degrade to a normal launch, never block it.
@@ -517,13 +522,13 @@ public sealed class DeepPathReloadTests
         await vm.LoadAllWorkspacesAsync();
         await SettleRestoreAsync(vm);
 
-        Assert.IsNotNull(vm.SelectedNode, "An unresolvable deep link must still land somewhere.");
-        Assert.AreNotEqual(MainWindowViewModel.NavIdAgentsSkills, vm.SelectedNode!.NodeId);
+        MessageAssert.NotNull(vm.SelectedNode, "An unresolvable deep link must still land somewhere.");
+        Assert.NotEqual(MainWindowViewModel.NavIdAgentsSkills, vm.SelectedNode!.NodeId);
 
         vm.Dispose();
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeepLinkArgument_IsConsumedOnce_SoALaterReloadDoesNotYankTheUserBack()
     {
         DebugFlags.Initialize(["--deep-link", "agents-skills/skills/pdf"]);
@@ -531,7 +536,7 @@ public sealed class DeepPathReloadTests
         MainWindowViewModel vm = BuildViewModel();
         await vm.LoadAllWorkspacesAsync();
         await SettleRestoreAsync(vm);
-        Assert.AreEqual(MainWindowViewModel.NavIdAgentsSkills, vm.SelectedNode?.NodeId);
+        Assert.Equal(MainWindowViewModel.NavIdAgentsSkills, vm.SelectedNode?.NodeId);
 
         // User navigates elsewhere, then something triggers a reload.
         vm.SelectedNode = vm.NavigationTree.First(
@@ -539,7 +544,7 @@ public sealed class DeepPathReloadTests
         await vm.ReloadCommand.ExecuteAsync(null);
         await SettleRestoreAsync(vm);
 
-        Assert.AreEqual(MainWindowViewModel.NavIdEssentials, vm.SelectedNode?.NodeId,
+        MessageAssert.Equal(MainWindowViewModel.NavIdEssentials, vm.SelectedNode?.NodeId,
             "The command-line target must not be re-applied on every reload.");
 
         vm.Dispose();

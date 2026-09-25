@@ -13,45 +13,44 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// internal state.  The helper trims absolute paths to their filename
 /// component and caps the message length to ~120 chars.
 /// </remarks>
-[TestClass]
 public sealed class SanitiseExceptionForStatusTests
 {
-    [TestMethod]
+    [Fact]
     public void StripsWindowsAbsolutePath_FromIOExceptionMessage()
     {
         // Construct the exact .NET IOException shape that motivated M1.
         IOException ex = new(@"Access to the path 'C:\Users\brian\.claude\settings.json' is denied.");
         string output = MainWindowViewModel.SanitiseExceptionForStatus(ex);
 
-        Assert.IsFalse(output.Contains(@"C:\Users\brian", StringComparison.Ordinal),
+        Assert.False(output.Contains(@"C:\Users\brian", StringComparison.Ordinal),
             "Windows absolute path must not appear in the sanitised status text.");
-        Assert.IsTrue(output.Contains("settings.json"),
+        Assert.True(output.Contains("settings.json"),
             "Filename component must survive so the user sees WHICH file failed.");
     }
 
-    [TestMethod]
+    [Fact]
     public void StripsPosixAbsolutePath_FromPermissionDeniedMessage()
     {
         UnauthorizedAccessException ex = new(
             @"Permission denied accessing /home/brian/.claude/settings.json");
         string output = MainWindowViewModel.SanitiseExceptionForStatus(ex);
 
-        Assert.IsFalse(output.Contains("/home/brian", StringComparison.Ordinal),
+        Assert.False(output.Contains("/home/brian", StringComparison.Ordinal),
             "POSIX home directory must not appear in the sanitised status text.");
-        Assert.IsTrue(output.Contains("settings.json"));
+        OrdinalAssert.Contains("settings.json", output);
     }
 
-    [TestMethod]
+    [Fact]
     public void NamesExceptionType_AsPrefix()
     {
         IOException ex = new("disk full");
         string output = MainWindowViewModel.SanitiseExceptionForStatus(ex);
 
-        Assert.IsTrue(output.StartsWith("IOException", StringComparison.Ordinal),
+        Assert.True(output.StartsWith("IOException", StringComparison.Ordinal),
             $"Output must start with the exception type name; got: {output}");
     }
 
-    [TestMethod]
+    [Fact]
     public void WithHintPath_AppendsFilenameOnly()
     {
         // Use a platform-correct hint path so Path.GetFileName (which the
@@ -72,23 +71,23 @@ public sealed class SanitiseExceptionForStatusTests
         IOException ex = new("disk full");
         string output = MainWindowViewModel.SanitiseExceptionForStatus(ex, hintPath: hintPath);
 
-        Assert.IsTrue(output.Contains("on settings.json"),
+        Assert.True(output.Contains("on settings.json"),
             $"hintPath must surface its filename component as 'on <name>'. Got: {output}");
-        Assert.IsFalse(output.Contains(hintDirSubstring, StringComparison.Ordinal),
+        Assert.False(output.Contains(hintDirSubstring, StringComparison.Ordinal),
             "Directory portion of hintPath must NOT appear.");
     }
 
-    [TestMethod]
+    [Fact]
     public void WithoutHintPath_OmitsOnSuffix()
     {
         InvalidOperationException ex = new("bad state");
         string output = MainWindowViewModel.SanitiseExceptionForStatus(ex);
 
-        Assert.IsFalse(output.Contains(" on "),
+        Assert.False(output.Contains(" on "),
             "When no hint path is provided, 'on <file>' must be omitted.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TruncatesLongMessage()
     {
         string longMessage = new('x', 500);
@@ -97,20 +96,20 @@ public sealed class SanitiseExceptionForStatusTests
 
         // Status-bar Failure pills shouldn't carry a 500-char message
         // pinned indefinitely; the cap is ~120 chars total.
-        Assert.IsTrue(output.Length <= 150,
+        Assert.True(output.Length <= 150,
             $"Output should be capped near 120 chars; got {output.Length}.");
-        Assert.IsTrue(output.EndsWith("…", StringComparison.Ordinal)
+        Assert.True(output.EndsWith("…", StringComparison.Ordinal)
                       || output.Length < 150,
             "Truncated output should end with an ellipsis to signal the cap.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyMessage_ProducesTypeOnlyOutput()
     {
         InvalidOperationException ex = new("");
         string output = MainWindowViewModel.SanitiseExceptionForStatus(ex);
 
-        Assert.IsTrue(output.Contains("InvalidOperationException"),
+        Assert.True(output.Contains("InvalidOperationException"),
             $"Type name must still appear when message is empty. Got: {output}");
     }
 }

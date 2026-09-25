@@ -8,204 +8,203 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// branch of the diagnose decision tree so a future regex tweak
 /// surfaces here rather than via a misleading inline error in the GUI.
 /// </summary>
-[TestClass]
 public sealed class PermissionRuleViewModelTests
 {
     // ── IsValid — happy paths ──────────────────────────────────────────────
 
-    [TestMethod]
-    [DataRow("Bash")]
-    [DataRow("Edit")]
-    [DataRow("Read")]
-    [DataRow("Write")]
-    [DataRow("Glob")]
-    [DataRow("Grep")]
-    [DataRow("WebFetch")]
-    [DataRow("WebSearch")]
-    [DataRow("Agent")]
-    [DataRow("ExitPlanMode")]
-    [DataRow("KillShell")]
-    [DataRow("LSP")]
-    [DataRow("Monitor")]
-    [DataRow("NotebookEdit")]
-    [DataRow("PowerShell")]
-    [DataRow("Skill")]
-    [DataRow("TaskCreate")]
-    [DataRow("TaskGet")]
-    [DataRow("TaskList")]
-    [DataRow("TaskOutput")]
-    [DataRow("TaskStop")]
-    [DataRow("TaskUpdate")]
-    [DataRow("TodoWrite")]
-    [DataRow("ToolSearch")]
+    [Theory]
+    [InlineData("Bash")]
+    [InlineData("Edit")]
+    [InlineData("Read")]
+    [InlineData("Write")]
+    [InlineData("Glob")]
+    [InlineData("Grep")]
+    [InlineData("WebFetch")]
+    [InlineData("WebSearch")]
+    [InlineData("Agent")]
+    [InlineData("ExitPlanMode")]
+    [InlineData("KillShell")]
+    [InlineData("LSP")]
+    [InlineData("Monitor")]
+    [InlineData("NotebookEdit")]
+    [InlineData("PowerShell")]
+    [InlineData("Skill")]
+    [InlineData("TaskCreate")]
+    [InlineData("TaskGet")]
+    [InlineData("TaskList")]
+    [InlineData("TaskOutput")]
+    [InlineData("TaskStop")]
+    [InlineData("TaskUpdate")]
+    [InlineData("TodoWrite")]
+    [InlineData("ToolSearch")]
     public void IsValid_BareKnownToolName_True(string rule)
     {
-        Assert.IsTrue(PermissionRuleViewModel.IsValid(rule),
+        Assert.True(PermissionRuleViewModel.IsValid(rule),
             $"\"{rule}\" should be a valid bare tool name.");
     }
 
-    [TestMethod]
-    [DataRow("Bash(git *)")]
-    [DataRow("Bash(npm install)")]
-    [DataRow("Edit(./**/*.cs)")]
-    [DataRow("Write(./**/*.json)")]
-    [DataRow("WebFetch(https://*.example.com/*)")]
-    [DataRow("PowerShell(Get-*)")]
+    [Theory]
+    [InlineData("Bash(git *)")]
+    [InlineData("Bash(npm install)")]
+    [InlineData("Edit(./**/*.cs)")]
+    [InlineData("Write(./**/*.json)")]
+    [InlineData("WebFetch(https://*.example.com/*)")]
+    [InlineData("PowerShell(Get-*)")]
     public void IsValid_ToolWithRealPattern_True(string rule)
     {
         // Note: pure-wildcard patterns like "Read(*)" are REJECTED by the
         // schema regex's lookahead — see IsValid_KnownInvalidShapes_False
         // for that branch.
-        Assert.IsTrue(PermissionRuleViewModel.IsValid(rule));
+        Assert.True(PermissionRuleViewModel.IsValid(rule));
     }
 
-    [TestMethod]
-    [DataRow("mcp__github__create_issue")]
-    [DataRow("mcp__exa__search")]
-    [DataRow("mcp__*")]
-    [DataRow("mcp__server__")]
+    [Theory]
+    [InlineData("mcp__github__create_issue")]
+    [InlineData("mcp__exa__search")]
+    [InlineData("mcp__*")]
+    [InlineData("mcp__server__")]
     public void IsValid_McpPrefix_True(string rule)
     {
-        Assert.IsTrue(PermissionRuleViewModel.IsValid(rule),
+        Assert.True(PermissionRuleViewModel.IsValid(rule),
             "Any string starting with mcp__ is valid per the schema regex.");
     }
 
     // ── IsValid — rejection paths ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void IsValid_NullOrWhitespace_False()
     {
-        Assert.IsFalse(PermissionRuleViewModel.IsValid(null));
-        Assert.IsFalse(PermissionRuleViewModel.IsValid(""));
-        Assert.IsFalse(PermissionRuleViewModel.IsValid("   "));
-        Assert.IsFalse(PermissionRuleViewModel.IsValid("\t\n"));
+        Assert.False(PermissionRuleViewModel.IsValid(null));
+        Assert.False(PermissionRuleViewModel.IsValid(""));
+        Assert.False(PermissionRuleViewModel.IsValid("   "));
+        Assert.False(PermissionRuleViewModel.IsValid("\t\n"));
     }
 
-    [TestMethod]
-    [DataRow("Foo")] // unknown bare name
-    [DataRow("bash")] // case-sensitive — wrong case
-    [DataRow("Bashh")] // typo
-    [DataRow("Foo(*)")] // unknown name + valid-looking paren
-    [DataRow("Bash(")] // unclosed paren
-    [DataRow("Bash()")] // empty paren — schema rejects
-    [DataRow("Bash(*)")] // pure-wildcard paren — schema rejects
-    [DataRow("Bash(?)")] // pure-? paren — schema rejects
-    [DataRow("Bash(***)")] // multiple wildcards only
-    [DataRow("Pwsh")] // not a real Claude Code tool — the shell tool is "PowerShell"
-    [DataRow("Pwsh(git status)")] // Pwsh(...) is not recognized; rules must use PowerShell(...)
+    [Theory]
+    [InlineData("Foo")] // unknown bare name
+    [InlineData("bash")] // case-sensitive — wrong case
+    [InlineData("Bashh")] // typo
+    [InlineData("Foo(*)")] // unknown name + valid-looking paren
+    [InlineData("Bash(")] // unclosed paren
+    [InlineData("Bash()")] // empty paren — schema rejects
+    [InlineData("Bash(*)")] // pure-wildcard paren — schema rejects
+    [InlineData("Bash(?)")] // pure-? paren — schema rejects
+    [InlineData("Bash(***)")] // multiple wildcards only
+    [InlineData("Pwsh")] // not a real Claude Code tool — the shell tool is "PowerShell"
+    [InlineData("Pwsh(git status)")] // Pwsh(...) is not recognized; rules must use PowerShell(...)
     public void IsValid_KnownInvalidShapes_False(string rule)
     {
-        Assert.IsFalse(PermissionRuleViewModel.IsValid(rule),
+        Assert.False(PermissionRuleViewModel.IsValid(rule),
             $"\"{rule}\" should be rejected by the permissionRule regex.");
     }
 
     // ── Diagnose — empty / whitespace branch ───────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_NullOrWhitespace_ReturnsEmptyMessage()
     {
-        Assert.AreEqual("Rule cannot be empty.", PermissionRuleViewModel.Diagnose(null));
-        Assert.AreEqual("Rule cannot be empty.", PermissionRuleViewModel.Diagnose(""));
-        Assert.AreEqual("Rule cannot be empty.", PermissionRuleViewModel.Diagnose("   "));
+        Assert.Equal("Rule cannot be empty.", PermissionRuleViewModel.Diagnose(null));
+        Assert.Equal("Rule cannot be empty.", PermissionRuleViewModel.Diagnose(""));
+        Assert.Equal("Rule cannot be empty.", PermissionRuleViewModel.Diagnose("   "));
     }
 
     // ── Diagnose — valid rules return empty string ────────────────────────
 
-    [TestMethod]
-    [DataRow("Bash")]
-    [DataRow("Edit(./**/*.cs)")]
-    [DataRow("mcp__github__list")]
+    [Theory]
+    [InlineData("Bash")]
+    [InlineData("Edit(./**/*.cs)")]
+    [InlineData("mcp__github__list")]
     public void Diagnose_ValidRule_ReturnsEmpty(string rule)
     {
-        Assert.AreEqual(string.Empty, PermissionRuleViewModel.Diagnose(rule),
+        MessageAssert.Equal(string.Empty, PermissionRuleViewModel.Diagnose(rule),
             "Valid rules must produce no diagnostic message.");
     }
 
     // ── Diagnose — unknown bare tool name ──────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_BareUnknownTool_ReportsName_AndSuggestsValidTools()
     {
         string msg = PermissionRuleViewModel.Diagnose("Foo");
-        StringAssert.Contains(msg, "\"Foo\" is not a known tool name");
-        StringAssert.Contains(msg, "Bash");
-        StringAssert.Contains(msg, "mcp__");
+        OrdinalAssert.Contains("\"Foo\" is not a known tool name", msg);
+        OrdinalAssert.Contains("Bash", msg);
+        OrdinalAssert.Contains("mcp__", msg);
     }
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_BareUnknownTool_TrimsWhitespaceInQuotedName()
     {
         // Diagnose's bare-name branch trims the rule before quoting, but
         // upstream IsValid rejects whitespace-only first. Internal whitespace
         // is preserved (still invalid, but quoted as-typed).
         string msg = PermissionRuleViewModel.Diagnose("  Foo  ");
-        StringAssert.Contains(msg, "\"Foo\"");
+        OrdinalAssert.Contains("\"Foo\"", msg);
     }
 
     // ── Diagnose — unknown tool with parentheses ───────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_UnknownToolWithParens_ReportsToolName_NotFullRule()
     {
         string msg = PermissionRuleViewModel.Diagnose("Foo(some pattern)");
-        StringAssert.Contains(msg, "\"Foo\" is not a known tool name");
+        OrdinalAssert.Contains("\"Foo\" is not a known tool name", msg);
         // Full rule should NOT be in the message (we report just the tool name).
-        Assert.IsFalse(msg.Contains("\"Foo(some pattern)\"", StringComparison.Ordinal),
+        Assert.False(msg.Contains("\"Foo(some pattern)\"", StringComparison.Ordinal),
             "Diagnose must report just the tool name, not the full rule string.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_UnknownToolWithParens_HintsAtMcpFormat()
     {
         string msg = PermissionRuleViewModel.Diagnose("BadTool(*)");
-        StringAssert.Contains(msg, "mcp__<server>__<tool>",
+        MessageAssert.Contains("mcp__<server>__<tool>", msg,
             "When a parenthesised rule has an unknown tool, hint at the MCP format.");
     }
 
     // ── Diagnose — missing closing paren ───────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_MissingClosingParen_SuggestsCompleteForm()
     {
         string msg = PermissionRuleViewModel.Diagnose("Bash(git status");
-        StringAssert.Contains(msg, "Missing closing ')'");
-        StringAssert.Contains(msg, "Bash(git status)",
+        OrdinalAssert.Contains("Missing closing ')'", msg);
+        MessageAssert.Contains("Bash(git status)", msg,
             "Suggested completion must echo the user's content with the closing paren added.");
     }
 
     // ── Diagnose — empty parentheses ───────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_EmptyParens_SuggestsBareToolOrPattern()
     {
         string msg = PermissionRuleViewModel.Diagnose("Bash()");
-        StringAssert.Contains(msg, "Empty parentheses");
-        StringAssert.Contains(msg, "\"Bash\"",
+        OrdinalAssert.Contains("Empty parentheses", msg);
+        MessageAssert.Contains("\"Bash\"", msg,
             "Suggest dropping the parens for the bare tool form.");
-        StringAssert.Contains(msg, "Bash(git *)",
+        MessageAssert.Contains("Bash(git *)", msg,
             "Suggest a real example of a parenthesised pattern.");
     }
 
     // ── Diagnose — pure-wildcard parens ────────────────────────────────────
 
-    [TestMethod]
-    [DataRow("Bash(*)")]
-    [DataRow("Bash(?)")]
-    [DataRow("Bash(***)")]
-    [DataRow("Bash(*?*)")]
+    [Theory]
+    [InlineData("Bash(*)")]
+    [InlineData("Bash(?)")]
+    [InlineData("Bash(***)")]
+    [InlineData("Bash(*?*)")]
     public void Diagnose_WildcardOnlyParens_ExplainsAndSuggests(string rule)
     {
         string msg = PermissionRuleViewModel.Diagnose(rule);
-        StringAssert.Contains(msg, "alone in parentheses is not valid");
-        StringAssert.Contains(msg, "\"Bash\"",
+        OrdinalAssert.Contains("alone in parentheses is not valid", msg);
+        MessageAssert.Contains("\"Bash\"", msg,
             "Suggest dropping the parens for the bare tool form.");
-        StringAssert.Contains(msg, "Bash(git *)",
+        MessageAssert.Contains("Bash(git *)", msg,
             "Suggest a real example of a parenthesised pattern.");
     }
 
     // ── Diagnose — fallthrough generic invalid ─────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Diagnose_GenericInvalid_FallsThroughWithExamples()
     {
         // A pattern that has a known tool, balanced parens, non-empty content,
@@ -217,7 +216,7 @@ public sealed class PermissionRuleViewModelTests
         string msg = PermissionRuleViewModel.Diagnose("Bash((nested");
         // Balanced + paren accounting falls into one of the structural
         // diagnostics; expect either a missing-) message or a generic message.
-        Assert.IsTrue(
+        Assert.True(
             msg.Contains("Missing closing ')'", StringComparison.Ordinal)
             || msg.Contains("Invalid rule syntax", StringComparison.Ordinal),
             $"Unexpected diagnose for nested unclosed paren: {msg}");
@@ -225,22 +224,22 @@ public sealed class PermissionRuleViewModelTests
 
     // ── HasValidationError / ValidationErrorText round-trip ───────────────
 
-    [TestMethod]
+    [Fact]
     public void Instance_HasValidationError_TracksRule()
     {
         PermissionRuleViewModel vm = new("Bash");
-        Assert.IsFalse(vm.HasValidationError);
-        Assert.AreEqual(string.Empty, vm.ValidationErrorText);
+        Assert.False(vm.HasValidationError);
+        Assert.Equal(string.Empty, vm.ValidationErrorText);
 
         vm.Rule = "Foo";
-        Assert.IsTrue(vm.HasValidationError);
-        StringAssert.Contains(vm.ValidationErrorText, "not a known tool name");
+        Assert.True(vm.HasValidationError);
+        OrdinalAssert.Contains("not a known tool name", vm.ValidationErrorText);
 
         vm.Rule = "mcp__server__tool";
-        Assert.IsFalse(vm.HasValidationError);
+        Assert.False(vm.HasValidationError);
     }
 
-    [TestMethod]
+    [Fact]
     public void Instance_RuleChange_FiresPropertyChangedForValidationFlags()
     {
         PermissionRuleViewModel vm = new("Bash");
@@ -257,8 +256,8 @@ public sealed class PermissionRuleViewModelTests
 
         // Source generator fires Rule + the explicit OnRuleChanged
         // re-fires HasValidationError and ValidationErrorText.
-        CollectionAssert.Contains(fired, "Rule");
-        CollectionAssert.Contains(fired, "HasValidationError");
-        CollectionAssert.Contains(fired, "ValidationErrorText");
+        Assert.Contains("Rule", fired);
+        Assert.Contains("HasValidationError", fired);
+        Assert.Contains("ValidationErrorText", fired);
     }
 }

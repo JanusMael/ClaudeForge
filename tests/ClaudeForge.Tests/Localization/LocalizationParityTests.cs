@@ -20,7 +20,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Localization;
 /// enforcement mechanism that prevents the same drift from recurring.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class LocalizationParityTests
 {
     /// <summary>
@@ -40,18 +39,18 @@ public sealed class LocalizationParityTests
     /// non-English locale file.  Future drift is caught here, not in a user
     /// report.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryEnglishKey_HasEntryInEveryLocale()
     {
         string localizationDir = FindLocalizationDirectory();
         IReadOnlySet<string> englishKeys = LoadKeys(Path.Combine(localizationDir, "Strings.resx"));
-        Assert.IsTrue(englishKeys.Count > 0,
+        Assert.True(englishKeys.Count > 0,
             "Sanity check: Strings.resx must contain at least one <data name='…'> key.");
 
         IReadOnlyList<string> localeFiles = Directory.GetFiles(localizationDir, "Strings.*.resx")
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        Assert.IsTrue(localeFiles.Count > 0,
+        Assert.True(localeFiles.Count > 0,
             "Sanity check: at least one Strings.<culture>.resx file must exist.");
 
         List<string> failures = new();
@@ -90,14 +89,14 @@ public sealed class LocalizationParityTests
     /// the drift compounded.  This test prevents the same pattern from
     /// recurring.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void NoLocaleFile_ContainsTodoMarker()
     {
         string localizationDir = FindLocalizationDirectory();
         IReadOnlyList<string> localeFiles = Directory.GetFiles(localizationDir, "Strings.*.resx")
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        Assert.IsTrue(localeFiles.Count > 0,
+        Assert.True(localeFiles.Count > 0,
             "Sanity check: at least one Strings.<culture>.resx file must exist.");
 
         List<string> failures = new();
@@ -145,12 +144,12 @@ public sealed class LocalizationParityTests
     /// (product names, glyphs, URLs, Latin loanwords) do count toward the
     /// ratio but are far below the threshold in any real translation.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EachLocale_HasReasonableTranslationCoverage()
     {
         string localizationDir = FindLocalizationDirectory();
         IReadOnlyDictionary<string, string> englishValues = LoadValues(Path.Combine(localizationDir, "Strings.resx"));
-        Assert.IsTrue(englishValues.Count > 0,
+        Assert.True(englishValues.Count > 0,
             "Sanity check: Strings.resx must contain at least one <data> with a <value>.");
 
         IReadOnlyList<string> localeFiles = Directory.GetFiles(localizationDir, "Strings.*.resx")
@@ -214,18 +213,18 @@ public sealed class LocalizationParityTests
     /// drift class that crashes rather than degrades, so the other three contracts
     /// don't cover it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryFormatPlaceholder_MatchesAcrossLocales()
     {
         string localizationDir = FindLocalizationDirectory();
         IReadOnlyDictionary<string, string> englishValues = LoadValues(Path.Combine(localizationDir, "Strings.resx"));
-        Assert.IsTrue(englishValues.Count > 0,
+        Assert.True(englishValues.Count > 0,
             "Sanity check: Strings.resx must contain at least one <data> with a <value>.");
 
         IReadOnlyList<string> localeFiles = Directory.GetFiles(localizationDir, "Strings.*.resx")
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        Assert.IsTrue(localeFiles.Count > 0,
+        Assert.True(localeFiles.Count > 0,
             "Sanity check: at least one Strings.<culture>.resx file must exist.");
 
         List<string> failures = new();
@@ -434,12 +433,12 @@ public sealed class LocalizationParityTests
     /// <summary>
     /// Contract #5 — every resx on disk is declared in the ledger, and vice versa.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryResxUnderSrc_IsDeclaredInTheLedger()
     {
         IReadOnlyList<string> onDisk = ProjectsWithResx();
 
-        Assert.IsTrue(
+        Assert.True(
             onDisk.Count > 0,
             "Found no Localization/Strings.resx under src/. This test would pass without checking "
             + "anything.");
@@ -449,14 +448,14 @@ public sealed class LocalizationParityTests
         List<string> undeclared = [.. onDisk.Where(p => !declared.Contains(p))];
         List<string> stale = [.. declared.Where(p => !onDisk.Contains(p)).Order(StringComparer.Ordinal)];
 
-        Assert.IsTrue(
+        Assert.True(
             undeclared.Count == 0,
             $"{undeclared.Count} project(s) own a Strings.resx that the ledger does not mention, so "
             + "nothing checks whether their strings are translated or deliberately English-only:\n  "
             + string.Join("\n  ", undeclared)
             + "\n\nAdd an entry to ResxLedger saying which it is, and why.");
 
-        Assert.IsTrue(
+        Assert.True(
             stale.Count == 0,
             $"{stale.Count} ledger entr(ies) name a project with no Strings.resx. Remove them, or "
             + $"the ledger is describing a repo that no longer exists:\n  {string.Join("\n  ", stale)}");
@@ -472,7 +471,7 @@ public sealed class LocalizationParityTests
     /// ledger exists to prevent — so it fails, and the fix is to widen those contracts past their
     /// single hardcoded directory rather than to edit this ledger.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void LedgerClaims_MatchTheLocaleFilesOnDisk()
     {
         string src = Path.Combine(FindRepoRoot(), "src");
@@ -505,7 +504,7 @@ public sealed class LocalizationParityTests
             }
         }
 
-        Assert.IsTrue(failures.Count == 0, string.Join("\n\n", failures));
+        Assert.True(failures.Count == 0, string.Join("\n\n", failures));
     }
 
     /// <summary>
@@ -517,7 +516,7 @@ public sealed class LocalizationParityTests
     /// localized project would leave the four contracts quietly covering a subset. The failure
     /// message is the instruction.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheParityContracts_CoverEveryLocalizedProject()
     {
         List<string> localized =
@@ -525,7 +524,7 @@ public sealed class LocalizationParityTests
 
         string covered = Path.GetFileName(Path.GetDirectoryName(FindLocalizationDirectory())!);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { covered },
             localized.ToArray(),
             $"Contracts #1–#4 run against '{covered}' only, but the ledger declares these projects "

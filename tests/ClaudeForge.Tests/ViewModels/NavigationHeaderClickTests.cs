@@ -20,14 +20,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// a startup-only debug switch.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class NavigationHeaderClickTests
+public sealed class NavigationHeaderClickTests : IDisposable
 {
     private string _sandbox = null!;
     private MainWindowViewModel _vm = null!;
 
-    [TestInitialize]
-    public void Init()
+    public NavigationHeaderClickTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -36,8 +36,7 @@ public sealed class NavigationHeaderClickTests
         _vm = new MainWindowViewModel(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         _vm.Dispose();
         PlatformPaths.TestUserProfileOverride = null;
@@ -47,24 +46,30 @@ public sealed class NavigationHeaderClickTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void SelectingHeaderNode_ClearsActiveEditor()
     {
         // Simulate: a leaf editor is currently selected.
         NavigationNodeViewModel leaf = new("Some leaf") { Editor = new object() };
         _vm.SelectedNode = leaf;
-        Assert.IsNotNull(_vm.ActiveEditor, "Setup: selecting a leaf populates ActiveEditor.");
+        MessageAssert.NotNull(_vm.ActiveEditor, "Setup: selecting a leaf populates ActiveEditor.");
 
         // User clicks a header row (no Editor) — ActiveEditor must clear so the
         // welcome view's "ActiveEditor IsNull" binding becomes true.
         NavigationNodeViewModel header = new("Claude Code", "⚙", "section header");
         _vm.SelectedNode = header;
 
-        Assert.IsNull(_vm.ActiveEditor,
+        MessageAssert.Null(_vm.ActiveEditor,
             "Selecting a header (Editor==null) must clear ActiveEditor so the welcome view shows.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectingNullNode_LeavesActiveEditorIntact()
     {
         // Programmatic clears (e.g. between workspace reloads) must NOT yank the
@@ -75,11 +80,11 @@ public sealed class NavigationHeaderClickTests
 
         _vm.SelectedNode = null;
 
-        Assert.AreSame(beforeNull, _vm.ActiveEditor,
+        MessageAssert.Same(beforeNull, _vm.ActiveEditor,
             "Setting SelectedNode=null is a programmatic clear and must leave ActiveEditor in place.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SelectingHeaderThenLeaf_RestoresActiveEditor()
     {
         NavigationNodeViewModel leaf = new("Some leaf") { Editor = new object() };
@@ -87,10 +92,10 @@ public sealed class NavigationHeaderClickTests
 
         _vm.SelectedNode = leaf;
         _vm.SelectedNode = header;
-        Assert.IsNull(_vm.ActiveEditor, "Header click cleared editor.");
+        MessageAssert.Null(_vm.ActiveEditor, "Header click cleared editor.");
 
         _vm.SelectedNode = leaf;
-        Assert.AreSame(leaf.Editor, _vm.ActiveEditor,
+        MessageAssert.Same(leaf.Editor, _vm.ActiveEditor,
             "Selecting a leaf again must restore ActiveEditor.");
     }
 

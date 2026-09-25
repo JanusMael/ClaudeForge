@@ -11,23 +11,22 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// "Copy deep link" silently useless for every plugin artifact: the restore fell
 /// back to the page's default tab.
 /// </summary>
-[TestClass]
 public sealed class NavDeepPathSourceEncodingTests
 {
     private const string PluginSource = "claude-plugins-official/plugins/math-olympiad";
 
-    [TestMethod]
+    [Fact]
     public void FormatItemKey_PluginSource_ProducesOneSegment()
     {
         string key = NavDeepPath.FormatItemKey("math-olympiad", PluginSource);
 
-        Assert.IsFalse(
+        Assert.False(
             key.Contains(NavDeepPath.Separator),
             "An item key containing the segment separator cannot survive a round trip.");
     }
 
     /// <summary>The regression this fixes, stated as the whole path the app captures.</summary>
-    [TestMethod]
+    [Fact]
     public void CapturedPluginPath_Parses()
     {
         string path = NavDeepPath.Format(
@@ -37,54 +36,54 @@ public sealed class NavDeepPathSourceEncodingTests
             NavDeepPath.FormatItemKey("math-olympiad", PluginSource),
         ]);
 
-        Assert.IsTrue(
+        Assert.True(
             NavDeepPath.TryParse(path, out IReadOnlyList<string> segments, out string? error),
             "The captured path must parse; it was rejected with: " + (error ?? "(none)"));
-        Assert.AreEqual(3, segments.Count);
-        Assert.AreEqual("agents-skills", segments[0]);
-        Assert.AreEqual("skills", segments[1]);
+        Assert.Equal(3, segments.Count);
+        Assert.Equal("agents-skills", segments[0]);
+        Assert.Equal("skills", segments[1]);
     }
 
-    [TestMethod]
+    [Fact]
     public void SplitItemKey_RoundTripsAnEncodedPluginSource()
     {
         string key = NavDeepPath.FormatItemKey("math-olympiad", PluginSource);
         (string name, string? source) = NavDeepPath.SplitItemKey(key);
 
-        Assert.AreEqual("math-olympiad", name);
-        Assert.AreEqual(NavDeepPath.EncodeSource(PluginSource), source);
+        Assert.Equal("math-olympiad", name);
+        Assert.Equal(NavDeepPath.EncodeSource(PluginSource), source);
     }
 
-    [TestMethod]
+    [Fact]
     public void EncodeSource_IsIdempotent()
     {
         string once = NavDeepPath.EncodeSource(PluginSource);
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             once,
             NavDeepPath.EncodeSource(once),
             "Encoding twice must not change the value, or comparisons that normalise both sides break.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EncodeSource_HandlesWindowsSeparators()
     {
-        Assert.AreEqual(
+        MessageAssert.Equal(
             NavDeepPath.EncodeSource("a/b/c"),
             NavDeepPath.EncodeSource(@"a\b\c"),
             "A source read off a Windows path must encode the same as its forward-slash spelling.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EncodeSource_LeavesAPlainScopeAlone()
     {
-        Assert.AreEqual("user", NavDeepPath.EncodeSource("user"));
+        Assert.Equal("user", NavDeepPath.EncodeSource("user"));
     }
 
-    [TestMethod]
+    [Fact]
     public void FormatItemKey_NoSource_IsJustTheName()
     {
-        Assert.AreEqual("pdf", NavDeepPath.FormatItemKey("pdf", source: null));
-        Assert.AreEqual("pdf", NavDeepPath.FormatItemKey("pdf", source: "   "));
+        Assert.Equal("pdf", NavDeepPath.FormatItemKey("pdf", source: null));
+        Assert.Equal("pdf", NavDeepPath.FormatItemKey("pdf", source: "   "));
     }
 }

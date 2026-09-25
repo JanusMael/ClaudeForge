@@ -7,18 +7,17 @@ namespace Bennewitz.Ninja.JsonC.Tests;
 /// than swap a span, and therefore the cases where it can produce invalid JSON.
 /// Every test here re-parses the result and asserts it is still clean.
 /// </summary>
-[TestClass]
 public sealed class JsoncEditorMutationTests
 {
     private static void AssertStillValid(string text)
     {
         JsoncDocument document = JsoncDocument.Parse(text);
-        Assert.IsTrue(
+        Assert.True(
             document.IsEditable,
             $"Edit produced text that no longer parses: {string.Join("; ", document.Errors)}\n---\n{text}\n---");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMember_AppendsAfterTheLastMember_WithMatchingIndent()
     {
         const string before = """
@@ -29,7 +28,7 @@ public sealed class JsoncEditorMutationTests
 
         string after = JsoncEditor.SetValue(before, "effortLevel", JsonValue.Create("high"));
 
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "model": "sonnet",
@@ -40,7 +39,7 @@ public sealed class JsoncEditorMutationTests
         AssertStillValid(after);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMember_ToAnEmptyObject_OpensItOntoItsOwnLines()
     {
         const string before = "{}";
@@ -48,11 +47,11 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
         AssertStillValid(after);
-        StringAssert.Contains(after, "\"model\"");
-        Assert.AreEqual("{" + Environment.NewLine + "  \"model\": \"opus\"" + Environment.NewLine + "}", after);
+        OrdinalAssert.Contains("\"model\"", after);
+        Assert.Equal("{" + Environment.NewLine + "  \"model\": \"opus\"" + Environment.NewLine + "}", after);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddMember_KeepsATrailingCommentAtTheEndOfTheObject()
     {
         const string before = """
@@ -65,11 +64,11 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "effortLevel", JsonValue.Create("high"));
 
         AssertStillValid(after);
-        StringAssert.Contains(after, "// a note after the last member");
-        StringAssert.Contains(after, "\"effortLevel\": \"high\"");
+        OrdinalAssert.Contains("// a note after the last member", after);
+        OrdinalAssert.Contains("\"effortLevel\": \"high\"", after);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddNestedPath_CreatesTheMissingIntermediateObjects()
     {
         const string before = """
@@ -82,7 +81,7 @@ public sealed class JsoncEditorMutationTests
                                             JsonValue.Create("acceptEdits"));
 
         AssertStillValid(after);
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "model": "sonnet",
@@ -94,7 +93,7 @@ public sealed class JsoncEditorMutationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddIntoAnExistingNestedObject_AppendsThereNotAtTheRoot()
     {
         const string before = """
@@ -108,7 +107,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "permissions.allow", new JsonArray());
 
         AssertStillValid(after);
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "permissions": {
@@ -120,16 +119,16 @@ public sealed class JsoncEditorMutationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_OnAnEmptyDocument_CreatesTheRootObject()
     {
         string after = JsoncEditor.SetValue(string.Empty, "model", JsonValue.Create("opus"));
 
         AssertStillValid(after);
-        StringAssert.Contains(after, "\"model\": \"opus\"");
+        OrdinalAssert.Contains("\"model\": \"opus\"", after);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_OnACommentsOnlyDocument_KeepsTheComments()
     {
         const string before = "// my hand-written header\n";
@@ -137,13 +136,13 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
         AssertStillValid(after);
-        StringAssert.StartsWith(after, "// my hand-written header");
-        StringAssert.Contains(after, "\"model\": \"opus\"");
+        OrdinalAssert.StartsWith("// my hand-written header", after);
+        OrdinalAssert.Contains("\"model\": \"opus\"", after);
     }
 
     // ── Removal ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Remove_FirstMember_LeavesValidJsonAndNoLeadingComma()
     {
         const string before = """
@@ -157,7 +156,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.Remove(before, "a");
 
         AssertStillValid(after);
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "b": 2,
@@ -167,7 +166,7 @@ public sealed class JsoncEditorMutationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_MiddleMember()
     {
         const string before = """
@@ -181,7 +180,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.Remove(before, "b");
 
         AssertStillValid(after);
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "a": 1,
@@ -191,7 +190,7 @@ public sealed class JsoncEditorMutationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_LastMember_TakesThePrecedingCommaWithIt()
     {
         const string before = """
@@ -205,7 +204,7 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.Remove(before, "c");
 
         AssertStillValid(after);
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "a": 1,
@@ -215,7 +214,7 @@ public sealed class JsoncEditorMutationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_OnlyMember_LeavesAnEmptyObject()
     {
         const string before = """
@@ -227,10 +226,10 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.Remove(before, "a");
 
         AssertStillValid(after);
-        Assert.AreEqual("{\n}", after.Replace("\r\n", "\n"));
+        Assert.Equal("{\n}", after.Replace("\r\n", "\n"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_NestedMember_LeavesSiblingsAndCommentsIntact()
     {
         const string before = """
@@ -246,8 +245,8 @@ public sealed class JsoncEditorMutationTests
         string after = JsoncEditor.Remove(before, "permissions.allow");
 
         AssertStillValid(after);
-        StringAssert.Contains(after, "// keep");
-        Assert.AreEqual(
+        OrdinalAssert.Contains("// keep", after);
+        Assert.Equal(
             """
             {
               "permissions": {
@@ -259,7 +258,7 @@ public sealed class JsoncEditorMutationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_AbsentPath_IsANoOp_ReturningTheOriginalBytes()
     {
         const string before = """
@@ -269,7 +268,7 @@ public sealed class JsoncEditorMutationTests
                               }
                               """;
 
-        Assert.AreEqual(before, JsoncEditor.Remove(before, "nope"));
-        Assert.AreEqual(before, JsoncEditor.Remove(before, "a.b.c"));
+        Assert.Equal(before, JsoncEditor.Remove(before, "nope"));
+        Assert.Equal(before, JsoncEditor.Remove(before, "a.b.c"));
     }
 }

@@ -39,7 +39,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// rather than detectable once no neutral type has a Claude-defaulting parameterless path at all.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class NeutralLayerDefaultsTests
 {
     /// <summary>A <c>??</c> falling back to a Claude-named symbol.</summary>
@@ -80,13 +79,13 @@ public sealed class NeutralLayerDefaultsTests
     /// </remarks>
     private static readonly string[] KnownSites = [];
 
-    [TestMethod]
+    [Fact]
     public void NoNeutralSourceResolvesToClaudeDataByDefault()
     {
         string repoRoot = FindRepoRoot();
         string[] projects = NeutralProjectDirectories(repoRoot);
 
-        Assert.AreNotEqual(0, projects.Length,
+        MessageAssert.NotEqual(0, projects.Length,
             "Found no packable project under src/, so the neutral layer was never scanned. "
             + "PackageMetadataTests explains what <IsPackable> is doing here — this guard reuses "
             + "it rather than keeping a second list of the eleven.");
@@ -133,7 +132,7 @@ public sealed class NeutralLayerDefaultsTests
             }
         }
 
-        Assert.AreNotEqual(0, filesScanned,
+        MessageAssert.NotEqual(0, filesScanned,
             "Scanned no source files under the neutral projects, so this guard proves nothing.");
 
         // ⭐ A ratchet that does not check its own entries rots into a list of things nobody can
@@ -141,12 +140,12 @@ public sealed class NeutralLayerDefaultsTests
         // has been fixed, and the fix is only finished when the exemption goes with it.
         string[] stale = [.. KnownSites.Except(allowedSitesHit, StringComparer.OrdinalIgnoreCase)];
 
-        Assert.AreEqual(0, stale.Length,
+        MessageAssert.Equal(0, stale.Length,
             "These KnownSites entries no longer match anything, which means they were fixed. "
             + "Delete them — this list is a ratchet and only shrinks. Stale: "
             + string.Join(", ", stale));
 
-        Assert.AreEqual(0, offenders.Count,
+        MessageAssert.Equal(0, offenders.Count,
             "These neutral-layer sites resolve to Claude's data when the caller does not choose. "
             + "A second product then reaches Claude's files with Claude named nowhere near the "
             + "call site — that is how both OpenCode clients came to report Claude's disk "
@@ -166,18 +165,18 @@ public sealed class NeutralLayerDefaultsTests
     /// <c>SchemaSnapshotService</c> call site spelled <c>new()</c>, target-typed, so it did not
     /// contain the type's name and no search for that name found it. The compiler did.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheTwoAuditedSitesStillRequireTheirCallerToNameTheHome()
     {
         ConstructorInfo[] snapshotCtors = typeof(SchemaSnapshotService)
             .GetConstructors(BindingFlags.Public | BindingFlags.Instance);
 
-        Assert.AreEqual(0, snapshotCtors.Count(c => c.GetParameters().Length == 0),
+        MessageAssert.Equal(0, snapshotCtors.Count(c => c.GetParameters().Length == 0),
             "SchemaSnapshotService has a parameterless constructor again. The one that was "
             + "removed defaulted to {ClaudeHome}/cache, which is Claude's answer — OpenCode's "
             + "schemas do not belong beneath it. Let the caller name the directory.");
 
-        Assert.AreNotEqual(0, snapshotCtors.Length,
+        MessageAssert.NotEqual(0, snapshotCtors.Length,
             "SchemaSnapshotService has no public constructor at all, so the assertion above is "
             + "passing for the wrong reason.");
 
@@ -188,7 +187,7 @@ public sealed class NeutralLayerDefaultsTests
 
         ParameterInfo home = run.GetParameters().First();
 
-        Assert.IsFalse(home.IsOptional,
+        Assert.False(home.IsOptional,
             $"RestoreSidecarCleanup.Run's '{home.Name}' parameter is optional again. It used to "
             + "default to PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty) when null, so the caller could delete files "
             + "from Claude's home without ever naming it — and ClaudeForge's own console message "

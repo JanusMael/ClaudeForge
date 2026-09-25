@@ -99,6 +99,34 @@ public sealed class ConfigScopeAdapter : IEditorScope
         throw new ArgumentException($"Cannot map scope '{scope.Id}' to ConfigScope.", nameof(scope));
     }
 
+    /// <summary>
+    /// Test seam: forgets every wrapped scope that is NOT on <see cref="ScopeLadder.Default"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="ToConfigScope"/>'s id fallback searches every scope the process has wrapped, and
+    /// <see cref="_cache"/> is process-wide, so a test that wraps another ladder's <c>Project</c>
+    /// changes what a later test's foreign <c>"project"</c> resolves to. That dependence on test ORDER
+    /// was invisible under MSTest, which ran a class's methods in declaration order, and surfaced
+    /// when the suite moved to xUnit (plans/00006).
+    /// </para>
+    /// <para>
+    /// ⚠ Default-ladder entries are deliberately KEPT: <see cref="For"/> promises one instance per
+    /// scope, production code holds those instances, and replacing them would break reference
+    /// identity for every later test.
+    /// </para>
+    /// </remarks>
+    internal static void ForgetNonDefaultLaddersForTesting()
+    {
+        foreach (ConfigScope scope in _cache.Keys)
+        {
+            if (!ReferenceEquals(scope.Ladder, ScopeLadder.Default))
+            {
+                _cache.TryRemove(scope, out _);
+            }
+        }
+    }
+
     /// <summary>Single canonical formula: inverts ConfigScope's lower=higher-priority convention.</summary>
     /// <remarks>
     /// Derived from the ladder's length rather than the literal 3, so adding a scope does

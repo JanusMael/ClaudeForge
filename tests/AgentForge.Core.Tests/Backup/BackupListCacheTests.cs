@@ -23,14 +23,14 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 // InvalidateListCache) by design — inherently process-global shared state that
 // cannot be probed concurrently. Run serially, isolated from the
 // method-level-parallelized rest of the assembly.
-[DoNotParallelize]
-[TestClass]
-public sealed class BackupListCacheTests
+[Collection("DoNotParallelize")]
+public sealed class BackupListCacheTests : IDisposable
 {
     private string _fakeHome = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public BackupListCacheTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(), "blc-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_fakeHome);
@@ -41,8 +41,7 @@ public sealed class BackupListCacheTests
         BackupEngine.InvalidateListCache();
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         BackupEngine.InvalidateListCache();
@@ -59,7 +58,13 @@ public sealed class BackupListCacheTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public async Task List_SecondCall_ServesFromCache_WhenZipUntouched()
     {
         string zipPath = Path.Combine(_fakeHome, "backup-20300101-000000.zip");
@@ -71,19 +76,19 @@ public sealed class BackupListCacheTests
 
         // First List: parses + caches.
         IReadOnlyList<BackupEntry> first = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, first.Count);
-        Assert.IsNotNull(first[0].Manifest);
+        Assert.Single(first);
+        Assert.NotNull(first[0].Manifest);
         BackupManifest? firstManifestRef = first[0].Manifest;
 
         // Second List on the same untouched file: should return the same
         // manifest reference (cached, not re-deserialised).
         IReadOnlyList<BackupEntry> second = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, second.Count);
-        Assert.AreSame(firstManifestRef, second[0].Manifest,
+        Assert.Single(second);
+        MessageAssert.Same(firstManifestRef, second[0].Manifest,
             "List should return the cached manifest reference when the zip is unchanged.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task List_AfterMtimeChange_ReParses()
     {
         string zipPath = Path.Combine(_fakeHome, "backup-20300101-000000.zip");
@@ -95,19 +100,19 @@ public sealed class BackupListCacheTests
 
         // Prime the cache.
         IReadOnlyList<BackupEntry> first = TestBackupEngine.Default.List(_fakeHome);
-        Assert.IsNotNull(first[0].Manifest);
+        Assert.NotNull(first[0].Manifest);
         BackupManifest? firstManifestRef = first[0].Manifest;
 
         // Bump mtime — no content change, but the cache key includes mtime.
         File.SetLastWriteTimeUtc(zipPath, DateTime.UtcNow.AddMinutes(1));
 
         IReadOnlyList<BackupEntry> second = TestBackupEngine.Default.List(_fakeHome);
-        Assert.IsNotNull(second[0].Manifest);
-        Assert.AreNotSame(firstManifestRef, second[0].Manifest,
+        Assert.NotNull(second[0].Manifest);
+        MessageAssert.NotSame(firstManifestRef, second[0].Manifest,
             "Mtime change must invalidate the cache and force a re-parse.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Delete_DropsCacheEntry()
     {
         string zipPath = Path.Combine(_fakeHome, "backup-20300101-000000.zip");
@@ -119,10 +124,10 @@ public sealed class BackupListCacheTests
 
         // Populate the cache.
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, entries.Count);
+        Assert.Single(entries);
 
         // Delete via the engine.
-        Assert.IsTrue(TestBackupEngine.Default.Delete(entries[0]));
+        Assert.True(TestBackupEngine.Default.Delete(entries[0]));
 
         // List should return empty (file is gone), and the cache entry for
         // that path should not survive into a re-creation. We probe this by
@@ -134,12 +139,12 @@ public sealed class BackupListCacheTests
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         });
         IReadOnlyList<BackupEntry> afterRecreate = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreEqual(1, afterRecreate.Count);
-        Assert.IsNotNull(afterRecreate[0].Manifest,
+        Assert.Single(afterRecreate);
+        MessageAssert.NotNull(afterRecreate[0].Manifest,
             "Re-created backup at the same path should parse fresh, not be poisoned by a stale pre-delete cache entry.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task InvalidateListCache_ForcesReparse()
     {
         string zipPath = Path.Combine(_fakeHome, "backup-20300101-000000.zip");
@@ -155,7 +160,7 @@ public sealed class BackupListCacheTests
         BackupEngine.InvalidateListCache();
 
         IReadOnlyList<BackupEntry> second = TestBackupEngine.Default.List(_fakeHome);
-        Assert.AreNotSame(firstManifestRef, second[0].Manifest,
+        MessageAssert.NotSame(firstManifestRef, second[0].Manifest,
             "Explicit InvalidateListCache must force the next List call to re-parse.");
     }
 }

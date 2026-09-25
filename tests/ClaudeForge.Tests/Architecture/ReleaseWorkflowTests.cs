@@ -24,7 +24,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// the executable form.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ReleaseWorkflowTests
 {
     /// <summary>A quoted entry under a <c>tags:</c> list, e.g. <c>- 'opencodeforge-v*.*.*'</c>.</summary>
@@ -130,17 +129,17 @@ public sealed class ReleaseWorkflowTests
         return new Regex("^" + escaped + "$", RegexOptions.IgnoreCase);
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryPublishableAppHasItsOwnReleaseWorkflow()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
         List<PublishAppTable.Row> apps = PublishAppTable.Read(repoRoot);
         List<ReleaseWorkflow> workflows = Discover(repoRoot);
 
-        Assert.IsTrue(
+        Assert.True(
             apps.Count > 0,
             $"{PublishAppTable.RelativePath} parsed to no rows; this test would check nothing.");
-        Assert.IsTrue(
+        Assert.True(
             workflows.Count > 0,
             "Found no release workflows (a tag trigger plus a publish.ps1 -App invocation). "
             + "Either the workflows changed shape and this scan no longer recognises them, or "
@@ -151,18 +150,18 @@ public sealed class ReleaseWorkflowTests
             .Where(name => !workflows.Any(w =>
                 w.AppArgs.Contains(name, StringComparer.Ordinal)))];
 
-        Assert.IsTrue(
+        Assert.True(
             unreleasable.Count == 0,
             $"{unreleasable.Count} app(s) can be published locally but have no release workflow, "
             + "so they can never actually ship:\n  " + string.Join("\n  ", unreleasable));
     }
 
-    [TestMethod]
+    [Fact]
     public void EachReleaseWorkflowPublishesExactlyOneAppAndSaysWhichInAppName()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
         List<ReleaseWorkflow> workflows = Discover(repoRoot);
-        Assert.IsTrue(workflows.Count > 0, "No release workflows discovered.");
+        Assert.True(workflows.Count > 0, "No release workflows discovered.");
 
         List<string> problems = [];
         foreach (ReleaseWorkflow w in workflows)
@@ -186,13 +185,13 @@ public sealed class ReleaseWorkflowTests
             }
         }
 
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     /// <summary>
     /// Each workflow's tag filters match its own app's <c>TagPrefix</c> and nothing else's.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EachWorkflowsTagFilterMatchesItsAppsTagPrefix()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
@@ -247,10 +246,10 @@ public sealed class ReleaseWorkflowTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             checkedCount > 0,
             "No tag filters were checked, so this test guarded nothing.");
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     /// <summary>
@@ -262,7 +261,7 @@ public sealed class ReleaseWorkflowTests
     /// widened by one character — <c>v*</c> for <c>v*.*.*</c> — would start swallowing the
     /// sibling's tags, and reading the two files side by side is exactly how that gets missed.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void NoTagMatchesMoreThanOneReleaseWorkflow()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
@@ -303,8 +302,8 @@ public sealed class ReleaseWorkflowTests
             }
         }
 
-        Assert.IsTrue(checkedCount > 0, "No sample tags were checked.");
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(checkedCount > 0, "No sample tags were checked.");
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     /// <summary>
@@ -325,7 +324,7 @@ public sealed class ReleaseWorkflowTests
     /// against the publish steps is what notices a job added later without one.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryPublishingJobResolvesItsVersionFromTheTag()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
@@ -367,10 +366,10 @@ public sealed class ReleaseWorkflowTests
             }
         }
 
-        Assert.AreNotEqual(0, covered,
+        MessageAssert.NotEqual(0, covered,
             "No tag-triggered workflow publishes anything, so this guard is measuring nothing.");
 
-        Assert.AreEqual(0, problems.Count, string.Join("\n", problems));
+        MessageAssert.Equal(0, problems.Count, string.Join("\n", problems));
     }
 
     /// <summary>
@@ -385,7 +384,7 @@ public sealed class ReleaseWorkflowTests
     /// release time. The agreement is cheap to assert and impossible to see by reading two ends
     /// of one file.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryTagPrefixMatchesItsOwnWorkflowsTrigger()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
@@ -424,10 +423,10 @@ public sealed class ReleaseWorkflowTests
             }
         }
 
-        Assert.AreNotEqual(0, checkedCount,
+        MessageAssert.NotEqual(0, checkedCount,
             "No workflow declares TAG_PREFIX, so this guard is measuring nothing.");
 
-        Assert.AreEqual(0, problems.Count, string.Join("\n", problems));
+        MessageAssert.Equal(0, problems.Count, string.Join("\n", problems));
     }
 
     /// <summary>Every workflow file that triggers on tags.</summary>
@@ -508,13 +507,13 @@ public sealed class ReleaseWorkflowTests
     /// prose is the reason it will not be reintroduced.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void NoWorkflowSetsPublicVersion()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
         string dir = Path.Combine(repoRoot, ".github", "workflows");
 
-        Assert.IsTrue(Directory.Exists(dir), $"No workflows directory at '{dir}'.");
+        Assert.True(Directory.Exists(dir), $"No workflows directory at '{dir}'.");
 
         List<string> offenders = [];
         int scanned = 0;
@@ -538,9 +537,9 @@ public sealed class ReleaseWorkflowTests
             }
         }
 
-        Assert.AreNotEqual(0, scanned, "Scanned no workflow files, so this guard proves nothing.");
+        MessageAssert.NotEqual(0, scanned, "Scanned no workflow files, so this guard proves nothing.");
 
-        Assert.AreEqual(0, offenders.Count,
+        MessageAssert.Equal(0, offenders.Count,
             "These workflow lines set PublicVersion themselves. It is not the version input — the "
             + "generator writes it only as assembly METADATA, and the numbers come from "
             + "BuildTimestamp — so a workflow setting it independently produces a binary whose "

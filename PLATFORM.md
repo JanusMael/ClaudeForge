@@ -342,23 +342,22 @@ if (!OperatingSystem.IsWindows()) return null;
 `_current` field). Tests must isolate themselves so emulation set in one
 test does not bleed into the next.
 
-**Pattern:** call `PlatformInfo.ResetForTesting()` in `TestCleanup`:
+**Pattern:** call `PlatformInfo.ResetForTesting()` in `Dispose`:
 
 ```csharp
-[TestClass]
-public sealed class MyFeatureTests
+[Collection("DoNotParallelize")]   // process-global state: never beside another test
+public sealed class MyFeatureTests : IDisposable
 {
-    [TestCleanup]
-    public void Cleanup() => PlatformInfo.ResetForTesting();
+    public void Dispose() => PlatformInfo.ResetForTesting();
 
-    [TestMethod]
+    [Fact]
     public void Feature_OnEmulatedMacOS_RendersMacPath()
     {
         PlatformInfo.OverrideForDebug(EmulatedPlatformInfo.ForId("macos"));
 
         var path = MyFeature.DescribePath();
 
-        StringAssert.Contains(path, "Library/Application Support");
+        Assert.Contains("Library/Application Support", path, StringComparison.Ordinal);
     }
 }
 ```
@@ -371,7 +370,8 @@ for the canonical pattern.
 **Thread safety:** `PlatformInfo._current` is intentionally NOT
 thread-safe. The override is meant to run once in `Program.Main` before
 any UI thread starts, and to be stable for the rest of the process.
-Tests serialize through MSTest's per-test isolation. If you ever need
+Tests that touch it run serially — `ClaudeForge.Tests` disables parallelization, and
+elsewhere such a class joins the `DoNotParallelize` collection. If you ever need
 to mutate it from multiple threads at once, redesign the test rather
 than adding locks here.
 

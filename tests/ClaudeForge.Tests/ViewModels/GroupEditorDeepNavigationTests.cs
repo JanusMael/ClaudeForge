@@ -18,7 +18,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// ever persisted, so place-keeping could not bring a tab back either.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class GroupEditorDeepNavigationTests
 {
     private static SettingsGroupEditorViewModel MakeEditor()
@@ -42,7 +41,7 @@ public sealed class GroupEditorDeepNavigationTests
             ClaudeSettingsGroupText.Create());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RestoreThenCapture_RoundTripsTheTab()
     {
         SettingsGroupEditorViewModel vm = MakeEditor();
@@ -50,15 +49,15 @@ public sealed class GroupEditorDeepNavigationTests
         bool applied = await vm.TryRestoreDeepPathAsync(
             [GroupTab.JsonId], DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsTrue(applied);
-        Assert.AreEqual(GroupTab.JsonId, vm.SelectedTab?.Id);
-        CollectionAssert.AreEqual(
+        Assert.True(applied);
+        Assert.Equal(GroupTab.JsonId, vm.SelectedTab?.Id);
+        MessageAssert.SequenceEqual(
             new[] { GroupTab.JsonId },
             vm.CaptureDeepPath().ToArray(),
             "What the page captures must be what a later restore can consume.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_UnknownTab_ReportsTheMissAndStaysPut()
     {
         SettingsGroupEditorViewModel vm = MakeEditor();
@@ -67,16 +66,16 @@ public sealed class GroupEditorDeepNavigationTests
         bool applied = await vm.TryRestoreDeepPathAsync(
             ["no-such-tab"], DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsFalse(applied, "A tab this group does not have is a miss the host must be told about.");
-        Assert.AreEqual(before, vm.SelectedTab?.Id, "A miss must not disturb the current tab.");
+        Assert.False(applied, "A tab this group does not have is a miss the host must be told about.");
+        MessageAssert.Equal(before, vm.SelectedTab?.Id, "A miss must not disturb the current tab.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_NoSegments_IsAMiss()
     {
         SettingsGroupEditorViewModel vm = MakeEditor();
 
-        Assert.IsFalse(await vm.TryRestoreDeepPathAsync(
+        Assert.False(await vm.TryRestoreDeepPathAsync(
             [], DeepRestoreMode.Locate, null, CancellationToken.None));
     }
 
@@ -85,7 +84,7 @@ public sealed class GroupEditorDeepNavigationTests
     /// view rebuild that follows node selection can land after the restore and
     /// reset the tab. It must be safe to call when the tab is already correct.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task ReapplyTab_IsIdempotent()
     {
         SettingsGroupEditorViewModel vm = MakeEditor();
@@ -95,10 +94,10 @@ public sealed class GroupEditorDeepNavigationTests
         vm.ReapplyTab([GroupTab.EffectiveId]);
         vm.ReapplyTab([GroupTab.EffectiveId]);
 
-        Assert.AreEqual(GroupTab.EffectiveId, vm.SelectedTab?.Id);
+        Assert.Equal(GroupTab.EffectiveId, vm.SelectedTab?.Id);
     }
 
-    [TestMethod]
+    [Fact]
     public void ReapplyTab_UnknownTab_LeavesTheSelectionAlone()
     {
         SettingsGroupEditorViewModel vm = MakeEditor();
@@ -106,7 +105,7 @@ public sealed class GroupEditorDeepNavigationTests
 
         vm.ReapplyTab(["no-such-tab"]);
 
-        Assert.AreEqual(before, vm.SelectedTab?.Id);
+        Assert.Equal(before, vm.SelectedTab?.Id);
     }
 
     /// <summary>
@@ -115,13 +114,13 @@ public sealed class GroupEditorDeepNavigationTests
     /// deep-link path. Guards against a future "only the seeded three are
     /// addressable" regression.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void SeededTabIds_AreStableAndDistinct()
     {
         string[] ids = [GroupTab.PropertiesId, GroupTab.EffectiveId, GroupTab.JsonId];
 
-        CollectionAssert.AreEqual(new[] { "properties", "effective", "json" }, ids,
+        MessageAssert.SequenceEqual(new[] { "properties", "effective", "json" }, ids,
             "These ids are a persisted wire format; renaming one breaks saved links.");
-        Assert.AreEqual(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
     }
 }

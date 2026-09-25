@@ -20,14 +20,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// returned when it had not.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class AgentsSkillsDeepPathTests
+public sealed class AgentsSkillsDeepPathTests : IDisposable
 {
     private string _sandbox = string.Empty;
     private string _project = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public AgentsSkillsDeepPathTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_asdeep_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -37,8 +37,7 @@ public sealed class AgentsSkillsDeepPathTests
         Directory.CreateDirectory(_project);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         foreach (string dir in new[] { _sandbox, _project })
@@ -55,6 +54,12 @@ public sealed class AgentsSkillsDeepPathTests
                 _ = ex;
             }
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private string Home => Path.Combine(_sandbox, ".claude");
@@ -84,27 +89,27 @@ public sealed class AgentsSkillsDeepPathTests
 
     // ── Segment ids ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SegmentIds_RoundTripWithIndices()
     {
-        Assert.AreEqual(0, AgentsSkillsEditorViewModel.SegmentIndexFor("subagents"));
-        Assert.AreEqual(1, AgentsSkillsEditorViewModel.SegmentIndexFor("skills"));
-        Assert.AreEqual(2, AgentsSkillsEditorViewModel.SegmentIndexFor("commands"));
+        Assert.Equal(0, AgentsSkillsEditorViewModel.SegmentIndexFor("subagents"));
+        Assert.Equal(1, AgentsSkillsEditorViewModel.SegmentIndexFor("skills"));
+        Assert.Equal(2, AgentsSkillsEditorViewModel.SegmentIndexFor("commands"));
 
-        Assert.AreEqual("subagents", AgentsSkillsEditorViewModel.SegmentIdFor(0));
-        Assert.AreEqual("skills", AgentsSkillsEditorViewModel.SegmentIdFor(1));
-        Assert.AreEqual("commands", AgentsSkillsEditorViewModel.SegmentIdFor(2));
+        Assert.Equal("subagents", AgentsSkillsEditorViewModel.SegmentIdFor(0));
+        Assert.Equal("skills", AgentsSkillsEditorViewModel.SegmentIdFor(1));
+        Assert.Equal("commands", AgentsSkillsEditorViewModel.SegmentIdFor(2));
     }
 
-    [TestMethod]
+    [Fact]
     public void SegmentIndexFor_IsCaseInsensitive_AndNullForUnknown()
     {
-        Assert.AreEqual(1, AgentsSkillsEditorViewModel.SegmentIndexFor("SKILLS"));
-        Assert.IsNull(AgentsSkillsEditorViewModel.SegmentIndexFor("nope"));
-        Assert.IsNull(AgentsSkillsEditorViewModel.SegmentIndexFor(null));
+        Assert.Equal(1, AgentsSkillsEditorViewModel.SegmentIndexFor("SKILLS"));
+        Assert.Null(AgentsSkillsEditorViewModel.SegmentIndexFor("nope"));
+        Assert.Null(AgentsSkillsEditorViewModel.SegmentIndexFor(null));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task SelectSegment_UnknownId_IsANoOp()
     {
         AgentsSkillsEditorViewModel vm = await LoadedVmAsync();
@@ -112,21 +117,21 @@ public sealed class AgentsSkillsDeepPathTests
 
         vm.SelectSegment("not-a-segment");
 
-        Assert.AreEqual(2, vm.SelectedSegmentIndex, "An unknown segment id must not move the user.");
+        MessageAssert.Equal(2, vm.SelectedSegmentIndex, "An unknown segment id must not move the user.");
     }
 
     // ── Capture ──────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureDeepPath_NoSelection_IsSegmentOnly()
     {
         AgentsSkillsEditorViewModel vm = await LoadedVmAsync();
         vm.SelectedSegmentIndex = 1;
 
-        CollectionAssert.AreEqual(new[] { "skills" }, vm.CaptureDeepPath().ToArray());
+        Assert.Equal(new[] { "skills" }, vm.CaptureDeepPath().ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureDeepPath_WithSelection_IsQualifiedBySource()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nB.\n");
@@ -136,14 +141,14 @@ public sealed class AgentsSkillsDeepPathTests
 
         IReadOnlyList<string> path = vm.CaptureDeepPath();
 
-        Assert.AreEqual(2, path.Count);
-        Assert.AreEqual("skills", path[0]);
+        Assert.Equal(2, path.Count);
+        Assert.Equal("skills", path[0]);
         // name@source, not a bare name — otherwise a restore could land on a
         // same-named artifact from a different scope or plugin.
-        StringAssert.StartsWith(path[1], "pdf@");
+        OrdinalAssert.StartsWith("pdf@", path[1]);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureDeepPath_SegmentComesFromTheArtifact_NotTheVisibleTab()
     {
         // The segment is derived from the selected artifact's CATEGORY, not from
@@ -158,10 +163,10 @@ public sealed class AgentsSkillsDeepPathTests
 
         IReadOnlyList<string> path = vm.CaptureDeepPath();
 
-        Assert.AreEqual("skills", path[0], "The segment must follow the artifact, not the visible tab.");
+        MessageAssert.Equal("skills", path[0], "The segment must follow the artifact, not the visible tab.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureDeepPath_NeverContainsAPathSeparator()
     {
         // The segment separator is '/', so an absolute path in an item key would
@@ -173,22 +178,22 @@ public sealed class AgentsSkillsDeepPathTests
 
         foreach (string segment in vm.CaptureDeepPath())
         {
-            Assert.IsFalse(segment.Contains('/'), $"Segment '{segment}' must not contain '/'.");
-            Assert.IsFalse(segment.Contains('\\'), $"Segment '{segment}' must not contain '\\'.");
+            Assert.False(segment.Contains('/'), $"Segment '{segment}' must not contain '/'.");
+            Assert.False(segment.Contains('\\'), $"Segment '{segment}' must not contain '\\'.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureTransientState_NullWhenNotEditing()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nB.\n");
         AgentsSkillsEditorViewModel vm = await LoadedVmAsync();
         await vm.LoadArtifactAsync(vm.SkillItems.OfType<ArtifactRowViewModel>().Single());
 
-        Assert.IsNull(vm.CaptureTransientState(), "A plain viewing position needs no transient payload.");
+        MessageAssert.Null(vm.CaptureTransientState(), "A plain viewing position needs no transient payload.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureTransientState_CarriesTheUnsavedBuffer()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"),
@@ -200,32 +205,32 @@ public sealed class AgentsSkillsDeepPathTests
 
         object? state = vm.CaptureTransientState();
 
-        Assert.IsNotNull(state, "An in-progress edit must be captured or a reload discards it.");
+        MessageAssert.NotNull(state, "An in-progress edit must be captured or a reload discards it.");
     }
 
     // ── Copy deep link (discoverability) ─────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CopyDeepLink_IsDisabledWithoutASelectionOrAHostNodeId()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nB.\n");
         AgentsSkillsEditorViewModel vm = await LoadedVmAsync();
 
         // No host node id (the unit-test case) and nothing selected.
-        Assert.IsFalse(vm.CanCopyDeepLink);
-        Assert.IsFalse(vm.CopyDeepLinkCommand.CanExecute(null));
+        Assert.False(vm.CanCopyDeepLink);
+        Assert.False(vm.CopyDeepLinkCommand.CanExecute(null));
 
         // A selection alone isn't enough — the full path needs the node prefix,
         // which only the host knows.
         await vm.LoadArtifactAsync(vm.SkillItems.OfType<ArtifactRowViewModel>().Single());
-        Assert.IsFalse(vm.CanCopyDeepLink, "Without a host node id no full path can be composed.");
+        Assert.False(vm.CanCopyDeepLink, "Without a host node id no full path can be composed.");
 
         vm.DeepLinkNodeId = "agents-skills";
-        Assert.IsTrue(vm.CanCopyDeepLink);
-        Assert.IsTrue(vm.CopyDeepLinkCommand.CanExecute(null));
+        Assert.True(vm.CanCopyDeepLink);
+        Assert.True(vm.CopyDeepLinkCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CopyDeepLink_EmitsAPathThatResolvesBackToTheSameArtifact()
     {
         // The whole point of the button: whatever it copies must be a path the
@@ -240,18 +245,18 @@ public sealed class AgentsSkillsDeepPathTests
 
         vm.CopyDeepLinkCommand.Execute(null);
 
-        Assert.IsNotNull(copied, "The command must hand a payload to the view's clipboard bridge.");
-        Assert.IsTrue(NavDeepPath.TryParse(copied, out IReadOnlyList<string> segs, out string? err),
+        MessageAssert.NotNull(copied, "The command must hand a payload to the view's clipboard bridge.");
+        Assert.True(NavDeepPath.TryParse(copied, out IReadOnlyList<string> segs, out string? err),
             $"The copied path must be well-formed; parser said: {err}");
-        CollectionAssert.AreEqual(new[] { "agents-skills", "skills" }, segs.Take(2).ToArray());
-        StringAssert.StartsWith(segs[2], "pdf@");
+        Assert.Equal(new[] { "agents-skills", "skills" }, segs.Take(2).ToArray());
+        OrdinalAssert.StartsWith("pdf@", segs[2]);
 
         // And the user gets told it happened.
-        Assert.IsNotNull(vm.LastActionMessage);
-        StringAssert.Contains(vm.LastActionMessage!, copied!);
+        Assert.NotNull(vm.LastActionMessage);
+        OrdinalAssert.Contains(copied!, vm.LastActionMessage!);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CopyDeepLink_PathRestoresOnAFreshViewModel()
     {
         // End-to-end: copy on one instance, restore on another, land on the same row.
@@ -264,18 +269,18 @@ public sealed class AgentsSkillsDeepPathTests
         source.CopyMarkdownRequested += (_, text) => copied = text;
         source.CopyDeepLinkCommand.Execute(null);
 
-        Assert.IsTrue(NavDeepPath.TryParse(copied, out IReadOnlyList<string> segs, out _));
+        Assert.True(NavDeepPath.TryParse(copied, out IReadOnlyList<string> segs, out _));
 
         AgentsSkillsEditorViewModel target = await LoadedVmAsync();
         // Drop the node segment — that's the host's part; the page restores below it.
-        Assert.IsTrue(await target.TryRestoreDeepPathAsync(
+        Assert.True(await target.TryRestoreDeepPathAsync(
             segs.Skip(1).ToList(), DeepRestoreMode.Locate, null, CancellationToken.None));
-        Assert.AreEqual("reviewer", target.SelectedArtifact?.DisplayName);
+        Assert.Equal("reviewer", target.SelectedArtifact?.DisplayName);
     }
 
     // ── Restore ──────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_SelectsSegmentAndItem_AndRevealsItByFiltering()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nB.\n");
@@ -285,19 +290,19 @@ public sealed class AgentsSkillsDeepPathTests
         bool ok = await vm.TryRestoreDeepPathAsync(
             ["skills", "pdf"], DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsTrue(ok);
-        Assert.AreEqual(1, vm.SelectedSegmentIndex);
-        Assert.AreEqual("pdf", vm.SelectedArtifact?.DisplayName);
+        Assert.True(ok);
+        Assert.Equal(1, vm.SelectedSegmentIndex);
+        Assert.Equal("pdf", vm.SelectedArtifact?.DisplayName);
 
         // Revealed by filtering — the mechanism the app already uses for property
         // jump links — with the navigated frame flagged.
-        Assert.AreEqual("pdf", vm.FilterText);
-        Assert.IsTrue(vm.FilterFromNavigation,
+        Assert.Equal("pdf", vm.FilterText);
+        Assert.True(vm.FilterFromNavigation,
             "The reveal must go through ApplyNavigationFilter so the navigated frame shows.");
-        Assert.AreEqual(1, vm.FilteredSkillItems.OfType<ArtifactRowViewModel>().Count());
+        Assert.Single(vm.FilteredSkillItems.OfType<ArtifactRowViewModel>());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_SegmentOnly_SelectsTabWithoutOpeningAnything()
     {
         Write(Path.Combine(Home, "commands", "c1.md"), "---\ndescription: d\n---\n\nB.\n");
@@ -306,12 +311,12 @@ public sealed class AgentsSkillsDeepPathTests
         bool ok = await vm.TryRestoreDeepPathAsync(
             ["commands"], DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsTrue(ok);
-        Assert.AreEqual(2, vm.SelectedSegmentIndex);
-        Assert.IsNull(vm.SelectedArtifact);
+        Assert.True(ok);
+        Assert.Equal(2, vm.SelectedSegmentIndex);
+        Assert.Null(vm.SelectedArtifact);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_QualifiedKey_PicksTheRightScope()
     {
         // Same NAME under two sources: only the qualified key disambiguates.
@@ -327,11 +332,11 @@ public sealed class AgentsSkillsDeepPathTests
             ["skills", NavDeepPath.FormatItemKey(pluginRow.DisplayName, pluginRow.Source)],
             DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsTrue(ok);
-        Assert.AreSame(pluginRow, vm.SelectedArtifact);
+        Assert.True(ok);
+        Assert.Same(pluginRow, vm.SelectedArtifact);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_MissingItem_ReturnsFalseButStillSelectsTheTab()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nB.\n");
@@ -340,12 +345,12 @@ public sealed class AgentsSkillsDeepPathTests
         bool ok = await vm.TryRestoreDeepPathAsync(
             ["skills", "deleted-skill"], DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsFalse(ok, "A deleted artifact must report not-restored…");
-        Assert.AreEqual(1, vm.SelectedSegmentIndex, "…but landing on the right tab is still better than not.");
-        Assert.IsNull(vm.SelectedArtifact);
+        Assert.False(ok, "A deleted artifact must report not-restored…");
+        MessageAssert.Equal(1, vm.SelectedSegmentIndex, "…but landing on the right tab is still better than not.");
+        Assert.Null(vm.SelectedArtifact);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_UnqualifiedKeyWhoseSourceIsGone_StillResolvesByName()
     {
         // A plugin can be uninstalled between capture and restore. The name
@@ -356,11 +361,11 @@ public sealed class AgentsSkillsDeepPathTests
         bool ok = await vm.TryRestoreDeepPathAsync(
             ["skills", "pdf@some-uninstalled-plugin"], DeepRestoreMode.Locate, null, CancellationToken.None);
 
-        Assert.IsTrue(ok);
-        Assert.AreEqual("pdf", vm.SelectedArtifact?.DisplayName);
+        Assert.True(ok);
+        Assert.Equal("pdf", vm.SelectedArtifact?.DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_Locate_DoesNotEnterEditMode_EvenWithATransientPayload()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"),
@@ -375,11 +380,11 @@ public sealed class AgentsSkillsDeepPathTests
         await target.TryRestoreDeepPathAsync(
             ["skills", "pdf"], DeepRestoreMode.Locate, transient, CancellationToken.None);
 
-        Assert.IsFalse(target.IsEditing,
+        Assert.False(target.IsEditing,
             "Locate must not re-enter editing — a cold launch has no live buffer to justify it.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_Full_ReturnsTheUsersActualUnsavedText()
     {
         // The core promise: Reload Window no longer eats an in-progress edit.
@@ -400,19 +405,19 @@ public sealed class AgentsSkillsDeepPathTests
         bool ok = await after.TryRestoreDeepPathAsync(
             path, DeepRestoreMode.Full, transient, CancellationToken.None);
 
-        Assert.IsTrue(ok);
-        Assert.IsTrue(after.IsEditing, "Full restore must re-open the editing experience.");
-        Assert.AreEqual("typed but not saved", after.EditDescription,
+        Assert.True(ok);
+        Assert.True(after.IsEditing, "Full restore must re-open the editing experience.");
+        MessageAssert.Equal("typed but not saved", after.EditDescription,
             "The user's unsaved text must come back — not the value re-read from disk.");
-        Assert.AreEqual("half-written body", after.EditBody);
+        Assert.Equal("half-written body", after.EditBody);
 
         // And the file on disk is untouched, because nothing was saved.
         string onDisk = await File.ReadAllTextAsync(
             Path.Combine(Home, "skills", "pdf", "SKILL.md"));
-        StringAssert.Contains(onDisk, "description: original");
+        OrdinalAssert.Contains("description: original", onDisk);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_Full_RestoresRawModeAndItsText()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"),
@@ -430,23 +435,23 @@ public sealed class AgentsSkillsDeepPathTests
         AgentsSkillsEditorViewModel after = await LoadedVmAsync();
         await after.TryRestoreDeepPathAsync(path, DeepRestoreMode.Full, transient, CancellationToken.None);
 
-        Assert.IsTrue(after.IsEditing);
-        Assert.IsTrue(after.IsRawMode, "Raw mode is part of the editing experience.");
+        Assert.True(after.IsEditing);
+        Assert.True(after.IsRawMode, "Raw mode is part of the editing experience.");
         // Toggling IsRawMode re-seeds the raw box from the typed fields, so the
         // captured raw text has to be applied AFTER the toggle or it is lost.
-        Assert.AreEqual("name: pdf\ndescription: raw edit in flight", after.EditRawFrontMatter);
+        Assert.Equal("name: pdf\ndescription: raw edit in flight", after.EditRawFrontMatter);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_EmptySegments_ReturnsFalse()
     {
         AgentsSkillsEditorViewModel vm = await LoadedVmAsync();
 
-        Assert.IsFalse(await vm.TryRestoreDeepPathAsync(
+        Assert.False(await vm.TryRestoreDeepPathAsync(
             [], DeepRestoreMode.Locate, null, CancellationToken.None));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Restore_UnrecognisedTransientPayload_IsIgnoredNotThrown()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nB.\n");
@@ -455,11 +460,11 @@ public sealed class AgentsSkillsDeepPathTests
         bool ok = await vm.TryRestoreDeepPathAsync(
             ["skills", "pdf"], DeepRestoreMode.Full, "not a snapshot", CancellationToken.None);
 
-        Assert.IsTrue(ok);
-        Assert.IsFalse(vm.IsEditing);
+        Assert.True(ok);
+        Assert.False(vm.IsEditing);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CaptureThenRestore_RoundTripsThroughTheStringForm()
     {
         // End-to-end: what gets persisted is a plain string, so the whole loop has
@@ -470,11 +475,11 @@ public sealed class AgentsSkillsDeepPathTests
         await before.LoadArtifactAsync(before.AgentItems.OfType<ArtifactRowViewModel>().Single());
 
         string persisted = NavDeepPath.Format(before.CaptureDeepPath());
-        Assert.IsTrue(NavDeepPath.TryParse(persisted, out IReadOnlyList<string> parsed, out _));
+        Assert.True(NavDeepPath.TryParse(persisted, out IReadOnlyList<string> parsed, out _));
 
         AgentsSkillsEditorViewModel after = await LoadedVmAsync();
-        Assert.IsTrue(await after.TryRestoreDeepPathAsync(
+        Assert.True(await after.TryRestoreDeepPathAsync(
             parsed, DeepRestoreMode.Locate, null, CancellationToken.None));
-        Assert.AreEqual("reviewer", after.SelectedArtifact?.DisplayName);
+        Assert.Equal("reviewer", after.SelectedArtifact?.DisplayName);
     }
 }

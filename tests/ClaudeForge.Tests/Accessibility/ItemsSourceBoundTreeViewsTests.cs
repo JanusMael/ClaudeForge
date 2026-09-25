@@ -65,10 +65,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// guard that chased styles across files would be far easier to fool into a false pass.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class ItemsSourceBoundTreeViewsTests
 {
-    [TestMethod]
+    [Fact]
     public void EveryItemsSourceBoundTreeViewNamesItsGeneratedContainers()
     {
         string repoRoot = FindRepoRoot();
@@ -86,7 +85,7 @@ public sealed class ItemsSourceBoundTreeViewsTests
         // still a real assertion here, because ClaudeForge's navigation tree is the one tree this
         // scan must always find. If it ever reports 0, the pattern is broken. Restore 2 when a
         // second app's tree returns to this tree, and do not lower it again without saying why.
-        Assert.IsTrue(trees.Count >= 1,
+        Assert.True(trees.Count >= 1,
             $"expected at least 1 ItemsSource-bound TreeView (ClaudeForge's navigation), found "
             + $"{trees.Count}. The scan or its pattern is broken, not the repo.");
 

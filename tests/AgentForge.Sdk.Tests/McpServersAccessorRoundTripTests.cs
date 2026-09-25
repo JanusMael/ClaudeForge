@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 /// <see cref="JsonObject"/> out of the SDK public API surface.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class McpServersAccessorRoundTripTests
 {
     private static SettingsWorkspace MakeWorkspace(JsonObject mcpServersBlock)
@@ -43,7 +42,7 @@ public sealed class McpServersAccessorRoundTripTests
             ws, ConfigScope.User, new SchemaRegistry());
     }
 
-    [TestMethod]
+    [Fact]
     public void Get_ExposesDescriptionAsTypedProperty()
     {
         // The user's exact scenario: a stdio MCP server with a description.
@@ -68,13 +67,13 @@ public sealed class McpServersAccessorRoundTripTests
 
         McpServer? server = client.McpServers.Get("omega-memory");
 
-        Assert.IsNotNull(server);
-        Assert.AreEqual("Persistent agent memory with semantic search", server!.Description);
-        Assert.IsTrue(server.PreservedFields is null || !server.PreservedFields.ContainsKey("description"),
+        Assert.NotNull(server);
+        Assert.Equal("Persistent agent memory with semantic search", server!.Description);
+        Assert.True(server.PreservedFields is null || !server.PreservedFields.ContainsKey("description"),
             "Typed Description must be the single source of truth — description must not also appear in PreservedFields.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Set_RoundTrip_PreservesDescriptionField()
     {
         // Get → Set without modification: description must survive intact.
@@ -97,13 +96,13 @@ public sealed class McpServersAccessorRoundTripTests
         JsonObject output = (JsonObject)client.GetScopeValue("mcpServers", ConfigScope.User)!;
         JsonObject entry = output["omega-memory"]!.AsObject();
 
-        Assert.IsTrue(entry.ContainsKey("description"),
+        Assert.True(entry.ContainsKey("description"),
             "After Get→Set round-trip, description must still be on disk.");
-        Assert.AreEqual("Persistent agent memory with semantic search",
+        Assert.Equal("Persistent agent memory with semantic search",
             entry["description"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Set_TypedPropertyTakesPrecedenceOverPreservedField()
     {
         // Defensive: if a preserved field somehow collides with a typed
@@ -134,11 +133,11 @@ public sealed class McpServersAccessorRoundTripTests
         JsonObject output = (JsonObject)client.GetScopeValue("mcpServers", ConfigScope.User)!;
         JsonObject entry = output["s"]!.AsObject();
 
-        Assert.AreEqual("real-command", entry["command"]!.GetValue<string>(),
+        MessageAssert.Equal("real-command", entry["command"]!.GetValue<string>(),
             "Typed property must win; preserved field with same key must be skipped.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_MultipleServersWithDescriptions_PreservesAll()
     {
         // The user's actual config has 5 MCP servers, all with descriptions.
@@ -163,12 +162,12 @@ public sealed class McpServersAccessorRoundTripTests
 
         JsonObject output = (JsonObject)client.GetScopeValue("mcpServers", ConfigScope.User)!;
 
-        Assert.AreEqual("desc a", output["a"]!.AsObject()["description"]!.GetValue<string>());
-        Assert.AreEqual("desc b", output["b"]!.AsObject()["description"]!.GetValue<string>());
-        Assert.AreEqual("desc c", output["c"]!.AsObject()["description"]!.GetValue<string>());
+        Assert.Equal("desc a", output["a"]!.AsObject()["description"]!.GetValue<string>());
+        Assert.Equal("desc b", output["b"]!.AsObject()["description"]!.GetValue<string>());
+        Assert.Equal("desc c", output["c"]!.AsObject()["description"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_ArbitraryUnknownFields_AllPreserved()
     {
         // Generalisation: ANY unknown field must round-trip, not just
@@ -195,10 +194,10 @@ public sealed class McpServersAccessorRoundTripTests
 
         JsonObject output = client.GetScopeValue("mcpServers", ConfigScope.User)!.AsObject()["s"]!.AsObject();
 
-        Assert.AreEqual("a description", output["description"]!.GetValue<string>());
-        Assert.AreEqual(42, output["customField"]!.GetValue<int>());
-        Assert.AreEqual("hello", output["futureSchemaAddition"]!.GetValue<string>());
-        Assert.AreEqual(1, output["nestedCustom"]!.AsObject()["a"]!.GetValue<int>());
-        Assert.AreEqual(3, output["arrayCustom"]!.AsArray().Count);
+        Assert.Equal("a description", output["description"]!.GetValue<string>());
+        Assert.Equal(42, output["customField"]!.GetValue<int>());
+        Assert.Equal("hello", output["futureSchemaAddition"]!.GetValue<string>());
+        Assert.Equal(1, output["nestedCustom"]!.AsObject()["a"]!.GetValue<int>());
+        Assert.Equal(3, output["arrayCustom"]!.AsArray().Count);
     }
 }

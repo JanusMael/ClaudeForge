@@ -26,7 +26,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 /// is observable today, which is also precisely where the hardcoded fallback lived.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class ProductScopeLadderTests
 {
     /// <summary>Six rungs, two of them read-only — the shape Spike S1 measured for OpenCode.</summary>
@@ -39,34 +38,34 @@ public sealed class ProductScopeLadderTests
         new ScopeRung("Custom", IsReadOnly: false),
         new ScopeRung("Global", IsReadOnly: false));
 
-    [TestMethod]
+    [Fact]
     public void UnloadedClient_OffersItsOwnLowestEditableScope_NotClaudesUser()
     {
         using LadderClient client = new(_sixRungs);
 
         IReadOnlyList<ConfigScope> editable = client.EditableScopes;
 
-        Assert.AreEqual(1, editable.Count);
-        Assert.AreEqual("global", editable[0].Id,
+        Assert.Single(editable);
+        MessageAssert.Equal("global", editable[0].Id,
             "The client must offer its own ladder's lowest editable rung. Getting \"user\" "
             + "here means the hardcoded [ConfigScope.User] fallback is back, and this "
             + "product does not have a User scope at all.");
-        Assert.AreNotEqual(ConfigScope.User, editable[0],
+        MessageAssert.NotEqual(ConfigScope.User, editable[0],
             "Same ordinal (3 vs 5) is not the point — a scope from another ladder must not "
             + "compare equal to Claude's.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UnloadedClient_WithClaudesLadder_StillOffersUser()
     {
         // The counter-direction, so the test above cannot pass merely by returning something
         // other than User. A product whose ladder IS the default must be unaffected by 4f.
         using LadderClient client = new(ScopeLadder.Default);
 
-        CollectionAssert.AreEqual(new[] { ConfigScope.User }, client.EditableScopes.ToArray());
+        Assert.Equal(new[] { ConfigScope.User }, client.EditableScopes.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void AProductWithNoEditableRung_StillOffersOne()
     {
         // An all-policy ladder is a coherent product statement (every layer set by MDM), and
@@ -78,8 +77,8 @@ public sealed class ProductScopeLadderTests
             new ScopeRung("Mdm", IsReadOnly: true),
             new ScopeRung("Managed", IsReadOnly: true)));
 
-        Assert.AreEqual(1, client.EditableScopes.Count);
-        Assert.AreEqual("managed", client.EditableScopes[0].Id);
+        Assert.Single(client.EditableScopes);
+        Assert.Equal("managed", client.EditableScopes[0].Id);
     }
 
     /// <summary>

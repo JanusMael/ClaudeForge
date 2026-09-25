@@ -23,8 +23,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// observable rather than <c>init</c>.</b> A test that only checked the returned summary
 /// would stay green if the badges never moved, and the badge is the part a user sees.
 /// </remarks>
-[TestClass]
-public sealed class SchemaCheckActionTests
+public sealed class SchemaCheckActionTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
@@ -71,8 +70,9 @@ public sealed class SchemaCheckActionTests
         }
     }
 
-    [TestInitialize]
-    public void Setup()
+    public SchemaCheckActionTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "cfcheck_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -87,8 +87,7 @@ public sealed class SchemaCheckActionTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -104,6 +103,12 @@ public sealed class SchemaCheckActionTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static async Task<MainWindowViewModel> LoadedAsync(HttpMessageHandler handler)
     {
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(new HttpClient(handler)), new NullDialogService());
@@ -116,7 +121,7 @@ public sealed class SchemaCheckActionTests
         NavigationNodeViewModel? header = vm.NavigationTree
             .FirstOrDefault(n => string.Equals(n.NodeId, nodeId, StringComparison.Ordinal));
 
-        Assert.IsNotNull(header, $"Premise: the '{nodeId}' section header must be in the tree.");
+        MessageAssert.NotNull(header, $"Premise: the '{nodeId}' section header must be in the tree.");
         return header;
     }
 
@@ -124,7 +129,7 @@ public sealed class SchemaCheckActionTests
     /// ⭐ A check that reaches upstream moves Claude Code's badge on the node already in the
     /// tree — and leaves Claude Desktop's alone, because it was never checked.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task ASuccessfulCheck_MovesTheBadgeInPlace_AndLeavesTheUncheckedSectionAlone()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -134,7 +139,7 @@ public sealed class SchemaCheckActionTests
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
             NavigationNodeViewModel dt = Header(vm, MainWindowViewModel.NavIdClaudeDesktop);
 
-            Assert.AreEqual(Strings.SchemaBadgeBundled, cc.Badge,
+            MessageAssert.Equal(Strings.SchemaBadgeBundled, cc.Badge,
                 "Premise: the window loaded while the network was down, so the badge starts on "
                 + "the bundled copy. Without that the assertion below could pass unchanged.");
             string desktopBefore = dt.Badge!;
@@ -142,26 +147,26 @@ public sealed class SchemaCheckActionTests
             string summary = await vm.CheckForSchemaUpdatesAsync(CancellationToken.None);
 
             // The SAME node objects, not a rebuilt tree.
-            Assert.AreSame(cc, Header(vm, MainWindowViewModel.NavIdClaudeCode),
+            MessageAssert.Same(cc, Header(vm, MainWindowViewModel.NavIdClaudeCode),
                 "The tree was rebuilt. The badge is observable precisely so it need not be.");
 
-            Assert.IsNotNull(cc.Badge);
-            StringAssert.StartsWith(cc.Badge, "fetched", StringComparison.Ordinal,
+            Assert.NotNull(cc.Badge);
+            MessageAssert.StartsWith("fetched", cc.Badge, StringComparison.Ordinal,
                 "Claude Code still shows its load-time badge after a successful check.");
 
-            Assert.AreEqual(desktopBefore, dt.Badge,
+            MessageAssert.Equal(desktopBefore, dt.Badge,
                 "Claude Desktop has no upstream, so a check cannot have moved it.");
 
-            StringAssert.Contains(summary, "Reload", StringComparison.OrdinalIgnoreCase,
+            MessageAssert.Contains("Reload", summary, StringComparison.OrdinalIgnoreCase,
                 "An Updated result must tell the user the editors do not yet reflect the new copy.");
 
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ACheckWithNoNetwork_ReportsUnavailable()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -170,11 +175,11 @@ public sealed class SchemaCheckActionTests
 
             string summary = await vm.CheckForSchemaUpdatesAsync(CancellationToken.None);
 
-            Assert.AreEqual(Strings.SchemaCheckUnavailable, summary);
+            Assert.Equal(Strings.SchemaCheckUnavailable, summary);
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── The summariser's severity order ──────────────────────────────────
@@ -184,7 +189,7 @@ public sealed class SchemaCheckActionTests
                 ArchiveFolder: id),
             status, null, null);
 
-    [TestMethod]
+    [Fact]
     public void FailedOutranksEverything()
     {
         string line = MainWindowViewModel.SummariseSchemaCheck(
@@ -193,14 +198,14 @@ public sealed class SchemaCheckActionTests
             Result("b", SchemaRefreshStatus.Failed),
         ]);
 
-        StringAssert.Contains(line, "b", StringComparison.Ordinal);
-        Assert.AreNotEqual(
+        Assert.Contains("b", line, StringComparison.Ordinal);
+        MessageAssert.NotEqual(
             string.Format(CultureInfo.CurrentCulture, Strings.SchemaCheckUpdatedFmt, "a"),
             line,
             "A run where something failed must not be reported as a plain update.");
     }
 
-    [TestMethod]
+    [Fact]
     public void UpdatedOutranksUnavailableAndUpToDate()
     {
         string line = MainWindowViewModel.SummariseSchemaCheck(
@@ -210,11 +215,11 @@ public sealed class SchemaCheckActionTests
             Result("c", SchemaRefreshStatus.Unavailable),
         ]);
 
-        StringAssert.Contains(line, "b", StringComparison.Ordinal,
+        MessageAssert.Contains("b", line, StringComparison.Ordinal,
             "The actionable outcome is the one that changed, and it names which product.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EverythingUnchanged_IsUpToDate()
     {
         string line = MainWindowViewModel.SummariseSchemaCheck(
@@ -223,7 +228,7 @@ public sealed class SchemaCheckActionTests
             Result("b", SchemaRefreshStatus.Unchanged),
         ]);
 
-        Assert.AreEqual(Strings.SchemaCheckUpToDate, line);
+        Assert.Equal(Strings.SchemaCheckUpToDate, line);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────

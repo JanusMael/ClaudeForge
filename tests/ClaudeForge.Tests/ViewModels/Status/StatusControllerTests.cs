@@ -26,12 +26,11 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;
 /// is that assertion.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class StatusControllerTests
 {
     private static StatusController NewController(FakeTimeProvider time) => new(time, action => action());
 
-    [TestMethod]
+    [Fact]
     public void SetSuccess_PutsTextAndKindOnTheController()
     {
         FakeTimeProvider time = new();
@@ -39,14 +38,14 @@ public sealed class StatusControllerTests
 
         sc.SetSuccess("Saved.");
 
-        Assert.AreEqual("Saved.", sc.Text);
-        Assert.AreEqual(StatusKind.Success, sc.Kind);
-        Assert.IsTrue(sc.HasText);
-        Assert.IsTrue(sc.IsSuccess);
-        Assert.IsFalse(sc.IsFailure);
+        Assert.Equal("Saved.", sc.Text);
+        Assert.Equal(StatusKind.Success, sc.Kind);
+        Assert.True(sc.HasText);
+        Assert.True(sc.IsSuccess);
+        Assert.False(sc.IsFailure);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetAnything_WithEmptyText_ForcesKindNone()
     {
         // Empty text always means "nothing on screen" — the kind is irrelevant in
@@ -57,28 +56,28 @@ public sealed class StatusControllerTests
 
         sc.SetFailure(null);
 
-        Assert.AreEqual(StatusKind.None, sc.Kind);
-        Assert.IsFalse(sc.HasText);
-        Assert.IsFalse(sc.IsFailure);
+        Assert.Equal(StatusKind.None, sc.Kind);
+        Assert.False(sc.HasText);
+        Assert.False(sc.IsFailure);
     }
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_ClearsTextAndResetsKindToNone()
     {
         FakeTimeProvider time = new();
         using StatusController sc = NewController(time);
 
         sc.SetFailure("Save failed: ...");
-        Assert.IsTrue(sc.IsFailure);
+        Assert.True(sc.IsFailure);
 
         sc.Dismiss();
 
-        Assert.IsNull(sc.Text);
-        Assert.AreEqual(StatusKind.None, sc.Kind);
-        Assert.IsFalse(sc.IsDismissible);
+        Assert.Null(sc.Text);
+        Assert.Equal(StatusKind.None, sc.Kind);
+        Assert.False(sc.IsDismissible);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsDismissible_OnlyTrueForFailureKind()
     {
         FakeTimeProvider time = new();
@@ -86,25 +85,25 @@ public sealed class StatusControllerTests
 
         // Success / Warning auto-clear instead, so no × button.
         sc.SetSuccess("Saved.");
-        Assert.IsFalse(sc.IsDismissible);
+        Assert.False(sc.IsDismissible);
 
         sc.SetWarning("Nothing to save");
-        Assert.IsFalse(sc.IsDismissible);
+        Assert.False(sc.IsDismissible);
 
         // Active is operation-tied, gets cleared by the next status emit.
         sc.SetActive("Reloading…");
-        Assert.IsFalse(sc.IsDismissible);
+        Assert.False(sc.IsDismissible);
 
         // State is long-lived identity text.
         sc.SetState("Ready");
-        Assert.IsFalse(sc.IsDismissible);
+        Assert.False(sc.IsDismissible);
 
         // Only Failure surfaces the manual × button.
         sc.SetFailure("Save failed: ...");
-        Assert.IsTrue(sc.IsDismissible);
+        Assert.True(sc.IsDismissible);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetSuccess_AutoClearsAfterItsDelay()
     {
         FakeTimeProvider time = new();
@@ -113,14 +112,14 @@ public sealed class StatusControllerTests
         sc.SetSuccess("Saved.");
 
         time.Advance(StatusController.DefaultSuccessAutoClearDelay - TimeSpan.FromMilliseconds(1));
-        Assert.AreEqual("Saved.", sc.Text, "The success must still be on screen a millisecond early.");
+        MessageAssert.Equal("Saved.", sc.Text, "The success must still be on screen a millisecond early.");
 
         time.Advance(TimeSpan.FromMilliseconds(2));
-        Assert.IsNull(sc.Text, "Success status should auto-clear after its delay.");
-        Assert.AreEqual(StatusKind.None, sc.Kind);
+        MessageAssert.Null(sc.Text, "Success status should auto-clear after its delay.");
+        Assert.Equal(StatusKind.None, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetWarning_StaysLongerThanASuccess()
     {
         // The delay a warning gets is its own, and longer. The previous static
@@ -132,17 +131,17 @@ public sealed class StatusControllerTests
         sc.SetWarning("Nothing to save");
 
         time.Advance(StatusController.DefaultSuccessAutoClearDelay);
-        Assert.AreEqual("Nothing to save", sc.Text,
+        MessageAssert.Equal("Nothing to save", sc.Text,
             "A warning must outlast the success delay — it has its own, longer one.");
 
         time.Advance(StatusController.DefaultWarningAutoClearDelay
                      - StatusController.DefaultSuccessAutoClearDelay
                      + TimeSpan.FromMilliseconds(1));
-        Assert.IsNull(sc.Text, "Warning status should auto-clear after its own delay.");
-        Assert.AreEqual(StatusKind.None, sc.Kind);
+        MessageAssert.Null(sc.Text, "Warning status should auto-clear after its own delay.");
+        Assert.Equal(StatusKind.None, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetFailure_DoesNotAutoClear()
     {
         FakeTimeProvider time = new();
@@ -151,12 +150,12 @@ public sealed class StatusControllerTests
         sc.SetFailure("Save failed: ...");
         time.Advance(TimeSpan.FromHours(1));
 
-        Assert.AreEqual("Save failed: ...", sc.Text);
-        Assert.AreEqual(StatusKind.Failure, sc.Kind);
-        Assert.IsTrue(sc.IsDismissible);
+        Assert.Equal("Save failed: ...", sc.Text);
+        Assert.Equal(StatusKind.Failure, sc.Kind);
+        Assert.True(sc.IsDismissible);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetActive_DoesNotAutoClear()
     {
         // Active statuses are tied to the lifetime of the emitting operation; the
@@ -167,11 +166,11 @@ public sealed class StatusControllerTests
         sc.SetActive("Reloading…");
         time.Advance(TimeSpan.FromHours(1));
 
-        Assert.AreEqual("Reloading…", sc.Text);
-        Assert.AreEqual(StatusKind.Active, sc.Kind);
+        Assert.Equal("Reloading…", sc.Text);
+        Assert.Equal(StatusKind.Active, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetState_DoesNotAutoClear()
     {
         FakeTimeProvider time = new();
@@ -180,11 +179,11 @@ public sealed class StatusControllerTests
         sc.SetState("Ready");
         time.Advance(TimeSpan.FromHours(1));
 
-        Assert.AreEqual("Ready", sc.Text);
-        Assert.AreEqual(StatusKind.State, sc.Kind);
+        Assert.Equal("Ready", sc.Text);
+        Assert.Equal(StatusKind.State, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void ReplacingAPendingSuccessWithAFailure_CancelsTheAutoClear()
     {
         // Sequence: SetSuccess (schedules a clear) → SetFailure before it comes
@@ -197,12 +196,12 @@ public sealed class StatusControllerTests
 
         time.Advance(TimeSpan.FromHours(1));
 
-        Assert.AreEqual("Save failed: ...", sc.Text,
+        MessageAssert.Equal("Save failed: ...", sc.Text,
             "The failure must survive the success's cancelled auto-clear.");
-        Assert.AreEqual(StatusKind.Failure, sc.Kind);
+        Assert.Equal(StatusKind.Failure, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_CancelsThePendingAutoClear()
     {
         // After Dismiss(), the previously-scheduled auto-clear must not fire and
@@ -216,12 +215,12 @@ public sealed class StatusControllerTests
 
         time.Advance(TimeSpan.FromHours(1));
 
-        Assert.AreEqual("New active op…", sc.Text,
+        MessageAssert.Equal("New active op…", sc.Text,
             "Dismiss() must cancel the pending auto-clear so a subsequent emit isn't wiped by it.");
-        Assert.AreEqual(StatusKind.Active, sc.Kind);
+        Assert.Equal(StatusKind.Active, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void AClearThatCameDueBeforeTheNextMessage_DoesNotClearIt()
     {
         // Production marshals the clear with Dispatcher.UIThread.Post, so a timer
@@ -235,8 +234,8 @@ public sealed class StatusControllerTests
         sc.SetSuccess("first");
 
         time.Advance(StatusController.DefaultSuccessAutoClearDelay);
-        Assert.AreEqual(1, posted.Count, "The due timer should have queued exactly one clear.");
-        Assert.AreEqual("first", sc.Text, "Nothing is cleared until the post is drained.");
+        MessageAssert.Equal(1, posted.Count, "The due timer should have queued exactly one clear.");
+        MessageAssert.Equal("first", sc.Text, "Nothing is cleared until the post is drained.");
 
         sc.SetWarning("second");
 
@@ -245,11 +244,11 @@ public sealed class StatusControllerTests
             posted.Dequeue()();
         }
 
-        Assert.AreEqual("second", sc.Text, "The in-flight clear belonged to the first message.");
-        Assert.AreEqual(StatusKind.Warning, sc.Kind);
+        MessageAssert.Equal("second", sc.Text, "The in-flight clear belonged to the first message.");
+        Assert.Equal(StatusKind.Warning, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Dispose_CancelsThePendingAutoClear_AndDoesNotThrow()
     {
         FakeTimeProvider time = new();
@@ -259,11 +258,11 @@ public sealed class StatusControllerTests
         sc.Dispose();
         time.Advance(TimeSpan.FromHours(1));
 
-        Assert.IsNull(sc.Text, "Disposed controller must end up with Text=null (Dispose clears it).");
-        Assert.AreEqual(StatusKind.None, sc.Kind);
+        MessageAssert.Null(sc.Text, "Disposed controller must end up with Text=null (Dispose clears it).");
+        Assert.Equal(StatusKind.None, sc.Kind);
     }
 
-    [TestMethod]
+    [Fact]
     public void Dispose_IsIdempotent()
     {
         FakeTimeProvider time = new();
@@ -273,6 +272,6 @@ public sealed class StatusControllerTests
         sc.Dispose();
         sc.Dispose();
 
-        Assert.IsNull(sc.Text);
+        Assert.Null(sc.Text);
     }
 }

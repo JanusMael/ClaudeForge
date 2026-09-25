@@ -24,20 +24,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Catalog;
 /// <c>EffortLevelInfo.Persists=false</c>. So the invariant is: schema's persisted enum ==
 /// catalog's persistable ids.
 /// </remarks>
-[TestClass]
 public sealed class ModelCatalogSchemaParityTests
 {
     private static JsonNode LoadMergedSchema()
     {
         byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
-        Assert.IsNotNull(bytes, "Bundled claude-code-settings.json must be present.");
+        MessageAssert.NotNull(bytes, "Bundled claude-code-settings.json must be present.");
         return JsonNode.Parse(bytes)!;
     }
 
     private static HashSet<string> EnumAt(JsonNode node)
         => node.AsArray().Select(n => n!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
 
-    [TestMethod]
+    [Fact]
     public void EffortLevelEnum_MatchesCatalog()
     {
         JsonNode schema = LoadMergedSchema();
@@ -47,28 +46,28 @@ public sealed class ModelCatalogSchemaParityTests
         // effortLevel enum, so they're excluded here too — see class remarks.
         HashSet<string> catalog = ModelCatalogLoader.Load().PersistableEffortIds.ToHashSet(StringComparer.Ordinal);
 
-        Assert.IsTrue(schemaEnum.SetEquals(catalog),
+        Assert.True(schemaEnum.SetEquals(catalog),
             $"effortLevel enum drift. schema=[{string.Join(",", schemaEnum)}] persistable-catalog=[{string.Join(",", catalog)}]");
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultModeEnum_MatchesCatalog()
     {
         JsonNode schema = LoadMergedSchema();
         HashSet<string> schemaEnum = EnumAt(schema["properties"]!["permissions"]!["properties"]!["defaultMode"]!["enum"]!);
         HashSet<string> catalog = ModelCatalogLoader.Load().DefaultModes.Select(d => d.Id).ToHashSet(StringComparer.Ordinal);
 
-        Assert.IsTrue(schemaEnum.SetEquals(catalog),
+        Assert.True(schemaEnum.SetEquals(catalog),
             $"permissions.defaultMode enum drift. schema=[{string.Join(",", schemaEnum)}] catalog=[{string.Join(",", catalog)}]");
     }
 
-    [TestMethod]
+    [Fact]
     public void ModelCatalogJson_ValidatesAgainstItsSchema()
     {
         byte[]? catBytes = BundledResource.TryRead("ModelCatalog", "model-catalog.json");
         byte[]? schBytes = BundledResource.TryRead("ModelCatalog", "model-catalog.schema.json");
-        Assert.IsNotNull(catBytes, "model-catalog.json must be embedded.");
-        Assert.IsNotNull(schBytes, "model-catalog.schema.json must be embedded.");
+        MessageAssert.NotNull(catBytes, "model-catalog.json must be embedded.");
+        MessageAssert.NotNull(schBytes, "model-catalog.schema.json must be embedded.");
 
         JsonSchema schema = SchemaRegistry.ParseSchema(Encoding.UTF8.GetString(schBytes));
         using JsonDocument doc = JsonDocument.Parse(catBytes);
@@ -76,21 +75,21 @@ public sealed class ModelCatalogSchemaParityTests
             doc.RootElement,
             new EvaluationOptions { OutputFormat = OutputFormat.List });
 
-        Assert.IsTrue(results.IsValid, "model-catalog.json must validate against model-catalog.schema.json.");
+        Assert.True(results.IsValid, "model-catalog.json must validate against model-catalog.schema.json.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryAlias_ResolvesToARealModel()
     {
         ModelCatalog c = ModelCatalogLoader.Load();
         foreach (KeyValuePair<string, string> kv in c.Aliases)
         {
-            Assert.IsTrue(c.Models.Any(m => m.Id == kv.Value),
+            Assert.True(c.Models.Any(m => m.Id == kv.Value),
                 $"Alias '{kv.Key}' points at unknown model id '{kv.Value}'.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryModel_DefaultEffort_IsSupportedOrNull()
     {
         ModelCatalog c = ModelCatalogLoader.Load();
@@ -101,9 +100,9 @@ public sealed class ModelCatalogSchemaParityTests
                 continue;
             }
 
-            CollectionAssert.Contains(
-                m.SupportedEffortLevels.ToList(),
+            MessageAssert.Contains(
                 m.DefaultEffortLevel,
+                m.SupportedEffortLevels.ToList(),
                 $"Model '{m.Id}' default effort '{m.DefaultEffortLevel}' is not in its supported set.");
         }
     }

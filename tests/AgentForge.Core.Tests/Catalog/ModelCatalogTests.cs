@@ -8,50 +8,49 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Catalog;
 /// Claude docs (Opus 4.6 / Sonnet 4.6 lack xhigh; max is session-only; Haiku has
 /// no effort; auto is gated on capable models).
 /// </summary>
-[TestClass]
 public sealed class ModelCatalogTests
 {
     private static ModelCatalog Catalog => ModelCatalogLoader.Load();
 
-    [TestMethod]
+    [Fact]
     public void Load_EmbedsBundledCatalog()
     {
         ModelCatalog c = Catalog;
-        Assert.IsTrue(c.Models.Count >= 6, "Bundled catalog must embed and parse.");
-        CollectionAssert.Contains(c.Models.Select(m => m.Id).ToList(), "claude-opus-4-8");
-        CollectionAssert.Contains(c.Models.Select(m => m.Id).ToList(), "claude-sonnet-4-6");
+        Assert.True(c.Models.Count >= 6, "Bundled catalog must embed and parse.");
+        Assert.Contains("claude-opus-4-8", c.Models.Select(m => m.Id).ToList());
+        Assert.Contains("claude-sonnet-4-6", c.Models.Select(m => m.Id).ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_StripsContextSuffix_AndUsesAliases()
     {
-        Assert.AreEqual("claude-opus-5-5", Catalog.Resolve("opus[1m]")?.Id);
-        Assert.AreEqual("claude-opus-5-5", Catalog.Resolve("opus")?.Id);
-        Assert.AreEqual("claude-sonnet-4-6", Catalog.Resolve("claude-sonnet-4-6[1m]")?.Id);
-        Assert.IsNull(Catalog.Resolve("some-custom-model"), "Unknown id resolves to null.");
-        Assert.IsNull(Catalog.Resolve(null));
+        Assert.Equal("claude-opus-5-5", Catalog.Resolve("opus[1m]")?.Id);
+        Assert.Equal("claude-opus-5-5", Catalog.Resolve("opus")?.Id);
+        Assert.Equal("claude-sonnet-4-6", Catalog.Resolve("claude-sonnet-4-6[1m]")?.Id);
+        MessageAssert.Null(Catalog.Resolve("some-custom-model"), "Unknown id resolves to null.");
+        Assert.Null(Catalog.Resolve(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void IsEffortSupported_ReflectsPerModelCapability()
     {
-        Assert.IsFalse(Catalog.IsEffortSupported("claude-sonnet-4-6", "xhigh"), "Sonnet 4.6 lacks xhigh.");
-        Assert.IsFalse(Catalog.IsEffortSupported("claude-opus-4-6", "xhigh"), "Opus 4.6 lacks xhigh.");
-        Assert.IsTrue(Catalog.IsEffortSupported("claude-opus-4-8", "xhigh"), "Opus 4.8 supports xhigh.");
+        Assert.False(Catalog.IsEffortSupported("claude-sonnet-4-6", "xhigh"), "Sonnet 4.6 lacks xhigh.");
+        Assert.False(Catalog.IsEffortSupported("claude-opus-4-6", "xhigh"), "Opus 4.6 lacks xhigh.");
+        Assert.True(Catalog.IsEffortSupported("claude-opus-4-8", "xhigh"), "Opus 4.8 supports xhigh.");
     }
 
-    [TestMethod]
+    [Fact]
     public void PersistableEffortLevels_OmitsSessionOnlyMax()
     {
-        Assert.IsFalse(Catalog.EffortLevels.Single(e => e.Id == "max").Persists, "max is session-only.");
-        CollectionAssert.DoesNotContain(Catalog.PersistableEffortLevels("claude-opus-4-8").ToList(), "max");
+        Assert.False(Catalog.EffortLevels.Single(e => e.Id == "max").Persists, "max is session-only.");
+        Assert.DoesNotContain("max", Catalog.PersistableEffortLevels("claude-opus-4-8").ToList());
         // Opus 4.8 supports low/medium/high/xhigh/max; persistable = all but max.
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "low", "medium", "high", "xhigh" },
             Catalog.PersistableEffortLevels("claude-opus-4-8").ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void SessionOnlyEffortLevels_MirrorFullRange_ButStayNonPersistable()
     {
         // "Mirror the UI": the catalog carries the full effort range Claude Desktop shows —
@@ -60,63 +59,63 @@ public sealed class ModelCatalogTests
         // they don't exist. Both are persists:false, so neither reaches the settings-file
         // effortLevel dropdown (which can only hold persistable values).
         EffortLevelInfo ultra = Catalog.EffortLevels.Single(e => e.Id == "ultracode");
-        Assert.IsFalse(ultra.Persists, "ultracode is session-only (not accepted in settings.json).");
-        Assert.IsTrue(
+        Assert.False(ultra.Persists, "ultracode is session-only (not accepted in settings.json).");
+        Assert.True(
             ultra.Order > Catalog.EffortLevels.Single(e => e.Id == "max").Order,
             "ultracode sits above max on the Faster→Smarter axis.");
 
         // Full range (incl. ultracode) is exposed for models that carry xhigh+max…
-        CollectionAssert.Contains(Catalog.SupportedEffortLevels("claude-opus-4-8").ToList(), "ultracode");
+        Assert.Contains("ultracode", Catalog.SupportedEffortLevels("claude-opus-4-8").ToList());
         // …but the persistable set stays low/medium/high/xhigh (no max, no ultracode).
-        CollectionAssert.DoesNotContain(Catalog.PersistableEffortLevels("claude-opus-4-8").ToList(), "ultracode");
+        Assert.DoesNotContain("ultracode", Catalog.PersistableEffortLevels("claude-opus-4-8").ToList());
 
         // Models without xhigh don't gain the ultracode tier (it reports as xhigh).
-        CollectionAssert.DoesNotContain(Catalog.SupportedEffortLevels("claude-sonnet-4-6").ToList(), "ultracode");
+        Assert.DoesNotContain("ultracode", Catalog.SupportedEffortLevels("claude-sonnet-4-6").ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void NearestAnalogEffort_CoercesToClosestSupported()
     {
         // Sonnet 4.6 persistable = low/medium/high; xhigh and max both fall to high.
-        Assert.AreEqual("high", Catalog.NearestAnalogEffort("claude-sonnet-4-6", "xhigh"));
-        Assert.AreEqual("high", Catalog.NearestAnalogEffort("claude-sonnet-4-6", "max"));
+        Assert.Equal("high", Catalog.NearestAnalogEffort("claude-sonnet-4-6", "xhigh"));
+        Assert.Equal("high", Catalog.NearestAnalogEffort("claude-sonnet-4-6", "max"));
         // Valid value is returned unchanged.
-        Assert.AreEqual("xhigh", Catalog.NearestAnalogEffort("claude-opus-4-8", "xhigh"));
-        Assert.AreEqual("low", Catalog.NearestAnalogEffort("claude-opus-4-8", "low"));
+        Assert.Equal("xhigh", Catalog.NearestAnalogEffort("claude-opus-4-8", "xhigh"));
+        Assert.Equal("low", Catalog.NearestAnalogEffort("claude-opus-4-8", "low"));
     }
 
-    [TestMethod]
+    [Fact]
     public void NearestAnalogEffort_ReturnsNull_WhenModelHasNoEffort()
     {
-        Assert.AreEqual(0, Catalog.SupportedEffortLevels("claude-haiku-4-5").Count, "Haiku exposes no effort.");
-        Assert.IsNull(Catalog.NearestAnalogEffort("claude-haiku-4-5", "high"));
+        MessageAssert.Equal(0, Catalog.SupportedEffortLevels("claude-haiku-4-5").Count, "Haiku exposes no effort.");
+        Assert.Null(Catalog.NearestAnalogEffort("claude-haiku-4-5", "high"));
     }
 
-    [TestMethod]
+    [Fact]
     public void UnknownModel_IsLenient_AllEffortAllowed_NoAuto()
     {
         // A hand-typed custom id must not blank the effort dropdown, and must not claim auto support.
-        Assert.IsTrue(Catalog.SupportedEffortLevels("my/custom-model").Count >= 4);
-        Assert.IsFalse(Catalog.SupportsAutoMode("my/custom-model"));
+        Assert.True(Catalog.SupportedEffortLevels("my/custom-model").Count >= 4);
+        Assert.False(Catalog.SupportsAutoMode("my/custom-model"));
     }
 
-    [TestMethod]
+    [Fact]
     public void SupportsAutoMode_GatedByModel()
     {
-        Assert.IsTrue(Catalog.SupportsAutoMode("claude-opus-4-8"));
-        Assert.IsFalse(Catalog.SupportsAutoMode("claude-haiku-4-5"), "Haiku does not support auto.");
+        Assert.True(Catalog.SupportsAutoMode("claude-opus-4-8"));
+        Assert.False(Catalog.SupportsAutoMode("claude-haiku-4-5"), "Haiku does not support auto.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Parse_EmptyObject_YieldsEmptyCatalog()
     {
         ModelCatalog c = ModelCatalogLoader.Parse("{}");
-        Assert.AreEqual(0, c.Models.Count);
+        Assert.Empty(c.Models);
         // Empty catalog stays lenient and never throws.
-        Assert.IsFalse(c.SupportsAutoMode("opus"));
+        Assert.False(c.SupportsAutoMode("opus"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Resolve_SecondaryAliasOnlyInAliasMap_IsCaseInsensitive()
     {
         // A key present ONLY in the alias map (not any model's primary Alias field)
@@ -132,28 +131,28 @@ public sealed class ModelCatalogTests
             }
             """);
 
-        Assert.AreEqual("claude-opus-4-8", c.Resolve("opus-latest")?.Id, "Secondary alias resolves via the alias-map fallback.");
-        Assert.AreEqual("claude-opus-4-8", c.Resolve("OPUS-LATEST")?.Id, "Secondary alias resolves case-insensitively.");
+        MessageAssert.Equal("claude-opus-4-8", c.Resolve("opus-latest")?.Id, "Secondary alias resolves via the alias-map fallback.");
+        MessageAssert.Equal("claude-opus-4-8", c.Resolve("OPUS-LATEST")?.Id, "Secondary alias resolves case-insensitively.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NearestAnalogEffort_OpusMax_CoercesToXhigh()
     {
         // 'max' (order 4, session-only) on Opus 4.8 (persistable low/medium/high/xhigh =
         // orders 0-3) is nearest to xhigh (|4-3|=1) — the ordinal-distance branch, not
         // the default/highest fallback (distinct from Sonnet, which lacks xhigh).
-        Assert.AreEqual("xhigh", Catalog.NearestAnalogEffort("claude-opus-4-8", "max"));
+        Assert.Equal("xhigh", Catalog.NearestAnalogEffort("claude-opus-4-8", "max"));
     }
 
-    [TestMethod]
+    [Fact]
     public void NearestAnalogEffort_CustomString_PrefersPersistableModelDefault()
     {
         // An effort id with no known order (custom string) falls back to the model's
         // declared default when that default persists (Opus 4.8 default = 'high').
-        Assert.AreEqual("high", Catalog.NearestAnalogEffort("claude-opus-4-8", "wibble"));
+        Assert.Equal("high", Catalog.NearestAnalogEffort("claude-opus-4-8", "wibble"));
     }
 
-    [TestMethod]
+    [Fact]
     public void NearestAnalogEffort_CustomString_FallsToHighest_WhenDefaultNotPersistable()
     {
         // When the model's declared default is session-only (non-persistable), an
@@ -172,27 +171,27 @@ public sealed class ModelCatalogTests
             }
             """);
 
-        Assert.AreEqual("high", c.NearestAnalogEffort("m", "wibble"));
+        Assert.Equal("high", c.NearestAnalogEffort("m", "wibble"));
     }
 
-    [TestMethod]
+    [Fact]
     public void ModelSuggestions_IncludesOneMVariants_ForSupportingModelsOnly()
     {
         List<string> s = Catalog.ModelSuggestions().ToList();
-        CollectionAssert.Contains(s, "opus[1m]", "Opus supports 1m → its [1m] variant is offered.");
-        CollectionAssert.DoesNotContain(s, "haiku[1m]", "Haiku does not support 1m → no [1m] variant.");
+        MessageAssert.Contains("opus[1m]", s, "Opus supports 1m → its [1m] variant is offered.");
+        MessageAssert.DoesNotContain("haiku[1m]", s, "Haiku does not support 1m → no [1m] variant.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ModelSuggestions_Include1mFalse_OmitsVariants()
     {
-        CollectionAssert.DoesNotContain(Catalog.ModelSuggestions(include1m: false).ToList(), "opus[1m]");
+        Assert.DoesNotContain("opus[1m]", Catalog.ModelSuggestions(include1m: false).ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void ModelSuggestions_IncludeLegacyTrue_AddsLegacyIds()
     {
-        CollectionAssert.DoesNotContain(Catalog.ModelSuggestions().ToList(), "claude-opus-4-7", "Legacy id omitted by default.");
-        CollectionAssert.Contains(Catalog.ModelSuggestions(includeLegacy: true).ToList(), "claude-opus-4-7", "Legacy id included when requested.");
+        MessageAssert.DoesNotContain("claude-opus-4-7", Catalog.ModelSuggestions().ToList(), "Legacy id omitted by default.");
+        MessageAssert.Contains("claude-opus-4-7", Catalog.ModelSuggestions(includeLegacy: true).ToList(), "Legacy id included when requested.");
     }
 }

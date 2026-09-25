@@ -4,7 +4,6 @@ using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 
-[TestClass]
 public class SchemaNodeAdapterTests
 {
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -21,133 +20,133 @@ public class SchemaNodeAdapterTests
     // SchemaValueType → EditorValueType mapping
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Boolean_MapsToBoolean()
     {
         SchemaNodeAdapter adapter = new(Node("b", SchemaValueType.Boolean));
-        Assert.AreEqual(EditorValueType.Boolean, adapter.ValueType);
+        Assert.Equal(EditorValueType.Boolean, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_String_MapsToString()
     {
         SchemaNodeAdapter adapter = new(Node("s"));
-        Assert.AreEqual(EditorValueType.String, adapter.ValueType);
+        Assert.Equal(EditorValueType.String, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Number_MapsToNumber()
     {
         SchemaNodeAdapter adapter = new(Node("n", SchemaValueType.Number));
-        Assert.AreEqual(EditorValueType.Number, adapter.ValueType);
+        Assert.Equal(EditorValueType.Number, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Integer_MapsToInteger()
     {
         SchemaNodeAdapter adapter = new(Node("i", SchemaValueType.Integer));
-        Assert.AreEqual(EditorValueType.Integer, adapter.ValueType);
+        Assert.Equal(EditorValueType.Integer, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Path_MapsToPath()
     {
         SchemaNodeAdapter adapter = new(Node("p", SchemaValueType.Path));
-        Assert.AreEqual(EditorValueType.Path, adapter.ValueType);
+        Assert.Equal(EditorValueType.Path, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Enum_MapsToEnum()
     {
         SchemaNodeAdapter adapter = new(Node("e", SchemaValueType.Enum));
-        Assert.AreEqual(EditorValueType.Enum, adapter.ValueType);
+        Assert.Equal(EditorValueType.Enum, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Array_MapsToStringArray()
     {
         SchemaNodeAdapter adapter = new(Node("a", SchemaValueType.Array));
-        Assert.AreEqual(EditorValueType.StringArray, adapter.ValueType);
+        Assert.Equal(EditorValueType.StringArray, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Object_MapsToObject()
     {
         SchemaNodeAdapter adapter = new(Node("o", SchemaValueType.Object));
-        Assert.AreEqual(EditorValueType.Object, adapter.ValueType);
+        Assert.Equal(EditorValueType.Object, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Complex_MapsToComplex()
     {
         SchemaNodeAdapter adapter = new(Node("c", SchemaValueType.Complex));
-        Assert.AreEqual(EditorValueType.Complex, adapter.ValueType);
+        Assert.Equal(EditorValueType.Complex, adapter.ValueType);
     }
 
-    [TestMethod]
+    [Fact]
     public void MapValueType_Unknown_MapsToUnknown()
     {
         SchemaNodeAdapter adapter = new(Node("u", SchemaValueType.Unknown));
-        Assert.AreEqual(EditorValueType.Unknown, adapter.ValueType);
+        Assert.Equal(EditorValueType.Unknown, adapter.ValueType);
     }
 
     // -----------------------------------------------------------------------
     // Passthrough properties
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DisplayName_DelegatesToSchemaNode()
     {
         SchemaNode node = new("myProp", "myProp") { Title = "My Property" };
         SchemaNodeAdapter adapter = new(node);
 
         // IEditorSchema exposes Title and Name; callers compute DisplayName as Title ?? Name.
-        Assert.AreEqual("My Property", adapter.Title);
-        Assert.AreEqual("myProp", adapter.Name);
+        Assert.Equal("My Property", adapter.Title);
+        Assert.Equal("myProp", adapter.Name);
     }
 
-    [TestMethod]
+    [Fact]
     public void Description_DelegatesToSchemaNode()
     {
         SchemaNode node = new("x", "x") { Description = "A helpful description" };
         SchemaNodeAdapter adapter = new(node);
 
-        Assert.AreEqual("A helpful description", adapter.Description);
+        Assert.Equal("A helpful description", adapter.Description);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsReadOnly_TrueWhenSchemaManagedOnly()
     {
         SchemaNode readonlyNode = new("r", "r") { IsManagedOnly = true };
         SchemaNode writableNode = new("w", "w") { IsManagedOnly = false };
 
-        Assert.IsTrue(new SchemaNodeAdapter(readonlyNode).IsReadOnly,
+        Assert.True(new SchemaNodeAdapter(readonlyNode).IsReadOnly,
             "IsManagedOnly=true must map to IsReadOnly=true");
-        Assert.IsFalse(new SchemaNodeAdapter(writableNode).IsReadOnly,
+        Assert.False(new SchemaNodeAdapter(writableNode).IsReadOnly,
             "IsManagedOnly=false must map to IsReadOnly=false");
     }
 
-    [TestMethod]
+    [Fact]
     public void IsNew_DelegatesToSchemaNode()
     {
         SchemaNode newNode = new("n", "n") { IsNew = true };
         SchemaNode oldNode = new("o", "o") { IsNew = false };
 
-        Assert.IsTrue(new SchemaNodeAdapter(newNode).IsNew);
-        Assert.IsFalse(new SchemaNodeAdapter(oldNode).IsNew);
+        Assert.True(new SchemaNodeAdapter(newNode).IsNew);
+        Assert.False(new SchemaNodeAdapter(oldNode).IsNew);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsDeprecated_DelegatesToSchemaNode()
     {
         SchemaNode deprecatedNode = new("d", "d") { IsDeprecated = true };
         SchemaNode activeNode = new("a", "a") { IsDeprecated = false };
 
-        Assert.IsTrue(new SchemaNodeAdapter(deprecatedNode).IsDeprecated);
-        Assert.IsFalse(new SchemaNodeAdapter(activeNode).IsDeprecated);
+        Assert.True(new SchemaNodeAdapter(deprecatedNode).IsDeprecated);
+        Assert.False(new SchemaNodeAdapter(activeNode).IsDeprecated);
     }
 
-    [TestMethod]
+    [Fact]
     public void Properties_ReturnsWrappedChildren()
     {
         SchemaNode child = new("childProp", "childProp") { Title = "Child Title" };
@@ -159,25 +158,25 @@ public class SchemaNodeAdapterTests
 
         SchemaNodeAdapter adapter = new(parent);
 
-        Assert.AreEqual(1, adapter.Properties.Count,
+        MessageAssert.Equal(1, adapter.Properties.Count,
             "Adapter must expose the single child property.");
-        Assert.AreEqual("Child Title", adapter.Properties[0].Title,
+        MessageAssert.Equal("Child Title", adapter.Properties[0].Title,
             "Child adapter's Title must match the inner SchemaNode's Title.");
-        Assert.AreEqual("childProp", adapter.Properties[0].Name,
+        MessageAssert.Equal("childProp", adapter.Properties[0].Name,
             "Child adapter's Name must match the inner SchemaNode's Name.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ItemsSchema_NullWhenSchemaHasNoItemsSchema()
     {
         SchemaNode node = new("arr", "arr") { ValueType = SchemaValueType.Array };
         SchemaNodeAdapter adapter = new(node);
 
-        Assert.IsNull(adapter.ItemsSchema,
+        MessageAssert.Null(adapter.ItemsSchema,
             "ItemsSchema must be null when SchemaNode.ItemsSchema is null.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ItemsSchema_NonNullWhenSchemaHasItemsSchema()
     {
         SchemaNode itemNode = new("item", "item") { ValueType = SchemaValueType.String };
@@ -189,9 +188,9 @@ public class SchemaNodeAdapterTests
 
         SchemaNodeAdapter adapter = new(arrNode);
 
-        Assert.IsNotNull(adapter.ItemsSchema,
+        MessageAssert.NotNull(adapter.ItemsSchema,
             "ItemsSchema must be non-null when SchemaNode.ItemsSchema is set.");
-        Assert.AreEqual(EditorValueType.String, adapter.ItemsSchema!.ValueType,
+        MessageAssert.Equal(EditorValueType.String, adapter.ItemsSchema!.ValueType,
             "ItemsSchema ValueType must be mapped from the inner SchemaNode.");
     }
 
@@ -199,17 +198,17 @@ public class SchemaNodeAdapterTests
     // ParseDefault
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DefaultValue_NullSchemaDefault_ReturnsNull()
     {
         SchemaNode node = new("x", "x") { DefaultValue = null };
         SchemaNodeAdapter adapter = new(node);
 
-        Assert.IsNull(adapter.DefaultValue,
+        MessageAssert.Null(adapter.DefaultValue,
             "null SchemaNode.DefaultValue must produce null adapter.DefaultValue.");
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultValue_StringJsonLiteral_ReturnsString()
     {
         // SchemaNode.DefaultValue = "\"hello\"" is a JSON-encoded string literal.
@@ -217,33 +216,33 @@ public class SchemaNodeAdapterTests
         SchemaNode node = new("x", "x") { DefaultValue = "\"hello\"" };
         SchemaNodeAdapter adapter = new(node);
 
-        Assert.IsInstanceOfType<string>(adapter.DefaultValue);
-        Assert.AreEqual("hello", (string)adapter.DefaultValue!);
+        Assert.IsAssignableFrom<string>(adapter.DefaultValue);
+        Assert.Equal("hello", (string)adapter.DefaultValue!);
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultValue_BoolLiteral_ReturnsBool()
     {
         SchemaNode trueNode = new("x", "x") { DefaultValue = "true" };
         SchemaNode falseNode = new("y", "y") { DefaultValue = "false" };
 
-        Assert.IsInstanceOfType<bool>(new SchemaNodeAdapter(trueNode).DefaultValue);
-        Assert.IsTrue((bool)new SchemaNodeAdapter(trueNode).DefaultValue!);
-        Assert.IsFalse((bool)new SchemaNodeAdapter(falseNode).DefaultValue!);
+        Assert.IsAssignableFrom<bool>(new SchemaNodeAdapter(trueNode).DefaultValue);
+        Assert.True((bool)new SchemaNodeAdapter(trueNode).DefaultValue!);
+        Assert.False((bool)new SchemaNodeAdapter(falseNode).DefaultValue!);
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultValue_NumberLiteral_ReturnsDouble()
     {
         // JSON floating-point numbers normalise to double via NormaliseScalar.
         SchemaNode node = new("x", "x") { DefaultValue = "3.14" };
         SchemaNodeAdapter adapter = new(node);
 
-        Assert.IsInstanceOfType<double>(adapter.DefaultValue);
-        Assert.AreEqual(3.14, (double)adapter.DefaultValue!, delta: 1e-10);
+        Assert.IsAssignableFrom<double>(adapter.DefaultValue);
+        Assert.Equal(3.14, (double)adapter.DefaultValue!, 1e-10);
     }
 
-    [TestMethod]
+    [Fact]
     public void DefaultValue_InvalidJson_ReturnsRawString()
     {
         // ParseDefault catches JsonException and returns the raw string unchanged.
@@ -251,8 +250,8 @@ public class SchemaNodeAdapterTests
         SchemaNode node = new("x", "x") { DefaultValue = rawValue };
         SchemaNodeAdapter adapter = new(node);
 
-        Assert.IsInstanceOfType<string>(adapter.DefaultValue);
-        Assert.AreEqual(rawValue, (string)adapter.DefaultValue!,
+        Assert.IsAssignableFrom<string>(adapter.DefaultValue);
+        MessageAssert.Equal(rawValue, (string)adapter.DefaultValue!,
             "Invalid JSON must be returned as the raw string.");
     }
 }

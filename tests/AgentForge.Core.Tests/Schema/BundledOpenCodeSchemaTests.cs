@@ -19,7 +19,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// <see cref="BundledConfigSchema_HasNoExternalRef"/> for what it costs.
 /// </para>
 /// </remarks>
-[TestClass]
 public class BundledOpenCodeSchemaTests
 {
     private const string ConfigSchema = "opencode-config.json";
@@ -28,7 +27,7 @@ public class BundledOpenCodeSchemaTests
     private static string ReadBundled(string fileName)
     {
         byte[]? bytes = BundledResource.TryRead("Schemas", fileName);
-        Assert.IsNotNull(bytes,
+        MessageAssert.NotNull(bytes,
             $"'{fileName}' is not embedded. Assets/Schemas/**/*.json is globbed into the "
             + "assembly, so this means the file is missing from the repo, not that the "
             + "csproj needs an entry.");
@@ -48,18 +47,18 @@ public class BundledOpenCodeSchemaTests
     /// Stripping the keyword leaves <c>"type": "string"</c>, which is the behaviour wanted.
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void BundledConfigSchema_HasNoExternalRef()
     {
         string json = ReadBundled(ConfigSchema);
 
-        Assert.IsFalse(
+        Assert.False(
             json.Contains("models.dev", StringComparison.OrdinalIgnoreCase),
             "The bundled OpenCode schema still references models.dev. A refresh has "
             + "re-introduced the external $ref that must be stripped: saving any config "
             + "that sets `model` will throw on schema evaluation.");
 
-        Assert.IsFalse(
+        Assert.False(
             json.Contains("\"$ref\": \"http", StringComparison.OrdinalIgnoreCase),
             "A bundled schema must resolve offline. An http(s) $ref makes evaluation "
             + "depend on the network at save time.");
@@ -108,11 +107,11 @@ public class BundledOpenCodeSchemaTests
     /// the four model fields would become untyped — every value would validate, and the
     /// editor would offer no type information at all.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void StrippingTheRefLeftTheModelPropertiesTyped()
     {
         JsonNode? root = JsonNode.Parse(ReadBundled(ConfigSchema));
-        Assert.IsNotNull(root?["$defs"], "$defs is missing — the schema shape changed upstream.");
+        MessageAssert.NotNull(root?["$defs"], "$defs is missing — the schema shape changed upstream.");
 
         foreach (string pointer in ModelRefSites)
         {
@@ -120,18 +119,18 @@ public class BundledOpenCodeSchemaTests
 
             // Premise before claim: a pointer that stopped resolving would otherwise let this
             // loop pass over a site it never looked at.
-            Assert.IsNotNull(property,
+            MessageAssert.NotNull(property,
                 $"'{pointer}' no longer resolves. Upstream moved or removed it, so the strip "
                 + "this test guards may now be aimed at nothing — re-measure the ref sites "
                 + "against the live upstream file before editing the list.");
 
-            Assert.AreEqual(
+            MessageAssert.Equal(
                 "string",
                 property["type"]?.GetValue<string>(),
                 $"'{pointer}' lost its type. The strip is supposed to remove the $ref keyword "
                 + "and nothing else.");
 
-            Assert.IsNull(property["$ref"],
+            MessageAssert.Null(property["$ref"],
                 $"'{pointer}' still carries a $ref. The strip missed this site — and it is the "
                 + "deeply-nested one if this is the `command` pointer.");
         }
@@ -143,7 +142,7 @@ public class BundledOpenCodeSchemaTests
     /// catches the parse failure per-file and simply skips that schema, so validation
     /// silently stops happening rather than reporting anything.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void BothBundledSchemas_ParseAsJsonSchema()
     {
         foreach (string fileName in new[] { ConfigSchema, TuiSchema })
@@ -166,20 +165,20 @@ public class BundledOpenCodeSchemaTests
     /// everything behind a root <c>$ref</c> with no <c>properties</c> keyword, while the TUI
     /// schema is an ordinary object with <c>properties</c> and no <c>$ref</c>.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheTwoSchemasHaveTheRootShapesTheTreeBuilderMustHandle()
     {
         JsonNode? config = JsonNode.Parse(ReadBundled(ConfigSchema));
-        Assert.IsNull(config?["properties"],
+        MessageAssert.Null(config?["properties"],
             "opencode-config.json is expected to have NO root `properties` — everything "
             + "hangs off a root $ref. If upstream added one, the root-$ref fallback is no "
             + "longer exercised by the real schema.");
-        Assert.AreEqual("#/$defs/Config", config?["$ref"]?.GetValue<string>());
+        Assert.Equal("#/$defs/Config", config?["$ref"]?.GetValue<string>());
 
         JsonNode? tui = JsonNode.Parse(ReadBundled(TuiSchema));
-        Assert.IsNotNull(tui?["properties"],
+        MessageAssert.NotNull(tui?["properties"],
             "opencode-tui.json is expected to be an ordinary object schema.");
-        Assert.IsNull(tui?["$ref"],
+        MessageAssert.Null(tui?["$ref"],
             "opencode-tui.json has no root $ref, which is why it is the control case.");
     }
 }

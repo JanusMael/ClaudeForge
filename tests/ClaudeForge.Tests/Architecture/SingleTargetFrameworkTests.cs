@@ -30,10 +30,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// accepts exactly that.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SingleTargetFrameworkTests
 {
-    [TestMethod]
+    [Fact]
     public void NoProjectDeclaresAnIgnoredTargetFrameworksList()
     {
         string repoRoot = FindRepoRoot();
@@ -42,7 +41,7 @@ public sealed class SingleTargetFrameworkTests
         // effective everywhere and this guard is measuring nothing — so it fails rather than
         // passes, and whoever made that change reads why.
         string rootProps = File.ReadAllText(Path.Combine(repoRoot, "Directory.Build.props"));
-        Assert.IsTrue(
+        Assert.True(
             XDocument.Parse(rootProps).Descendants()
                 .Any(e => e.Name.LocalName == "TargetFramework" && !string.IsNullOrWhiteSpace(e.Value)),
             "Directory.Build.props no longer sets a singular <TargetFramework>. That is the only "
@@ -75,10 +74,10 @@ public sealed class SingleTargetFrameworkTests
             }
         }
 
-        Assert.IsTrue(scanned > 0,
+        Assert.True(scanned > 0,
             "Scanned no project files; the scan has been narrowed to nothing.");
 
-        Assert.AreEqual(0, offenders.Count,
+        MessageAssert.Equal(0, offenders.Count,
             "These projects declare <TargetFrameworks> without clearing the inherited singular "
             + "<TargetFramework>, so MSBuild ignores the list and builds ONE framework. Nothing "
             + "will fail — the extra TFM simply never gets built, as a Windows TFM silently did "

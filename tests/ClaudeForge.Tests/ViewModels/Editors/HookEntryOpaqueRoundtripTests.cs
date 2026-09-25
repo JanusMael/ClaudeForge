@@ -21,10 +21,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// the hook type.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class HookEntryOpaqueRoundtripTests
 {
-    [TestMethod]
+    [Fact]
     public void FromJson_AgentType_PreservesOpaque()
     {
         // An "agent" hook with arbitrary fields the editor doesn't know about.
@@ -39,10 +38,10 @@ public sealed class HookEntryOpaqueRoundtripTests
 
         HookEntry entry = HookEntry.FromJson(input);
 
-        Assert.IsTrue(entry.IsOpaque, "Agent type must be preserved as opaque.");
+        Assert.True(entry.IsOpaque, "Agent type must be preserved as opaque.");
     }
 
-    [TestMethod]
+    [Fact]
     public void FromJson_HttpType_PreservesOpaque()
     {
         JsonObject input = (JsonObject)JsonNode.Parse("""
@@ -56,10 +55,10 @@ public sealed class HookEntryOpaqueRoundtripTests
 
         HookEntry entry = HookEntry.FromJson(input);
 
-        Assert.IsTrue(entry.IsOpaque);
+        Assert.True(entry.IsOpaque);
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_AgentType_EmitsVerbatim()
     {
         JsonObject input = (JsonObject)JsonNode.Parse("""
@@ -74,15 +73,15 @@ public sealed class HookEntryOpaqueRoundtripTests
         JsonObject output = entry.ToJson();
 
         // Every field of the original must survive the round-trip.
-        Assert.AreEqual("agent", output["type"]!.GetValue<string>());
-        Assert.AreEqual("code-reviewer", output["agent"]!.GetValue<string>());
+        Assert.Equal("agent", output["type"]!.GetValue<string>());
+        Assert.Equal("code-reviewer", output["agent"]!.GetValue<string>());
         JsonObject cfg = output["config"]!.AsObject();
-        Assert.AreEqual(3, cfg["depth"]!.GetValue<int>());
-        Assert.AreEqual(2, cfg["extra"]!.AsArray().Count);
-        Assert.AreEqual("a", cfg["extra"]![0]!.GetValue<string>());
+        Assert.Equal(3, cfg["depth"]!.GetValue<int>());
+        Assert.Equal(2, cfg["extra"]!.AsArray().Count);
+        Assert.Equal("a", cfg["extra"]![0]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_HttpType_EmitsVerbatim()
     {
         JsonObject input = (JsonObject)JsonNode.Parse("""
@@ -92,12 +91,12 @@ public sealed class HookEntryOpaqueRoundtripTests
         HookEntry entry = HookEntry.FromJson(input);
         JsonObject output = entry.ToJson();
 
-        Assert.AreEqual("http", output["type"]!.GetValue<string>());
-        Assert.AreEqual("https://example.com/hook", output["url"]!.GetValue<string>());
-        Assert.AreEqual("POST", output["method"]!.GetValue<string>());
+        Assert.Equal("http", output["type"]!.GetValue<string>());
+        Assert.Equal("https://example.com/hook", output["url"]!.GetValue<string>());
+        Assert.Equal("POST", output["method"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_CommandType_NotOpaque()
     {
         // The native types must continue to use the synthesized form, NOT the
@@ -109,13 +108,13 @@ public sealed class HookEntryOpaqueRoundtripTests
 
         HookEntry entry = HookEntry.FromJson(input);
 
-        Assert.IsFalse(entry.IsOpaque,
+        Assert.False(entry.IsOpaque,
             "Native command type must not take the opaque preservation path.");
-        Assert.AreEqual(HookCommandType.Command, entry.CommandType);
-        Assert.AreEqual("echo hello", entry.CommandValue);
+        Assert.Equal(HookCommandType.Command, entry.CommandType);
+        Assert.Equal("echo hello", entry.CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_CommandType_EditsApplyOnSave()
     {
         // Lock the contract: edits through the editor's CommandValue setter
@@ -129,10 +128,10 @@ public sealed class HookEntryOpaqueRoundtripTests
         entry.CommandValue = "new";
 
         JsonObject output = entry.ToJson();
-        Assert.AreEqual("new", output["command"]!.GetValue<string>());
+        Assert.Equal("new", output["command"]!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_PromptType_NotOpaque()
     {
         JsonObject input = (JsonObject)JsonNode.Parse("""
@@ -141,11 +140,11 @@ public sealed class HookEntryOpaqueRoundtripTests
 
         HookEntry entry = HookEntry.FromJson(input);
 
-        Assert.IsFalse(entry.IsOpaque);
-        Assert.AreEqual(HookCommandType.Prompt, entry.CommandType);
+        Assert.False(entry.IsOpaque);
+        Assert.Equal(HookCommandType.Prompt, entry.CommandType);
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_UrlType_NotOpaque()
     {
         JsonObject input = (JsonObject)JsonNode.Parse("""
@@ -154,11 +153,11 @@ public sealed class HookEntryOpaqueRoundtripTests
 
         HookEntry entry = HookEntry.FromJson(input);
 
-        Assert.IsFalse(entry.IsOpaque);
-        Assert.AreEqual(HookCommandType.Url, entry.CommandType);
+        Assert.False(entry.IsOpaque);
+        Assert.Equal(HookCommandType.Url, entry.CommandType);
     }
 
-    [TestMethod]
+    [Fact]
     public void OpaqueEntry_NotFilteredByGroupToJson()
     {
         // Lock the HookEventGroup.ToJson contract: opaque entries must NOT be
@@ -176,13 +175,13 @@ public sealed class HookEntryOpaqueRoundtripTests
                                                                               ]
                                                                               """));
 
-        Assert.AreEqual(1, group.Hooks.Count);
-        Assert.IsTrue(group.Hooks[0].IsOpaque);
+        Assert.Single(group.Hooks);
+        Assert.True(group.Hooks[0].IsOpaque);
 
         JsonArray output = group.ToJson();
-        Assert.AreEqual(1, output.Count);
+        Assert.Single(output);
         JsonArray inner = output[0]!.AsObject()["hooks"]!.AsArray();
-        Assert.AreEqual(1, inner.Count);
-        Assert.AreEqual("agent", inner[0]!.AsObject()["type"]!.GetValue<string>());
+        Assert.Single(inner);
+        Assert.Equal("agent", inner[0]!.AsObject()["type"]!.GetValue<string>());
     }
 }

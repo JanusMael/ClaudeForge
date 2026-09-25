@@ -31,7 +31,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// real key it chose had no predicate at all.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class EffectiveRowDangerTests
 {
     // A secret-shaped key: caution wherever you keep it, critical once it is in a file git
@@ -105,7 +104,7 @@ public sealed class EffectiveRowDangerTests
     /// <see cref="ConfigScope.User"/> — while the value the agent actually reads comes from the
     /// git-committed project file and is Critical. The whole column exists to say that.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_IsAssessedAtTheWinningScope_NotTheEditingScope()
     {
         SettingsWorkspace workspace = Workspace(
@@ -117,16 +116,16 @@ public sealed class EffectiveRowDangerTests
 
         EffectivePropertyRow row = Row(vm, EscalatingKey);
 
-        Assert.AreEqual(ConfigScope.Project, row.Scope,
+        MessageAssert.Equal(ConfigScope.Project, row.Scope,
             "precondition: the project file must be the one that wins, or this test proves nothing");
-        Assert.AreEqual(AppSeverity.Critical, row.Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, row.Danger.Severity,
             "the effective row must be assessed at the scope that WON (Project → escalated), not "
             + "at the scope being edited (User → Caution). Reporting the editing scope here is "
             + "what delegating to the editor would do, and it mislabels the runtime truth.");
 
         // …and the editor row, answering its own different question, still reads Caution. Both
         // are correct; only their questions differ.
-        Assert.AreEqual(AppSeverity.Caution, vm.Editors.Single().Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Caution, vm.Editors.Single().Danger.Severity,
             "the settings row assesses the EDITING scope and must be unaffected by this column");
     }
 
@@ -134,7 +133,7 @@ public sealed class EffectiveRowDangerTests
     /// The same key, edited at the same scope that wins, reports the escalated tier too — so the
     /// divergence above is genuinely about the winner and not an off-by-one in the wiring.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_AgreesWithTheEditorWhenTheEditedScopeIsTheWinner()
     {
         SettingsWorkspace workspace =
@@ -143,8 +142,8 @@ public sealed class EffectiveRowDangerTests
         SettingsGroupEditorViewModel vm =
             Group(workspace, Table(), ConfigScope.Project, Node(EscalatingKey));
 
-        Assert.AreEqual(AppSeverity.Critical, Row(vm, EscalatingKey).Danger.Severity);
-        Assert.AreEqual(AppSeverity.Critical, vm.Editors.Single().Danger.Severity);
+        Assert.Equal(AppSeverity.Critical, Row(vm, EscalatingKey).Danger.Severity);
+        Assert.Equal(AppSeverity.Critical, vm.Editors.Single().Danger.Severity);
     }
 
     // ── Currency conversions: both are load-bearing, both fail silently ───────
@@ -158,7 +157,7 @@ public sealed class EffectiveRowDangerTests
     /// answers <c>false</c> — i.e. reports "nothing wrong right now" on a value that is wrong.
     /// Nothing else in the suite would notice.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_ValueReachesThePredicateInEditorCurrency()
     {
         SettingsWorkspace workspace = Workspace(
@@ -168,14 +167,14 @@ public sealed class EffectiveRowDangerTests
             Node(ToggleKey, SchemaValueType.Boolean),
             Node("timeoutMs", SchemaValueType.Integer));
 
-        Assert.IsTrue(Row(vm, ToggleKey).Danger.IsDangerNow,
+        Assert.True(Row(vm, ToggleKey).Danger.IsDangerNow,
             "a JSON true must arrive as a bool");
-        Assert.IsTrue(Row(vm, "timeoutMs").Danger.IsDangerNow,
+        Assert.True(Row(vm, "timeoutMs").Danger.IsDangerNow,
             "a JSON integer must arrive as a long — an int-typed pattern would silently miss");
     }
 
     /// <summary>A safe value at a dangerous key keeps the tier and drops the banner.</summary>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_SafeValueKeepsTheTierButIsNotDangerNow()
     {
         SettingsWorkspace workspace =
@@ -185,9 +184,9 @@ public sealed class EffectiveRowDangerTests
             Group(workspace, Table(), ConfigScope.User, Node(ToggleKey, SchemaValueType.Boolean));
 
         EffectivePropertyRow row = Row(vm, ToggleKey);
-        Assert.AreEqual(AppSeverity.Critical, row.Danger.Severity);
-        Assert.IsFalse(row.Danger.IsDangerNow);
-        Assert.IsTrue(row.HasDangerSeverity, "a triaged key still renders its dot");
+        Assert.Equal(AppSeverity.Critical, row.Danger.Severity);
+        Assert.False(row.Danger.IsDangerNow);
+        Assert.True(row.HasDangerSeverity, "a triaged key still renders its dot");
     }
 
     // ── The path, not the display name ───────────────────────────────────────
@@ -202,7 +201,7 @@ public sealed class EffectiveRowDangerTests
     /// still renders and every other test stays green. This is the cheapest way to break the
     /// feature and the hardest to notice.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_ClassifiesTheJsonPath_NotTheDisplayTitle()
     {
         SettingsWorkspace workspace =
@@ -217,9 +216,9 @@ public sealed class EffectiveRowDangerTests
         SettingsGroupEditorViewModel vm = Group(workspace, Table(), ConfigScope.User, titled);
 
         EffectivePropertyRow row = vm.EffectiveRows.Single();
-        Assert.AreEqual("Skip Permission Prompts", row.Property,
+        MessageAssert.Equal("Skip Permission Prompts", row.Property,
             "precondition: the display column must differ from the path, or this proves nothing");
-        Assert.AreEqual(AppSeverity.Critical, row.Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, row.Danger.Severity,
             "the title matches no rule; classification must use JsonPath");
     }
 
@@ -229,7 +228,7 @@ public sealed class EffectiveRowDangerTests
     /// A section with no danger table renders rows with no dot, exactly as before this column
     /// existed.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_WithoutATable_IsUnremarkable()
     {
         SettingsWorkspace workspace =
@@ -239,15 +238,15 @@ public sealed class EffectiveRowDangerTests
             Node(ToggleKey, SchemaValueType.Boolean));
 
         EffectivePropertyRow row = vm.EffectiveRows.Single();
-        Assert.AreSame(DangerAssessment.Unremarkable, row.Danger);
-        Assert.IsFalse(row.HasDangerSeverity);
-        Assert.AreEqual(string.Empty, row.DangerAccessibleText);
+        Assert.Same(DangerAssessment.Unremarkable, row.Danger);
+        Assert.False(row.HasDangerSeverity);
+        Assert.Equal(string.Empty, row.DangerAccessibleText);
     }
 
     /// <summary>
     /// A key the table has no opinion about renders no dot even when a table is present.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_UnclassifiedKey_RendersNoDot()
     {
         SettingsWorkspace workspace = Workspace((ConfigScope.User, """{"model":"sonnet"}"""));
@@ -255,7 +254,7 @@ public sealed class EffectiveRowDangerTests
         SettingsGroupEditorViewModel vm =
             Group(workspace, Table(), ConfigScope.User, Node("model"));
 
-        Assert.IsFalse(vm.EffectiveRows.Single().HasDangerSeverity);
+        Assert.False(vm.EffectiveRows.Single().HasDangerSeverity);
     }
 
     // ── Accessible text ──────────────────────────────────────────────────────
@@ -264,7 +263,7 @@ public sealed class EffectiveRowDangerTests
     /// The dot is a coloured shape and conveys nothing to a screen reader on its own, so the row
     /// names the tier and the consequence.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EffectiveRow_AccessibleTextNamesTheTierAndTheConsequence()
     {
         SettingsWorkspace workspace =
@@ -274,7 +273,7 @@ public sealed class EffectiveRowDangerTests
             Group(workspace, Table(), ConfigScope.User, Node(ToggleKey, SchemaValueType.Boolean));
 
         EffectivePropertyRow row = vm.EffectiveRows.Single();
-        Assert.AreEqual(
+        Assert.Equal(
             "Critical: Skips the permission prompt for every tool call.",
             row.DangerAccessibleText);
     }
@@ -291,13 +290,13 @@ public sealed class EffectiveRowDangerTests
     /// itself, and no test could reasonably be expected to catch a caller passing two different
     /// tables.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TheGroupEditorTakesItsClassifierFromTheFactory()
     {
         IDangerClassifier table = Table();
         CompositeEditorFactory factory = ClaudeEditorFactoryConfig.CreateDefault(danger: table);
 
-        Assert.AreSame(table, ((ISchemaEditorFactory)factory).Danger,
+        MessageAssert.Same(table, ((ISchemaEditorFactory)factory).Danger,
             "the factory must surface the very classifier it stamps onto its editors");
 
         SettingsWorkspace workspace =
@@ -309,7 +308,7 @@ public sealed class EffectiveRowDangerTests
             factory,
             ClaudeSettingsGroupText.Create());
 
-        Assert.AreEqual(AppSeverity.Critical, vm.EffectiveRows.Single().Danger.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, vm.EffectiveRows.Single().Danger.Severity,
             "the effective row must be classified by the factory's table without the view-model "
             + "being handed one separately");
     }
@@ -322,7 +321,6 @@ public sealed class EffectiveRowDangerTests
     /// row type and nothing else — different view-models, different data sources, different
     /// classifier wiring — so a fix applied to one leaves the other silent.
     /// </summary>
-    [TestClass]
     public sealed class StandalonePage
     {
         private static AgentConfigClientCore Client(params (ConfigScope Scope, string Json)[] entries)
@@ -344,7 +342,7 @@ public sealed class EffectiveRowDangerTests
         /// scope it could use — but it still has to look it up rather than pass
         /// <see langword="null"/>, or the escalation never fires.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Rows_AreAssessedAtTheWinningScope()
         {
             EffectiveSettingsViewModel vm = new(
@@ -355,9 +353,9 @@ public sealed class EffectiveRowDangerTests
 
             EffectivePropertyRow row = Row(vm, EscalatingKey);
 
-            Assert.AreEqual(ConfigScope.Project, row.Scope,
+            MessageAssert.Equal(ConfigScope.Project, row.Scope,
                 "precondition: the project file must win, or this test proves nothing");
-            Assert.AreEqual(AppSeverity.Critical, row.Danger.Severity,
+            MessageAssert.Equal(AppSeverity.Critical, row.Danger.Severity,
                 "passing a null scope here would silently drop every escalation — an unknown "
                 + "scope must never raise severity, so the omission reads as 'safe'");
         }
@@ -366,24 +364,24 @@ public sealed class EffectiveRowDangerTests
         /// The value crosses into editor currency here too. This page's own conversion is a
         /// separate line of code from the group editor's, so it needs its own proof.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Rows_ValueReachesThePredicateInEditorCurrency()
         {
             EffectiveSettingsViewModel vm = new(
                 Client((ConfigScope.User, $$"""{"{{ToggleKey}}":true,"timeoutMs":90000}""")),
                 danger: Table());
 
-            Assert.IsTrue(Row(vm, ToggleKey).Danger.IsDangerNow, "a JSON true must arrive as a bool");
-            Assert.IsTrue(Row(vm, "timeoutMs").Danger.IsDangerNow, "a JSON integer must arrive as a long");
+            Assert.True(Row(vm, ToggleKey).Danger.IsDangerNow, "a JSON true must arrive as a bool");
+            Assert.True(Row(vm, "timeoutMs").Danger.IsDangerNow, "a JSON integer must arrive as a long");
         }
 
-        [TestMethod]
+        [Fact]
         public void Rows_WithoutATable_AreUnremarkable()
         {
             EffectiveSettingsViewModel vm = new(
                 Client((ConfigScope.User, $$"""{"{{ToggleKey}}":true}""")));
 
-            Assert.AreSame(DangerAssessment.Unremarkable, Row(vm, ToggleKey).Danger);
+            Assert.Same(DangerAssessment.Unremarkable, Row(vm, ToggleKey).Danger);
         }
 
         /// <summary>
@@ -391,7 +389,7 @@ public sealed class EffectiveRowDangerTests
         /// rules' value predicates and scope escalation genuinely run, rather than the tier-only
         /// answer an inherited (ancestor) match would give.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Rows_AreExactMatches_SoPredicatesActuallyRun()
         {
             EffectiveSettingsViewModel vm = new(
@@ -399,8 +397,8 @@ public sealed class EffectiveRowDangerTests
                 danger: Table());
 
             EffectivePropertyRow row = Row(vm, ToggleKey);
-            Assert.AreEqual(AppSeverity.Critical, row.Danger.Severity);
-            Assert.IsFalse(row.Danger.IsDangerNow,
+            Assert.Equal(AppSeverity.Critical, row.Danger.Severity);
+            Assert.False(row.Danger.IsDangerNow,
                 "an inherited match reports IsDangerNow false unconditionally, so this assertion "
                 + "only means something alongside the true case above");
         }

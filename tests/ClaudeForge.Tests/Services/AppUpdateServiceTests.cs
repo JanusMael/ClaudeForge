@@ -26,13 +26,13 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// the AppUpdateService-level orchestration.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class AppUpdateServiceTests
+public sealed class AppUpdateServiceTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public AppUpdateServiceTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_appupdate_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -46,8 +46,7 @@ public sealed class AppUpdateServiceTests
         AppUpdateService.Initialize(ClaudeEnvironment.Empty);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         DebugFlags.ResetForTesting();
         AppUpdateService.ResetForTesting();
@@ -59,9 +58,15 @@ public sealed class AppUpdateServiceTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // ── Once-per-process latch ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CheckOncePerLaunchAsync_SecondCall_ReturnsNoUpdateWithoutWork()
     {
         // First call exercises the real path (or a flag-driven one);
@@ -71,18 +76,18 @@ public sealed class AppUpdateServiceTests
         // Default WindowState (no override file) → CheckForUpdatesOnLaunch=true.
 
         UpdateCheckResult first = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsTrue(first.IsUpdateAvailable,
+        Assert.True(first.IsUpdateAvailable,
             "Setup: first call must produce an UpdateAvailable (so we know the second isn't trivially false).");
 
         UpdateCheckResult second = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsFalse(second.IsUpdateAvailable,
+        Assert.False(second.IsUpdateAvailable,
             "Second call to CheckOncePerLaunchAsync MUST collapse to NoUpdate — the latch is load-bearing for " +
             "the 'fires exactly once per launch' contract.");
     }
 
     // ── User-toggle gate ────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CheckOncePerLaunchAsync_CheckDisabledByUser_ReturnsNoUpdate()
     {
         // User toggled the Essentials card off — even with simulate-update
@@ -93,13 +98,13 @@ public sealed class AppUpdateServiceTests
 
         UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
 
-        Assert.IsFalse(result.IsUpdateAvailable,
+        Assert.False(result.IsUpdateAvailable,
             "User opt-out (CheckForUpdatesOnLaunch=false) must override the simulate-update path.");
     }
 
     // ── --simulate-update branch ────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task CheckOncePerLaunchAsync_SimulateUpdate_ReturnsUpdateAvailable_WithIncrementedVersion()
     {
         // The synth path takes the running assembly version and
@@ -113,24 +118,24 @@ public sealed class AppUpdateServiceTests
 
         UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
 
-        Assert.IsTrue(result.IsUpdateAvailable,
+        Assert.True(result.IsUpdateAvailable,
             "Simulate flag must always produce UpdateAvailable — the synth is guaranteed " +
             "greater-than-current by construction.");
-        Assert.IsNotNull(result.LatestVersion);
-        Assert.IsTrue(result.LatestVersion! > current,
+        Assert.NotNull(result.LatestVersion);
+        Assert.True(result.LatestVersion! > current,
             $"Synthesised version {result.LatestVersion} must be strictly greater than " +
             $"current {current} — the whole point of the simulate flag is a visible update.");
-        Assert.IsNotNull(result.LatestTagName);
-        StringAssert.StartsWith(result.LatestTagName!, "v",
+        Assert.NotNull(result.LatestTagName);
+        MessageAssert.StartsWith("v", result.LatestTagName!,
             "Synthesised tag carries the canonical 'v' prefix used in release tags.");
-        Assert.IsNotNull(result.ReleaseUrl);
-        StringAssert.Contains(result.ReleaseUrl!, "JanusMael/ClaudeForge",
+        Assert.NotNull(result.ReleaseUrl);
+        MessageAssert.Contains("JanusMael/ClaudeForge", result.ReleaseUrl!,
             "Synthesised URL must point at the canonical repo path.");
-        StringAssert.Contains(result.ReleaseUrl!, result.LatestTagName!,
+        MessageAssert.Contains(result.LatestTagName!, result.ReleaseUrl!,
             "Synthesised URL must include the synthesised tag for the QA tester to click.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckOncePerLaunchAsync_SimulateUpdate_BumpsBuildSegmentOnly()
     {
         // Concrete shape contract: the increment lands on the Build
@@ -143,14 +148,14 @@ public sealed class AppUpdateServiceTests
 
         UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
 
-        Assert.IsNotNull(result.LatestVersion);
-        Assert.AreEqual(current.Major, result.LatestVersion!.Major,
+        Assert.NotNull(result.LatestVersion);
+        MessageAssert.Equal(current.Major, result.LatestVersion!.Major,
             "Major segment must be preserved — synth stays in the same major series.");
-        Assert.AreEqual(current.Minor, result.LatestVersion.Minor,
+        MessageAssert.Equal(current.Minor, result.LatestVersion.Minor,
             "Minor segment must be preserved — synth stays in the same minor series.");
         if (current.Build >= 0)
         {
-            Assert.AreEqual(current.Build + 1, result.LatestVersion.Build,
+            MessageAssert.Equal(current.Build + 1, result.LatestVersion.Build,
                 "Build segment must be incremented by exactly one — that's the synth contract.");
         }
     }
@@ -163,29 +168,29 @@ public sealed class AppUpdateServiceTests
     //     Essentials "Check for updates on launch" opt-out).
     //   - Still honour --simulate-update for QA.
 
-    [TestMethod]
+    [Fact]
     public async Task CheckManualAsync_BypassesOncePerLaunchLatch()
     {
         // Consume the latch first via the auto path.
         DebugFlags.Initialize(["--simulate-update"]);
         UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsTrue(auto.IsUpdateAvailable, "Setup: auto check must produce a result.");
+        Assert.True(auto.IsUpdateAvailable, "Setup: auto check must produce a result.");
 
         // Auto path is now latched — a second auto call would NoUpdate.
         UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsFalse(autoAgain.IsUpdateAvailable, "Setup: auto latch confirmed.");
+        Assert.False(autoAgain.IsUpdateAvailable, "Setup: auto latch confirmed.");
 
         // Manual must still produce a real result.
         UpdateCheckResult manual = await AppUpdateService.CheckManualAsync();
-        Assert.IsTrue(manual.IsUpdateAvailable,
+        Assert.True(manual.IsUpdateAvailable,
             "CheckManualAsync MUST bypass the once-per-launch latch — the user " +
             "explicitly re-clicked, and is entitled to a fresh answer.");
-        Assert.IsNotNull(manual.LatestTagName);
-        StringAssert.StartsWith(manual.LatestTagName!, "v",
+        Assert.NotNull(manual.LatestTagName);
+        MessageAssert.StartsWith("v", manual.LatestTagName!,
             "Synthesised tag has the canonical 'v' prefix.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckManualAsync_BypassesUserToggleOptOut()
     {
         // User has the Essentials toggle OFF.  The auto path would skip;
@@ -194,16 +199,16 @@ public sealed class AppUpdateServiceTests
         DebugFlags.Initialize(["--simulate-update"]);
 
         UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsFalse(auto.IsUpdateAvailable,
+        Assert.False(auto.IsUpdateAvailable,
             "Setup: auto check must respect the user opt-out (CheckForUpdatesOnLaunch=false).");
 
         UpdateCheckResult manual = await AppUpdateService.CheckManualAsync();
-        Assert.IsTrue(manual.IsUpdateAvailable,
+        Assert.True(manual.IsUpdateAvailable,
             "CheckManualAsync MUST bypass the user-toggle opt-out — clicking the " +
             "button is explicit consent that overrides the auto-check preference.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckManualAsync_HonoursSimulateUpdateFlag()
     {
         DebugFlags.Initialize(["--simulate-update"]);
@@ -211,16 +216,16 @@ public sealed class AppUpdateServiceTests
 
         UpdateCheckResult result = await AppUpdateService.CheckManualAsync();
 
-        Assert.IsTrue(result.IsUpdateAvailable);
-        Assert.IsNotNull(result.LatestVersion);
-        Assert.IsTrue(result.LatestVersion! > current,
+        Assert.True(result.IsUpdateAvailable);
+        Assert.NotNull(result.LatestVersion);
+        Assert.True(result.LatestVersion! > current,
             "Manual + simulate must synthesise a version strictly greater than current — " +
             "same contract as the auto path's synth.");
-        StringAssert.StartsWith(result.LatestTagName!, "v",
+        MessageAssert.StartsWith("v", result.LatestTagName!,
             "Synthesised tag has the canonical 'v' prefix.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckManualAsync_CanFireMultipleTimes()
     {
         DebugFlags.Initialize(["--simulate-update"]);
@@ -229,10 +234,10 @@ public sealed class AppUpdateServiceTests
         UpdateCheckResult second = await AppUpdateService.CheckManualAsync();
         UpdateCheckResult third = await AppUpdateService.CheckManualAsync();
 
-        Assert.IsTrue(first.IsUpdateAvailable);
-        Assert.IsTrue(second.IsUpdateAvailable,
+        Assert.True(first.IsUpdateAvailable);
+        Assert.True(second.IsUpdateAvailable,
             "Manual checks must not consume a latch — every call is independent.");
-        Assert.IsTrue(third.IsUpdateAvailable,
+        Assert.True(third.IsUpdateAvailable,
             "A third manual check must still produce a result (re-click-friendly).");
     }
 
@@ -244,25 +249,25 @@ public sealed class AppUpdateServiceTests
     //     consent, so this is the key behavioural difference from CheckManual.
     //   - Still honour --simulate-update for QA.
 
-    [TestMethod]
+    [Fact]
     public async Task CheckPeriodicAsync_BypassesOncePerLaunchLatch()
     {
         // Consume the launch latch first via the auto path.
         DebugFlags.Initialize(["--simulate-update"]);
         UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsTrue(auto.IsUpdateAvailable, "Setup: launch check must produce a result.");
+        Assert.True(auto.IsUpdateAvailable, "Setup: launch check must produce a result.");
 
         UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync();
-        Assert.IsFalse(autoAgain.IsUpdateAvailable, "Setup: launch latch confirmed.");
+        Assert.False(autoAgain.IsUpdateAvailable, "Setup: launch latch confirmed.");
 
         // Periodic must still produce a real result despite the consumed latch.
         UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
-        Assert.IsTrue(periodic.IsUpdateAvailable,
+        Assert.True(periodic.IsUpdateAvailable,
             "CheckPeriodicAsync MUST bypass the once-per-launch latch — it re-checks on a timer, " +
             "so the launch latch (which guards only the single launch kick) must not gate it.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckPeriodicAsync_RespectsUserToggleOptOut()
     {
         // User has the Essentials toggle OFF.  Unlike the manual button, the
@@ -273,12 +278,12 @@ public sealed class AppUpdateServiceTests
 
         UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
 
-        Assert.IsFalse(periodic.IsUpdateAvailable,
+        Assert.False(periodic.IsUpdateAvailable,
             "CheckPeriodicAsync MUST respect the opt-out (CheckForUpdatesOnLaunch=false) — a background " +
             "re-check is not consent. This is the key distinction from CheckManualAsync, which bypasses it.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckPeriodicAsync_CanFireMultipleTimes()
     {
         // Each timer tick is independent — no latch is consumed.
@@ -287,12 +292,12 @@ public sealed class AppUpdateServiceTests
         UpdateCheckResult first = await AppUpdateService.CheckPeriodicAsync();
         UpdateCheckResult second = await AppUpdateService.CheckPeriodicAsync();
 
-        Assert.IsTrue(first.IsUpdateAvailable);
-        Assert.IsTrue(second.IsUpdateAvailable,
+        Assert.True(first.IsUpdateAvailable);
+        Assert.True(second.IsUpdateAvailable,
             "Periodic checks must not consume a latch — every 4-hourly tick is independent.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CheckPeriodicAsync_HonoursSimulateUpdateFlag()
     {
         DebugFlags.Initialize(["--simulate-update"]);
@@ -300,9 +305,9 @@ public sealed class AppUpdateServiceTests
 
         UpdateCheckResult result = await AppUpdateService.CheckPeriodicAsync();
 
-        Assert.IsTrue(result.IsUpdateAvailable);
-        Assert.IsNotNull(result.LatestVersion);
-        Assert.IsTrue(result.LatestVersion! > current,
+        Assert.True(result.IsUpdateAvailable);
+        Assert.NotNull(result.LatestVersion);
+        Assert.True(result.LatestVersion! > current,
             "Periodic + simulate must synthesise a version strictly greater than current — " +
             "same synth contract as the launch path.");
     }

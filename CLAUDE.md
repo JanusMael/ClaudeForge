@@ -161,8 +161,10 @@ dotnet build ClaudeForge.slnx -c Debug
 dotnet test  ClaudeForge.slnx -c Debug --no-build
 ```
 
-Tests are **MSTest**, not xUnit. Passing tests' stdout is hidden unless you pass
-`--logger "console;verbosity=detailed"`. The suite is sequential by design — see
+Tests are **xUnit v3 on Microsoft.Testing.Platform** (moved from MSTest by `plans/00006`),
+selected for `dotnet test` by `global.json`. Passing tests' output is hidden unless you pass
+`--show-live-output on`. ⚠ **xUnit randomises test order per run**; reproduce an order-dependent
+failure with the test executable's `--seed N`. The suite is sequential by design — see
 `AGENTS.md` on Avalonia.Headless and the global-static seams.
 
 **A green Debug suite does not mean the apps ship.** An `IL2026` in a JSON helper once broke the

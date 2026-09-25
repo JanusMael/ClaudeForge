@@ -23,11 +23,8 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// as "you are up to date".
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SchemaRefresherTests
 {
-    public required TestContext TestContext { get; set; }
-
     private static readonly ProductDescriptor Checkable = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
     private static readonly ProductDescriptor NoUpstream = SchemaRegistry.ClaudeDesktopProduct;
 
@@ -92,38 +89,38 @@ public sealed class SchemaRefresherTests
     private async Task<SchemaRefreshResult> SingleAsync(SchemaRegistry registry)
     {
         IReadOnlyList<SchemaRefreshResult> results = await SchemaRefresher.RefreshAsync(
-            registry, [Checkable], TestContext.CancellationTokenSource.Token);
+            registry, [Checkable], TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(1, results.Count, "Premise: one checkable product in, one result out.");
+        MessageAssert.Equal(1, results.Count, "Premise: one checkable product in, one result out.");
         return results[0];
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UpstreamServingWhatIsAlreadyLoaded_IsUnchanged()
     {
         using SchemaRegistry registry = new(new HttpClient(new ConstantHandler("stable")));
-        _ = await registry.GetSettingsNodeAsync(Checkable, TestContext.CancellationTokenSource.Token);
+        _ = await registry.GetSettingsNodeAsync(Checkable, TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(SchemaSource.Fetched, registry.ProvenanceFor(Checkable.SchemaFileName)!.Source,
+        MessageAssert.Equal(SchemaSource.Fetched, registry.ProvenanceFor(Checkable.SchemaFileName)!.Source,
             "Premise: the first load must have come from the handler, or the comparison below "
             + "is between two bundled copies and would be unchanged for the wrong reason.");
 
         SchemaRefreshResult result = await SingleAsync(registry);
 
-        Assert.AreEqual(SchemaRefreshStatus.Unchanged, result.Status);
+        Assert.Equal(SchemaRefreshStatus.Unchanged, result.Status);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UpstreamServingSomethingNew_IsUpdated()
     {
         using SchemaRegistry registry = new(new HttpClient(new DriftingHandler()));
-        _ = await registry.GetSettingsNodeAsync(Checkable, TestContext.CancellationTokenSource.Token);
+        _ = await registry.GetSettingsNodeAsync(Checkable, TestContext.Current.CancellationToken);
         string firstSha = registry.ProvenanceFor(Checkable.SchemaFileName)!.ShortSha;
 
         SchemaRefreshResult result = await SingleAsync(registry);
 
-        Assert.AreEqual(SchemaRefreshStatus.Updated, result.Status);
-        Assert.AreNotEqual(firstSha, result.Provenance!.ShortSha,
+        Assert.Equal(SchemaRefreshStatus.Updated, result.Status);
+        MessageAssert.NotEqual(firstSha, result.Provenance!.ShortSha,
             "Updated must mean the digest actually moved, not merely that a fetch happened.");
     }
 
@@ -131,24 +128,24 @@ public sealed class SchemaRefresherTests
     /// ⛔ A check that cannot reach upstream leaves the registry on the bundled copy — pressing
     /// the button can move a session backwards, and the status has to say so.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task NetworkGoingDownMidSession_IsUnavailable_NotUnchanged()
     {
         using SchemaRegistry registry = new(new HttpClient(new GoesDownHandler()));
-        _ = await registry.GetSettingsNodeAsync(Checkable, TestContext.CancellationTokenSource.Token);
+        _ = await registry.GetSettingsNodeAsync(Checkable, TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(SchemaSource.Fetched, registry.ProvenanceFor(Checkable.SchemaFileName)!.Source,
+        MessageAssert.Equal(SchemaSource.Fetched, registry.ProvenanceFor(Checkable.SchemaFileName)!.Source,
             "Premise: the session starts on a FETCHED copy, which is the state that can be lost.");
 
         SchemaRefreshResult result = await SingleAsync(registry);
 
-        Assert.AreEqual(SchemaRefreshStatus.Unavailable, result.Status,
+        MessageAssert.Equal(SchemaRefreshStatus.Unavailable, result.Status,
             "Falling back to bundled after a failed re-fetch is not 'no updates' — the app is "
             + "now running on a different schema than it was a moment ago.");
-        Assert.AreEqual(SchemaSource.Bundled, result.Provenance!.Source);
+        Assert.Equal(SchemaSource.Bundled, result.Provenance!.Source);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task AnOfflineRegistry_IsUnavailable()
     {
         // No HttpClient at all — the fetch step is skipped entirely.
@@ -156,24 +153,24 @@ public sealed class SchemaRefresherTests
 
         SchemaRefreshResult result = await SingleAsync(registry);
 
-        Assert.AreEqual(SchemaRefreshStatus.Unavailable, result.Status);
+        Assert.Equal(SchemaRefreshStatus.Unavailable, result.Status);
     }
 
     /// <summary>
     /// A first check on a registry that has loaded nothing reports Updated, because there was
     /// no prior copy for it to be unchanged from.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task AFreshRegistryWithAReachableUpstream_IsUpdated()
     {
         using SchemaRegistry registry = new(new HttpClient(new ConstantHandler("stable")));
 
-        Assert.IsNull(registry.ProvenanceFor(Checkable.SchemaFileName),
+        MessageAssert.Null(registry.ProvenanceFor(Checkable.SchemaFileName),
             "Premise: nothing loaded yet.");
 
         SchemaRefreshResult result = await SingleAsync(registry);
 
-        Assert.AreEqual(SchemaRefreshStatus.Updated, result.Status);
+        Assert.Equal(SchemaRefreshStatus.Updated, result.Status);
     }
 
     /// <summary>
@@ -183,28 +180,28 @@ public sealed class SchemaRefresherTests
     /// Claude Desktop's schema is hand-maintained. Listing it in the result — with any status —
     /// would tell the user a check happened for it, and none did.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task AProductWithNoUpstream_IsOmittedEntirely()
     {
-        Assert.IsFalse(SchemaRefresher.IsCheckable(NoUpstream),
+        Assert.False(SchemaRefresher.IsCheckable(NoUpstream),
             "Premise: Claude Desktop has no published schema URL.");
-        Assert.IsTrue(SchemaRefresher.IsCheckable(Checkable),
+        Assert.True(SchemaRefresher.IsCheckable(Checkable),
             "Premise: Claude Code does, or the assertion below passes vacuously.");
 
         using SchemaRegistry registry = new(new HttpClient(new ConstantHandler("stable")));
 
         IReadOnlyList<SchemaRefreshResult> results = await SchemaRefresher.RefreshAsync(
-            registry, [NoUpstream, Checkable], TestContext.CancellationTokenSource.Token);
+            registry, [NoUpstream, Checkable], TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(1, results.Count, "Only the checkable product belongs in the results.");
-        Assert.AreEqual(Checkable.Id, results[0].Product.Id);
+        MessageAssert.Equal(1, results.Count, "Only the checkable product belongs in the results.");
+        Assert.Equal(Checkable.Id, results[0].Product.Id);
     }
 
     /// <summary>
     /// Results come back in the order the products were given, so a surface can pair them with
     /// its own section list without matching on identity.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task ResultsKeepTheOrderTheProductsWereGivenIn()
     {
         ProductDescriptor second = new(
@@ -214,10 +211,10 @@ public sealed class SchemaRefresherTests
         using SchemaRegistry registry = new(new HttpClient(new ConstantHandler("stable")));
 
         IReadOnlyList<SchemaRefreshResult> results = await SchemaRefresher.RefreshAsync(
-            registry, [Checkable, second], TestContext.CancellationTokenSource.Token);
+            registry, [Checkable, second], TestContext.Current.CancellationToken);
 
-        Assert.AreEqual(2, results.Count);
-        Assert.AreEqual(Checkable.Id, results[0].Product.Id);
-        Assert.AreEqual(second.Id, results[1].Product.Id);
+        Assert.Equal(2, results.Count);
+        Assert.Equal(Checkable.Id, results[0].Product.Id);
+        Assert.Equal(second.Id, results[1].Product.Id);
     }
 }

@@ -6,20 +6,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// Covers worktree discovery's in-project filtering, non-git skip, and the
 /// <c>git worktree list --porcelain</c> line-parser.
 /// </summary>
-[TestClass]
-public sealed class WorktreeProbeTests
+public sealed class WorktreeProbeTests : IDisposable
 {
     private string _scratch = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public WorktreeProbeTests() => Setup();
+
+    private void Setup()
     {
         _scratch = Path.Combine(Path.GetTempPath(), "wt-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_scratch);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         try
         {
@@ -34,7 +33,13 @@ public sealed class WorktreeProbeTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void ParseWorktreeList_ExtractsEveryWorktreeLine()
     {
         string[] lines =
@@ -51,12 +56,12 @@ public sealed class WorktreeProbeTests
 
         IReadOnlyList<string> result = WorktreeProbe.ParseWorktreeList(lines);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "/home/user/repo", "/tmp/feature-x" },
             result.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DiscoverExternal_FiltersInProjectWorktrees()
     {
         // Set up a fake "git project" directory with a .git sub-folder so the probe
@@ -79,12 +84,12 @@ public sealed class WorktreeProbeTests
 
         WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project]);
 
-        Assert.AreEqual(1, result.Worktrees.Count);
-        Assert.AreEqual(Path.GetFullPath(outside), result.Worktrees[0].WorktreePath);
-        Assert.AreEqual(Path.GetFullPath(project), result.Worktrees[0].ProjectRoot);
+        Assert.Single(result.Worktrees);
+        Assert.Equal(Path.GetFullPath(outside), result.Worktrees[0].WorktreePath);
+        Assert.Equal(Path.GetFullPath(project), result.Worktrees[0].ProjectRoot);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DiscoverExternal_SkipsNonGitProjects()
     {
         string notAGit = Path.Combine(_scratch, "plain");
@@ -95,11 +100,11 @@ public sealed class WorktreeProbeTests
 
         WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([notAGit]);
 
-        Assert.AreEqual(0, result.Worktrees.Count);
-        Assert.AreEqual(0, runner.Calls); // Never invoked git
+        Assert.Empty(result.Worktrees);
+        Assert.Equal(0, runner.Calls); // Never invoked git
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DiscoverExternal_HandlesNullRunnerResultGracefully()
     {
         string project = Path.Combine(_scratch, "repo");
@@ -109,11 +114,11 @@ public sealed class WorktreeProbeTests
         WorktreeProbe probe = new(runner);
 
         WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project]);
-        Assert.AreEqual(0, result.Worktrees.Count);
-        Assert.IsTrue(result.GitMissing, "GitMissing should be true when runner returns null.");
+        Assert.Empty(result.Worktrees);
+        Assert.True(result.GitMissing, "GitMissing should be true when runner returns null.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DiscoverExternal_RecognizesGitFileMarker()
     {
         // Regression: when a project directory was itself created by `git worktree add`,
@@ -140,11 +145,11 @@ public sealed class WorktreeProbeTests
         WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project]);
 
         // git must have been invoked — proves the .git file was accepted as a valid marker.
-        Assert.AreEqual(1, runner.Calls,
+        MessageAssert.Equal(1, runner.Calls,
             "git should have been invoked for a project with a .git file marker.");
-        Assert.AreEqual(1, result.Worktrees.Count,
+        MessageAssert.Equal(1, result.Worktrees.Count,
             "External worktree should have been discovered via a .git-file project.");
-        Assert.AreEqual(Path.GetFullPath(external), result.Worktrees[0].WorktreePath);
+        Assert.Equal(Path.GetFullPath(external), result.Worktrees[0].WorktreePath);
     }
 
     private sealed class FakeRunner : IProcessRunner

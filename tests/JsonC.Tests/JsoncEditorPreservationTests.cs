@@ -7,10 +7,9 @@ namespace Bennewitz.Ninja.JsonC.Tests;
 /// nothing else. Each test here names a specific thing today's re-serializing writer
 /// destroys.
 /// </summary>
-[TestClass]
 public sealed class JsoncEditorPreservationTests
 {
-    [TestMethod]
+    [Fact]
     public void SetExistingValue_ChangesOnlyThatValuesSpan()
     {
         const string before = """
@@ -22,7 +21,7 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
-        Assert.AreEqual(
+        Assert.Equal(
             """
             {
               "model": "opus",
@@ -32,7 +31,7 @@ public sealed class JsoncEditorPreservationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void LineComments_Survive_IncludingOnesAttachedToTheEditedMember()
     {
         const string before = """
@@ -45,9 +44,9 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
-        StringAssert.Contains(after, "// why we pin the model");
-        StringAssert.Contains(after, "// inline note");
-        Assert.AreEqual(
+        OrdinalAssert.Contains("// why we pin the model", after);
+        OrdinalAssert.Contains("// inline note", after);
+        Assert.Equal(
             """
             {
               // why we pin the model
@@ -58,7 +57,7 @@ public sealed class JsoncEditorPreservationTests
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void BlockComments_AndBlankLines_Survive()
     {
         const string before = """
@@ -74,22 +73,22 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "effortLevel", JsonValue.Create("low"));
 
-        StringAssert.Contains(after, "/* a block");
-        StringAssert.Contains(after, "spanning lines */");
-        Assert.AreEqual(before.Replace("\"high\"", "\"low\""), after,
+        OrdinalAssert.Contains("/* a block", after);
+        OrdinalAssert.Contains("spanning lines */", after);
+        MessageAssert.Equal(before.Replace("\"high\"", "\"low\""), after,
                         "Only the edited value's span should differ.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TabIndentation_IsNotConvertedToSpaces()
     {
         string before = "{\n\t\"model\": \"sonnet\",\n\t\"nested\": {\n\t\t\"a\": 1\n\t}\n}";
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
-        Assert.IsFalse(after.Contains("  \"", StringComparison.Ordinal),
+        Assert.False(after.Contains("  \"", StringComparison.Ordinal),
                        "A tab-indented document must not gain space indentation.");
-        Assert.AreEqual(before.Replace("sonnet", "opus"), after);
+        Assert.Equal(before.Replace("sonnet", "opus"), after);
     }
 
     /// <summary>
@@ -106,7 +105,7 @@ public sealed class JsoncEditorPreservationTests
     /// the realistic case — a user with a tab-indented CRLF config gaining
     /// space-indented LF islands wherever the tool inserted something.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void InsertedMultiLineValue_UsesTheDocumentsTabsAndCrlf()
     {
         const string before = "{\r\n\t\"model\": \"sonnet\"\r\n}";
@@ -114,33 +113,33 @@ public sealed class JsoncEditorPreservationTests
         JsonObject value = new() { ["defaultMode"] = JsonValue.Create("ask") };
         string after = JsoncEditor.SetValue(before, "permissions", value);
 
-        Assert.AreEqual(
+        Assert.Equal(
             "{\r\n\t\"model\": \"sonnet\",\r\n\t\"permissions\": {\r\n\t\t\"defaultMode\": \"ask\"\r\n\t}\r\n}",
             after);
 
-        Assert.IsFalse(after.Contains("  ", StringComparison.Ordinal),
+        Assert.False(after.Contains("  ", StringComparison.Ordinal),
                        "No space indentation should appear in a tab-indented document.");
-        Assert.AreEqual(
+        MessageAssert.Equal(
             after.Split("\r\n").Length - 1,
             after.Count(c => c == '\n'),
             "Every LF should be part of a CRLF pair; a bare LF means the inserted text "
             + "used the wrong line ending.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CrlfLineEndings_Survive()
     {
         const string before = "{\r\n  \"model\": \"sonnet\",\r\n  \"effortLevel\": \"high\"\r\n}";
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
 
-        Assert.AreEqual(before.Replace("sonnet", "opus"), after);
-        Assert.IsFalse(
+        Assert.Equal(before.Replace("sonnet", "opus"), after);
+        Assert.False(
             after.Replace("\r\n", string.Empty).Contains('\n', StringComparison.Ordinal),
             "No bare LF should appear in a CRLF document.");
     }
 
-    [TestMethod]
+    [Fact]
     public void KeyOrder_IsNeverNormalized()
     {
         const string before = """
@@ -153,14 +152,14 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "alpha", JsonValue.Create(99));
 
-        Assert.IsTrue(
+        Assert.True(
             after.IndexOf("zebra", StringComparison.Ordinal)
             < after.IndexOf("alpha", StringComparison.Ordinal),
             "Source key order must survive; a re-serializing writer is what loses it.");
-        Assert.AreEqual(before.Replace(": 2", ": 99"), after);
+        Assert.Equal(before.Replace(": 2", ": 99"), after);
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_ToTheSameValue_IsAByteIdenticalNoOp()
     {
         const string before = """
@@ -172,11 +171,11 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("sonnet"));
 
-        Assert.AreEqual(before, after,
+        MessageAssert.Equal(before, after,
                         "Re-writing the identical value should reproduce the file byte for byte.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ReplacingAScalarWithAnObject_IndentsToTheDocumentsStyle()
     {
         string before = "{\n\t\"permissions\": null\n}";
@@ -189,12 +188,12 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "permissions", value);
 
-        Assert.AreEqual(
+        Assert.Equal(
             "{\n\t\"permissions\": {\n\t\t\"defaultMode\": \"acceptEdits\",\n\t\t\"allow\": [\n\t\t\t\"Bash(git status)\"\n\t\t]\n\t}\n}",
             after);
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedValue_IsReachedByDottedPath_AndSiblingsAreUntouched()
     {
         const string before = """
@@ -210,11 +209,11 @@ public sealed class JsoncEditorPreservationTests
         string after = JsoncEditor.SetValue(before, "permissions.defaultMode",
                                             JsonValue.Create("acceptEdits"));
 
-        Assert.AreEqual(before.Replace("\"ask\"", "\"acceptEdits\""), after);
-        StringAssert.Contains(after, "// preserve this");
+        Assert.Equal(before.Replace("\"ask\"", "\"acceptEdits\""), after);
+        OrdinalAssert.Contains("// preserve this", after);
     }
 
-    [TestMethod]
+    [Fact]
     public void TrailingCommaDocument_IsEditable_NotRejected()
     {
         const string before = """
@@ -224,16 +223,16 @@ public sealed class JsoncEditorPreservationTests
                               """;
 
         JsoncDocument document = JsoncDocument.Parse(before);
-        Assert.IsTrue(document.IsEditable,
+        Assert.True(document.IsEditable,
                       "JSONC in the wild has trailing commas; rejecting them would route the "
                       + "caller onto a lossy fallback for something every JSONC parser accepts. "
                       + $"Errors: {string.Join("; ", document.Errors)}");
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("opus"));
-        Assert.AreEqual(before.Replace("sonnet", "opus"), after);
+        Assert.Equal(before.Replace("sonnet", "opus"), after);
     }
 
-    [TestMethod]
+    [Fact]
     public void DuplicateKeys_TheLastOneIsEdited_MatchingReaderSemantics()
     {
         const string before = """
@@ -245,7 +244,7 @@ public sealed class JsoncEditorPreservationTests
 
         string after = JsoncEditor.SetValue(before, "model", JsonValue.Create("edited"));
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             """
             {
               "model": "first",

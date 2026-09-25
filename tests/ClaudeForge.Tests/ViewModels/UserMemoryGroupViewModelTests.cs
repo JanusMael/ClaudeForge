@@ -8,7 +8,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// user-memory category group.  Tests pin every category branch of the
 /// HumanLabel + Tooltip switches plus CountLabel formatting and IsEmpty.
 /// </summary>
-[TestClass]
 public sealed class UserMemoryGroupViewModelTests
 {
     private static UserMemoryFile File(UserMemoryCategory category, string name = "alpha")
@@ -24,89 +23,89 @@ public sealed class UserMemoryGroupViewModelTests
 
     // ── HumanLabel switch (lines 20-32) ─────────────────────────────
 
-    [TestMethod]
-    [DataRow(UserMemoryCategory.PrimaryMemory)]
-    [DataRow(UserMemoryCategory.ProjectMemory)]
-    [DataRow(UserMemoryCategory.Subagent)]
-    [DataRow(UserMemoryCategory.SlashCommand)]
-    [DataRow(UserMemoryCategory.Hook)]
-    [DataRow(UserMemoryCategory.Plan)]
-    [DataRow(UserMemoryCategory.Rule)]
-    [DataRow(UserMemoryCategory.Skill)]
-    [DataRow(UserMemoryCategory.CrossToolMemory)]
+    [Theory]
+    [InlineData(UserMemoryCategory.PrimaryMemory)]
+    [InlineData(UserMemoryCategory.ProjectMemory)]
+    [InlineData(UserMemoryCategory.Subagent)]
+    [InlineData(UserMemoryCategory.SlashCommand)]
+    [InlineData(UserMemoryCategory.Hook)]
+    [InlineData(UserMemoryCategory.Plan)]
+    [InlineData(UserMemoryCategory.Rule)]
+    [InlineData(UserMemoryCategory.Skill)]
+    [InlineData(UserMemoryCategory.CrossToolMemory)]
     public void HumanLabel_EveryCategory_ReturnsNonEmptyLocalisedLabel(UserMemoryCategory category)
     {
         UserMemoryGroupViewModel group = new(category, new List<UserMemoryFile>());
-        Assert.IsFalse(string.IsNullOrEmpty(group.HumanLabel),
+        Assert.False(string.IsNullOrEmpty(group.HumanLabel),
             $"Category {category} must have a localised HumanLabel.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HumanLabel_UnknownCategory_FallsBackToEnumToString()
     {
         // Cast an out-of-range int to hit the default branch.
         UserMemoryGroupViewModel group = new((UserMemoryCategory)999, new List<UserMemoryFile>());
-        Assert.AreEqual("999", group.HumanLabel);
+        Assert.Equal("999", group.HumanLabel);
     }
 
     // ── Tooltip switch (line 54 default) ────────────────────────────
 
-    [TestMethod]
-    [DataRow(UserMemoryCategory.PrimaryMemory)]
-    [DataRow(UserMemoryCategory.ProjectMemory)]
-    [DataRow(UserMemoryCategory.Subagent)]
-    [DataRow(UserMemoryCategory.SlashCommand)]
-    [DataRow(UserMemoryCategory.Hook)]
-    [DataRow(UserMemoryCategory.Plan)]
-    [DataRow(UserMemoryCategory.Rule)]
-    [DataRow(UserMemoryCategory.Skill)]
-    [DataRow(UserMemoryCategory.CrossToolMemory)]
+    [Theory]
+    [InlineData(UserMemoryCategory.PrimaryMemory)]
+    [InlineData(UserMemoryCategory.ProjectMemory)]
+    [InlineData(UserMemoryCategory.Subagent)]
+    [InlineData(UserMemoryCategory.SlashCommand)]
+    [InlineData(UserMemoryCategory.Hook)]
+    [InlineData(UserMemoryCategory.Plan)]
+    [InlineData(UserMemoryCategory.Rule)]
+    [InlineData(UserMemoryCategory.Skill)]
+    [InlineData(UserMemoryCategory.CrossToolMemory)]
     public void Tooltip_EveryCategory_ReturnsNonEmptyDescription(UserMemoryCategory category)
     {
         UserMemoryGroupViewModel group = new(category, new List<UserMemoryFile>());
-        Assert.IsFalse(string.IsNullOrEmpty(group.Tooltip),
+        Assert.False(string.IsNullOrEmpty(group.Tooltip),
             $"Category {category} must have a localised Tooltip.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Tooltip_UnknownCategory_ReturnsEmpty()
     {
         UserMemoryGroupViewModel group = new((UserMemoryCategory)999, new List<UserMemoryFile>());
-        Assert.AreEqual(string.Empty, group.Tooltip);
+        Assert.Equal(string.Empty, group.Tooltip);
     }
 
     // ── CountLabel + IsEmpty (line 35 + 58) ─────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void CountLabel_ContainsFileCount()
     {
         UserMemoryGroupViewModel group = new(
             UserMemoryCategory.Skill,
             [File(UserMemoryCategory.Skill), File(UserMemoryCategory.Skill, "beta")]);
-        StringAssert.Contains(group.CountLabel, "2",
+        MessageAssert.Contains("2", group.CountLabel,
             "CountLabel must include the file count.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CountLabel_ZeroFiles_StillFormats()
     {
         UserMemoryGroupViewModel group = new(UserMemoryCategory.Skill, new List<UserMemoryFile>());
-        StringAssert.Contains(group.CountLabel, "0");
+        OrdinalAssert.Contains("0", group.CountLabel);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsEmpty_NoFiles_ReturnsTrue()
     {
         UserMemoryGroupViewModel group = new(UserMemoryCategory.Subagent, new List<UserMemoryFile>());
-        Assert.IsTrue(group.IsEmpty);
+        Assert.True(group.IsEmpty);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsEmpty_WithFiles_ReturnsFalse()
     {
         UserMemoryGroupViewModel group = new(
             UserMemoryCategory.Subagent,
             [File(UserMemoryCategory.Subagent)]);
-        Assert.IsFalse(group.IsEmpty);
+        Assert.False(group.IsEmpty);
     }
 }

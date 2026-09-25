@@ -21,7 +21,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Theming;
 /// <see cref="PageBackgrounds"/>.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class StatusPaletteContrastTests
 {
     /// <summary>WCAG AA for text: the floor a pill's foreground owes its own fill.</summary>
@@ -55,7 +54,7 @@ public sealed class StatusPaletteContrastTests
             ["Dark"] = "#16161A",
         };
 
-    [TestMethod]
+    [Fact]
     public void EveryStatusPill_ClearsItsFillAndThePage()
     {
         List<string> failures = [];
@@ -66,7 +65,7 @@ public sealed class StatusPaletteContrastTests
 
             // A parse that silently found nothing would pass every assertion below by
             // having none to make. Eight brushes per variant, or the structure moved.
-            Assert.AreEqual(8, brushes.Count,
+            MessageAssert.Equal(8, brushes.Count,
                 $"Expected 8 AppStatus* brushes in App.axaml's '{variant}' theme dictionary, found " +
                 $"{brushes.Count} ({string.Join(", ", brushes.Keys.OrderBy(k => k, StringComparer.Ordinal))}). " +
                 "The dictionary was renamed or restructured — fix this test before trusting it.");
@@ -106,7 +105,7 @@ public sealed class StatusPaletteContrastTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void TheMarginIsReported_SoATightPairIsVisibleBeforeItBreaks()
     {
         // Diagnostic only. The palette clears its floors by 0.07 and 0.05 at the worst
@@ -127,7 +126,7 @@ public sealed class StatusPaletteContrastTests
             }
         }
 
-        Assert.IsTrue(PageBackgrounds.Count == 2);
+        Assert.True(PageBackgrounds.Count == 2);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

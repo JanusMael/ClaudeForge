@@ -13,7 +13,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// before Effective/JSON, and leaves every other group's built-in strip
 /// untouched.
 /// </summary>
-[TestClass]
 public sealed class GroupTabCustomizerTests
 {
     private static List<GroupTab> SeedBuiltIns() =>
@@ -26,21 +25,21 @@ public sealed class GroupTabCustomizerTests
     private static PermissionsEditorViewModel MakePermissionsEditor() =>
         new(new SchemaNode("permissions", "permissions"), ConfigScope.User);
 
-    [TestMethod]
+    [Fact]
     public void Customize_NonPermissionsGroup_LeavesBuiltInsUnchanged()
     {
         List<GroupTab> tabs = SeedBuiltIns();
 
         ClaudeGroupTabCustomizer.Instance.Customize("Model & Effort", tabs, []);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { GroupTab.PropertiesId, GroupTab.EffectiveId, GroupTab.JsonId },
             tabs.Select(t => t.Id).ToList(),
             "A non-permissions group must keep exactly the three built-in tabs.");
-        Assert.AreEqual("Properties", tabs[0].Header, "Properties must not be relabeled for other groups.");
+        MessageAssert.Equal("Properties", tabs[0].Header, "Properties must not be relabeled for other groups.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Customize_PermissionsGroup_NoEditor_LeavesBuiltInsUnchanged()
     {
         // Defensive: if the permissions group somehow has no PermissionsEditorViewModel,
@@ -50,12 +49,12 @@ public sealed class GroupTabCustomizerTests
         ClaudeGroupTabCustomizer.Instance.Customize(
             ClaudeGroupTabCustomizer.PermissionsGroupName, tabs, []);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { GroupTab.PropertiesId, GroupTab.EffectiveId, GroupTab.JsonId },
             tabs.Select(t => t.Id).ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void Customize_PermissionsGroup_InsertsThreeTabsAfterPropertiesBeforeEffective()
     {
         // Advanced is an accordion on the Overview body, not a tab — so the
@@ -66,7 +65,7 @@ public sealed class GroupTabCustomizerTests
         ClaudeGroupTabCustomizer.Instance.Customize(
             ClaudeGroupTabCustomizer.PermissionsGroupName, tabs, [perm]);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[]
             {
                 GroupTab.PropertiesId,
@@ -79,13 +78,13 @@ public sealed class GroupTabCustomizerTests
             tabs.Select(t => t.Id).ToList(),
             "Permissions tabs must sit right after Properties and before Effective/JSON.");
 
-        CollectionAssert.DoesNotContain(
-            tabs.Select(t => t.Id).ToList(),
+        MessageAssert.DoesNotContain(
             ClaudeGroupTabCustomizer.PermAdvancedId,
+            tabs.Select(t => t.Id).ToList(),
             "Advanced is an Overview accordion, not a contributed tab.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Customize_PermissionsGroup_RelabelsPropertiesToOverview()
     {
         List<GroupTab> tabs = SeedBuiltIns();
@@ -94,11 +93,11 @@ public sealed class GroupTabCustomizerTests
             ClaudeGroupTabCustomizer.PermissionsGroupName, tabs, [MakePermissionsEditor()]);
 
         GroupTab properties = tabs.Single(t => t.Id == GroupTab.PropertiesId);
-        Assert.AreEqual(Strings.TabPermOverview, properties.Header,
+        MessageAssert.Equal(Strings.TabPermOverview, properties.Header,
             "The built-in Properties tab is relabeled 'Overview' for the Permissions group.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Customize_PermissionsGroup_ContributedTabsBindToPermissionsEditor()
     {
         List<GroupTab> tabs = SeedBuiltIns();
@@ -116,12 +115,12 @@ public sealed class GroupTabCustomizerTests
         foreach (string id in permIds)
         {
             GroupTab tab = tabs.Single(t => t.Id == id);
-            Assert.AreSame(perm, tab.Content,
+            MessageAssert.Same(perm, tab.Content,
                 $"Contributed tab '{id}' must bind to the shared PermissionsEditorViewModel.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Customize_HooksGroup_InsertsFlowTabAfterProperties_AndWiresLink()
     {
         List<GroupTab> tabs = SeedBuiltIns();
@@ -132,7 +131,7 @@ public sealed class GroupTabCustomizerTests
             ClaudeGroupTabCustomizer.HooksGroupName, tabs, [hooks], id => navigated = id);
 
         // Flow sits right after Properties, before Effective/JSON.
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[]
             {
                 GroupTab.PropertiesId,
@@ -143,15 +142,15 @@ public sealed class GroupTabCustomizerTests
             tabs.Select(t => t.Id).ToList());
 
         GroupTab flow = tabs.Single(t => t.Id == ClaudeGroupTabCustomizer.HooksFlowId);
-        Assert.AreSame(hooks, flow.Content, "The Flow tab binds to the hooks editor VM.");
-        Assert.IsTrue(hooks.HasFlowTab, "The Properties-tab 'View flow diagram' link is enabled.");
+        MessageAssert.Same(hooks, flow.Content, "The Flow tab binds to the hooks editor VM.");
+        Assert.True(hooks.HasFlowTab, "The Properties-tab 'View flow diagram' link is enabled.");
 
         // The wired link invokes the supplied SelectTab with the Flow tab id.
         hooks.OpenFlowCommand.Execute(null);
-        Assert.AreEqual(ClaudeGroupTabCustomizer.HooksFlowId, navigated);
+        Assert.Equal(ClaudeGroupTabCustomizer.HooksFlowId, navigated);
     }
 
-    [TestMethod]
+    [Fact]
     public void Customize_HooksGroup_NoEditor_LeavesBuiltInsUnchanged()
     {
         List<GroupTab> tabs = SeedBuiltIns();
@@ -159,7 +158,7 @@ public sealed class GroupTabCustomizerTests
         ClaudeGroupTabCustomizer.Instance.Customize(
             ClaudeGroupTabCustomizer.HooksGroupName, tabs, []);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { GroupTab.PropertiesId, GroupTab.EffectiveId, GroupTab.JsonId },
             tabs.Select(t => t.Id).ToList());
     }

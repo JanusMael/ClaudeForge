@@ -3,14 +3,13 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
 
-[TestClass]
 public class LayeredValueTests
 {
     // -----------------------------------------------------------------------
     // IsManagedLocked
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void IsManagedLocked_WhenManagedScopePresent_ReturnsTrue()
     {
         ScopeEntry[] entries =
@@ -21,10 +20,10 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsTrue(layered.IsManagedLocked);
+        Assert.True(layered.IsManagedLocked);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsManagedLocked_WhenNoManagedScope_ReturnsFalse()
     {
         ScopeEntry[] entries =
@@ -35,14 +34,14 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsFalse(layered.IsManagedLocked);
+        Assert.False(layered.IsManagedLocked);
     }
 
     // -----------------------------------------------------------------------
     // IsOverridden
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void IsOverridden_SingleEntry_ReturnsFalse()
     {
         ScopeEntry[] entries =
@@ -52,10 +51,10 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsFalse(layered.IsOverridden);
+        Assert.False(layered.IsOverridden);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsOverridden_MultipleEntries_ReturnsTrue()
     {
         ScopeEntry[] entries =
@@ -66,14 +65,14 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsTrue(layered.IsOverridden);
+        Assert.True(layered.IsOverridden);
     }
 
     // -----------------------------------------------------------------------
     // GetValueAt
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void GetValueAt_PresentScope_ReturnsValue()
     {
         ScopeEntry[] entries =
@@ -84,11 +83,11 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.AreEqual("user-val", layered.GetValueAt(ConfigScope.User)!.GetValue<string>());
-        Assert.AreEqual("project-val", layered.GetValueAt(ConfigScope.Project)!.GetValue<string>());
+        Assert.Equal("user-val", layered.GetValueAt(ConfigScope.User)!.GetValue<string>());
+        Assert.Equal("project-val", layered.GetValueAt(ConfigScope.Project)!.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void GetValueAt_AbsentScope_ReturnsNull()
     {
         ScopeEntry[] entries =
@@ -98,14 +97,14 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsNull(layered.GetValueAt(ConfigScope.Local));
+        Assert.Null(layered.GetValueAt(ConfigScope.Local));
     }
 
     // -----------------------------------------------------------------------
     // IsDefinedAt
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void IsDefinedAt_PresentScope_ReturnsTrue()
     {
         ScopeEntry[] entries =
@@ -115,10 +114,10 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsTrue(layered.IsDefinedAt(ConfigScope.User));
+        Assert.True(layered.IsDefinedAt(ConfigScope.User));
     }
 
-    [TestMethod]
+    [Fact]
     public void IsDefinedAt_AbsentScope_ReturnsFalse()
     {
         ScopeEntry[] entries =
@@ -128,14 +127,14 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.IsFalse(layered.IsDefinedAt(ConfigScope.Project));
+        Assert.False(layered.IsDefinedAt(ConfigScope.Project));
     }
 
     // -----------------------------------------------------------------------
     // Entries ordering — highest-priority scope first
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Entries_SortedHighestPriorityFirst()
     {
         // Construct with Local, Project, User in insertion order;
@@ -153,12 +152,12 @@ public class LayeredValueTests
         // (Scope priority was corrected post-Project-scope addition: Local
         // is the highest-priority user-editable scope, then Project, then
         // User. Lower numeric value = higher priority. See ConfigScope.cs.)
-        Assert.AreEqual(ConfigScope.Local, layered.Entries[0].Scope);
-        Assert.AreEqual(ConfigScope.Project, layered.Entries[1].Scope);
-        Assert.AreEqual(ConfigScope.User, layered.Entries[2].Scope);
+        Assert.Equal(ConfigScope.Local, layered.Entries[0].Scope);
+        Assert.Equal(ConfigScope.Project, layered.Entries[1].Scope);
+        Assert.Equal(ConfigScope.User, layered.Entries[2].Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void Entries_SortedHighestPriorityFirst_WithManaged()
     {
         // When Managed is present it must be first (priority 0).
@@ -170,7 +169,7 @@ public class LayeredValueTests
 
         LayeredValue layered = new("model", entries);
 
-        Assert.AreEqual(ConfigScope.Managed, layered.Entries[0].Scope);
-        Assert.AreEqual(ConfigScope.User, layered.Entries[1].Scope);
+        Assert.Equal(ConfigScope.Managed, layered.Entries[0].Scope);
+        Assert.Equal(ConfigScope.User, layered.Entries[1].Scope);
     }
 }

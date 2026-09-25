@@ -13,12 +13,11 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// JSON Merge Patch.  Pre-fix, every <c>scripts/refresh-schema.{sh,ps1}</c>
 /// run silently wiped the additions and required manual re-application.
 /// </summary>
-[TestClass]
 public sealed class SchemaRegistryOverlayTests
 {
     // ── ApplyMergePatch — RFC 7396 unit tests ────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_PatchReplacesPrimitive_WhenSameKey()
     {
         JsonNode? target = JsonNode.Parse("""{"k":"old"}""");
@@ -26,10 +25,10 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonNode? merged = SchemaRegistry.ApplyMergePatch(target, patch);
 
-        Assert.AreEqual("new", merged?["k"]?.GetValue<string>());
+        Assert.Equal("new", merged?["k"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_PatchAddsKey_WhenAbsentInTarget()
     {
         JsonNode? target = JsonNode.Parse("""{"a":1}""");
@@ -37,11 +36,11 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonNode? merged = SchemaRegistry.ApplyMergePatch(target, patch);
 
-        Assert.AreEqual(1, merged?["a"]?.GetValue<int>());
-        Assert.AreEqual(2, merged?["b"]?.GetValue<int>());
+        Assert.Equal(1, merged?["a"]?.GetValue<int>());
+        Assert.Equal(2, merged?["b"]?.GetValue<int>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_PatchRecursesIntoNestedObjects()
     {
         // RFC 7396: when both target and patch have an object at the same
@@ -51,12 +50,12 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonNode? merged = SchemaRegistry.ApplyMergePatch(target, patch);
 
-        Assert.AreEqual(1, merged?["outer"]?["x"]?.GetValue<int>(), "Original 'x' preserved.");
-        Assert.AreEqual(99, merged?["outer"]?["y"]?.GetValue<int>(), "Patch overwrites 'y'.");
-        Assert.AreEqual(3, merged?["outer"]?["z"]?.GetValue<int>(), "Patch adds 'z'.");
+        MessageAssert.Equal(1, merged?["outer"]?["x"]?.GetValue<int>(), "Original 'x' preserved.");
+        MessageAssert.Equal(99, merged?["outer"]?["y"]?.GetValue<int>(), "Patch overwrites 'y'.");
+        MessageAssert.Equal(3, merged?["outer"]?["z"]?.GetValue<int>(), "Patch adds 'z'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_NullInPatch_DeletesKey()
     {
         // RFC 7396 §2: explicit null in the patch removes the key from target.
@@ -65,12 +64,12 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonObject? merged = SchemaRegistry.ApplyMergePatch(target, patch) as JsonObject;
 
-        Assert.IsNotNull(merged);
-        Assert.IsTrue(merged!.ContainsKey("keep"));
-        Assert.IsFalse(merged.ContainsKey("drop"), "null in patch must remove the key.");
+        Assert.NotNull(merged);
+        Assert.True(merged!.ContainsKey("keep"));
+        Assert.False(merged.ContainsKey("drop"), "null in patch must remove the key.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_ArrayInPatch_ReplacesWholesale()
     {
         // RFC 7396 explicitly does NOT merge arrays — patch array replaces
@@ -82,13 +81,13 @@ public sealed class SchemaRegistryOverlayTests
         JsonNode? merged = SchemaRegistry.ApplyMergePatch(target, patch);
 
         JsonArray? arr = merged?["examples"] as JsonArray;
-        Assert.IsNotNull(arr);
-        Assert.AreEqual(2, arr!.Count);
-        Assert.AreEqual("x", arr[0]?.GetValue<string>());
-        Assert.AreEqual("y", arr[1]?.GetValue<string>());
+        Assert.NotNull(arr);
+        Assert.Equal(2, arr!.Count);
+        Assert.Equal("x", arr[0]?.GetValue<string>());
+        Assert.Equal("y", arr[1]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_PrimitivePatch_ReplacesObjectTarget()
     {
         // RFC 7396 §1: if patch is not an object, patch replaces target.
@@ -97,10 +96,10 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonNode? merged = SchemaRegistry.ApplyMergePatch(target, patch);
 
-        Assert.AreEqual("replaced", merged?.GetValue<string>());
+        Assert.Equal("replaced", merged?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_NullTarget_PatchObjectBecomesResult()
     {
         // Null target + object patch → patch's keys become the result.
@@ -108,36 +107,36 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonObject? merged = SchemaRegistry.ApplyMergePatch(null, patch) as JsonObject;
 
-        Assert.IsNotNull(merged);
-        Assert.AreEqual(1, merged!["a"]?.GetValue<int>());
-        Assert.AreEqual(2, merged["b"]?.GetValue<int>());
+        Assert.NotNull(merged);
+        Assert.Equal(1, merged!["a"]?.GetValue<int>());
+        Assert.Equal(2, merged["b"]?.GetValue<int>());
     }
 
     // ── TryReadBundledBytesMerged — production path E2E ──────────────
 
-    [TestMethod]
+    [Fact]
     public void TryReadBundledBytesMerged_AppliesClaudeCodeOverlay()
     {
         // Reading the production bundled schema through the merged loader
         // must surface the overlay's `model.examples` + `default` even
         // though the base file no longer carries them.
         byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
-        Assert.IsNotNull(bytes);
+        Assert.NotNull(bytes);
 
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
         JsonObject? model = node?["properties"]?["model"] as JsonObject;
-        Assert.IsNotNull(model, "model property must survive the merge.");
+        MessageAssert.NotNull(model, "model property must survive the merge.");
 
-        Assert.AreEqual("sonnet", model!["default"]?.GetValue<string>(),
+        MessageAssert.Equal("sonnet", model!["default"]?.GetValue<string>(),
             "Overlay's `default` must surface on the merged result.");
 
         JsonArray? examples = model["examples"] as JsonArray;
-        Assert.IsNotNull(examples, "Overlay's `examples` must surface.");
-        Assert.IsTrue(examples!.Count >= 4, $"At least 4 examples expected; got {examples.Count}.");
+        MessageAssert.NotNull(examples, "Overlay's `examples` must surface.");
+        Assert.True(examples!.Count >= 4, $"At least 4 examples expected; got {examples.Count}.");
         string?[] values = examples.Select(e => e?.GetValue<string>()).ToArray();
-        CollectionAssert.Contains(values, "sonnet");
-        CollectionAssert.Contains(values, "opus");
-        CollectionAssert.Contains(values, "haiku");
+        Assert.Contains("sonnet", values);
+        Assert.Contains("opus", values);
+        Assert.Contains("haiku", values);
     }
 
     /// <summary>
@@ -150,29 +149,29 @@ public sealed class SchemaRegistryOverlayTests
     /// has no way to learn what a valid theme name is. Asserted against the MERGED loader, because
     /// the base file deliberately still carries neither key.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void TryReadBundledBytesMerged_AppliesOpenCodeTuiOverlay()
     {
         byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("opencode-tui.json");
-        Assert.IsNotNull(bytes);
+        Assert.NotNull(bytes);
 
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
         JsonObject? theme = node?["properties"]?["theme"] as JsonObject;
-        Assert.IsNotNull(theme, "the theme property must survive the merge.");
+        MessageAssert.NotNull(theme, "the theme property must survive the merge.");
 
-        Assert.IsFalse(
+        Assert.False(
             string.IsNullOrWhiteSpace(theme!["description"]?.GetValue<string>()),
             "the overlay's description must surface — upstream has none.");
 
         JsonArray? examples = theme["examples"] as JsonArray;
-        Assert.IsNotNull(examples, "the overlay's examples must surface.");
-        CollectionAssert.AreEqual(
+        MessageAssert.NotNull(examples, "the overlay's examples must surface.");
+        MessageAssert.SequenceEqual(
             new[] { "opencode" },
             examples!.Select(e => e?.GetValue<string>()).ToArray(),
             "only the built-in theme is asserted here; the rest are discovered at runtime.");
 
         // The merge must not have cost the schema its other properties.
-        Assert.IsNotNull(node?["properties"]?["keybinds"], "keybinds must survive the merge.");
+        MessageAssert.NotNull(node?["properties"]?["keybinds"], "keybinds must survive the merge.");
     }
 
     /// <summary>
@@ -186,7 +185,7 @@ public sealed class SchemaRegistryOverlayTests
     /// which is exactly why adding this overlay broke no existing test and why this assertion had to
     /// be written rather than assumed.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void OpenCodeTuiTheme_IsPromotedToAFreeFormEnum_ByTheOverlay()
     {
         // An isolated Json.Schema registry per parse, the same way the sibling tree tests do, so
@@ -201,50 +200,50 @@ public sealed class SchemaRegistryOverlayTests
 
         byte[]? baseBytes = BundledResource.TryRead("Schemas", "opencode-tui.json");
         byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("opencode-tui.json");
-        Assert.IsNotNull(baseBytes);
-        Assert.IsNotNull(merged);
+        Assert.NotNull(baseBytes);
+        Assert.NotNull(merged);
 
         SchemaNode withoutOverlay = ThemeFrom(baseBytes!);
         SchemaNode withOverlay = ThemeFrom(merged!);
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             SchemaValueType.String,
             withoutOverlay.ValueType,
             "the bare upstream declaration is a plain string — a text box with no suggestions.");
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             SchemaValueType.Enum,
             withOverlay.ValueType,
             "with the overlay it must classify as an enum, which is what renders the picker.");
-        Assert.AreNotEqual(
+        MessageAssert.NotEqual(
             0,
             withOverlay.Examples.Count,
             "a non-empty Examples is what keeps the picker free-form rather than closed — "
                 + "without it the editor would refuse every theme this build has not heard of.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryReadBundledBytesMerged_NoOverlay_ReturnsBaseUnchanged()
     {
         // claude-desktop-config.json has no .overlay.json sibling — the
         // merged helper must return the base bytes verbatim.
         byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("claude-desktop-config.json");
-        Assert.IsNotNull(merged);
+        Assert.NotNull(merged);
 
         // Sanity: the base file must parse as JSON (the merge is a no-op
         // here, so the resulting bytes are just the base file's content).
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(merged!));
-        Assert.IsNotNull(node);
+        Assert.NotNull(node);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryReadBundledBytesMerged_NoSuchSchema_ReturnsNull()
     {
         byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("definitely-not-a-real-schema.json");
-        Assert.IsNull(merged);
+        Assert.Null(merged);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyMergePatch_PreservesKeyOrder_WhenPatchedKeyAlreadyExists()
     {
         // Regression lock (2026-05-19): the first implementation called
@@ -259,16 +258,16 @@ public sealed class SchemaRegistryOverlayTests
 
         JsonObject? merged = SchemaRegistry.ApplyMergePatch(target, patch) as JsonObject;
 
-        Assert.IsNotNull(merged);
+        Assert.NotNull(merged);
         string[] keysInOrder = merged!.Select(kvp => kvp.Key).ToArray();
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "a", "b", "c", "d" },
             keysInOrder,
             "Patched key must keep its original position; previously it moved to the end.");
-        Assert.AreEqual(99, merged["b"]?.GetValue<int>());
+        Assert.Equal(99, merged["b"]?.GetValue<int>());
     }
 
-    [TestMethod]
+    [Fact]
     public void TryReadBundledBytesMerged_PreservesModelPropertyPosition_InMergedResult()
     {
         // End-to-end variant of the order-preservation regression: the model
@@ -277,16 +276,16 @@ public sealed class SchemaRegistryOverlayTests
         // to the end of the properties OrderedDictionary, and the editor's
         // property list rendered `model` as the last entry.
         byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
-        Assert.IsNotNull(bytes);
+        Assert.NotNull(bytes);
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
         JsonObject? properties = node?["properties"] as JsonObject;
-        Assert.IsNotNull(properties);
+        Assert.NotNull(properties);
 
         string[] keys = properties!.Select(kvp => kvp.Key).ToArray();
         int modelIdx = Array.IndexOf(keys, "model");
         int lastIdx = keys.Length - 1;
-        Assert.IsTrue(modelIdx >= 0, "model property must exist in merged schema.");
-        Assert.AreNotEqual(lastIdx, modelIdx,
+        Assert.True(modelIdx >= 0, "model property must exist in merged schema.");
+        MessageAssert.NotEqual(lastIdx, modelIdx,
             $"model must NOT be the last property after the overlay merge "
             + $"(was at index {modelIdx} of {keys.Length}; last is {lastIdx}). "
             + $"If this regresses, ApplyMergePatch is re-adding instead of "
@@ -302,7 +301,7 @@ public sealed class SchemaRegistryOverlayTests
     // overlay entry that nulls one of these out, the guard fires and points
     // them at the must-not-touch comment in the overlay file itself.
 
-    [TestMethod]
+    [Fact]
     public void Overlay_PreservesPermissionRulePattern()
     {
         // $defs.permissionRule.pattern is a regex locking valid permission
@@ -313,16 +312,16 @@ public sealed class SchemaRegistryOverlayTests
         JsonNode? merged = LoadMerged();
         string? pattern = merged?["$defs"]?["permissionRule"]?["pattern"]?.GetValue<string>();
 
-        Assert.IsFalse(string.IsNullOrEmpty(pattern),
+        Assert.False(string.IsNullOrEmpty(pattern),
             "$defs.permissionRule.pattern must survive the overlay merge. "
             + "If this fails, an overlay entry has stripped the regex that locks "
             + "permission-rule action names.  See claude-code-settings.overlay.json's "
             + "$comment-must-not-touch block.");
-        StringAssert.Contains(pattern!, "Bash",
+        MessageAssert.Contains("Bash", pattern!,
             "Pattern must enumerate the known action names — Bash is the canary.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Overlay_PreservesHookCommandTypeConst()
     {
         // $defs.hookCommand.anyOf[0].properties.type.const = "command" is the
@@ -332,19 +331,19 @@ public sealed class SchemaRegistryOverlayTests
         // contract that protects unknown hook types from silent downcast.
         JsonNode? merged = LoadMerged();
         JsonNode? hookCommand = merged?["$defs"]?["hookCommand"];
-        Assert.IsNotNull(hookCommand, "$defs.hookCommand must exist in the merged schema.");
+        MessageAssert.NotNull(hookCommand, "$defs.hookCommand must exist in the merged schema.");
 
         JsonArray? anyOf = hookCommand!["anyOf"] as JsonArray;
-        Assert.IsNotNull(anyOf, "hookCommand must use anyOf to discriminate variants.");
-        Assert.IsTrue(anyOf!.Count > 0, "hookCommand.anyOf must have at least one variant.");
+        MessageAssert.NotNull(anyOf, "hookCommand must use anyOf to discriminate variants.");
+        Assert.True(anyOf!.Count > 0, "hookCommand.anyOf must have at least one variant.");
 
         string? typeConst = anyOf[0]?["properties"]?["type"]?["const"]?.GetValue<string>();
-        Assert.AreEqual("command", typeConst,
+        MessageAssert.Equal("command", typeConst,
             "hookCommand.anyOf[0].properties.type.const must remain \"command\" — "
             + "the variant discriminator MUST NOT be stripped by the overlay.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Overlay_PreservesAutoUpdatesChannelEnum()
     {
         // properties.autoUpdatesChannel.enum = ["stable", "latest"] locks the
@@ -354,20 +353,20 @@ public sealed class SchemaRegistryOverlayTests
         JsonNode? merged = LoadMerged();
         JsonArray? channelEnum = merged?["properties"]?["autoUpdatesChannel"]?["enum"] as JsonArray;
 
-        Assert.IsNotNull(channelEnum, "autoUpdatesChannel.enum must survive the overlay merge.");
+        MessageAssert.NotNull(channelEnum, "autoUpdatesChannel.enum must survive the overlay merge.");
         string?[] values = channelEnum!.Select(v => v?.GetValue<string>()).ToArray();
-        CollectionAssert.Contains(values, "stable");
-        CollectionAssert.Contains(values, "latest");
+        Assert.Contains("stable", values);
+        Assert.Contains("latest", values);
     }
 
     private static JsonNode? LoadMerged()
     {
         byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
-        Assert.IsNotNull(bytes);
+        Assert.NotNull(bytes);
         return JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
     }
 
-    [TestMethod]
+    [Fact]
     public void BaseSchema_ModelProperty_DoesNotCarryHandCuratedAdditions()
     {
         // Regression lock: the BASE schema (before overlay) must NOT carry
@@ -377,13 +376,13 @@ public sealed class SchemaRegistryOverlayTests
         byte[]? baseBytes = ReadBaseResource("claude-code-settings.json");
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(baseBytes!));
         JsonObject? model = node?["properties"]?["model"] as JsonObject;
-        Assert.IsNotNull(model);
+        Assert.NotNull(model);
 
-        Assert.IsFalse(model!.ContainsKey("default"),
+        Assert.False(model!.ContainsKey("default"),
             "Base schema must NOT carry `model.default` — that lives in the overlay. "
             + "If this test fails after `refresh-schema`, check that the overlay file "
             + "wasn't accidentally folded into the base.");
-        Assert.IsFalse(model.ContainsKey("examples"),
+        Assert.False(model.ContainsKey("examples"),
             "Base schema must NOT carry `model.examples` — that lives in the overlay.");
     }
 

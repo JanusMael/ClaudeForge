@@ -2,21 +2,20 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 
-[TestClass]
-public sealed class PlatformPathsProfileTests
+public sealed class PlatformPathsProfileTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public PlatformPathsProfileTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_sandbox))
@@ -25,32 +24,38 @@ public sealed class PlatformPathsProfileTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // -----------------------------------------------------------------------
     // DiscoverDesktopProfiles
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopProfiles_NoDirExists_ReturnsEmpty()
     {
         // DesktopProfilesDirectory does not exist in the fresh sandbox
-        Assert.IsFalse(Directory.Exists(PlatformPaths.DesktopProfilesDirectory));
+        Assert.False(Directory.Exists(PlatformPaths.DesktopProfilesDirectory));
 
         IReadOnlyList<string> profiles = PlatformPaths.DiscoverDesktopProfiles();
 
-        Assert.AreEqual(0, profiles.Count);
+        Assert.Empty(profiles);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopProfiles_EmptyDir_ReturnsEmpty()
     {
         Directory.CreateDirectory(PlatformPaths.DesktopProfilesDirectory);
 
         IReadOnlyList<string> profiles = PlatformPaths.DiscoverDesktopProfiles();
 
-        Assert.AreEqual(0, profiles.Count);
+        Assert.Empty(profiles);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopProfiles_SingleProfile_ReturnsProfileName()
     {
         string profileDir = Path.Combine(PlatformPaths.DesktopProfilesDirectory, "work");
@@ -59,11 +64,11 @@ public sealed class PlatformPathsProfileTests
 
         IReadOnlyList<string> profiles = PlatformPaths.DiscoverDesktopProfiles();
 
-        Assert.AreEqual(1, profiles.Count);
-        Assert.AreEqual("work", profiles[0]);
+        Assert.Single(profiles);
+        Assert.Equal("work", profiles[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopProfiles_MultipleProfiles_ReturnsSortedNames()
     {
         // Create in reverse alphabetical order to confirm sorting
@@ -74,13 +79,13 @@ public sealed class PlatformPathsProfileTests
 
         IReadOnlyList<string> profiles = PlatformPaths.DiscoverDesktopProfiles();
 
-        Assert.AreEqual(3, profiles.Count);
-        Assert.AreEqual("aaa", profiles[0]);
-        Assert.AreEqual("mmm", profiles[1]);
-        Assert.AreEqual("zzz", profiles[2]);
+        Assert.Equal(3, profiles.Count);
+        Assert.Equal("aaa", profiles[0]);
+        Assert.Equal("mmm", profiles[1]);
+        Assert.Equal("zzz", profiles[2]);
     }
 
-    [TestMethod]
+    [Fact]
     public void DiscoverDesktopProfiles_ProfileDirWithNoConfigFile_StillReturnsName()
     {
         // The method enumerates subdirectory names; it does not require the config file to exist.
@@ -88,7 +93,7 @@ public sealed class PlatformPathsProfileTests
 
         IReadOnlyList<string> profiles = PlatformPaths.DiscoverDesktopProfiles();
 
-        Assert.AreEqual(1, profiles.Count);
-        Assert.AreEqual("empty", profiles[0]);
+        Assert.Single(profiles);
+        Assert.Equal("empty", profiles[0]);
     }
 }

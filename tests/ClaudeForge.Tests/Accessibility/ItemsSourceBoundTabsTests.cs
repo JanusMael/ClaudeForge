@@ -39,10 +39,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// uniformly and cannot skip.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class ItemsSourceBoundTabsTests
 {
-    [TestMethod]
+    [Fact]
     public void EveryItemsSourceBoundTabControlsItemTypeOverridesToString()
     {
         string repoRoot = FindRepoRoot();
@@ -54,7 +53,7 @@ public sealed class ItemsSourceBoundTabsTests
         // and SettingsGroupEditorView); the first is gone with OpenCodeForge. 1 is still a real
         // assertion — SettingsGroupEditorView must always be found — so a regex slip still empties
         // the list. Restore 2 when OpenCodeForge rejoins.
-        Assert.IsTrue(bound.Count >= 1,
+        Assert.True(bound.Count >= 1,
             $"expected at least 1 ItemsSource-bound TabControl with an ItemTemplate x:DataType "
             + $"(SettingsGroupEditorView), found {bound.Count}. "
             + "The scan or its pattern is broken, not the repo.");

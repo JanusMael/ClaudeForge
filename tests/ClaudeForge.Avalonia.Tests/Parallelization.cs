@@ -4,4 +4,4 @@
 // current sequential behavior and guards against a global .runsettings enabling
 // parallelization. Only the pure-logic assemblies (Core.Tests, Sdk.Tests) opt in
 // to [assembly: Parallelize].
-[assembly: DoNotParallelize]
+[assembly: CollectionBehavior(DisableTestParallelization = true)]

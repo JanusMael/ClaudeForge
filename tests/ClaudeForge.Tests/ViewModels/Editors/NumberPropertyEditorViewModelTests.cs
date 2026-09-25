@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// constructs the library type directly via the Claude schema/scope adapters
 /// and exercises the library API (ToValue / LoadFromValue / ResetToInherited).
 /// </summary>
-[TestClass]
 public class NumberPropertyEditorViewModelTests
 {
     private static SchemaNode IntSchema(double? min = null, double? max = null)
@@ -45,73 +44,73 @@ public class NumberPropertyEditorViewModelTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void IsInteger_TrueForIntegerSchema()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(IntSchema());
-        Assert.IsTrue(vm.IsInteger);
+        Assert.True(vm.IsInteger);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsInteger_FalseForNumberSchema()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(DoubleSchema());
-        Assert.IsFalse(vm.IsInteger);
+        Assert.False(vm.IsInteger);
     }
 
-    [TestMethod]
+    [Fact]
     public void Bounds_AreExposedFromSchema()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(IntSchema(min: 1, max: 100));
-        Assert.AreEqual(1.0, vm.Minimum);
-        Assert.AreEqual(100.0, vm.Maximum);
+        Assert.Equal(1.0, vm.Minimum);
+        Assert.Equal(100.0, vm.Maximum);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_SetsValue()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(IntSchema());
         Load(vm, LayeredLong(ConfigScope.User, 42), ConfigScope.User);
 
-        Assert.AreEqual(42.0, vm.Value);
-        Assert.IsTrue(vm.IsModified);
+        Assert.Equal(42.0, vm.Value);
+        Assert.True(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsLongForInteger()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(IntSchema());
         vm.Value = 7.0;
         object? v = vm.ToValue();
-        Assert.IsInstanceOfType<long>(v);
-        Assert.AreEqual(7L, v);
+        Assert.IsAssignableFrom<long>(v);
+        Assert.Equal(7L, v);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsDoubleForNumber()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(DoubleSchema());
         vm.Value = 3.5;
         object? v = vm.ToValue();
-        Assert.IsInstanceOfType<double>(v);
-        Assert.AreEqual(3.5, v);
+        Assert.IsAssignableFrom<double>(v);
+        Assert.Equal(3.5, v);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsNull_WhenNoValue()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(IntSchema());
-        Assert.IsNull(vm.ToValue());
+        Assert.Null(vm.ToValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_ClearsValue()
     {
         LibVm.NumberPropertyEditorViewModel vm = NewVm(IntSchema());
         vm.Value = 5;
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.IsNull(vm.Value);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Null(vm.Value);
+        Assert.False(vm.IsModified);
     }
 }

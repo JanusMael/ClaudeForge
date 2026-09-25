@@ -4,28 +4,27 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Settings;
 
-[TestClass]
 public sealed class SettingsDocumentTests
 {
     // -----------------------------------------------------------------------
     // Construction
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Constructor_SetsAllProperties()
     {
         JsonObject root = new() { ["key"] = "value" };
         SettingsDocument doc = new(ConfigScope.User, "/fake/path.json", root, isReadOnly: false);
 
-        Assert.AreEqual(ConfigScope.User, doc.Scope);
-        Assert.AreEqual("/fake/path.json", doc.FilePath);
-        Assert.AreSame(root, doc.Root);
-        Assert.IsFalse(doc.IsReadOnly);
-        Assert.IsFalse(doc.IsDirty);
-        Assert.IsNull(doc.LastModified);
+        Assert.Equal(ConfigScope.User, doc.Scope);
+        Assert.Equal("/fake/path.json", doc.FilePath);
+        Assert.Same(root, doc.Root);
+        Assert.False(doc.IsReadOnly);
+        Assert.False(doc.IsDirty);
+        Assert.Null(doc.LastModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void Constructor_SnapshotsBaselineRoot()
     {
         JsonObject root = new() { ["key"] = "original" };
@@ -34,42 +33,42 @@ public sealed class SettingsDocumentTests
         // Baseline is a deep clone — mutating Root must not affect the baseline.
         root["key"] = "mutated";
 
-        Assert.AreEqual("original", doc.BaselineRoot?["key"]?.GetValue<string>());
+        Assert.Equal("original", doc.BaselineRoot?["key"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void Constructor_AcceptsReadOnlyFlag()
     {
         SettingsDocument doc = new(ConfigScope.Managed, "/sys/policy.json",
             new JsonObject(), isReadOnly: true);
 
-        Assert.IsTrue(doc.IsReadOnly);
+        Assert.True(doc.IsReadOnly);
     }
 
     // -----------------------------------------------------------------------
     // MarkDirty / MarkClean
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void MarkDirty_SetsIsDirtyTrue()
     {
         SettingsDocument doc = MakeDoc();
         doc.MarkDirty();
 
-        Assert.IsTrue(doc.IsDirty);
+        Assert.True(doc.IsDirty);
     }
 
-    [TestMethod]
+    [Fact]
     public void MarkClean_ClearsIsDirtyFlag()
     {
         SettingsDocument doc = MakeDoc();
         doc.MarkDirty();
         doc.MarkClean();
 
-        Assert.IsFalse(doc.IsDirty);
+        Assert.False(doc.IsDirty);
     }
 
-    [TestMethod]
+    [Fact]
     public void MarkClean_AdvancesBaselineToCurrentRoot()
     {
         JsonObject root = new() { ["key"] = "original" };
@@ -81,10 +80,10 @@ public sealed class SettingsDocumentTests
         doc.MarkClean();
 
         // Baseline must now reflect the post-save state.
-        Assert.AreEqual("edited", doc.BaselineRoot?["key"]?.GetValue<string>());
+        Assert.Equal("edited", doc.BaselineRoot?["key"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void MarkClean_BaselineIsDeepClone_FurtherMutationDoesNotCorruptBaseline()
     {
         JsonObject root = new() { ["key"] = "saved" };
@@ -95,14 +94,14 @@ public sealed class SettingsDocumentTests
         // Mutate Root after MarkClean — baseline must remain unchanged.
         root["key"] = "after-clean";
 
-        Assert.AreEqual("saved", doc.BaselineRoot?["key"]?.GetValue<string>());
+        Assert.Equal("saved", doc.BaselineRoot?["key"]?.GetValue<string>());
     }
 
     // -----------------------------------------------------------------------
     // UpdateRoot
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void UpdateRoot_ReplacesRootWithNewObject()
     {
         JsonObject original = new() { ["a"] = 1 };
@@ -112,20 +111,20 @@ public sealed class SettingsDocumentTests
         JsonObject reloaded = new() { ["b"] = 2 };
         doc.UpdateRoot(reloaded);
 
-        Assert.AreSame(reloaded, doc.Root);
+        Assert.Same(reloaded, doc.Root);
     }
 
-    [TestMethod]
+    [Fact]
     public void UpdateRoot_ClearsDirtyFlag()
     {
         SettingsDocument doc = MakeDoc();
         doc.MarkDirty();
         doc.UpdateRoot(new JsonObject());
 
-        Assert.IsFalse(doc.IsDirty);
+        Assert.False(doc.IsDirty);
     }
 
-    [TestMethod]
+    [Fact]
     public void UpdateRoot_SetsLastModifiedToApproximatelyNow()
     {
         DateTimeOffset before = DateTimeOffset.UtcNow;
@@ -133,12 +132,12 @@ public sealed class SettingsDocumentTests
         doc.UpdateRoot(new JsonObject());
         DateTimeOffset after = DateTimeOffset.UtcNow;
 
-        Assert.IsNotNull(doc.LastModified);
-        Assert.IsTrue(doc.LastModified >= before);
-        Assert.IsTrue(doc.LastModified <= after);
+        Assert.NotNull(doc.LastModified);
+        Assert.True(doc.LastModified >= before);
+        Assert.True(doc.LastModified <= after);
     }
 
-    [TestMethod]
+    [Fact]
     public void UpdateRoot_AdvancesBaselineToNewRoot()
     {
         JsonObject original = new() { ["k"] = "old" };
@@ -148,10 +147,10 @@ public sealed class SettingsDocumentTests
         doc.UpdateRoot(incoming);
 
         // Baseline should now match the incoming root.
-        Assert.AreEqual("new", doc.BaselineRoot?["k"]?.GetValue<string>());
+        Assert.Equal("new", doc.BaselineRoot?["k"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void UpdateRoot_BaselineIsIndependentDeepClone()
     {
         SettingsDocument doc = MakeDoc();
@@ -161,14 +160,14 @@ public sealed class SettingsDocumentTests
         // Mutate the incoming object after UpdateRoot — baseline must not change.
         incoming["k"] = "mutated-after";
 
-        Assert.AreEqual("reloaded", doc.BaselineRoot?["k"]?.GetValue<string>());
+        Assert.Equal("reloaded", doc.BaselineRoot?["k"]?.GetValue<string>());
     }
 
     // -----------------------------------------------------------------------
     // Round-trip: dirty → clean → dirty
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void MultipleMarkDirtyMarkCleanCycles_StateRemainsConsistent()
     {
         JsonObject root = new() { ["x"] = 0 };
@@ -178,11 +177,11 @@ public sealed class SettingsDocumentTests
         {
             root["x"] = i;
             doc.MarkDirty();
-            Assert.IsTrue(doc.IsDirty, $"cycle {i}: expected dirty");
+            Assert.True(doc.IsDirty, $"cycle {i}: expected dirty");
 
             doc.MarkClean();
-            Assert.IsFalse(doc.IsDirty, $"cycle {i}: expected clean");
-            Assert.AreEqual(i, doc.BaselineRoot?["x"]?.GetValue<int>(), $"cycle {i}: baseline mismatch");
+            Assert.False(doc.IsDirty, $"cycle {i}: expected clean");
+            MessageAssert.Equal(i, doc.BaselineRoot?["x"]?.GetValue<int>(), $"cycle {i}: baseline mismatch");
         }
     }
 
@@ -190,14 +189,14 @@ public sealed class SettingsDocumentTests
     // HasActualChanges
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_FreshDoc_ReturnsFalse()
     {
         SettingsDocument doc = new(ConfigScope.User, "/p", new JsonObject { ["k"] = "v" }, false);
-        Assert.IsFalse(doc.HasActualChanges());
+        Assert.False(doc.HasActualChanges());
     }
 
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_AfterMutation_ReturnsTrue()
     {
         JsonObject root = new() { ["k"] = "original" };
@@ -205,7 +204,7 @@ public sealed class SettingsDocumentTests
 
         root["k"] = "changed";
 
-        Assert.IsTrue(doc.HasActualChanges());
+        Assert.True(doc.HasActualChanges());
     }
 
     /// <summary>
@@ -220,7 +219,7 @@ public sealed class SettingsDocumentTests
     /// strips "//" from both sides and reports clean.
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_OnlyMetadataKeyDiffers_ReturnsFalse()
     {
         JsonObject root = new()
@@ -234,7 +233,7 @@ public sealed class SettingsDocumentTests
         // from the user's perspective.  HasActualChanges must report clean.
         root["//"] = "ClaudeForge v1.0 last saved 2026-05-08 11:30:00 AM";
 
-        Assert.IsFalse(doc.HasActualChanges(),
+        Assert.False(doc.HasActualChanges(),
             "Timestamp-only mutation in the '//' header-comment key must not flag the document dirty.");
     }
 
@@ -242,7 +241,7 @@ public sealed class SettingsDocumentTests
     /// Inverse: a real content change is still flagged dirty even when the
     /// metadata key happens to also differ between Root and BaselineRoot.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_RealChangePlusMetadataChange_ReturnsTrue()
     {
         JsonObject root = new()
@@ -255,7 +254,7 @@ public sealed class SettingsDocumentTests
         root["//"] = "new timestamp";
         root["k"] = "different value";
 
-        Assert.IsTrue(doc.HasActualChanges(),
+        Assert.True(doc.HasActualChanges(),
             "Real value change must still report dirty even when the metadata key also differs.");
     }
 
@@ -267,7 +266,7 @@ public sealed class SettingsDocumentTests
     /// in-memory baseline lacks "//" while a fresh load (or mid-session
     /// mutation) might have it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_OneSideHasMetadataKey_OtherDoesNot_StillClean()
     {
         // Document loaded from disk without "//" header.
@@ -278,11 +277,11 @@ public sealed class SettingsDocumentTests
         // (captured at construction) does not.
         root["//"] = "stamped just now";
 
-        Assert.IsFalse(doc.HasActualChanges(),
+        Assert.False(doc.HasActualChanges(),
             "Adding only the '//' metadata key must not flag the document dirty.");
     }
 
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_AfterSetThenReset_ReturnsFalse()
     {
         // Simulates: user changes a value, then presses Reset — net content is unchanged.
@@ -291,38 +290,38 @@ public sealed class SettingsDocumentTests
 
         // "Set" — add a new key
         root["newKey"] = "added";
-        Assert.IsTrue(doc.HasActualChanges(), "should be dirty after set");
+        Assert.True(doc.HasActualChanges(), "should be dirty after set");
 
         // "Reset" — remove the key we just added
         root.Remove("newKey");
-        Assert.IsFalse(doc.HasActualChanges(), "should be clean after reset (back to baseline)");
+        Assert.False(doc.HasActualChanges(), "should be clean after reset (back to baseline)");
     }
 
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_AfterMarkClean_ReturnsFalse()
     {
         JsonObject root = new() { ["k"] = "v" };
         SettingsDocument doc = new(ConfigScope.User, "/p", root, false);
 
         root["k"] = "mutated";
-        Assert.IsTrue(doc.HasActualChanges());
+        Assert.True(doc.HasActualChanges());
 
         doc.MarkClean();
-        Assert.IsFalse(doc.HasActualChanges(), "MarkClean should advance baseline to current state");
+        Assert.False(doc.HasActualChanges(), "MarkClean should advance baseline to current state");
     }
 
-    [TestMethod]
+    [Fact]
     public void HasActualChanges_EmptyDoc_ReturnsFalse()
     {
         SettingsDocument doc = new(ConfigScope.User, "/p", new JsonObject(), false);
-        Assert.IsFalse(doc.HasActualChanges());
+        Assert.False(doc.HasActualChanges());
     }
 
     // -----------------------------------------------------------------------
     // Constructor guard — non-object root
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Constructor_WhenDeepCloneReturnsNonObject_FallsBackToEmptyBaseline()
     {
         // The SettingsDocument constructor parameter is typed `JsonObject root`, so a
@@ -345,19 +344,19 @@ public sealed class SettingsDocumentTests
         SettingsDocument doc = new(
             ConfigScope.User, "/fake/path.json", asObject, isReadOnly: false);
 
-        Assert.IsNotNull(doc.BaselineRoot,
+        MessageAssert.NotNull(doc.BaselineRoot,
             "Even with an unsound root, the constructor must establish a non-null baseline.");
-        Assert.AreEqual(0, doc.BaselineRoot!.Count,
+        MessageAssert.Equal(0, doc.BaselineRoot!.Count,
             "Baseline should fall back to an empty JsonObject when DeepClone does not return a JsonObject.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Constructor_WhenRootIsObject_SetsBaselineRoot()
     {
         JsonObject root = new() { ["env"] = new JsonObject { ["API_KEY"] = "val" } };
         SettingsDocument doc = new(ConfigScope.User, "/fake/path.json", root, isReadOnly: false);
-        Assert.IsNotNull(doc.BaselineRoot, "BaselineRoot must be non-null for a JsonObject root.");
-        Assert.IsTrue(doc.BaselineRoot.ContainsKey("env"),
+        MessageAssert.NotNull(doc.BaselineRoot, "BaselineRoot must be non-null for a JsonObject root.");
+        Assert.True(doc.BaselineRoot.ContainsKey("env"),
             "BaselineRoot must contain a deep-cloned copy of the root object.");
     }
 

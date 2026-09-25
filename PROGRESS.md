@@ -153,16 +153,101 @@ the defect.
    and `AgentForge.Sdk` baselines). Releasing is the maintainer's, always. Then the `SharedPackageVersion`
    bump to that version, in its own change — publish and pin are ONE release, and only both clear the
    two red jobs.
-2. ▶ **`plans/00006` — MSTest → xUnit v3**, now unblocked (it waited on 00005). Its own branch and PR.
-   Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`. ⚠ Its step 5 carries
-   the headless bootstrap as proof of set-up ordering — that premise is FALSE (see the headless section),
-   so the bootstrap is not ported; record that as 00006 drift, never in the plan.
+2. ✅ **`plans/00006` — MSTest → xUnit v3**, DONE on `feat/tests-xunit-v3`, draft PR #79, gate passed
+   (see *Where `00006` stands* below); merge Templates PR #1 first. Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs` at `17e6bd8`.
+   ⚠ Its step 5 carries the headless bootstrap as proof of set-up ordering — that premise is FALSE (see
+   the headless section), so the bootstrap is not ported; record that as 00006 drift, never in the plan.
 3. ⏳ **Headless flakes still open:** the cross-thread `VerifyAccess` failure (cause unknown; `PerAssembly`
    tried and parked on local-only branch `fix/headless-perassembly` `d5c660a` — it breaks
    `MainWindowViewModel`'s `Application.Current is null` seam); the 2026-09-19 `IOException` on a temp
    `settings.json`; and one `GuiSave_WritesEveryProductsChanges…` failure seen once locally, message not
    captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
 4. ⓘ Coverage that left with the library and is not yet restored in the ScopedEditors repo: drift 12.
+
+### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
+
+| Step | State |
+|---|---|
+| 0 · baseline | ✅ `artifacts/xunit-move/baseline/` (gitignored): **7 assemblies, 3,068 methods, 3,298 results, 11 skipped**. Compared by `scripts/Compare-TestNames.ps1` — identity is assembly + class + method from each TRX's definitions, data rows by COUNT. Canaried: one test and one `[DataRow]` removed from a copy → it named exactly those two (`REMOVED …`, `ROWS … 21 -> 20`) |
+| 1 · MSTest onto MTP | ✅ `global.json` runner, `EnableMSTestRunner`, test projects `Exe`; every `dotnet test` in workflows and the canary uses `--solution`, CI uses `--report-trx`. Name set vs step 0: **0 differences**. Package canary green in package mode. ✅ CI green on three OSes (`46c73f8`). ✅ **Premise for decision 7 holds**: a throwaway xUnit v3 project ran beside the seven MSTest ones under one `dotnet test --solution` (3,301 = 3,298 + 3), wrote its own TRX, then was deleted. `tests/Directory.Build.props` now picks the framework per project — `<UseXunitV3>true</UseXunitV3>` in a converted csproj |
+| 2 · rewriter + helpers | ✅ Templates `17e6bd8`, unchanged. Helpers emitted ONCE to `tests/Shared/MessageAssert.cs`, linked into each converted project by `tests/Directory.Build.props` with a global `using Bennewitz.Ninja.Testing` |
+| 3 · pilot `JsonC.Tests` | ✅ 73 of 73, same identities, build 0 warnings; the only unmapped site was the assembly `[Parallelize]`, converted by hand to `CollectionPerClass`. Canaried: a message-bearing `MessageAssert.Equal` and ONE `[MemberData]` row (`name: "with space"`, 1 of 21) each fail with the original message above xUnit's diff. ⚠ `JsonC.Tests` has no `CollectionAssert` — that canary moves to `AgentForge.Artifacts.Tests` |
+| 4a · `AgentForge.Artifacts.Tests` | ✅ 35 of 35, 0 differences, build 0 warnings. Its build found **xUnit2012** (`IsFalse(xs.Any(p))`) → a converter rule, Templates **`b4d3c4a`** on `feat/mstest-to-xunit-rules`, ⏳ **PR JanusMael/Bennewitz.Ninja.Templates#1**, not merged. ⚠ `5d06d84`'s message cites `95aaed2`, the same commit before a rebase: the converter file is blob `54189b6` in both, so the conversion reproduces from either. And the project was re-converted from its MSTest state. Canaried: `CollectionAssert.AreEqual` → `Assert.Equal` still fails on ORDER; `AreEquivalent` → `SameElements` fails on multiplicity |
+| 4b · `ClaudeForge.Avalonia.Tests` | ✅ 42 of 42, nothing unmapped, 0 differences, build 0 warnings. Its `[assembly: DoNotParallelize]` became `CollectionBehavior(DisableTestParallelization = true)` — still serial. Converter from a PRIVATE worktree of the Templates branch: ⛔ never switch branches in the shared `Bennewitz.Ninja.Templates` checkout — a peer session works there, and its commit landed on this branch once (cleaned up with it; its patch is on Templates `main` as `159425b`) |
+| 4c · `AgentForge.Core.Tests` | ✅ 810, 8 skipped, 0 differences, build 0 warnings. Converter at Templates **`27c0ec6`** (PR #1, pushed): its first build found 401 errors, and every one except xUnit1051 became a rule there — `[Description]` → `[Trait("Description", …)]` (maintainer's choice, 2026-09-24), boolean `Contains`/`StartsWith`/`EndsWith` checks (xUnit2009/2017), `TestContext.WriteLine`, `AssertFailedException`, `nameof()` messages, named `delta:`/`ignoreCase:`/`message:`, and the 4-argument/message-bearing collection forms for the projects still to come. Re-converted from the MSTest state. By hand: `[Parallelize]` → `CollectionPerClass`; the one synchronous `[Timeout]` test made async (`await Task.Run(…)`) — canaried: a 60 s hang under a 2 s budget is cut off at **2.009 s**. `Inconclusive` → `Skip`: 22 sites, the same 8 skip here by name as under MSTest. ⚠ **xUnit1051 is suppressed** in `tests/Directory.Build.props` (383 sites here): passing `TestContext.Current.CancellationToken` everywhere would rewrite tests mid-move — decision 5. Its own change afterwards |
+| 4d · ordinal fix | ✅ JsonC, Artifacts, Avalonia and Core re-converted from `46c73f8` with Templates **`d12e28a`**, which keeps MSTest's ORDINAL string comparison (drift 8); hand edits reapplied (`GitignoreReaderTests` came out byte-identical to its committed form). 0 differences, build 0 warnings |
+| 5a · `AgentForge.Sdk.Tests` | ✅ 370, 0 differences, build 0 warnings, Templates `d12e28a`. It has NO headless session any more (the plan's "1 file" predates `00005`). By hand: `[Parallelize]` → `CollectionPerClass`; **xUnit1031** suppressed by `#pragma` in the two files whose tests block ON PURPOSE (bounded `Wait()`s proving the reentrant lock and `ConfigureAwait(false)` hold) — awaiting would delete what they test |
+| 5b · `ClaudeForge.Sdk.Claude.Tests` | ✅ 208, 0 differences, build 0 warnings, Templates `d12e28a`; no headless session either. By hand: `[Parallelize]` → `CollectionPerClass` |
+| 5c · `ClaudeForge.Tests` | ✅ 1,757 (was 1,760), build 0 warnings, Templates `d12e28a`, nothing unmapped. **The headless bootstrap is NOT ported** (the recorded decision: under `PerTest` isolation every `Dispatch` rebuilds the app, so the warm-up changed nothing and its guard was true by construction): `HeadlessSessionBootstrap.cs` and `HeadlessSessionBootstrapTests.cs` deleted with their links — the **3 intended `REMOVED`** in the name set. By hand, each with its reason in the file: `#pragma` for **xUnit1030** (`ConfigureAwait(false)` in `ClaudeEditorDangerWiringTests` — removing it would move continuations onto xUnit's context) and **xUnit1031** (`LiveLogWindowTests`, `McpServersEditorViewModelTests` — deliberate blocking). ⛔ **One real ORDER bug, exposed and fixed** — drift 10. Three whole-suite runs: 3,295 / 0 failed, differences = exactly the 3 removals |
+| 6 · drop MSTest, correct the prose | ✅ `tests/Directory.Build.props` references `xunit.v3` + TrxReport unconditionally; `MSTest`, `EnableMSTestRunner`, the per-project `UseXunitV3` switch and the dead `Microsoft.NET.Test.Sdk` / `coverlet.collector` entries are gone. Live docs rewritten to xUnit: `CLAUDE.md` (now also says order is RANDOMISED and how to reproduce with `--seed`), `PLATFORM.md`, root `AGENTS.md`, and the area `AGENTS.md` files under `Settings/`, `AgentForge.Sdk/`, `ViewModels/` and `ViewModels/Editors/`, plus the template in `SampleHeadlessTests`. No MSTest code remains anywhere; what still says "MSTest" is history in comments, `CHANGELOG.md`, `PROGRESS.md` history and approved plans. All seven TRX report executor `xunit 3.2.2`; build 0 warnings; the only differences are the 3 removed bootstrap tests |
+| 7 · gate | ✅ **Reconciliation** against the MSTest baseline (3,298 → 3,295): the ONLY differences are the 3 `REMOVED` `HeadlessSessionBootstrapTests` (not ported, drift/5c); the 11 skips are the same tests BY NAME (22 `Inconclusive` → `Skip` sites, 11 fire on Windows Debug); theory rows compare by count per method, so xUnit's `(arg: value)` display names are not differences (drift 6). **CI on `e450a43`**: Build & Test green on Windows, Ubuntu and macOS; Package Canary, Trim Check, catalog validation and CodeQL green; `Feed Restore` + `Published Version` red by construction only — every error NU1101 on the four `LayeredEditors.*` ids. **Package canary locally**: PASSED, 3,295 / 0 failed (Release skips 10, as under MSTest). **Trimmed Release publish** (`linux-x64`, `-p:AllowProjectReferencePublish=true`): exit 0, **0 IL warnings** |
+| ▶ RESUME | **`plans/00006` is DONE on `feat/tests-xunit-v3` (draft PR #79); merging is the maintainer's.** ✅ **Templates PR #1 is MERGED** (2026-09-25, rebased onto Templates `main` as `0355106..6b23f21`); #79 is next. ✅ **Templates PR #2 is MERGED** (`63b7595`) and `tests/Shared/MessageAssert.cs` is regenerated from it (`e07f71c`, suite 3,295 / 0 failed). It fixed a weakening its review found: the generic `OrdinalAssert.Contains`/`DoesNotContain` handed a dictionary's `Keys` to xUnit, which compares non-sets by the default equality, so `IsFalse(keys.Contains("A"))` over case-insensitive keys passed after conversion where MSTest failed (sets were never affected: xUnit 3.2.2 asks an `ISet<T>` for itself). **This branch's 10 `OrdinalAssert.DoesNotContain` sites were read:** 8 bind the ordinal string overload, and the 2 generic ones pass `BashCommandSplitter.ReadOnlyCommandNames` (a `FrozenSet` built with `StringComparer.Ordinal`, which IS the default string equality) and a `List<string>` — so no verdict here changed. Independent of both: **#80** retires `docs/AVALONIA-GOTCHAS.md` for XamlQuality's living copy and now states the inflow rule (`AGENTS.md` §7, `7e77581`); it touches other lines of `CLAUDE.md`/`AGENTS.md` than #79 — recheck `BuildFilePathIntegrityTests` once both land. Follow-ups, none blocking: (1) a compilation-backed scan for collection-typed `AreEqual` sites (drift 8 — the one mapping that stayed looser); (2) reconsider the `xUnit1051` suppression as its own change; (3) `ConfigScopeAdapter.ToConfigScope`'s id ambiguity across ladders before OpenCodeForge rejoins (drift 10); (4) the open `ReloadHardeningTests` timing flake — now reproducible only by luck, message still uncaptured (drift 9). ⚠ Pushing Templates from here needs `-c credential.helper= -c "credential.helper=!gh auth git-credential"` |
+| 4 – 7 (rest) | ⏳ Rewriter dry-run over all seven: `ClaudeForge.Avalonia.Tests` maps cleanly; the other six list **40 UNMAPPED** sites — 5× assembly `[Parallelize]`, 1 sync `[Timeout]`, 5× `[Description]`, 16× 3-argument `AreEqual` in `ClaudeArtifactPathsTests`, 2× `AllItemsAreUnique(msg)`, 2× `CollectionAssert.AreNotEqual(msg)`, 2× named-argument `AreEqual`, 7× 4-argument `StartsWith`/`Contains`/`AreNotEqual`. Each is a rule for the TOOL first, never a hand patch |
+
+⚠ **Drift from the frozen plan** — recorded here, because `00006` is never edited:
+
+1. **The baseline is 3,298, not 3,297** — one test landed in `ClaudeForge.Tests` after the plan measured at `3447783`.
+2. ⛔ **`--nologo` on `dotnet test` breaks every test app under MTP**: it is forwarded to each executable,
+   which rejects it with exit 5, "Zero tests ran", and **nothing names the option**. The package canary
+   passed it; removed there.
+3. ⛔ **An assembly whose `--filter` selects nothing exits 8 under MTP** — VSTest never cared. The one
+   filtered workflow (`model-catalog-refresh.yml`) now runs per project: 22 + 4 + 4 = the 30 the old
+   solution-wide filter selected, measured against the baseline. ✅ Re-expressed for xUnit, which rejects
+   `--filter` ("Unknown option", exit 5 — CI caught it on `da33de6`): `--filter-class "*ModelCatalog*"`
+   selects the same 22 + 4 + 4, and every test it selects was in the old set, so the sets are equal.
+4. ⛔ **NETSDK1151 in Release only**: `ClaudeForge.Tests` references the app, which is `SelfContained`
+   in Release, and an `Exe` may not reference a self-contained `Exe`. Debug never sees it, so only the
+   package canary caught it. `ValidateExecutableReferencesMatchSelfContained=false` on that one project.
+5. **The converter's commit is now on Templates `main`** (the plan says `feat/mstest-to-xunit`); the file
+   is unchanged from `17e6bd8` through `6d83523`.
+6. ⚠ **xUnit's TRX spells a method `Namespace.Class.Method(arg: value)`**, MSTest's the bare name — so
+   `Compare-TestNames.ps1` normalises both, or every converted test would read as removed-and-added.
+   Proven on the probe: its theory's two rows grouped as one method, count 2.
+7. ⚠ **Compare in the baseline's ENVIRONMENT.** `PackageVersionLockstepTests` is Inconclusive unless
+   `artifacts/localfeed` exists, and the package canary creates it — so a comparison after a canary run
+   shows one `NotExecuted -> Passed`. Delete `artifacts/localfeed` before comparing.
+8. ⛔⛔ **The first four conversions WEAKENED every string assertion, and every gate was green.**
+   MSTest's `StringAssert.*` and string `Assert.Contains/StartsWith/EndsWith` are ORDINAL; xUnit's
+   default to the CURRENT CULTURE, which ignores e.g. a soft hyphen — measured on both frameworks:
+   `Contains("coop", "co­op")` fails in MSTest (all five forms) and passes in xUnit. A weaker
+   assertion that still passes is invisible to a name-set comparison, which is exactly why the
+   gate cannot catch this class. Fixed in the converter (Templates `d12e28a`: an emitted
+   `OrdinalAssert`, ordinal `MessageAssert` string helpers), and all four projects re-converted
+   from `46c73f8`. Proven both ways: a search for bare xUnit string assertions finds **12** in the
+   committed JsonC tests and **0** after. ⭐ The lesson generalises: a conversion can keep every
+   name and every outcome and still change what a test PROVES — check the semantics of each
+   mapping on both frameworks, not only that the suite stays green.
+   ✅ **The other two suspects, measured on both frameworks (2026-09-24):**
+   `AreEqual(string, string, ignoreCase: true)` — MSTest compares under the invariant CULTURE, so it
+   passes on the soft-hyphen case where xUnit's `Equal(…, ignoreCase: true)` fails: xUnit is
+   STRICTER there, which can only surface as a visible failure (none — the suite is green); `ß`/`SS`
+   and `i`/`I` behave the same on both. ⏳ **`AreEqual(a, b)` on a COLLECTION-typed value is LOOSER**:
+   MSTest's `Equals` is reference equality for an array or `List<T>` (an equal copy FAILS), xUnit's
+   `Equal` compares structurally (an equal copy passes). A converted site therefore still passes, but
+   would no longer catch code that starts returning a copy where it returned the same instance.
+   Unlike the ordinal case this cannot be settled syntactically — it needs each argument's TYPE —
+   so it is a follow-up for a semantic (compilation-backed) scan, not a converter rule. Nested
+   `CollectionAssert.AreEqual` agrees on both sides.
+9. ⛔ **xUnit v3 RANDOMISES test order per run** (`--seed`); MSTest always ran one fixed order. A suite
+   built around process-wide static seams can therefore meet orders it never met before. Measured on
+   `ClaudeForge.Tests` after the fix below: **20 orders** (seeds 1–8, 101–110, and seed 3 twice),
+   **no order-dependent failure**. Randomisation is KEPT — it is what found drift 10 — and a failure
+   is reproduced with the seed: `tests/ClaudeForge.Tests/bin/Debug/net10.0/ClaudeForge.Tests.exe --seed N`.
+   ⏳ The one failure in those 20 runs was `ReloadHardeningTests.LoadAllWorkspacesAsync_ConcurrentCalls_ConvergeWithoutDeadlock`
+   under seed 3, which then passed twice under the same seed — TIMING, not order: the open
+   `VerifyAccess` flake, and its message was lost again (the runner script kept names only).
+10. ⛔ **`ConfigScopeAdapterTests.ToConfigScope_ResolvesRealWrappersAndForeignScopesAlike` only ever
+    passed because of MSTest's declaration order.** `ConfigScopeAdapter`'s cache is process-wide, and
+    `ToConfigScope`'s id fallback searches every wrapped scope first; classmates wrap an
+    `other-product` ladder that also has a `Project` rung, so once one of them ran first a foreign
+    `"project"` resolved to THAT ladder (`Expected: Project / Actual: Project` — same name, different
+    ladder). Fixed, on the maintainer's choice (2026-09-24), by isolating the test:
+    `ConfigScopeAdapter.ForgetNonDefaultLaddersForTesting()` (internal) forgets only non-default-ladder
+    entries — default-ladder singletons are KEPT, because `For` promises one instance per scope and
+    production holds them — called from the class constructor. Canaried under 8 fixed seeds: without
+    it the test fails 8/8, with it passes 8/8. ⏳ **The production ambiguity remains**: once two
+    ladders share an id, resolving a foreign scope by id alone cannot say which ladder is meant. It
+    matters when OpenCodeForge rejoins; a follow-up, not part of the move.
 
 ### ✅ DONE — stage two: [`plans/00005`](plans/00005-claudeforge-and-agentforge-consume-scopededitors.md), approved 2026-09-23, merged 2026-09-24 as #77
 

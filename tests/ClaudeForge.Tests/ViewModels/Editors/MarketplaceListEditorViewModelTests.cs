@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// - returns null when Items is empty (preserves the schema's
 ///   "undefined = no restriction" semantic — never emits `[]` by accident)
 /// </summary>
-[TestClass]
 public class MarketplaceListEditorViewModelTests
 {
     private static SchemaNode ArraySchema(string name = "strictKnownMarketplaces")
@@ -40,17 +39,17 @@ public class MarketplaceListEditorViewModelTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Initial_NoLayeredEntry_NoRows_NotModified()
     {
         MarketplaceListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_HydratesRowsFromAllSources()
     {
         JsonArray arr =
@@ -68,17 +67,17 @@ public class MarketplaceListEditorViewModelTests
         MarketplaceListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithArray("strictKnownMarketplaces", ConfigScope.User, arr), ConfigScope.User);
 
-        Assert.AreEqual(8, vm.Items.Count);
-        Assert.AreEqual("acme/plugins", vm.Items.Single(i => i.Source == "github").PrimaryValue);
-        Assert.AreEqual("https://x/r.git", vm.Items.Single(i => i.Source == "git").PrimaryValue);
-        Assert.AreEqual("@acme/plugins", vm.Items.Single(i => i.Source == "npm").PrimaryValue);
-        Assert.AreEqual("/srv/m.json", vm.Items.Single(i => i.Source == "file").PrimaryValue);
-        Assert.AreEqual("/srv/m", vm.Items.Single(i => i.Source == "directory").PrimaryValue);
-        Assert.AreEqual("^github\\.com$", vm.Items.Single(i => i.Source == "hostPattern").PrimaryValue);
-        Assert.AreEqual("^/srv/.*", vm.Items.Single(i => i.Source == "pathPattern").PrimaryValue);
+        Assert.Equal(8, vm.Items.Count);
+        Assert.Equal("acme/plugins", vm.Items.Single(i => i.Source == "github").PrimaryValue);
+        Assert.Equal("https://x/r.git", vm.Items.Single(i => i.Source == "git").PrimaryValue);
+        Assert.Equal("@acme/plugins", vm.Items.Single(i => i.Source == "npm").PrimaryValue);
+        Assert.Equal("/srv/m.json", vm.Items.Single(i => i.Source == "file").PrimaryValue);
+        Assert.Equal("/srv/m", vm.Items.Single(i => i.Source == "directory").PrimaryValue);
+        Assert.Equal("^github\\.com$", vm.Items.Single(i => i.Source == "hostPattern").PrimaryValue);
+        Assert.Equal("^/srv/.*", vm.Items.Single(i => i.Source == "pathPattern").PrimaryValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_RebuildsSchemaCorrectObjects()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -93,18 +92,18 @@ public class MarketplaceListEditorViewModelTests
         vm.AddEntryCommand.Execute(null);
 
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
-        Assert.AreEqual(2, written.Count);
+        Assert.Equal(2, written.Count);
 
         JsonObject github = (JsonObject)written[0]!;
-        Assert.AreEqual("github", github["source"]?.GetValue<string>());
-        Assert.AreEqual("acme/plugins", github["repo"]?.GetValue<string>());
+        Assert.Equal("github", github["source"]?.GetValue<string>());
+        Assert.Equal("acme/plugins", github["repo"]?.GetValue<string>());
 
         JsonObject npm = (JsonObject)written[1]!;
-        Assert.AreEqual("npm", npm["source"]?.GetValue<string>());
-        Assert.AreEqual("@acme/plugins", npm["package"]?.GetValue<string>());
+        Assert.Equal("npm", npm["source"]?.GetValue<string>());
+        Assert.Equal("@acme/plugins", npm["package"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void OpaqueExtraFields_PreservedAcrossRoundTrip()
     {
         // A managed-policy admin's hand-curated entry may include optional
@@ -137,23 +136,23 @@ public class MarketplaceListEditorViewModelTests
 
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
         JsonObject gh = (JsonObject)written[0]!;
-        Assert.AreEqual("v2.0", gh["ref"]?.GetValue<string>());
-        Assert.AreEqual("marketplaces/main", gh["path"]?.GetValue<string>());
+        Assert.Equal("v2.0", gh["ref"]?.GetValue<string>());
+        Assert.Equal("marketplaces/main", gh["path"]?.GetValue<string>());
 
         JsonObject urlEntry = (JsonObject)written[1]!;
         JsonObject headers = (JsonObject)urlEntry["headers"]!;
-        Assert.AreEqual("Bearer xyz", headers["Authorization"]?.GetValue<string>());
+        Assert.Equal("Bearer xyz", headers["Authorization"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyItems_ReturnsNull_PreservingUndefinedSemantics()
     {
         MarketplaceListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void BareStringScope_HydratesEmpty_NoCrash()
     {
         JsonArray arr = [JsonValue.Create("bare-string-from-old-fallback")];
@@ -165,19 +164,19 @@ public class MarketplaceListEditorViewModelTests
             EffectiveScope = ConfigScope.User,
         };
         vm.LoadFromLayered(lv, ConfigScope.User);
-        Assert.AreEqual(0, vm.Items.Count);
+        Assert.Empty(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void ItemMissingSourceDiscriminator_Skipped()
     {
         JsonArray arr = [new JsonObject { ["repo"] = "acme/plugins" }];
         MarketplaceListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithArray("strictKnownMarketplaces", ConfigScope.User, arr), ConfigScope.User);
-        Assert.AreEqual(0, vm.Items.Count);
+        Assert.Empty(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void ItemWithUnknownSource_Skipped()
     {
         // We don't surface a row for a source we don't know how to render —
@@ -188,22 +187,22 @@ public class MarketplaceListEditorViewModelTests
         ];
         MarketplaceListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(WithArray("strictKnownMarketplaces", ConfigScope.User, arr), ConfigScope.User);
-        Assert.AreEqual(0, vm.Items.Count);
+        Assert.Empty(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void Add_DisabledWhenPrimaryValueBlank()
     {
         MarketplaceListEditorViewModel vm = NewVm();
         vm.LoadFromLayered(Empty(), ConfigScope.User);
-        Assert.IsFalse(vm.AddEntryCommand.CanExecute(null));
+        Assert.False(vm.AddEntryCommand.CanExecute(null));
         vm.NewPrimaryValue = "  ";
-        Assert.IsFalse(vm.AddEntryCommand.CanExecute(null));
+        Assert.False(vm.AddEntryCommand.CanExecute(null));
         vm.NewPrimaryValue = "acme/plugins";
-        Assert.IsTrue(vm.AddEntryCommand.CanExecute(null));
+        Assert.True(vm.AddEntryCommand.CanExecute(null));
     }
 
-    [TestMethod]
+    [Fact]
     public void BlankRow_SkippedOnSave()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -214,10 +213,10 @@ public class MarketplaceListEditorViewModelTests
 
         vm.Items[0].PrimaryValue = string.Empty;
 
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Null(vm.ToJsonValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void Source_Change_FlagsModified()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -233,10 +232,10 @@ public class MarketplaceListEditorViewModelTests
             }
         };
         vm.Items[0].Source = "git";
-        Assert.IsTrue(fired > 0);
+        Assert.True(fired > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_ShrinksItemsAndFlagsModified()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -256,11 +255,11 @@ public class MarketplaceListEditorViewModelTests
             }
         };
         vm.RemoveEntryCommand.Execute(vm.Items[0]);
-        Assert.AreEqual(1, vm.Items.Count);
-        Assert.IsTrue(fired > 0);
+        Assert.Single(vm.Items);
+        Assert.True(fired > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetCommand_AfterLoad_RestoresOnDiskRows_NotClearsThem()
     {
         // Reset semantic consistency.  See
@@ -269,7 +268,7 @@ public class MarketplaceListEditorViewModelTests
         MarketplaceListEditorViewModel vm = NewVm();
         JsonArray arr = [new JsonObject { ["source"] = "github", ["repo"] = "a/b" }];
         vm.LoadFromLayered(WithArray("strictKnownMarketplaces", ConfigScope.User, arr), ConfigScope.User);
-        Assert.AreEqual(1, vm.Items.Count, "precondition: load populated 1 row");
+        MessageAssert.Equal(1, vm.Items.Count, "precondition: load populated 1 row");
 
         // User edits transient inputs.
         vm.NewSource = "npm";
@@ -277,13 +276,13 @@ public class MarketplaceListEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Items.Count,
+        MessageAssert.Equal(1, vm.Items.Count,
             "Reset must restore the original on-disk row, not wipe to empty.");
-        Assert.AreEqual(string.Empty, vm.NewPrimaryValue, "Reset clears transient input.");
-        Assert.AreEqual("github", vm.NewSource, "Reset clears transient input.");
+        MessageAssert.Equal(string.Empty, vm.NewPrimaryValue, "Reset clears transient input.");
+        MessageAssert.Equal("github", vm.NewSource, "Reset clears transient input.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ResetCommand_WithoutPriorLoad_FallsBackToClear()
     {
         // Edge case: Reset before LoadFromLayered runs.
@@ -294,18 +293,18 @@ public class MarketplaceListEditorViewModelTests
 
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.AreEqual(string.Empty, vm.NewPrimaryValue);
-        Assert.AreEqual("github", vm.NewSource);
-        Assert.IsFalse(vm.IsModified);
-        Assert.IsNull(vm.ToJsonValue());
+        Assert.Empty(vm.Items);
+        Assert.Equal(string.Empty, vm.NewPrimaryValue);
+        Assert.Equal("github", vm.NewSource);
+        Assert.False(vm.IsModified);
+        Assert.Null(vm.ToJsonValue());
     }
 
     // -----------------------------------------------------------------------
     // Surfaced Advanced sub-fields (ref / path) on github / git variants.
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void RefAndPath_HydratedIntoDedicatedProperties_NotExtraFields()
     {
         // Pre-2026-05-05 behaviour: ref/path were preserved opaquely via
@@ -326,12 +325,12 @@ public class MarketplaceListEditorViewModelTests
         vm.LoadFromLayered(WithArray("strictKnownMarketplaces", ConfigScope.User, arr), ConfigScope.User);
 
         MarketplaceListEntryViewModel entry = vm.Items.Single();
-        Assert.AreEqual("v2.0", entry.Ref);
-        Assert.AreEqual("marketplaces/main", entry.Path);
-        Assert.IsTrue(entry.ShowGitFields);
+        Assert.Equal("v2.0", entry.Ref);
+        Assert.Equal("marketplaces/main", entry.Path);
+        Assert.True(entry.ShowGitFields);
     }
 
-    [TestMethod]
+    [Fact]
     public void Edit_RefAndPath_RoundTripsToOnDiskShape()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -346,11 +345,11 @@ public class MarketplaceListEditorViewModelTests
 
         JsonArray arr = (JsonArray)vm.ToJsonValue()!;
         JsonObject obj = (JsonObject)arr[0]!;
-        Assert.AreEqual("main", obj["ref"]?.GetValue<string>());
-        Assert.AreEqual("subdir", obj["path"]?.GetValue<string>());
+        Assert.Equal("main", obj["ref"]?.GetValue<string>());
+        Assert.Equal("subdir", obj["path"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyRefOrPath_OmittedFromOnDiskShape()
     {
         // User clearing the field should remove it from the saved shape —
@@ -374,11 +373,11 @@ public class MarketplaceListEditorViewModelTests
 
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
         JsonObject obj = (JsonObject)written[0]!;
-        Assert.IsFalse(obj.ContainsKey("ref"),
+        Assert.False(obj.ContainsKey("ref"),
             "Empty ref must be omitted from the on-disk shape, not written as an empty string.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RefAndPath_IgnoredOnSave_WhenSourceDoesNotAcceptThem()
     {
         // Set Ref/Path while Source is github (visible). Then switch
@@ -401,15 +400,15 @@ public class MarketplaceListEditorViewModelTests
 
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
         JsonObject obj = (JsonObject)written[0]!;
-        Assert.AreEqual("npm", obj["source"]?.GetValue<string>());
-        Assert.AreEqual("@scope/pkg", obj["package"]?.GetValue<string>());
-        Assert.IsFalse(obj.ContainsKey("ref"),
+        Assert.Equal("npm", obj["source"]?.GetValue<string>());
+        Assert.Equal("@scope/pkg", obj["package"]?.GetValue<string>());
+        Assert.False(obj.ContainsKey("ref"),
             "ref must not be emitted on npm variant — it's not in the schema for npm.");
-        Assert.IsFalse(obj.ContainsKey("path"),
+        Assert.False(obj.ContainsKey("path"),
             "path must not be emitted on npm variant — it's not in the schema for npm.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RefAndPath_FlagModified_WhenEdited()
     {
         JsonArray arr = [new JsonObject { ["source"] = "github", ["repo"] = "a/b" }];
@@ -425,14 +424,14 @@ public class MarketplaceListEditorViewModelTests
             }
         };
         vm.Items.Single().Ref = "main";
-        Assert.IsTrue(fired > 0, "Editing Ref must re-fire IsModified for the live-write loop.");
+        Assert.True(fired > 0, "Editing Ref must re-fire IsModified for the live-write loop.");
     }
 
     // -----------------------------------------------------------------------
     // Surfaced HTTP headers sub-editor on the url variant.
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Headers_OnUrlVariant_HydratedIntoDedicatedCollection()
     {
         // ref/path surfacing: `headers` was
@@ -457,13 +456,13 @@ public class MarketplaceListEditorViewModelTests
         vm.LoadFromLayered(WithArray("strictKnownMarketplaces", ConfigScope.User, arr), ConfigScope.User);
 
         MarketplaceListEntryViewModel entry = vm.Items.Single();
-        Assert.IsTrue(entry.ShowHeadersField);
-        Assert.AreEqual(2, entry.Headers.Count);
+        Assert.True(entry.ShowHeadersField);
+        Assert.Equal(2, entry.Headers.Count);
         StringMapEntryViewModel auth = entry.Headers.Single(h => h.Key == "Authorization");
-        Assert.AreEqual("Bearer xyz", auth.Value);
+        Assert.Equal("Bearer xyz", auth.Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void Headers_RoundTripFromOnDiskShape_IsLossless()
     {
         // A managed-policy admin's hand-curated entry: the on-disk shape
@@ -485,10 +484,10 @@ public class MarketplaceListEditorViewModelTests
         JsonArray written = (JsonArray)vm.ToJsonValue()!;
         JsonObject obj = (JsonObject)written[0]!;
         JsonObject headers = (JsonObject)obj["headers"]!;
-        Assert.AreEqual("Bearer xyz", headers["Authorization"]?.GetValue<string>());
+        Assert.Equal("Bearer xyz", headers["Authorization"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void AddHeader_AppendsRow_AndFiresModifiedOnParent()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -512,15 +511,15 @@ public class MarketplaceListEditorViewModelTests
         entry.NewHeaderValue = "Bearer xyz";
         entry.AddHeaderCommand.Execute(null);
 
-        Assert.AreEqual(1, entry.Headers.Count);
-        Assert.AreEqual(string.Empty, entry.NewHeaderName);
-        Assert.AreEqual(string.Empty, entry.NewHeaderValue);
-        Assert.IsTrue(fired > 0,
+        Assert.Single(entry.Headers);
+        Assert.Equal(string.Empty, entry.NewHeaderName);
+        Assert.Equal(string.Empty, entry.NewHeaderValue);
+        Assert.True(fired > 0,
             "Adding a header must propagate IsModified through the entry's "
             + "Headers PropertyChanged forwarding.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditHeaderRow_FiresModifiedOnParent()
     {
         JsonArray arr =
@@ -547,13 +546,13 @@ public class MarketplaceListEditorViewModelTests
         };
 
         entry.Headers[0].Value = "new";
-        Assert.IsTrue(fired > 0, "Editing a header row's Value must re-fire IsModified.");
+        Assert.True(fired > 0, "Editing a header row's Value must re-fire IsModified.");
 
         JsonObject obj = (JsonObject)((JsonArray)vm.ToJsonValue()!)[0]!;
-        Assert.AreEqual("new", ((JsonObject)obj["headers"]!)["Authorization"]?.GetValue<string>());
+        Assert.Equal("new", ((JsonObject)obj["headers"]!)["Authorization"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveHeader_ShrinksAndUpdatesOnDiskShape()
     {
         JsonArray arr =
@@ -579,12 +578,12 @@ public class MarketplaceListEditorViewModelTests
 
         JsonObject obj = (JsonObject)((JsonArray)vm.ToJsonValue()!)[0]!;
         JsonObject headers = (JsonObject)obj["headers"]!;
-        Assert.AreEqual(1, headers.Count);
-        Assert.IsTrue(headers.ContainsKey("A"));
-        Assert.IsFalse(headers.ContainsKey("B"));
+        Assert.Single(headers);
+        Assert.True(headers.ContainsKey("A"));
+        Assert.False(headers.ContainsKey("B"));
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyHeadersMap_OmittedFromOnDiskShape()
     {
         // User adds a url entry, no headers — on-disk shape must NOT
@@ -596,12 +595,12 @@ public class MarketplaceListEditorViewModelTests
         vm.AddEntryCommand.Execute(null);
 
         JsonObject obj = (JsonObject)((JsonArray)vm.ToJsonValue()!)[0]!;
-        Assert.IsFalse(obj.ContainsKey("headers"),
+        Assert.False(obj.ContainsKey("headers"),
             "Empty headers must be omitted from the on-disk shape, not "
             + "written as an empty `headers: {}`.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Headers_IgnoredOnSave_WhenSourceIsNotUrl()
     {
         // Set Headers while Source is url (visible). Then switch to git.
@@ -623,14 +622,14 @@ public class MarketplaceListEditorViewModelTests
         entry.PrimaryValue = "https://x/repo.git";
 
         JsonObject obj = (JsonObject)((JsonArray)vm.ToJsonValue()!)[0]!;
-        Assert.AreEqual("git", obj["source"]?.GetValue<string>());
-        Assert.AreEqual("https://x/repo.git", obj["url"]?.GetValue<string>());
-        Assert.IsFalse(obj.ContainsKey("headers"),
+        Assert.Equal("git", obj["source"]?.GetValue<string>());
+        Assert.Equal("https://x/repo.git", obj["url"]?.GetValue<string>());
+        Assert.False(obj.ContainsKey("headers"),
             "headers must not be emitted on git variant — the schema "
             + "doesn't define headers there.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddHeader_DuplicateName_OverwritesValue()
     {
         MarketplaceListEditorViewModel vm = NewVm();
@@ -648,11 +647,11 @@ public class MarketplaceListEditorViewModelTests
         entry.NewHeaderValue = "second";
         entry.AddHeaderCommand.Execute(null);
 
-        Assert.AreEqual(1, entry.Headers.Count);
-        Assert.AreEqual("second", entry.Headers[0].Value);
+        Assert.Single(entry.Headers);
+        Assert.Equal("second", entry.Headers[0].Value);
     }
 
-    [TestMethod]
+    [Fact]
     public void BlankHeaderName_SkippedOnSave()
     {
         // Direct mutation simulates a row whose name was blanked after
@@ -670,7 +669,7 @@ public class MarketplaceListEditorViewModelTests
         entry.Headers[0].Key = string.Empty;
 
         JsonObject obj = (JsonObject)((JsonArray)vm.ToJsonValue()!)[0]!;
-        Assert.IsFalse(obj.ContainsKey("headers"),
+        Assert.False(obj.ContainsKey("headers"),
             "All-blank-name headers must reduce to an empty map, which "
             + "is then omitted from the on-disk shape.");
     }

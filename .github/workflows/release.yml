@@ -143,7 +143,7 @@ jobs:
       # introduces the auto-RID-pick failure mode.
       - run: dotnet build ClaudeForge.slnx --no-restore -c Debug
 
-      - run: dotnet test ClaudeForge.slnx --no-build -c Debug
+      - run: dotnet test --solution ClaudeForge.slnx --no-build -c Debug
 
   # ── Publish via src/publish/publish.ps1 on each host OS ────────────────────
   #

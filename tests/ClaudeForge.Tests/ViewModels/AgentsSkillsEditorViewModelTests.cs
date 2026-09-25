@@ -14,14 +14,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// projection, plugin rows surfaced read-only, and the viewer open/close
 /// toggle.
 /// </summary>
-[TestClass]
-public sealed class AgentsSkillsEditorViewModelTests
+public sealed class AgentsSkillsEditorViewModelTests : IDisposable
 {
     private string _sandbox = string.Empty;
     private string _project = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public AgentsSkillsEditorViewModelTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_asvm_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -31,8 +31,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         Directory.CreateDirectory(_project);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         foreach (string dir in new[] { _sandbox, _project })
@@ -49,6 +48,12 @@ public sealed class AgentsSkillsEditorViewModelTests
                 _ = ex;
             }
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private string Home => Path.Combine(_sandbox, ".claude");
@@ -70,7 +75,7 @@ public sealed class AgentsSkillsEditorViewModelTests
     private static IReadOnlyList<ArtifactRowViewModel> CommandRows(AgentsSkillsEditorViewModel vm) =>
         vm.CommandItems.OfType<ArtifactRowViewModel>().ToList();
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_PopulatesThreeSegmentLists_AcrossScopes()
     {
         Write(Path.Combine(Home, "agents", "reviewer.md"),
@@ -88,20 +93,20 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
 
         // Agents: user reviewer + project proj-agent.
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "reviewer", "proj-agent" },
             AgentRows(vm).Select(a => a.DisplayName).ToArray());
         // Skills: user pdf + plugin widget.
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "pdf", "widget" },
             SkillRows(vm).Select(s => s.DisplayName).ToArray());
         // Commands: user summarise.
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "summarise" },
             CommandRows(vm).Select(c => c.DisplayName).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_GroupsYoursBeforePlugin_WithSectionHeaders()
     {
         Write(Path.Combine(Home, "skills", "user-skill", "SKILL.md"), "---\nname: user-skill\n---\n\nB.\n");
@@ -112,20 +117,20 @@ public sealed class AgentsSkillsEditorViewModelTests
 
         // Expected flat shape: [Yours header, user-skill row, Plugin header, plug-skill row].
         var items = vm.SkillItems.ToList();
-        Assert.AreEqual(4, items.Count);
+        Assert.Equal(4, items.Count);
 
         var h0 = (ArtifactSectionHeaderViewModel)items[0];
-        Assert.AreEqual("Yours", h0.Header);
-        Assert.IsFalse(h0.IsReadOnly);
-        Assert.AreEqual("user-skill", ((ArtifactRowViewModel)items[1]).DisplayName);
+        Assert.Equal("Yours", h0.Header);
+        Assert.False(h0.IsReadOnly);
+        Assert.Equal("user-skill", ((ArtifactRowViewModel)items[1]).DisplayName);
 
         var h2 = (ArtifactSectionHeaderViewModel)items[2];
-        Assert.AreEqual("Plugin", h2.Header);
-        Assert.IsTrue(h2.IsReadOnly, "The Plugin section header carries the read-only badge.");
-        Assert.AreEqual("plug-skill", ((ArtifactRowViewModel)items[3]).DisplayName);
+        Assert.Equal("Plugin", h2.Header);
+        Assert.True(h2.IsReadOnly, "The Plugin section header carries the read-only badge.");
+        Assert.Equal("plug-skill", ((ArtifactRowViewModel)items[3]).DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_OmitsHeaderForEmptyGroup()
     {
         // Only user items → no Plugin header.
@@ -134,12 +139,12 @@ public sealed class AgentsSkillsEditorViewModelTests
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
-        Assert.IsFalse(vm.AgentItems.OfType<ArtifactSectionHeaderViewModel>().Any(h => h.Header == "Plugin"),
+        Assert.False(vm.AgentItems.OfType<ArtifactSectionHeaderViewModel>().Any(h => h.Header == "Plugin"),
             "A group with no rows must not get a header.");
-        Assert.IsTrue(vm.AgentItems.OfType<ArtifactSectionHeaderViewModel>().Any(h => h.Header == "Yours"));
+        Assert.Contains(vm.AgentItems.OfType<ArtifactSectionHeaderViewModel>(), h => h.Header == "Yours");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_PluginRowSource_DerivedFromPluginPath()
     {
         Write(Path.Combine(Home, "plugins", "everything-claude-code", "skills", "widget", "SKILL.md"),
@@ -149,11 +154,11 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
 
         ArtifactRowViewModel row = SkillRows(vm).Single(r => r.DisplayName == "widget");
-        Assert.AreEqual("everything-claude-code", row.Source,
+        MessageAssert.Equal("everything-claude-code", row.Source,
             "Plugin row Source disambiguates by the providing plugin's name.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_LazyDescriptions_FillSubtitlesAfterRowsAppear()
     {
         Write(Path.Combine(Home, "agents", "a.md"), "---\nname: a\ndescription: has desc\n---\n\nB.\n");
@@ -164,14 +169,14 @@ public sealed class AgentsSkillsEditorViewModelTests
 
         // Rows are present immediately (stat-only) — subtitles fill in via the
         // background pass, which the test seam lets us await.
-        Assert.IsNotNull(vm.LastDescriptionFill);
+        Assert.NotNull(vm.LastDescriptionFill);
         await vm.LastDescriptionFill!;
 
-        Assert.AreEqual("has desc", AgentRows(vm).Single(r => r.DisplayName == "a").Subtitle);
-        Assert.AreEqual("(no description)", AgentRows(vm).Single(r => r.DisplayName == "b").Subtitle);
+        Assert.Equal("has desc", AgentRows(vm).Single(r => r.DisplayName == "a").Subtitle);
+        Assert.Equal("(no description)", AgentRows(vm).Single(r => r.DisplayName == "b").Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_PluginSkillRow_IsReadOnly()
     {
         Write(Path.Combine(Home, "plugins", "mkt", "plug", "skills", "widget", "SKILL.md"),
@@ -181,12 +186,12 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
 
         ArtifactRowViewModel widget = SkillRows(vm).Single(s => s.DisplayName == "widget");
-        Assert.IsTrue(widget.IsPlugin);
-        Assert.IsFalse(widget.IsWritable, "Plugin skill row must be read-only.");
-        Assert.AreEqual("Plugin", widget.ScopeLabel);
+        Assert.True(widget.IsPlugin);
+        Assert.False(widget.IsWritable, "Plugin skill row must be read-only.");
+        Assert.Equal("Plugin", widget.ScopeLabel);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadArtifact_Agent_PopulatesCardAndBody_ShowsViewer()
     {
         Write(Path.Combine(Home, "agents", "reviewer.md"),
@@ -196,24 +201,24 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
         ArtifactRowViewModel row = AgentRows(vm).Single();
 
-        Assert.IsFalse(vm.IsViewerVisible, "Viewer starts hidden.");
+        Assert.False(vm.IsViewerVisible, "Viewer starts hidden.");
         await vm.LoadArtifactAsync(row);
 
-        Assert.IsTrue(vm.IsViewerVisible, "Selecting a row shows the detail pane.");
-        Assert.AreSame(row, vm.SelectedArtifact);
-        Assert.AreEqual("reviewer", vm.CardName);
-        Assert.AreEqual("Reviews code", vm.CardDescription);
-        Assert.AreEqual("sonnet", vm.CardModel);
-        Assert.AreEqual("Read, Grep, Bash", vm.CardTools);
-        Assert.IsTrue(vm.CardShowName);
-        Assert.IsTrue(vm.CardShowToolsAndModel);
-        StringAssert.Contains(vm.ViewerBody!, "You are a reviewer.");
+        Assert.True(vm.IsViewerVisible, "Selecting a row shows the detail pane.");
+        Assert.Same(row, vm.SelectedArtifact);
+        Assert.Equal("reviewer", vm.CardName);
+        Assert.Equal("Reviews code", vm.CardDescription);
+        Assert.Equal("sonnet", vm.CardModel);
+        Assert.Equal("Read, Grep, Bash", vm.CardTools);
+        Assert.True(vm.CardShowName);
+        Assert.True(vm.CardShowToolsAndModel);
+        OrdinalAssert.Contains("You are a reviewer.", vm.ViewerBody!);
         // The card carries the front-matter; the body excludes it.
-        Assert.IsFalse(vm.ViewerBody!.Contains("name: reviewer"),
+        Assert.False(vm.ViewerBody!.Contains("name: reviewer"),
             "Body viewer shows the post-front-matter prose, not the front-matter (that's the card's job).");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadArtifact_SlashCommand_HidesNameAndToolsRows()
     {
         Write(Path.Combine(Home, "commands", "summarise.md"),
@@ -223,12 +228,12 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(CommandRows(vm).Single());
 
-        Assert.AreEqual("Summarise the PR", vm.CardDescription);
-        Assert.IsFalse(vm.CardShowName, "Slash commands have no name field — name row hidden.");
-        Assert.IsFalse(vm.CardShowToolsAndModel, "Slash commands have no tools/model — those rows hidden.");
+        Assert.Equal("Summarise the PR", vm.CardDescription);
+        Assert.False(vm.CardShowName, "Slash commands have no name field — name row hidden.");
+        Assert.False(vm.CardShowToolsAndModel, "Slash commands have no tools/model — those rows hidden.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CloseViewer_ResetsViewerState()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"),
@@ -237,17 +242,17 @@ public sealed class AgentsSkillsEditorViewModelTests
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
-        Assert.IsTrue(vm.IsViewerVisible);
+        Assert.True(vm.IsViewerVisible);
 
         vm.CloseViewerCommand.Execute(null);
 
-        Assert.IsFalse(vm.IsViewerVisible);
-        Assert.IsNull(vm.SelectedArtifact);
-        Assert.IsNull(vm.ViewerBody);
-        Assert.IsNull(vm.CardName);
+        Assert.False(vm.IsViewerVisible);
+        Assert.Null(vm.SelectedArtifact);
+        Assert.Null(vm.ViewerBody);
+        Assert.Null(vm.CardName);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadArtifact_MissingFile_ShowsPlaceholderNotCrash()
     {
         string path = Path.Combine(Home, "agents", "ghost.md");
@@ -267,13 +272,13 @@ public sealed class AgentsSkillsEditorViewModelTests
         File.Delete(path);
         await vm.LoadArtifactAsync(row);
 
-        Assert.IsTrue(vm.IsViewerVisible);
-        StringAssert.Contains(vm.ViewerBody!, "no longer available");
+        Assert.True(vm.IsViewerVisible);
+        OrdinalAssert.Contains("no longer available", vm.ViewerBody!);
     }
 
     // ── Group #3 — editor flow ───────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task BeginEdit_SeedsEditFieldsFromCard()
     {
         Write(Path.Combine(Home, "agents", "reviewer.md"),
@@ -283,17 +288,17 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
 
-        Assert.IsTrue(vm.CanEdit);
+        Assert.True(vm.CanEdit);
         vm.BeginEditCommand.Execute(null);
 
-        Assert.IsTrue(vm.IsEditing);
-        Assert.AreEqual("reviewer", vm.EditName);
-        Assert.AreEqual("Reviews code", vm.EditDescription);
-        Assert.AreEqual("Read, Grep", vm.EditTools);
-        Assert.AreEqual("sonnet", vm.EditModel);
+        Assert.True(vm.IsEditing);
+        Assert.Equal("reviewer", vm.EditName);
+        Assert.Equal("Reviews code", vm.EditDescription);
+        Assert.Equal("Read, Grep", vm.EditTools);
+        Assert.Equal("sonnet", vm.EditModel);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task PluginRow_CanEditFalse_BeginEditIsNoOp()
     {
         Write(Path.Combine(Home, "plugins", "p", "skills", "w", "SKILL.md"),
@@ -303,13 +308,13 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
 
-        Assert.IsFalse(vm.CanEdit, "Plugin rows are read-only.");
-        Assert.IsFalse(vm.BeginEditCommand.CanExecute(null), "BeginEdit must be disabled for plugin rows.");
+        Assert.False(vm.CanEdit, "Plugin rows are read-only.");
+        Assert.False(vm.BeginEditCommand.CanExecute(null), "BeginEdit must be disabled for plugin rows.");
         vm.BeginEditCommand.Execute(null);
-        Assert.IsFalse(vm.IsEditing, "BeginEdit must be a no-op on a read-only row.");
+        Assert.False(vm.IsEditing, "BeginEdit must be a no-op on a read-only row.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_PersistsEditsToDisk_AndRefreshesCard()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -325,19 +330,19 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditBody = "Rewritten body.";
         await vm.SaveAsync();
 
-        Assert.IsFalse(vm.IsEditing, "Save exits edit mode.");
-        Assert.AreEqual("new desc", vm.CardDescription, "Card reflects the saved description.");
-        Assert.AreEqual("Read, Grep, Bash", vm.CardTools);
+        Assert.False(vm.IsEditing, "Save exits edit mode.");
+        MessageAssert.Equal("new desc", vm.CardDescription, "Card reflects the saved description.");
+        Assert.Equal("Read, Grep, Bash", vm.CardTools);
 
         // Confirm it actually hit disk and round-trips.
         string onDisk = await File.ReadAllTextAsync(path);
-        StringAssert.Contains(onDisk, "description: new desc");
-        StringAssert.Contains(onDisk, "tools: Read, Grep, Bash");
-        StringAssert.Contains(onDisk, "Rewritten body.");
-        Assert.IsFalse(onDisk.Contains("Original body."), "Old body must be replaced.");
+        OrdinalAssert.Contains("description: new desc", onDisk);
+        OrdinalAssert.Contains("tools: Read, Grep, Bash", onDisk);
+        OrdinalAssert.Contains("Rewritten body.", onDisk);
+        Assert.False(onDisk.Contains("Original body."), "Old body must be replaced.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_UpdatesTheListRowSubtitle_NotJustTheDetailCard()
     {
         // Regression: SaveAsync used to refresh only the detail pane's Card*
@@ -355,18 +360,18 @@ public sealed class AgentsSkillsEditorViewModelTests
         }
 
         ArtifactRowViewModel row = AgentRows(vm).Single();
-        Assert.AreEqual("old desc", row.Subtitle, "Precondition: the row shows the pre-edit description.");
+        MessageAssert.Equal("old desc", row.Subtitle, "Precondition: the row shows the pre-edit description.");
 
         await vm.LoadArtifactAsync(row);
         vm.BeginEditCommand.Execute(null);
         vm.EditDescription = "new desc";
         await vm.SaveAsync();
 
-        Assert.AreEqual("new desc", row.Subtitle,
+        MessageAssert.Equal("new desc", row.Subtitle,
             "The row that launched the editor must show the saved description.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_ClearingDescription_ShowsThePlaceholderOnTheRow()
     {
         // Emptying the description removes the key, so the row must fall back to
@@ -388,10 +393,10 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditDescription = string.Empty;
         await vm.SaveAsync();
 
-        Assert.AreEqual("(no description)", row.Subtitle);
+        Assert.Equal("(no description)", row.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_PreservesUnknownKeysAndComments()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -411,12 +416,12 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.SaveAsync();
 
         string onDisk = await File.ReadAllTextAsync(path);
-        StringAssert.Contains(onDisk, "# leading comment", "Comments must survive an edit-save.");
-        StringAssert.Contains(onDisk, "x-custom: keep-me", "Un-modelled keys must survive an edit-save.");
-        StringAssert.Contains(onDisk, "description: new");
+        MessageAssert.Contains("# leading comment", onDisk, "Comments must survive an edit-save.");
+        MessageAssert.Contains("x-custom: keep-me", onDisk, "Un-modelled keys must survive an edit-save.");
+        OrdinalAssert.Contains("description: new", onDisk);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_FirstThisSession_ShowsRestartHint()
     {
         // Note: the restart-hint flag is static (process-session lifetime), so
@@ -433,11 +438,11 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditName = "s2";
         await vm.SaveAsync();
 
-        Assert.IsNotNull(vm.LastActionMessage);
-        StringAssert.StartsWith(vm.LastActionMessage!, "Saved.");
+        Assert.NotNull(vm.LastActionMessage);
+        OrdinalAssert.StartsWith("Saved.", vm.LastActionMessage!);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task CancelEdit_DiscardsChanges()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -450,15 +455,15 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditDescription = "discarded";
         vm.CancelEditCommand.Execute(null);
 
-        Assert.IsFalse(vm.IsEditing);
-        Assert.AreEqual("keep", vm.CardDescription, "Card retains the original after cancel.");
+        Assert.False(vm.IsEditing);
+        MessageAssert.Equal("keep", vm.CardDescription, "Card retains the original after cancel.");
 
         string onDisk = await File.ReadAllTextAsync(path);
-        StringAssert.Contains(onDisk, "description: keep", "Cancelled edits must not touch disk.");
-        Assert.IsFalse(onDisk.Contains("discarded"));
+        MessageAssert.Contains("description: keep", onDisk, "Cancelled edits must not touch disk.");
+        OrdinalAssert.DoesNotContain("discarded", onDisk);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_EmptyTools_RemovesKey()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -472,12 +477,12 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.SaveAsync();
 
         string onDisk = await File.ReadAllTextAsync(path);
-        Assert.IsFalse(onDisk.Contains("tools:"), "Clearing the tools field removes the key entirely.");
+        Assert.False(onDisk.Contains("tools:"), "Clearing the tools field removes the key entirely.");
     }
 
     // ── Raw front-matter editing ─────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task ToggleRawMode_SeedsRawFromTypedState()
     {
         Write(Path.Combine(Home, "agents", "reviewer.md"),
@@ -492,17 +497,17 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditDescription = "typed-desc";
         vm.ToggleRawModeCommand.Execute(null);
 
-        Assert.IsTrue(vm.IsRawMode);
-        Assert.IsFalse(vm.IsTypedEditVisible, "Typed card hides when raw mode is on.");
-        Assert.IsTrue(vm.IsRawEditVisible);
-        StringAssert.Contains(vm.EditRawFrontMatter!, "name: reviewer");
-        StringAssert.Contains(vm.EditRawFrontMatter!, "description: typed-desc",
+        Assert.True(vm.IsRawMode);
+        Assert.False(vm.IsTypedEditVisible, "Typed card hides when raw mode is on.");
+        Assert.True(vm.IsRawEditVisible);
+        OrdinalAssert.Contains("name: reviewer", vm.EditRawFrontMatter!);
+        MessageAssert.Contains("description: typed-desc", vm.EditRawFrontMatter!,
             "Raw box is seeded from the current typed edits, not the on-disk original.");
         // Raw block excludes the --- fences (the editor manages those).
-        Assert.IsFalse(vm.EditRawFrontMatter!.Contains("---"), "Raw block excludes the delimiter fences.");
+        Assert.False(vm.EditRawFrontMatter!.Contains("---"), "Raw block excludes the delimiter fences.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_FromRawMode_WritesRawContent_IncludingNewArbitraryKey()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -520,18 +525,18 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditBody = "Raw body.";
         await vm.SaveAsync();
 
-        Assert.IsFalse(vm.IsRawMode, "Save exits raw mode.");
+        Assert.False(vm.IsRawMode, "Save exits raw mode.");
         string onDisk = await File.ReadAllTextAsync(path);
-        StringAssert.Contains(onDisk, "description: via-raw");
-        StringAssert.Contains(onDisk, "x-custom: arbitrary-value",
+        OrdinalAssert.Contains("description: via-raw", onDisk);
+        MessageAssert.Contains("x-custom: arbitrary-value", onDisk,
             "An arbitrary key authored in raw mode is written to disk.");
-        StringAssert.Contains(onDisk, "Raw body.");
+        OrdinalAssert.Contains("Raw body.", onDisk);
 
         // And the un-modelled key survives a reload (round-trip).
-        Assert.AreEqual("arbitrary-value", YamlFrontMatter.Parse(onDisk).FindScalar("x-custom"));
+        Assert.Equal("arbitrary-value", YamlFrontMatter.Parse(onDisk).FindScalar("x-custom"));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ToggleRawMode_Off_DiscardsRawEdits_RevertsToTyped()
     {
         Write(Path.Combine(Home, "agents", "reviewer.md"),
@@ -547,13 +552,13 @@ public sealed class AgentsSkillsEditorViewModelTests
         vm.EditRawFrontMatter = "name: reviewer\ndescription: raw-desc";   // diverge in raw
         vm.ToggleRawModeCommand.Execute(null);   // off → discard raw
 
-        Assert.IsFalse(vm.IsRawMode);
-        Assert.IsNull(vm.EditRawFrontMatter, "Leaving raw mode clears the raw text.");
-        Assert.AreEqual("typed-desc", vm.EditDescription,
+        Assert.False(vm.IsRawMode);
+        MessageAssert.Null(vm.EditRawFrontMatter, "Leaving raw mode clears the raw text.");
+        MessageAssert.Equal("typed-desc", vm.EditDescription,
             "Typed fields keep their values — raw edits are discarded on toggle-off.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task RawMode_DoesNotApplyToReadOnlyPluginRows()
     {
         Write(Path.Combine(Home, "plugins", "p", "skills", "w", "SKILL.md"), "---\nname: w\n---\n\nB.\n");
@@ -562,13 +567,13 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
         await vm.LoadArtifactAsync(SkillRows(vm).Single());
 
-        Assert.IsFalse(vm.ToggleRawModeCommand.CanExecute(null),
+        Assert.False(vm.ToggleRawModeCommand.CanExecute(null),
             "Raw-mode toggle is gated on CanEdit — disabled for read-only plugin rows.");
     }
 
     // ── Robustness / error conditions ────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Refresh_NoArtifacts_LeavesEmptyListsNoCrash()
     {
         // Fresh sandbox, nothing under ~/.claude — refresh must not throw and
@@ -576,13 +581,13 @@ public sealed class AgentsSkillsEditorViewModelTests
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project);
         await vm.RefreshAsync();
 
-        Assert.AreEqual(0, vm.AgentItems.Count);
-        Assert.AreEqual(0, vm.SkillItems.Count);
-        Assert.AreEqual(0, vm.CommandItems.Count);
-        Assert.IsFalse(vm.IsBusy);
+        Assert.Empty(vm.AgentItems);
+        Assert.Empty(vm.SkillItems);
+        Assert.Empty(vm.CommandItems);
+        Assert.False(vm.IsBusy);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadArtifact_MalformedContent_DegradesToRawTextNoCrash()
     {
         // A file whose front-matter never closes (unterminated) — Parse reports
@@ -599,12 +604,12 @@ public sealed class AgentsSkillsEditorViewModelTests
 
         await vm.LoadArtifactAsync(AgentRows(vm).Single());
 
-        Assert.IsTrue(vm.IsViewerVisible, "Even a malformed file opens the detail pane.");
-        StringAssert.Contains(vm.ViewerBody!, "this never closes",
+        Assert.True(vm.IsViewerVisible, "Even a malformed file opens the detail pane.");
+        MessageAssert.Contains("this never closes", vm.ViewerBody!,
             "Malformed front-matter degrades to showing the raw text.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Save_IntoReadOnlyDirectory_SurfacesFailureMessageNoCrash()
     {
         // Windows-only: the read-only file attribute reliably blocks
@@ -638,9 +643,9 @@ public sealed class AgentsSkillsEditorViewModelTests
             await vm.SaveAsync();
 
             // File.Replace into a read-only target throws → caught → status set.
-            Assert.IsTrue(vm.IsEditing, "On save failure the editor stays in edit mode.");
-            Assert.IsNotNull(vm.LastActionMessage);
-            StringAssert.StartsWith(vm.LastActionMessage!, "Save failed");
+            Assert.True(vm.IsEditing, "On save failure the editor stays in edit mode.");
+            Assert.NotNull(vm.LastActionMessage);
+            OrdinalAssert.StartsWith("Save failed", vm.LastActionMessage!);
         }
         finally
         {
@@ -650,16 +655,16 @@ public sealed class AgentsSkillsEditorViewModelTests
 
     // ── Delete (writable artifacts only) ─────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteArtifact_NullRow_NoOp()
     {
         StubDialogService dlg = new();
         var vm = new AgentsSkillsEditorViewModel(ClaudeEnvironment.Empty, _project, shellLauncher: null, dialogService: dlg);
         await vm.DeleteArtifactAsync(null);
-        Assert.AreEqual(0, dlg.ConfirmCalls);
+        Assert.Equal(0, dlg.ConfirmCalls);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteArtifact_PluginRow_NotDeletable_NoOp()
     {
         string skillMd = Path.Combine(Home, "plugins", "mkt", "plug", "skills", "widget", "SKILL.md");
@@ -674,15 +679,15 @@ public sealed class AgentsSkillsEditorViewModelTests
         }
 
         ArtifactRowViewModel widget = SkillRows(vm).Single(s => s.DisplayName == "widget");
-        Assert.IsFalse(widget.IsDeletable, "Plugin rows must report as non-deletable.");
+        Assert.False(widget.IsDeletable, "Plugin rows must report as non-deletable.");
 
         await vm.DeleteArtifactAsync(widget);
 
-        Assert.AreEqual(0, dlg.ConfirmCalls, "Plugin (read-only) rows must not prompt for delete.");
-        Assert.IsTrue(File.Exists(skillMd), "Plugin-provided artifacts must never be deleted.");
+        MessageAssert.Equal(0, dlg.ConfirmCalls, "Plugin (read-only) rows must not prompt for delete.");
+        Assert.True(File.Exists(skillMd), "Plugin-provided artifacts must never be deleted.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteArtifact_UserAgent_Confirms_DeletesFile()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -697,17 +702,17 @@ public sealed class AgentsSkillsEditorViewModelTests
         }
 
         ArtifactRowViewModel row = AgentRows(vm).Single();
-        Assert.IsTrue(row.IsDeletable);
+        Assert.True(row.IsDeletable);
 
         await vm.DeleteArtifactAsync(row);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.IsFalse(File.Exists(path), "Confirmed → file deleted.");
-        Assert.IsFalse(AgentRows(vm).Any(r => r.DisplayName == "reviewer"),
+        Assert.Equal(1, dlg.ConfirmCalls);
+        Assert.False(File.Exists(path), "Confirmed → file deleted.");
+        Assert.False(AgentRows(vm).Any(r => r.DisplayName == "reviewer"),
             "Deleted row drops out of the list after refresh.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteArtifact_Skill_Confirms_DeletesWholeDirectory()
     {
         Write(Path.Combine(Home, "skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n\nBody.\n");
@@ -723,15 +728,15 @@ public sealed class AgentsSkillsEditorViewModelTests
         }
 
         ArtifactRowViewModel skill = SkillRows(vm).Single();
-        Assert.IsTrue(skill.IsSkill);
+        Assert.True(skill.IsSkill);
 
         await vm.DeleteArtifactAsync(skill);
 
-        Assert.IsFalse(Directory.Exists(skillDir),
+        Assert.False(Directory.Exists(skillDir),
             "Deleting a skill removes its whole directory, not just SKILL.md.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteArtifact_UserDeclines_NoDelete()
     {
         string path = Path.Combine(Home, "commands", "summarise.md");
@@ -749,11 +754,11 @@ public sealed class AgentsSkillsEditorViewModelTests
 
         await vm.DeleteArtifactAsync(row);
 
-        Assert.AreEqual(1, dlg.ConfirmCalls);
-        Assert.IsTrue(File.Exists(path), "Declined → file survives.");
+        Assert.Equal(1, dlg.ConfirmCalls);
+        Assert.True(File.Exists(path), "Declined → file survives.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteArtifact_OpenRow_ClosesViewerOnDelete()
     {
         string path = Path.Combine(Home, "agents", "reviewer.md");
@@ -769,11 +774,11 @@ public sealed class AgentsSkillsEditorViewModelTests
 
         ArtifactRowViewModel row = AgentRows(vm).Single();
         await vm.LoadArtifactAsync(row);
-        Assert.IsTrue(vm.IsViewerVisible);
+        Assert.True(vm.IsViewerVisible);
 
         await vm.DeleteArtifactAsync(row);
 
-        Assert.IsFalse(vm.IsViewerVisible, "Deleting the open row closes the detail pane.");
+        Assert.False(vm.IsViewerVisible, "Deleting the open row closes the detail pane.");
     }
 
     /// <summary>
@@ -787,7 +792,7 @@ public sealed class AgentsSkillsEditorViewModelTests
     /// scalar. The row must show the prose, not the "&gt;-" header token.
     /// </summary>
     /// <remarks>ⓘ Ported from <c>main</c> on 2026-09-16 with the parser it guards.</remarks>
-    [TestMethod]
+    [Fact]
     public async Task Refresh_FoldedBlockDescription_ShowsTheProseNotTheHeaderToken()
     {
         Write(Path.Combine(Home, "skills", "folded", "SKILL.md"),
@@ -804,7 +809,7 @@ public sealed class AgentsSkillsEditorViewModelTests
         await vm.RefreshAsync();
         await vm.LastDescriptionFill!;
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             "Fetch, vet, and act on review feedback left on a pull request. "
             + "Use this WHENEVER the developer says there is review feedback.",
             SkillRows(vm).Single(r => r.DisplayName == "folded").Subtitle,
@@ -817,7 +822,7 @@ public sealed class AgentsSkillsEditorViewModelTests
     /// list. The detail pane and editor keep the real multi-line value.
     /// </summary>
     /// <remarks>ⓘ Ported from <c>main</c> on 2026-09-16 with the parser it guards.</remarks>
-    [TestMethod]
+    [Fact]
     public async Task Refresh_MultiLineDescription_IsFlattenedToOneLineInTheList()
     {
         Write(Path.Combine(Home, "skills", "para", "SKILL.md"),
@@ -836,8 +841,8 @@ public sealed class AgentsSkillsEditorViewModelTests
 
         string subtitle = SkillRows(vm).Single(r => r.DisplayName == "para").Subtitle!;
 
-        Assert.AreEqual("first line second line", subtitle);
-        Assert.IsFalse(subtitle.Contains('\n'), "A list row must never carry an embedded newline.");
+        Assert.Equal("first line second line", subtitle);
+        Assert.False(subtitle.Contains('\n'), "A list row must never carry an embedded newline.");
     }
 
     private sealed class StubDialogService : IDialogService

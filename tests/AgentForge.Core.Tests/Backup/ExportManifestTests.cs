@@ -15,7 +15,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// was unguarded end to end, in a format written to users' disks.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class ExportManifestTests
 {
     private const string ClaudeCodeFolder = "ClaudeCode";
@@ -23,7 +22,7 @@ public sealed class ExportManifestTests
 
     // ── v2, the shape written today ──────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_V2_PreservesEveryField()
     {
         // TWO clients on purpose. A single-product list would pass just as well with a
@@ -43,41 +42,41 @@ public sealed class ExportManifestTests
         string json = JsonSerializer.Serialize(original, BackupJsonContext.Default.ExportManifest);
         ExportManifest? round = ExportManifest.TryRead(Utf8(json));
 
-        Assert.IsNotNull(round);
-        Assert.AreEqual("export", round!.Kind);
-        Assert.AreEqual(ExportManifest.CurrentSchemaVersion, round.SchemaVersion);
-        Assert.AreEqual(original.CreatedUtc, round.CreatedUtc);
-        Assert.AreEqual(original.Platform, round.Platform);
-        Assert.AreEqual(original.AppVersion, round.AppVersion);
-        Assert.AreEqual(original.HeaderComment, round.HeaderComment);
-        CollectionAssert.AreEqual(original.Clients, round.Clients,
+        Assert.NotNull(round);
+        Assert.Equal("export", round!.Kind);
+        Assert.Equal(ExportManifest.CurrentSchemaVersion, round.SchemaVersion);
+        Assert.Equal(original.CreatedUtc, round.CreatedUtc);
+        Assert.Equal(original.Platform, round.Platform);
+        Assert.Equal(original.AppVersion, round.AppVersion);
+        Assert.Equal(original.HeaderComment, round.HeaderComment);
+        MessageAssert.SequenceEqual(original.Clients, round.Clients,
             "Both products must survive the round trip, in order.");
     }
 
-    [TestMethod]
+    [Fact]
     public void V2Write_CarriesNoTraceOfTheV1Booleans()
     {
         ExportManifest m = new() { Clients = [ClaudeCodeFolder] };
 
         string json = JsonSerializer.Serialize(m, BackupJsonContext.Default.ExportManifest);
 
-        Assert.IsFalse(json.Contains("includesClaude", StringComparison.Ordinal),
+        Assert.False(json.Contains("includesClaude", StringComparison.Ordinal),
             "A v2 export must not emit the legacy booleans at all — not even as null. They "
             + "are read-only compatibility fields; writing them would leave a second, "
             + "silently stale statement of which products the archive covers. Actual JSON:\n"
             + json);
-        StringAssert.Contains(json, "\"clients\"",
+        MessageAssert.Contains("\"clients\"", json,
             "The product list is the whole point of v2.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SchemaVersion_DefaultIsCurrent()
     {
         ExportManifest m = new();
-        Assert.AreEqual(ExportManifest.CurrentSchemaVersion, m.SchemaVersion);
+        Assert.Equal(ExportManifest.CurrentSchemaVersion, m.SchemaVersion);
     }
 
-    [TestMethod]
+    [Fact]
     public void NewExport_Declares_SchemaVersion2_OnDisk()
     {
         // Pins the bump, through the bytes rather than the constant: comparing the constant
@@ -88,12 +87,12 @@ public sealed class ExportManifestTests
         // silently reports no products at all.
         string json = JsonSerializer.Serialize(new ExportManifest(), BackupJsonContext.Default.ExportManifest);
 
-        StringAssert.Contains(json, "\"schemaVersion\": 2",
+        MessageAssert.Contains("\"schemaVersion\": 2", json,
             "v1 was two booleans; v2 is the Clients list. A further bump needs a matching "
             + $"branch in ExportManifest.TryRead. Actual JSON:\n{json}");
     }
 
-    [TestMethod]
+    [Fact]
     public void Clients_UseTheSameVocabularyAsBackupManifest()
     {
         // Deliberately looks tautological, like ArchiveFolderNames_AreTheValuesAlreadyOn-
@@ -101,17 +100,17 @@ public sealed class ExportManifestTests
         // manifest.json inside their archive, and BackupRestoreViewModel.AbbreviateClient
         // renders BackupManifest.Clients directly. Two vocabularies for the same products is
         // precisely the mistake Phase 4d-2 removed.
-        Assert.AreEqual(ClaudeCodeFolder, SchemaRegistry.ClaudeCodeArchiveFolder);
-        Assert.AreEqual(ClaudeDesktopFolder, SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
+        Assert.Equal(ClaudeCodeFolder, SchemaRegistry.ClaudeCodeArchiveFolder);
+        Assert.Equal(ClaudeDesktopFolder, SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
     }
 
     // ── v1, the shape already on disk ────────────────────────────────────
 
-    [TestMethod]
-    [DataRow(true, true, ClaudeCodeFolder + "," + ClaudeDesktopFolder)]
-    [DataRow(true, false, ClaudeCodeFolder)]
-    [DataRow(false, true, ClaudeDesktopFolder)]
-    [DataRow(false, false, "")]
+    [Theory]
+    [InlineData(true, true, ClaudeCodeFolder + "," + ClaudeDesktopFolder)]
+    [InlineData(true, false, ClaudeCodeFolder)]
+    [InlineData(false, true, ClaudeDesktopFolder)]
+    [InlineData(false, false, "")]
     public void TryRead_V1_MapsTheBooleansOntoClients(
         bool includesCode, bool includesDesktop, string expectedCsv)
     {
@@ -119,15 +118,15 @@ public sealed class ExportManifestTests
 
         ExportManifest? read = ExportManifest.TryRead(Utf8(v1));
 
-        Assert.IsNotNull(read, "A v1 manifest is still readable — v1 <= CurrentSchemaVersion.");
+        MessageAssert.NotNull(read, "A v1 manifest is still readable — v1 <= CurrentSchemaVersion.");
         string[] expected = expectedCsv.Length == 0 ? [] : expectedCsv.Split(',');
-        CollectionAssert.AreEqual(expected, read!.Clients,
+        MessageAssert.SequenceEqual(expected, read!.Clients,
             "Without this mapping a v1 archive deserialises to an EMPTY product list, which "
             + "is indistinguishable from an export that genuinely covered nothing — a silent "
             + "wrong answer rather than a loud one.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryRead_ManifestWithNoSchemaVersion_StillHonoursItsBooleans()
     {
         // This test failed when first written, and the reason is the finding: a missing
@@ -147,11 +146,11 @@ public sealed class ExportManifestTests
 
         ExportManifest? read = ExportManifest.TryRead(Utf8(json));
 
-        Assert.IsNotNull(read);
-        CollectionAssert.AreEqual(new[] { ClaudeCodeFolder, ClaudeDesktopFolder }, read!.Clients);
+        Assert.NotNull(read);
+        Assert.Equal(new[] { ClaudeCodeFolder, ClaudeDesktopFolder }, read!.Clients);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryRead_V2WithStrayLegacyBooleans_KeepsClients()
     {
         // The version gate drives the mapping, not field presence. If it were the other way
@@ -170,14 +169,14 @@ public sealed class ExportManifestTests
 
         ExportManifest? read = ExportManifest.TryRead(Utf8(hybrid));
 
-        Assert.IsNotNull(read);
-        CollectionAssert.AreEqual(new[] { ClaudeDesktopFolder }, read!.Clients,
+        Assert.NotNull(read);
+        MessageAssert.SequenceEqual(new[] { ClaudeDesktopFolder }, read!.Clients,
             "clients is authoritative at schemaVersion 2; the booleans must be ignored.");
     }
 
     // ── what TryRead must refuse ─────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void TryRead_RejectsABackupManifest()
     {
         // Both formats are named manifest.json inside their archive, so either reader can be
@@ -187,11 +186,11 @@ public sealed class ExportManifestTests
         BackupManifest backup = new() { Clients = [ClaudeCodeFolder, ClaudeDesktopFolder] };
         string json = JsonSerializer.Serialize(backup, BackupJsonContext.Default.BackupManifest);
 
-        Assert.IsNull(ExportManifest.TryRead(Utf8(json)),
+        MessageAssert.Null(ExportManifest.TryRead(Utf8(json)),
             "kind=\"backup\" is not an export and must not parse as one.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryRead_RejectsAFutureSchemaVersion()
     {
         string future =
@@ -203,19 +202,19 @@ public sealed class ExportManifestTests
             }
             """;
 
-        Assert.IsNull(ExportManifest.TryRead(Utf8(future)),
+        MessageAssert.Null(ExportManifest.TryRead(Utf8(future)),
             "An unknown future version must be rejected outright rather than partly "
             + "understood — the same contract BackupEngine applies to backups.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryRead_RejectsMalformedJson()
     {
-        Assert.IsNull(ExportManifest.TryRead(Utf8("{ not json")),
+        MessageAssert.Null(ExportManifest.TryRead(Utf8("{ not json")),
             "A truncated or corrupt manifest must return null, not throw at the call site.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TryRead_ExplicitNullClients_DoesNotThrow()
     {
         // System.Text.Json honours an explicit JSON null over a property initialiser, so
@@ -233,8 +232,8 @@ public sealed class ExportManifestTests
 
         ExportManifest? read = ExportManifest.TryRead(Utf8(nullList));
 
-        Assert.IsNotNull(read, "An explicit null list is odd, not corrupt.");
-        Assert.AreEqual(0, read!.Clients.Count,
+        MessageAssert.NotNull(read, "An explicit null list is odd, not corrupt.");
+        MessageAssert.Equal(0, read!.Clients.Count,
             "It must normalise to an empty list so callers can enumerate it without a null check.");
     }
 

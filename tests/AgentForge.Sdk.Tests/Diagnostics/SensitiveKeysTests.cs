@@ -8,39 +8,38 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Diagnostics;
 /// reports — they are replaced with <see cref="SensitiveKeys.RedactedMarker"/>
 /// before being persisted.
 /// </summary>
-[TestClass]
 public sealed class SensitiveKeysTests
 {
-    [TestMethod]
-    [DataRow("env")] // exact: env vars block (holds API keys)
-    [DataRow("ENV")] // case-insensitive
-    [DataRow("headers")] // exact: MCP HTTP headers (Authorization)
-    [DataRow("credentials")] // exact
-    [DataRow("apiKey")] // substring: apikey
-    [DataRow("ANTHROPIC_API_KEY")] // substring: api_key
-    [DataRow("githubAccessToken")] // substring: token
-    [DataRow("refreshToken")] // substring: token
-    [DataRow("clientSecret")] // substring: secret
-    [DataRow("password")] // substring: password
-    [DataRow("user_password")] // substring: password
+    [Theory]
+    [InlineData("env")] // exact: env vars block (holds API keys)
+    [InlineData("ENV")] // case-insensitive
+    [InlineData("headers")] // exact: MCP HTTP headers (Authorization)
+    [InlineData("credentials")] // exact
+    [InlineData("apiKey")] // substring: apikey
+    [InlineData("ANTHROPIC_API_KEY")] // substring: api_key
+    [InlineData("githubAccessToken")] // substring: token
+    [InlineData("refreshToken")] // substring: token
+    [InlineData("clientSecret")] // substring: secret
+    [InlineData("password")] // substring: password
+    [InlineData("user_password")] // substring: password
     public void IsSensitive_ReturnsTrue_ForSecretBearingKeys(string key)
     {
-        Assert.IsTrue(SensitiveKeys.IsSensitive(key),
+        Assert.True(SensitiveKeys.IsSensitive(key),
             $"'{key}' should be treated as sensitive");
     }
 
-    [TestMethod]
-    [DataRow("model")]
-    [DataRow("permissions")]
-    [DataRow("hooks")]
-    [DataRow("mcpServers")]
-    [DataRow("includeCoworkScheduledTasks")]
-    [DataRow("verbose")]
-    [DataRow("availableModels")]
-    [DataRow("")]
+    [Theory]
+    [InlineData("model")]
+    [InlineData("permissions")]
+    [InlineData("hooks")]
+    [InlineData("mcpServers")]
+    [InlineData("includeCoworkScheduledTasks")]
+    [InlineData("verbose")]
+    [InlineData("availableModels")]
+    [InlineData("")]
     public void IsSensitive_ReturnsFalse_ForOrdinaryKeys(string key)
     {
-        Assert.IsFalse(SensitiveKeys.IsSensitive(key),
+        Assert.False(SensitiveKeys.IsSensitive(key),
             $"'{key}' should not be treated as sensitive");
     }
 
@@ -50,41 +49,41 @@ public sealed class SensitiveKeysTests
     /// paths under env / headers / credentials leaked their leaf values to
     /// the rolling log.  These tests pin the "any segment matches" contract.
     /// </summary>
-    [TestMethod]
-    [DataRow("env.ANTHROPIC_API_KEY")]
-    [DataRow("env.OPAQUE_TOKEN_FOR_THIRD_PARTY")]
-    [DataRow("env.MAX_OUTPUT_TOKENS")] // false-positive but fail-safe
-    [DataRow("mcpServers.gh.headers.Authorization")]
-    [DataRow("mcpServers.gh.headers.X-API-Key")]
-    [DataRow("mcpServers.gh.headers.Cookie")]
-    [DataRow("mcpServers.gh.headers.x-api-key")] // hyphen variant
-    [DataRow("permissions.allow.0.headers.Authorization")] // pathological-but-possible nested
-    [DataRow("credentials.refresh_token")]
-    [DataRow("credentials.access_token")]
-    [DataRow("auth.bearer")]
-    [DataRow("settings.authorization")] // direct authorization segment
+    [Theory]
+    [InlineData("env.ANTHROPIC_API_KEY")]
+    [InlineData("env.OPAQUE_TOKEN_FOR_THIRD_PARTY")]
+    [InlineData("env.MAX_OUTPUT_TOKENS")] // false-positive but fail-safe
+    [InlineData("mcpServers.gh.headers.Authorization")]
+    [InlineData("mcpServers.gh.headers.X-API-Key")]
+    [InlineData("mcpServers.gh.headers.Cookie")]
+    [InlineData("mcpServers.gh.headers.x-api-key")] // hyphen variant
+    [InlineData("permissions.allow.0.headers.Authorization")] // pathological-but-possible nested
+    [InlineData("credentials.refresh_token")]
+    [InlineData("credentials.access_token")]
+    [InlineData("auth.bearer")]
+    [InlineData("settings.authorization")] // direct authorization segment
     public void IsSensitive_ReturnsTrue_ForNestedPathsUnderSecretSegments(string key)
     {
-        Assert.IsTrue(SensitiveKeys.IsSensitive(key),
+        Assert.True(SensitiveKeys.IsSensitive(key),
             $"'{key}' has a path segment that should trigger redaction.");
     }
 
-    [TestMethod]
-    [DataRow("permissions.allow")]
-    [DataRow("hooks.PreToolUse")]
-    [DataRow("mcpServers.gh.command")]
-    [DataRow("mcpServers.gh.args")]
-    [DataRow("model")]
-    [DataRow("modelOverrides.opus")]
-    [DataRow("uniqueKey")] // contains "key" but NOT "apikey/api_key/api-key"
-    [DataRow("locKey")] // same
+    [Theory]
+    [InlineData("permissions.allow")]
+    [InlineData("hooks.PreToolUse")]
+    [InlineData("mcpServers.gh.command")]
+    [InlineData("mcpServers.gh.args")]
+    [InlineData("model")]
+    [InlineData("modelOverrides.opus")]
+    [InlineData("uniqueKey")] // contains "key" but NOT "apikey/api_key/api-key"
+    [InlineData("locKey")] // same
     public void IsSensitive_ReturnsFalse_ForBenignNestedPaths(string key)
     {
-        Assert.IsFalse(SensitiveKeys.IsSensitive(key),
+        Assert.False(SensitiveKeys.IsSensitive(key),
             $"'{key}' has no secret-bearing segment or substring; must not redact.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RedactedMarker_IsExpectedString()
     {
         // Lock the public marker text — anything that travels into bug
@@ -92,7 +91,7 @@ public sealed class SensitiveKeysTests
         // MSTEST0032: const-vs-literal folds to always-true; locking the marker
         // is precisely what this test exists to do.
 #pragma warning disable MSTEST0032
-        Assert.AreEqual("[redacted]", SensitiveKeys.RedactedMarker);
+        Assert.Equal("[redacted]", SensitiveKeys.RedactedMarker);
 #pragma warning restore MSTEST0032
     }
 }

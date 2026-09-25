@@ -22,7 +22,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Diagnostics;
 /// backup) start disagreeing on what counts as a secret — and the one
 /// that's lagging starts leaking secrets the others scrub.
 /// </summary>
-[TestClass]
 public sealed class SensitiveKeysParityTests
 {
     /// <summary>
@@ -98,7 +97,7 @@ public sealed class SensitiveKeysParityTests
         "permissions.disableBypassPermissionsMode",
     ];
 
-    [TestMethod]
+    [Fact]
     public void Classifiers_AgreeOnAllSampleKeys()
     {
         List<string> disagreements = new();
@@ -113,7 +112,7 @@ public sealed class SensitiveKeysParityTests
             }
         }
 
-        Assert.AreEqual(0, disagreements.Count,
+        MessageAssert.Equal(0, disagreements.Count,
             "JsonRedactor.IsSensitiveKey and SensitiveKeys.IsSensitive must " +
             "agree for every sampled key — drift means one of the three " +
             "redaction surfaces (audit log, save diff, sanitized backup) is " +
@@ -121,7 +120,7 @@ public sealed class SensitiveKeysParityTests
             string.Join("\n  ", disagreements));
     }
 
-    [TestMethod]
+    [Fact]
     public void RedactedMarker_StringIsIdentical()
     {
         // Both surfaces use "[redacted]" as the marker — the literal must
@@ -131,9 +130,9 @@ public sealed class SensitiveKeysParityTests
         // always-true. Pinning them is the entire point of a parity test — if the
         // two classifiers ever drifted apart, or the marker changed, this must fail.
 #pragma warning disable MSTEST0032
-        Assert.AreEqual(SensitiveKeys.RedactedMarker, JsonRedactor.RedactedMarker,
+        MessageAssert.Equal(SensitiveKeys.RedactedMarker, JsonRedactor.RedactedMarker,
             "The two classifiers must use the same redaction marker string.");
-        Assert.AreEqual("[redacted]", JsonRedactor.RedactedMarker);
+        Assert.Equal("[redacted]", JsonRedactor.RedactedMarker);
 #pragma warning restore MSTEST0032
     }
 }

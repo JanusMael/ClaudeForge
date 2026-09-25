@@ -11,7 +11,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// and exercises the library API (ToValue / LoadFromValue / Add / Remove /
 /// Reset).
 /// </summary>
-[TestClass]
 public class StringArrayPropertyEditorViewModelTests
 {
     private static SchemaNode ArraySchema()
@@ -49,27 +48,27 @@ public class StringArrayPropertyEditorViewModelTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void InitialState_IsEmpty()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Empty(vm.Items);
+        Assert.False(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddItem_AddsToCollection()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
         vm.NewItemText = "hello";
         vm.AddItemCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Items.Count);
-        Assert.AreEqual("hello", vm.Items[0]);
-        Assert.AreEqual(string.Empty, vm.NewItemText);
+        Assert.Single(vm.Items);
+        Assert.Equal("hello", vm.Items[0]);
+        Assert.Equal(string.Empty, vm.NewItemText);
     }
 
-    [TestMethod]
+    [Fact]
     public void AddItem_NoDuplicates()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
@@ -78,10 +77,10 @@ public class StringArrayPropertyEditorViewModelTests
         vm.NewItemText = "dup";
         vm.AddItemCommand.Execute(null);
 
-        Assert.AreEqual(1, vm.Items.Count);
+        Assert.Single(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void RemoveItem_RemovesFromCollection()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
@@ -89,27 +88,27 @@ public class StringArrayPropertyEditorViewModelTests
         vm.AddItemCommand.Execute(null);
         vm.RemoveItemCommand.Execute("a");
 
-        Assert.AreEqual(0, vm.Items.Count);
+        Assert.Empty(vm.Items);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_PopulatesItems()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
         Load(vm, LayeredWithArray(ConfigScope.User, "x", "y", "z"), ConfigScope.User);
 
-        CollectionAssert.AreEquivalent(new[] { "x", "y", "z" }, vm.Items.ToArray());
-        Assert.IsTrue(vm.IsModified);
+        MessageAssert.SameElements(new[] { "x", "y", "z" }, vm.Items.ToArray());
+        Assert.True(vm.IsModified);
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsNull_WhenEmpty()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
-        Assert.IsNull(vm.ToValue());
+        Assert.Null(vm.ToValue());
     }
 
-    [TestMethod]
+    [Fact]
     public void ToValue_ReturnsList_WhenHasItems()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
@@ -119,13 +118,13 @@ public class StringArrayPropertyEditorViewModelTests
         vm.AddItemCommand.Execute(null);
 
         IReadOnlyList<object?>? list = vm.ToValue() as IReadOnlyList<object?>;
-        Assert.IsNotNull(list);
-        Assert.AreEqual(2, list!.Count);
-        Assert.AreEqual("one", list[0]);
-        Assert.AreEqual("two", list[1]);
+        Assert.NotNull(list);
+        Assert.Equal(2, list!.Count);
+        Assert.Equal("one", list[0]);
+        Assert.Equal("two", list[1]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Reset_ClearsItems()
     {
         LibVm.StringArrayPropertyEditorViewModel vm = NewVm();
@@ -133,7 +132,7 @@ public class StringArrayPropertyEditorViewModelTests
         vm.AddItemCommand.Execute(null);
         vm.ResetToInheritedCommand.Execute(null);
 
-        Assert.AreEqual(0, vm.Items.Count);
-        Assert.IsFalse(vm.IsModified);
+        Assert.Empty(vm.Items);
+        Assert.False(vm.IsModified);
     }
 }

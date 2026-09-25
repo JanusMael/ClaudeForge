@@ -13,20 +13,19 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// <see cref="MemoryArtifactDeleter.StatTarget"/> reports the honest count + size
 /// the confirm dialog cites.
 /// </summary>
-[TestClass]
-public sealed class MemoryArtifactDeleterTests
+public sealed class MemoryArtifactDeleterTests : IDisposable
 {
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public MemoryArtifactDeleterTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_deleter_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         try
         {
@@ -41,6 +40,12 @@ public sealed class MemoryArtifactDeleterTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private string Write(string relPath, string content)
     {
         string full = Path.Combine(_sandbox, relPath);
@@ -51,7 +56,7 @@ public sealed class MemoryArtifactDeleterTests
 
     // ── DeleteAsync ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_PlainFile_RemovesOnlyThatFile()
     {
         string agent = Write(Path.Combine("agents", "reviewer.md"), "x");
@@ -59,12 +64,12 @@ public sealed class MemoryArtifactDeleterTests
 
         string removed = await MemoryArtifactDeleter.DeleteAsync(agent, isSkill: false, CancellationToken.None);
 
-        Assert.AreEqual(agent, removed);
-        Assert.IsFalse(File.Exists(agent), "Target file must be deleted.");
-        Assert.IsTrue(File.Exists(sibling), "Neighbouring files must be untouched.");
+        Assert.Equal(agent, removed);
+        Assert.False(File.Exists(agent), "Target file must be deleted.");
+        Assert.True(File.Exists(sibling), "Neighbouring files must be untouched.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_Skill_RemovesWholeDirectoryIncludingSiblingAssets()
     {
         string skillMd = Write(Path.Combine("skills", "pdf", "SKILL.md"), "---\nname: pdf\n---\n");
@@ -75,12 +80,12 @@ public sealed class MemoryArtifactDeleterTests
 
         string removed = await MemoryArtifactDeleter.DeleteAsync(skillMd, isSkill: true, CancellationToken.None);
 
-        Assert.AreEqual(skillDir, removed, "A skill delete removes (and returns) the whole skill directory.");
-        Assert.IsFalse(Directory.Exists(skillDir), "Skill directory + all assets must be gone.");
-        Assert.IsTrue(File.Exists(otherSkill), "Sibling skills must be untouched.");
+        MessageAssert.Equal(skillDir, removed, "A skill delete removes (and returns) the whole skill directory.");
+        Assert.False(Directory.Exists(skillDir), "Skill directory + all assets must be gone.");
+        Assert.True(File.Exists(otherSkill), "Sibling skills must be untouched.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_SkillFlagButFileNotSkillMd_DeletesOnlyTheFile()
     {
         // Defence in depth: isSkill=true but the path isn't a SKILL.md → only the
@@ -91,13 +96,13 @@ public sealed class MemoryArtifactDeleterTests
 
         string removed = await MemoryArtifactDeleter.DeleteAsync(file, isSkill: true, CancellationToken.None);
 
-        Assert.AreEqual(file, removed);
-        Assert.IsFalse(File.Exists(file));
-        Assert.IsTrue(Directory.Exists(skillDir), "Parent directory must NOT be wiped for a non-SKILL.md path.");
-        Assert.IsTrue(File.Exists(skillMd));
+        Assert.Equal(file, removed);
+        Assert.False(File.Exists(file));
+        Assert.True(Directory.Exists(skillDir), "Parent directory must NOT be wiped for a non-SKILL.md path.");
+        Assert.True(File.Exists(skillMd));
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_NotSkillButSkillMdPath_DeletesOnlyTheFile()
     {
         // isSkill=false on a SKILL.md → single-file delete, directory survives.
@@ -107,40 +112,40 @@ public sealed class MemoryArtifactDeleterTests
 
         await MemoryArtifactDeleter.DeleteAsync(skillMd, isSkill: false, CancellationToken.None);
 
-        Assert.IsFalse(File.Exists(skillMd));
-        Assert.IsTrue(Directory.Exists(skillDir), "Without the skill flag only the file is removed.");
+        Assert.False(File.Exists(skillMd));
+        Assert.True(Directory.Exists(skillDir), "Without the skill flag only the file is removed.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_MissingPath_NoThrow()
     {
         string ghost = Path.Combine(_sandbox, "agents", "ghost.md");
         string removed = await MemoryArtifactDeleter.DeleteAsync(ghost, isSkill: false, CancellationToken.None);
-        Assert.AreEqual(ghost, removed, "Deleting a non-existent file is a no-op that returns the path.");
+        MessageAssert.Equal(ghost, removed, "Deleting a non-existent file is a no-op that returns the path.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DeleteAsync_BlankPath_Throws()
     {
-        await Assert.ThrowsExactlyAsync<ArgumentException>(
+        await Assert.ThrowsAsync<ArgumentException>(
             () => MemoryArtifactDeleter.DeleteAsync("   ", isSkill: false, CancellationToken.None));
     }
 
     // ── StatTarget ───────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void StatTarget_PlainFile_ReturnsSelfCountOneAndKnownSize()
     {
         string agent = Write(Path.Combine("agents", "reviewer.md"), "x");
 
         (string path, int count, long bytes) = MemoryArtifactDeleter.StatTarget(agent, isSkill: false, knownSize: 123);
 
-        Assert.AreEqual(agent, path);
-        Assert.AreEqual(1, count);
-        Assert.AreEqual(123, bytes, "A plain file reports the caller's known size, no walk.");
+        Assert.Equal(agent, path);
+        Assert.Equal(1, count);
+        MessageAssert.Equal(123, bytes, "A plain file reports the caller's known size, no walk.");
     }
 
-    [TestMethod]
+    [Fact]
     public void StatTarget_Skill_WalksDirectoryForRealCountAndBytes()
     {
         string skillMd = Write(Path.Combine("skills", "pdf", "SKILL.md"), "ab");      // 2 bytes
@@ -149,8 +154,8 @@ public sealed class MemoryArtifactDeleterTests
 
         (string path, int count, long bytes) = MemoryArtifactDeleter.StatTarget(skillMd, isSkill: true, knownSize: 2);
 
-        Assert.AreEqual(skillDir, path, "Skill stats target the directory, not SKILL.md.");
-        Assert.AreEqual(2, count, "Both files under the skill directory are counted.");
-        Assert.AreEqual(7, bytes, "Size is the recursive sum, not just SKILL.md.");
+        MessageAssert.Equal(skillDir, path, "Skill stats target the directory, not SKILL.md.");
+        MessageAssert.Equal(2, count, "Both files under the skill directory are counted.");
+        MessageAssert.Equal(7, bytes, "Size is the recursive sum, not just SKILL.md.");
     }
 }

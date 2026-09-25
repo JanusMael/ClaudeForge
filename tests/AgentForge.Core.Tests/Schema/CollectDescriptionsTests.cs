@@ -7,10 +7,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// help-bearing node's dot-path to its description (title as fallback), recurses into
 /// object properties and array item schemas, and omits nodes with no help text.
 /// </summary>
-[TestClass]
 public sealed class CollectDescriptionsTests
 {
-    [TestMethod]
+    [Fact]
     public void CollectDescriptions_MapsPathsToDescription_RecursingProperties()
     {
         SchemaNode child = new("permissions.defaultMode", "defaultMode")
@@ -30,13 +29,13 @@ public sealed class CollectDescriptionsTests
 
         IReadOnlyDictionary<string, string> map = SchemaTreeBuilder.CollectDescriptions([parent]);
 
-        Assert.AreEqual("Permission settings.", map["permissions"]);
-        Assert.AreEqual("The default permission mode.", map["permissions.defaultMode"]);
-        Assert.AreEqual("Allowed rules", map["permissions.allow"], "Title should be used when there is no description.");
-        Assert.IsFalse(map.ContainsKey("permissions.deny"), "Nodes with no help text are omitted.");
+        Assert.Equal("Permission settings.", map["permissions"]);
+        Assert.Equal("The default permission mode.", map["permissions.defaultMode"]);
+        MessageAssert.Equal("Allowed rules", map["permissions.allow"], "Title should be used when there is no description.");
+        Assert.False(map.ContainsKey("permissions.deny"), "Nodes with no help text are omitted.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CollectDescriptions_RecursesArrayItemSchema()
     {
         SchemaNode item = new("servers[]", "item") { Description = "One server entry." };
@@ -44,6 +43,6 @@ public sealed class CollectDescriptionsTests
 
         IReadOnlyDictionary<string, string> map = SchemaTreeBuilder.CollectDescriptions([array]);
 
-        Assert.AreEqual("One server entry.", map["servers[]"]);
+        Assert.Equal("One server entry.", map["servers[]"]);
     }
 }

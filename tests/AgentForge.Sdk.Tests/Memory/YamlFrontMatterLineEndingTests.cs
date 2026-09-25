@@ -26,7 +26,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// parser and 3 of the branch's failed against main's, so neither side was a superset and the
 /// implementation here is the union. See <c>YamlFrontMatterBlockScalarTests</c> for the sibling.
 /// </remarks>
-[TestClass]
 public sealed class YamlFrontMatterLineEndingTests
 {
     private static string Join(string nl, params string[] lines)
@@ -70,31 +69,31 @@ public sealed class YamlFrontMatterLineEndingTests
         "Body.",
     ];
 
-    [TestMethod]
+    [Fact]
     public void Crlf_BlockScalar_RoundTripsByteForByte()
     {
         string text = Join("\r\n", BlockScalarLines);
 
-        Assert.AreEqual(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
+        Assert.Equal(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
     }
 
-    [TestMethod]
+    [Fact]
     public void Crlf_NestedMapping_RoundTripsByteForByte()
     {
         string text = Join("\r\n", NestedMappingLines);
 
-        Assert.AreEqual(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
+        Assert.Equal(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
     }
 
-    [TestMethod]
+    [Fact]
     public void Crlf_BlockList_RoundTripsByteForByte()
     {
         string text = Join("\r\n", BlockListLines);
 
-        Assert.AreEqual(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
+        Assert.Equal(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
     }
 
-    [TestMethod]
+    [Fact]
     public void Crlf_ComposedFile_HasNoBareLineFeed()
     {
         string composed = YamlFrontMatter.Compose(
@@ -104,7 +103,7 @@ public sealed class YamlFrontMatterLineEndingTests
         {
             if (composed[i] == '\n')
             {
-                Assert.IsTrue(
+                Assert.True(
                     i > 0 && composed[i - 1] == '\r',
                     "A CRLF file must not come back with a bare LF at index " + i
                     + " — that is a mixed-ending file written into the user's repository.");
@@ -112,21 +111,21 @@ public sealed class YamlFrontMatterLineEndingTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Lf_BlockScalar_RoundTripsByteForByte()
     {
         string text = Join("\n", BlockScalarLines);
 
-        Assert.AreEqual(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
+        Assert.Equal(text, YamlFrontMatter.Compose(YamlFrontMatter.Parse(text)));
     }
 
-    [TestMethod]
+    [Fact]
     public void Lf_ComposedFile_HasNoCarriageReturn()
     {
         string composed = YamlFrontMatter.Compose(
             YamlFrontMatter.Parse(Join("\n", BlockScalarLines)));
 
-        Assert.IsFalse(
+        Assert.False(
             composed.Contains('\r'),
             "An LF file must not pick up carriage returns on the way back out.");
     }
@@ -135,7 +134,7 @@ public sealed class YamlFrontMatterLineEndingTests
     /// The edited path re-renders rather than replaying RawText, so it has its own
     /// way to get this wrong.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Crlf_EditedBlockScalar_StaysCrlf()
     {
         string text = Join("\r\n", BlockScalarLines);
@@ -143,8 +142,8 @@ public sealed class YamlFrontMatterLineEndingTests
         string composed = YamlFrontMatter.Compose(
             YamlFrontMatter.Parse(text).WithScalar("description", "Something shorter now."));
 
-        StringAssert.Contains(composed, "description: >-\r\n");
-        Assert.IsFalse(
+        OrdinalAssert.Contains("description: >-\r\n", composed);
+        Assert.False(
             composed.Contains("\n\n", StringComparison.Ordinal),
             "A bare LF pair means a re-rendered line was emitted with the wrong ending.");
     }

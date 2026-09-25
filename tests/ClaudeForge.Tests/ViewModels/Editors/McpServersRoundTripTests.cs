@@ -5,7 +5,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// Claude Desktop (<c>{command, args, env}</c>) and Claude Code (<c>{type, command|url, headers}</c>)
 /// variants, plus a pass-through bag for unknown fields so saves don't drop data.
 /// </summary>
-[TestClass]
 public class McpServersRoundTripTests
 {
     private static SchemaNode McpSchema()
@@ -23,7 +22,7 @@ public class McpServersRoundTripTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void DesktopShape_NoTypeField_DefaultsToStdio()
     {
         // Claude Desktop's claude_desktop_config.json typically omits "type":
@@ -41,17 +40,17 @@ public class McpServersRoundTripTests
         McpServersEditorViewModel vm = new(McpSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Servers.Count);
+        Assert.Single(vm.Servers);
         McpServerEntry srv = vm.Servers[0];
-        Assert.AreEqual("my-server", srv.Name);
-        Assert.AreEqual("stdio", srv.Type, "Missing type must default to stdio.");
-        Assert.AreEqual("npx", srv.Command);
-        Assert.AreEqual(2, srv.Args.Count);
-        Assert.AreEqual(1, srv.Env.Count);
-        Assert.AreEqual("FOO", srv.Env[0].Key);
+        Assert.Equal("my-server", srv.Name);
+        MessageAssert.Equal("stdio", srv.Type, "Missing type must default to stdio.");
+        Assert.Equal("npx", srv.Command);
+        Assert.Equal(2, srv.Args.Count);
+        Assert.Single(srv.Env);
+        Assert.Equal("FOO", srv.Env[0].Key);
     }
 
-    [TestMethod]
+    [Fact]
     public void CodeShape_ExplicitStdio_RoundTrips()
     {
         JsonObject obj = new()
@@ -68,15 +67,15 @@ public class McpServersRoundTripTests
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(emitted);
+        Assert.NotNull(emitted);
         JsonObject? srvJson = emitted!["context7"] as JsonObject;
-        Assert.IsNotNull(srvJson);
-        Assert.AreEqual("stdio", srvJson!["type"]?.GetValue<string>());
-        Assert.AreEqual("npx", srvJson["command"]?.GetValue<string>());
-        Assert.AreEqual(2, (srvJson["args"] as JsonArray)!.Count);
+        Assert.NotNull(srvJson);
+        Assert.Equal("stdio", srvJson!["type"]?.GetValue<string>());
+        Assert.Equal("npx", srvJson["command"]?.GetValue<string>());
+        Assert.Equal(2, (srvJson["args"] as JsonArray)!.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void CodeShape_SseWithUrlAndHeaders()
     {
         JsonObject obj = new()
@@ -96,22 +95,22 @@ public class McpServersRoundTripTests
         McpServersEditorViewModel vm = new(McpSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Servers.Count);
+        Assert.Single(vm.Servers);
         McpServerEntry srv = vm.Servers[0];
-        Assert.AreEqual("sse", srv.Type);
-        Assert.AreEqual("https://example.com/sse", srv.Url);
-        Assert.AreEqual(2, srv.Headers.Count);
+        Assert.Equal("sse", srv.Type);
+        Assert.Equal("https://example.com/sse", srv.Url);
+        Assert.Equal(2, srv.Headers.Count);
 
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
         JsonObject? srvJson = emitted!["remote-sse"] as JsonObject;
-        Assert.AreEqual("sse", srvJson!["type"]?.GetValue<string>());
-        Assert.AreEqual("https://example.com/sse", srvJson["url"]?.GetValue<string>());
+        Assert.Equal("sse", srvJson!["type"]?.GetValue<string>());
+        Assert.Equal("https://example.com/sse", srvJson["url"]?.GetValue<string>());
         JsonObject? headers = srvJson["headers"] as JsonObject;
-        Assert.IsNotNull(headers);
-        Assert.AreEqual("Bearer xyz", headers!["Authorization"]?.GetValue<string>());
+        Assert.NotNull(headers);
+        Assert.Equal("Bearer xyz", headers!["Authorization"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void CodeShape_HttpType()
     {
         JsonObject obj = new()
@@ -126,12 +125,12 @@ public class McpServersRoundTripTests
         McpServersEditorViewModel vm = new(McpSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
-        Assert.AreEqual(1, vm.Servers.Count);
-        Assert.AreEqual("http", vm.Servers[0].Type);
-        Assert.AreEqual("https://example.com/api", vm.Servers[0].Url);
+        Assert.Single(vm.Servers);
+        Assert.Equal("http", vm.Servers[0].Type);
+        Assert.Equal("https://example.com/api", vm.Servers[0].Url);
     }
 
-    [TestMethod]
+    [Fact]
     public void UnknownFields_RoundTripThroughPassThroughBag()
     {
         // Forward-compat: any unknown key (e.g., a new "timeout" field) must survive
@@ -152,12 +151,12 @@ public class McpServersRoundTripTests
 
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
         JsonObject? srvJson = emitted!["weird"] as JsonObject;
-        Assert.AreEqual(30000, srvJson!["timeout"]?.GetValue<int>());
-        Assert.IsNotNull(srvJson["experimental"] as JsonObject);
-        Assert.IsTrue((srvJson["experimental"] as JsonObject)!["flag"]?.GetValue<bool>());
+        Assert.Equal(30000, srvJson!["timeout"]?.GetValue<int>());
+        Assert.NotNull(srvJson["experimental"] as JsonObject);
+        Assert.True((srvJson["experimental"] as JsonObject)!["flag"]?.GetValue<bool>());
     }
 
-    [TestMethod]
+    [Fact]
     public void MultipleServers_AllRender()
     {
         JsonObject obj = new()
@@ -170,8 +169,8 @@ public class McpServersRoundTripTests
         McpServersEditorViewModel vm = new(McpSchema(), ConfigScope.User);
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
-        Assert.AreEqual(3, vm.Servers.Count);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(3, vm.Servers.Count);
+        MessageAssert.SameElements(
             new[] { "alpha", "beta", "gamma" },
             vm.Servers.Select(s => s.Name).ToArray());
     }

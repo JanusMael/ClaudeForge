@@ -8,7 +8,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 /// Key order through the value-currency layer, which for some configuration is meaning rather
 /// than formatting.
 /// </summary>
-[TestClass]
 public sealed class OrderedPropertyMapTests
 {
     /// <summary>
@@ -20,35 +19,35 @@ public sealed class OrderedPropertyMapTests
 
     private static readonly string[] DeclaredOrder = ["npm *", "*", "git *", "aaa *"];
 
-    [TestMethod]
+    [Fact]
     public void DeclaredOrder_IsNotSorted_SoThisFixtureCanDetectAReSort()
     {
-        CollectionAssert.AreNotEqual(
+        MessageAssert.SequenceNotEqual(
             DeclaredOrder.Order(StringComparer.Ordinal).ToArray(), DeclaredOrder,
             "Precondition: an alphabetical fixture cannot detect an alphabetical re-sort.");
-        CollectionAssert.AreNotEqual(
+        MessageAssert.SequenceNotEqual(
             DeclaredOrder.OrderDescending(StringComparer.Ordinal).ToArray(), DeclaredOrder,
             "Precondition: nor can a reverse-alphabetical one detect a reverse sort.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ReadingAJsonObject_PreservesKeyOrder()
     {
         object? value = JsonCurrency.FromJsonNode(JsonNode.Parse(PermissionJson));
 
         IReadOnlyDictionary<string, object?> map = (IReadOnlyDictionary<string, object?>)value!;
-        CollectionAssert.AreEqual(DeclaredOrder, map.Keys.ToArray(),
+        MessageAssert.SequenceEqual(DeclaredOrder, map.Keys.ToArray(),
             "Reading a permission map must preserve key order — the LAST matching rule wins, so "
             + "reordering the keys rewrites the policy.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrippingThroughTheCurrencyLayer_PreservesKeyOrder()
     {
         object? value = JsonCurrency.FromJsonNode(JsonNode.Parse(PermissionJson));
         JsonNode? back = JsonCurrency.ToJsonNode(value);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             DeclaredOrder,
             ((JsonObject)back!).Select(p => p.Key).ToArray(),
             "A full read/write round trip must return the keys in the order they arrived.");
@@ -58,7 +57,7 @@ public sealed class OrderedPropertyMapTests
     /// Editing a value must not move its key. Otherwise changing one rule's action would
     /// re-order the policy around it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ReplacingAValue_KeepsTheKeyInPlace()
     {
         OrderedPropertyMap map = new();
@@ -68,13 +67,13 @@ public sealed class OrderedPropertyMapTests
 
         map.Set("b", 99);
 
-        CollectionAssert.AreEqual(new[] { "a", "b", "c" }, map.Keys.ToArray(),
+        MessageAssert.SequenceEqual(new[] { "a", "b", "c" }, map.Keys.ToArray(),
             "Replacing b's value moved its key. Editing a rule's action would then change which "
             + "rule wins.");
-        Assert.AreEqual(99, map["b"]);
+        Assert.Equal(99, map["b"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedObjects_PreserveOrderToo()
     {
         object? value = JsonCurrency.FromJsonNode(
@@ -84,18 +83,18 @@ public sealed class OrderedPropertyMapTests
         var permission = (IReadOnlyDictionary<string, object?>)outer["permission"]!;
         var bash = (IReadOnlyDictionary<string, object?>)permission["bash"]!;
 
-        CollectionAssert.AreEqual(DeclaredOrder, bash.Keys.ToArray(),
+        MessageAssert.SequenceEqual(DeclaredOrder, bash.Keys.ToArray(),
             "The real permission map is nested two levels down; order must survive the recursion.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LookupIsCaseSensitive_MatchingTheRestOfTheConfigHandling()
     {
         OrderedPropertyMap map = new();
         map.Set("Bash", 1);
 
-        Assert.IsTrue(map.ContainsKey("Bash"));
-        Assert.IsFalse(map.ContainsKey("bash"),
+        Assert.True(map.ContainsKey("Bash"));
+        Assert.False(map.ContainsKey("bash"),
             "Ordinal comparison: 'bash' and 'Bash' are different tools, and case-folding would "
             + "silently merge two rule sets.");
     }
@@ -117,12 +116,12 @@ public sealed class OrderedPropertyMapTests
     /// only way to hold the guarantee is to assert that the guaranteeing type is the one in use.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void ReadingAJsonObject_YieldsAMapThatGuaranteesOrder()
     {
         object? value = JsonCurrency.FromJsonNode(JsonNode.Parse(PermissionJson));
 
-        Assert.IsInstanceOfType<OrderedPropertyMap>(value,
+        MessageAssert.IsAssignableFrom<OrderedPropertyMap>(value,
             "A JSON object must read into OrderedPropertyMap. A plain Dictionary passes every "
             + "other test in this class while promising nothing about order — and for a "
             + "permission map, order is the policy.");

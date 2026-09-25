@@ -11,15 +11,15 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 // Mutates the process-wide PATH env var AND the process-lifetime claude-code
 // location cache (_claudeCodeLocationCache) — both real process globals, not
 // AsyncLocal test seams. Must run serially, isolated from the parallel batch.
-[DoNotParallelize]
-[TestClass]
-public sealed class ClaudeCodeDetectionTests
+[Collection("DoNotParallelize")]
+public sealed class ClaudeCodeDetectionTests : IDisposable
 {
     private string _sandbox = null!;
     private string? _originalPath;
 
-    [TestInitialize]
-    public void Init()
+    public ClaudeCodeDetectionTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -39,8 +39,7 @@ public sealed class ClaudeCodeDetectionTests
         PlatformPaths.InvalidatePathCache();
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         Environment.SetEnvironmentVariable("PATH", _originalPath);
@@ -53,14 +52,20 @@ public sealed class ClaudeCodeDetectionTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void TryFindClaudeCodeBinary_NoPath_NoFiles_ReturnsNull()
     {
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
-        Assert.IsNull(result);
+        Assert.Null(result);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_SelfContainedInstall_ReturnsLocationNotOnPath()
     {
         // ~/.claude/local/claude(.exe) — the canonical first-priority install
@@ -75,17 +80,17 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_NpmGlobalOnWindows_ReturnsLocationNotOnPath()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Windows-only scenario (%APPDATA%\\npm\\claude.cmd)");
+            Assert.Skip("Windows-only scenario (%APPDATA%\\npm\\claude.cmd)");
             return;
         }
 
@@ -98,12 +103,12 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_PathWinsOverCanonical_ReturnsIsOnPathTrue()
     {
         // Arrange: create a claude binary both on PATH (sandboxed shim
@@ -129,8 +134,8 @@ public sealed class ClaudeCodeDetectionTests
         {
             PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-            Assert.IsNotNull(result);
-            Assert.IsTrue(result!.IsOnPath);
+            Assert.NotNull(result);
+            Assert.True(result!.IsOnPath);
             // PATH resolution on Windows appends the PATHEXT extension as-cased
             // (e.g. ".EXE"), so the returned path's extension casing may differ
             // from the filesystem file's casing. Compare case-insensitively on
@@ -138,7 +143,7 @@ public sealed class ClaudeCodeDetectionTests
             StringComparison comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal;
-            Assert.IsTrue(string.Equals(pathBinary, result.BinaryPath, comparison),
+            Assert.True(string.Equals(pathBinary, result.BinaryPath, comparison),
                 $"Expected '{pathBinary}', got '{result.BinaryPath}'");
         }
         finally
@@ -149,13 +154,13 @@ public sealed class ClaudeCodeDetectionTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void IsClaudeCodeOnPath_ReturnsFalseWhenPathEmpty()
     {
-        Assert.IsFalse(PlatformPaths.IsClaudeCodeOnPath);
+        Assert.False(PlatformPaths.IsClaudeCodeOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsClaudeCodeInstalled_TrueWhenCanonicalExistsEvenIfNotOnPath()
     {
         string localDir = Path.Combine(_sandbox, ".claude", "local");
@@ -165,13 +170,13 @@ public sealed class ClaudeCodeDetectionTests
             : "claude";
         File.WriteAllText(Path.Combine(localDir, fileName), string.Empty);
 
-        Assert.IsTrue(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
+        Assert.True(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
     }
 
-    [TestMethod]
+    [Fact]
     public void IsClaudeCodeInstalled_FalseOnEmptySandbox()
     {
-        Assert.IsFalse(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
+        Assert.False(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
     }
 
     // ── Extended candidate-path coverage (2026-05-19 COVERAGE-B3 #3) ──
@@ -186,12 +191,12 @@ public sealed class ClaudeCodeDetectionTests
     // Windows branch; WSL/Linux runs land coverage on the non-Windows
     // branch).
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_WindowsNpmGlobalPs1_ReturnsLocationNotOnPath()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Windows-only candidate (%APPDATA%\\npm\\claude.ps1)");
+            Assert.Skip("Windows-only candidate (%APPDATA%\\npm\\claude.ps1)");
             return;
         }
 
@@ -202,19 +207,19 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_WindowsLocalAppDataPrograms_ReturnsLocationNotOnPath()
     {
         // Future-proofing candidate: %LOCALAPPDATA%\Programs\claude\claude.exe
         // — mirrors how VS Code / GitHub Desktop install per-user on Windows.
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Windows-only candidate (%LOCALAPPDATA%\\Programs\\claude\\)");
+            Assert.Skip("Windows-only candidate (%LOCALAPPDATA%\\Programs\\claude\\)");
             return;
         }
 
@@ -225,17 +230,17 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_UnixLocalBin_ReturnsLocationNotOnPath()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Unix-only candidate (~/.local/bin/claude — curl|bash installer default)");
+            Assert.Skip("Unix-only candidate (~/.local/bin/claude — curl|bash installer default)");
             return;
         }
 
@@ -246,17 +251,17 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_UnixNpmGlobalBin_ReturnsLocationNotOnPath()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Unix-only candidate (~/.npm-global/bin/claude)");
+            Assert.Skip("Unix-only candidate (~/.npm-global/bin/claude)");
             return;
         }
 
@@ -267,17 +272,17 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_UnixVoltaBin_ReturnsLocationNotOnPath()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Unix-only candidate (~/.volta/bin/claude — Volta-managed npm binaries)");
+            Assert.Skip("Unix-only candidate (~/.volta/bin/claude — Volta-managed npm binaries)");
             return;
         }
 
@@ -288,12 +293,12 @@ public sealed class ClaudeCodeDetectionTests
 
         PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
-        Assert.IsNotNull(result);
-        Assert.AreEqual(binary, result!.BinaryPath);
-        Assert.IsFalse(result.IsOnPath);
+        Assert.NotNull(result);
+        Assert.Equal(binary, result!.BinaryPath);
+        Assert.False(result.IsOnPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryFindClaudeCodeBinary_ProbeSuppressed_ReportsNotFoundWithoutCachingTheMiss()
     {
         // A binary is reachable both via PATH and at the canonical
@@ -315,9 +320,9 @@ public sealed class ClaudeCodeDetectionTests
         {
             PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
 
-            Assert.IsNull(PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty));
-            Assert.IsFalse(PlatformPaths.IsClaudeCodeOnPath);
-            Assert.IsFalse(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
+            Assert.Null(PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty));
+            Assert.False(PlatformPaths.IsClaudeCodeOnPath);
+            Assert.False(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
 
             // The suppressed calls must not have stored a negative result in
             // the process-lifetime caches: clearing the switch on its own,
@@ -325,9 +330,9 @@ public sealed class ClaudeCodeDetectionTests
             PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
 
             PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
-            Assert.IsNotNull(result);
-            Assert.IsTrue(result!.IsOnPath);
-            Assert.IsTrue(PlatformPaths.IsClaudeCodeOnPath);
+            Assert.NotNull(result);
+            Assert.True(result!.IsOnPath);
+            Assert.True(PlatformPaths.IsClaudeCodeOnPath);
         }
         finally
         {

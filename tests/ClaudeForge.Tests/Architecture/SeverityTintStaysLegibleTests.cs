@@ -30,7 +30,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// approximation cannot flip the verdict.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SeverityTintStaysLegibleTests
 {
     private const double TextFloor = 4.5;
@@ -46,10 +45,10 @@ public sealed class SeverityTintStaysLegibleTests
     /// The premise: the tint is actually a wash, not an opaque fill or nothing at all. A converter
     /// returning alpha 0 would satisfy every contrast assertion below by making the tint invisible.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ThePremiseHolds_TheTintIsTranslucentAndVisible()
     {
-        Assert.IsTrue(
+        Assert.True(
             AppSeverityToTintBrushConverter.TintAlpha is > 0.02 and < 0.5,
             $"TintAlpha is {AppSeverityToTintBrushConverter.TintAlpha}. At zero the banner has no "
             + "background and every contrast test below passes vacuously; near one it is an opaque "
@@ -63,7 +62,7 @@ public sealed class SeverityTintStaysLegibleTests
             {
                 string tint = Composite(SeverityHex(variant, severity), surface);
 
-                Assert.AreNotEqual(surface, tint, StringComparer.OrdinalIgnoreCase,
+                MessageAssert.NotEqual(surface, tint, StringComparer.OrdinalIgnoreCase,
                     $"{variant}/{severity}: the tint composites to the surface colour exactly, so "
                     + "the banner has no visible background");
             }
@@ -71,7 +70,7 @@ public sealed class SeverityTintStaysLegibleTests
     }
 
     /// <summary>⛔ The ceiling. This is the assertion the alpha is actually chosen against.</summary>
-    [TestMethod]
+    [Fact]
     public void TheBorderStaysClearOfItsFloorAgainstItsOwnTint()
     {
         List<string> failures = [];
@@ -95,14 +94,14 @@ public sealed class SeverityTintStaysLegibleTests
             }
         }
 
-        Assert.IsTrue(failures.Count == 0,
+        Assert.True(failures.Count == 0,
             $"{failures.Count} banner border(s) disappear into their own tint:\n  "
             + string.Join("\n  ", failures)
             + "\n\nLower AppSeverityToTintBrushConverter.TintAlpha. Raising it is what causes "
             + "this — the border and the tint are the same colour.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BodyTextOnTheTintClearsTheTextFloor()
     {
         List<string> failures = [];
@@ -126,7 +125,7 @@ public sealed class SeverityTintStaysLegibleTests
             }
         }
 
-        Assert.IsTrue(failures.Count == 0,
+        Assert.True(failures.Count == 0,
             $"{failures.Count} banner(s) render unreadable body text:\n  "
             + string.Join("\n  ", failures));
     }
@@ -135,7 +134,7 @@ public sealed class SeverityTintStaysLegibleTests
     /// ⭐ Derives the ceiling instead of asserting a remembered number, and proves the guard above
     /// discriminates: if every alpha passed, that test would be vacuous.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheChosenAlphaSitsBelowTheMeasuredCeiling()
     {
         double ceiling = 1.0;
@@ -171,12 +170,12 @@ public sealed class SeverityTintStaysLegibleTests
             }
         }
 
-        Assert.IsTrue(ceiling < 1.0,
+        Assert.True(ceiling < 1.0,
             "no alpha between 1% and 100% breaks the border floor, so "
             + $"{nameof(TheBorderStaysClearOfItsFloorAgainstItsOwnTint)} cannot fail and is not "
             + "guarding anything");
 
-        Assert.IsTrue(AppSeverityToTintBrushConverter.TintAlpha < ceiling,
+        Assert.True(AppSeverityToTintBrushConverter.TintAlpha < ceiling,
             $"TintAlpha is {AppSeverityToTintBrushConverter.TintAlpha:P0} but the border floor "
             + $"breaks at {ceiling:P0}");
     }
@@ -235,7 +234,7 @@ public sealed class SeverityTintStaysLegibleTests
             Path.Combine(FindRepoRoot(), "src", "ClaudeForge", "App.axaml"));
 
         Match start = Regex.Match(axaml, $@"<ResourceDictionary\s+x:Key\s*=\s*""{variant}""");
-        Assert.IsTrue(start.Success, $"no {variant} ThemeDictionaries entry in App.axaml");
+        Assert.True(start.Success, $"no {variant} ThemeDictionaries entry in App.axaml");
 
         Match next = Regex.Match(
             axaml[(start.Index + start.Length)..],
@@ -249,7 +248,7 @@ public sealed class SeverityTintStaysLegibleTests
             block,
             $@"x:Key\s*=\s*""{Regex.Escape(key)}""\s+Color\s*=\s*""(?<hex>#[0-9A-Fa-f]{{6,8}})""");
 
-        Assert.IsTrue(m.Success, $"{key} is not declared in the {variant} variant of App.axaml");
+        Assert.True(m.Success, $"{key} is not declared in the {variant} variant of App.axaml");
         return m.Groups["hex"].Value;
     }
 
@@ -261,7 +260,7 @@ public sealed class SeverityTintStaysLegibleTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

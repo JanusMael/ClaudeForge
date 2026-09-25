@@ -21,7 +21,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// cannot fail is worse than a missing one, because it reads as coverage.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class NavigationTreeBuilderThreadSafetyTests
 {
     private static HeadlessUnitTestSession Session =>
@@ -57,7 +56,7 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
     /// itself (and verifies BuildGroups stays a pure, thread-agnostic factory).
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task BuildGroups_ConstructsAllEditors_OffTheUiThread()
     {
         (int Groups, bool EveryGroupHasEditor, int LeafEditors) built =
@@ -76,11 +75,11 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
                         groups.Sum(g => g.Editor.Editors.Count));
             }, CancellationToken.None);
 
-        Assert.IsTrue(built.Groups > 0,
+        Assert.True(built.Groups > 0,
             "The real Claude Code schema should bucket into navigation groups.");
-        Assert.IsTrue(built.EveryGroupHasEditor,
+        Assert.True(built.EveryGroupHasEditor,
             "Every group must carry a constructed editor view-model.");
-        Assert.IsTrue(built.LeafEditors > 0,
+        Assert.True(built.LeafEditors > 0,
             "The off-thread build must construct the leaf property editors too.");
     }
 
@@ -101,7 +100,7 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
     /// broken rather than that a registration went missing.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public async Task BuildGroups_WiresTheSpecialisedEditors_NotJustGenericFallbacks()
     {
         List<string> editorTypes = await Session.Dispatch(async () =>
@@ -118,7 +117,7 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
         foreach (string specialised in
                  new[] { "PermissionsEditorViewModel", "HooksEditorViewModel", "McpServerListEditorViewModel" })
         {
-            Assert.IsTrue(
+            Assert.True(
                 editorTypes.Contains(specialised),
                 $"The real schema built through the production path produced no {specialised}. "
                 + "The factory that page composition passes is no longer registering this "

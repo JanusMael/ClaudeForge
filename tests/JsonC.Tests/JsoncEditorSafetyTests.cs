@@ -12,7 +12,6 @@ namespace Bennewitz.Ninja.JsonC.Tests;
 /// over the user's file. A single stray character in a config file was therefore enough
 /// to lose it. These tests exist so that path cannot come back.
 /// </remarks>
-[TestClass]
 public sealed class JsoncEditorSafetyTests
 {
     private static readonly string[] Unparseable =
@@ -28,51 +27,51 @@ public sealed class JsoncEditorSafetyTests
         "@",                       // stray character
     ];
 
-    [TestMethod]
+    [Fact]
     public void UnparseableDocuments_AreNotEditable()
     {
         foreach (string text in Unparseable)
         {
             JsoncDocument document = JsoncDocument.Parse(text);
-            Assert.IsFalse(
+            Assert.False(
                 document.IsEditable,
                 $"{JsoncScannerTests.Describe(text)} parsed without complaint. Editing a "
                 + "document we misread is how config gets corrupted.");
-            Assert.IsTrue(
+            Assert.True(
                 document.Errors.Count > 0,
                 $"{JsoncScannerTests.Describe(text)} is not editable but reported no reason why; "
                 + "the caller needs something to log.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_OnAnUnparseableDocument_Throws_RatherThanCorrupting()
     {
         foreach (string text in Unparseable)
         {
-            InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(
+            InvalidOperationException ex = MessageAssert.Throws<InvalidOperationException>(
                 () => JsoncEditor.SetValue(text, "a", JsonValue.Create(1)),
                 $"Expected a refusal for {JsoncScannerTests.Describe(text)}.");
 
-            StringAssert.Contains(
-                ex.Message, "Refusing to edit",
+            MessageAssert.Contains(
+                "Refusing to edit", ex.Message,
                 "The message should say plainly that the edit was refused, so a caller "
                 + "logging it can tell this from an incidental failure.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Remove_OnAnUnparseableDocument_Throws()
     {
         foreach (string text in Unparseable)
         {
-            Assert.ThrowsExactly<InvalidOperationException>(
+            MessageAssert.Throws<InvalidOperationException>(
                 () => JsoncEditor.Remove(text, "a"),
                 $"Expected a refusal for {JsoncScannerTests.Describe(text)}.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void EmptyAndCommentOnlyDocuments_AreEditable_BecauseTheyAreUnderstood()
     {
         // The distinction that matters: "we could not parse this" is not the same as
@@ -81,15 +80,15 @@ public sealed class JsoncEditorSafetyTests
         foreach (string text in new[] { "", "   ", "\n\n", "// note", "/* note */" })
         {
             JsoncDocument document = JsoncDocument.Parse(text);
-            Assert.IsTrue(
+            Assert.True(
                 document.IsEditable,
                 $"{JsoncScannerTests.Describe(text)} should be editable. "
                 + $"Errors: {string.Join("; ", document.Errors)}");
-            Assert.IsNull(document.Root, "There is no value in this document to find.");
+            MessageAssert.Null(document.Root, "There is no value in this document to find.");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void WellFormedCorpusEntries_AreAllEditable()
     {
         string[] wellFormed =
@@ -110,19 +109,19 @@ public sealed class JsoncEditorSafetyTests
         foreach (string text in wellFormed)
         {
             JsoncDocument document = JsoncDocument.Parse(text);
-            Assert.IsTrue(
+            Assert.True(
                 document.IsEditable,
                 $"{JsoncScannerTests.Describe(text)} should parse cleanly. "
                 + $"Errors: {string.Join("; ", document.Errors)}");
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void SetValue_OnANonObjectRoot_Throws_RatherThanGuessing()
     {
         // "[1,2]" is valid JSONC but has nowhere to put a named member. Silently
         // replacing the array would destroy data; the caller must decide.
-        Assert.ThrowsExactly<InvalidOperationException>(
+        Assert.Throws<InvalidOperationException>(
             () => JsoncEditor.SetValue("[1, 2]", "a", JsonValue.Create(1)));
     }
 }

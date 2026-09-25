@@ -52,7 +52,6 @@ internal sealed class FakeSource(
 /// This is the type that decides which agent actually runs, so the tests are about <b>order</b> and
 /// about <b>what survives</b> — never about merging, which is deliberately not this type's job.
 /// </remarks>
-[TestClass]
 public sealed class ArtifactResolverTests
 {
     private static readonly ArtifactScope BuiltIn = new("builtin", "Built-in", 0);
@@ -64,28 +63,28 @@ public sealed class ArtifactResolverTests
 
     // ── The empty and trivial cases ──────────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void NoSourcesResolveToNothing()
     {
-        Assert.AreEqual(0, ArtifactResolver.Resolve([]).Count);
+        Assert.Empty(ArtifactResolver.Resolve([]));
     }
 
-    [TestMethod]
+    [Fact]
     public void ASingleDeclarationIsNotShadowed()
     {
         ResolvedArtifact a = One(new FakeSource("g", ArtifactKind.Agent, Global, "build"));
 
-        Assert.AreEqual("build", a.Name);
-        Assert.AreEqual(ArtifactKind.Agent, a.Kind);
-        Assert.IsFalse(a.IsShadowed);
-        Assert.AreEqual(0, a.Shadowed.Count());
-        Assert.AreEqual("g", a.Effective.SourceId);
+        Assert.Equal("build", a.Name);
+        Assert.Equal(ArtifactKind.Agent, a.Kind);
+        Assert.False(a.IsShadowed);
+        Assert.Empty(a.Shadowed);
+        Assert.Equal("g", a.Effective.SourceId);
     }
 
-    [TestMethod]
+    [Fact]
     public void ResolveRejectsANullSourceList()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => ArtifactResolver.Resolve(null!));
+        Assert.Throws<ArgumentNullException>(() => ArtifactResolver.Resolve(null!));
     }
 
     // ── Precedence: the whole point ──────────────────────────────────────────────────────────────
@@ -94,7 +93,7 @@ public sealed class ArtifactResolverTests
     /// ⭐ Higher precedence first, whatever order the sources were listed in — otherwise the chain
     /// would report the winner as whichever source happened to be registered first.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheChainIsOrderedByPrecedence_NotByListingOrder()
     {
         ResolvedArtifact a = One(
@@ -102,21 +101,21 @@ public sealed class ArtifactResolverTests
             new FakeSource("project", ArtifactKind.Agent, Project, "build"),
             new FakeSource("global", ArtifactKind.Agent, Global, "build"));
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "project", "global", "builtin" },
             a.Entries.Select(e => e.SourceId).ToArray());
-        Assert.AreEqual("project", a.Effective.SourceId);
-        CollectionAssert.AreEqual(
+        Assert.Equal("project", a.Effective.SourceId);
+        Assert.Equal(
             new[] { "global", "builtin" },
             a.Shadowed.Select(e => e.SourceId).ToArray());
-        Assert.IsTrue(a.IsShadowed);
+        Assert.True(a.IsShadowed);
     }
 
     /// <summary>
     /// The five-layer chain the plan names: an agent may be built in, in global JSON, in a global
     /// markdown file, in project JSON and in a project markdown file at once.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AFiveLayerChainKeepsEveryLayer()
     {
         ArtifactScope globalJson = new("global", "Global", 10);
@@ -131,8 +130,8 @@ public sealed class ArtifactResolverTests
             new FakeSource("project-json", ArtifactKind.Agent, projectJson, "build"),
             new FakeSource("project-md", ArtifactKind.Agent, projectFile, "build"));
 
-        Assert.AreEqual(5, a.Entries.Count);
-        CollectionAssert.AreEqual(
+        Assert.Equal(5, a.Entries.Count);
+        Assert.Equal(
             new[] { "project-md", "project-json", "global-md", "global-json", "builtin" },
             a.Entries.Select(e => e.SourceId).ToArray());
     }
@@ -141,7 +140,7 @@ public sealed class ArtifactResolverTests
     /// ⚠ Ties keep listing order, and that is the only claim the resolver can honestly make about
     /// two declarations at the same precedence.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EqualPrecedenceKeepsListingOrder()
     {
         ResolvedArtifact a = One(
@@ -149,7 +148,7 @@ public sealed class ArtifactResolverTests
             new FakeSource("third", ArtifactKind.Skill, Global, "review"),
             new FakeSource("first", ArtifactKind.Skill, Project, "review"));
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "first", "second", "third" },
             a.Entries.Select(e => e.SourceId).ToArray());
     }
@@ -158,7 +157,7 @@ public sealed class ArtifactResolverTests
     /// A source may declare the same name twice — OpenCode's recursive skill discovery flattens
     /// nested directories into one namespace, so this is reachable rather than hypothetical.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void OneSourceDeclaringANameTwiceContributesBothEntries()
     {
         FakeSource s = new FakeSource("g", ArtifactKind.Skill, Global, "review");
@@ -166,9 +165,9 @@ public sealed class ArtifactResolverTests
 
         ResolvedArtifact a = One(s);
 
-        Assert.AreEqual(2, a.Entries.Count);
-        Assert.IsTrue(a.IsShadowed);
-        CollectionAssert.AreEqual(
+        Assert.Equal(2, a.Entries.Count);
+        Assert.True(a.IsShadowed);
+        Assert.Equal(
             new[] { "/g/review", "/g/nested/review" },
             a.Entries.Select(e => e.Location).ToArray());
     }
@@ -179,7 +178,7 @@ public sealed class ArtifactResolverTests
     /// ⚠ Grouping is per KIND as well as name. A skill and an agent both called <c>review</c> are
     /// two artifacts, not one shadowing the other.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void TheSameNameInDifferentKindsIsTwoArtifacts()
     {
         IReadOnlyList<ResolvedArtifact> all = ArtifactResolver.Resolve([
@@ -187,10 +186,10 @@ public sealed class ArtifactResolverTests
             new FakeSource("s", ArtifactKind.Skill, Global, "review"),
         ]);
 
-        Assert.AreEqual(2, all.Count);
-        Assert.IsFalse(all[0].IsShadowed);
-        Assert.IsFalse(all[1].IsShadowed);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, all.Count);
+        Assert.False(all[0].IsShadowed);
+        Assert.False(all[1].IsShadowed);
+        MessageAssert.SameElements(
             new[] { ArtifactKind.Agent, ArtifactKind.Skill },
             all.Select(a => a.Kind).ToArray());
     }
@@ -201,7 +200,7 @@ public sealed class ArtifactResolverTests
     /// <c>build.md</c> are one artifact shadowing the other, when a case-sensitive filesystem hands
     /// the tool two independent files.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void NamesAreCaseSensitive()
     {
         IReadOnlyList<ResolvedArtifact> all = ArtifactResolver.Resolve([
@@ -209,15 +208,15 @@ public sealed class ArtifactResolverTests
             new FakeSource("p", ArtifactKind.Agent, Project, "Build"),
         ]);
 
-        Assert.AreEqual(2, all.Count, "'build' and 'Build' are different artifacts");
-        Assert.IsFalse(all.Any(a => a.IsShadowed));
+        MessageAssert.Equal(2, all.Count, "'build' and 'Build' are different artifacts");
+        Assert.DoesNotContain(all, a => a.IsShadowed);
     }
 
     /// <summary>
     /// Results come out in the order each artifact was first seen, so a diff of the resolved set is
     /// reviewable rather than hash-ordered.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ResultOrderFollowsFirstAppearance()
     {
         IReadOnlyList<ResolvedArtifact> all = ArtifactResolver.Resolve([
@@ -225,7 +224,7 @@ public sealed class ArtifactResolverTests
             new FakeSource("p", ArtifactKind.Agent, Project, "middle", "alpha"),
         ]);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "zeta", "alpha", "middle" },
             all.Select(a => a.Name).ToArray());
     }
@@ -238,7 +237,7 @@ public sealed class ArtifactResolverTests
     /// keep which form each came from, or a consumer cannot implement the merge and a UI would
     /// wrongly report the file as shadowing the inline definition.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AnInlineAndAFileDeclarationBothSurvive_WithTheirFormsIntact()
     {
         FakeSource inline = new("cfg", ArtifactKind.Agent, Global);
@@ -248,10 +247,10 @@ public sealed class ArtifactResolverTests
             inline,
             new FakeSource("md", ArtifactKind.Agent, Project, "dup"));
 
-        Assert.AreEqual(2, a.Entries.Count);
-        Assert.AreEqual(ArtifactForm.File, a.Entries[0].Form);
-        Assert.AreEqual(ArtifactForm.Inline, a.Entries[1].Form);
-        Assert.AreEqual("$.agent.dup", a.Entries[1].Location,
+        Assert.Equal(2, a.Entries.Count);
+        Assert.Equal(ArtifactForm.File, a.Entries[0].Form);
+        Assert.Equal(ArtifactForm.Inline, a.Entries[1].Form);
+        MessageAssert.Equal("$.agent.dup", a.Entries[1].Location,
             "the inline declaration keeps its JSON path so a consumer can still read its fields");
     }
 
@@ -259,7 +258,7 @@ public sealed class ArtifactResolverTests
     /// A remote source is listed, never fetched — so it appears in the chain like any other
     /// declaration, carrying its URL.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ARemoteDeclarationIsListedWithItsUrl()
     {
         FakeSource remote = new("urls", ArtifactKind.Skill, Global);
@@ -267,8 +266,8 @@ public sealed class ArtifactResolverTests
 
         ResolvedArtifact a = One(remote);
 
-        Assert.AreEqual(ArtifactForm.Remote, a.Effective.Form);
-        Assert.AreEqual("https://example.invalid/skill.md", a.Effective.Location);
+        Assert.Equal(ArtifactForm.Remote, a.Effective.Form);
+        Assert.Equal("https://example.invalid/skill.md", a.Effective.Location);
     }
 
     // ── Fail-soft: one bad source must not empty the page ────────────────────────────────────────
@@ -278,7 +277,7 @@ public sealed class ArtifactResolverTests
     /// has always promised "never throws on enumeration"; losing that here would turn one unreadable
     /// directory or denied ACL into an empty page.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AThrowingSourceDoesNotStopTheOthers()
     {
         FakeSource bad = new("bad", ArtifactKind.Agent, Project, "first", "never-reached")
@@ -291,7 +290,7 @@ public sealed class ArtifactResolverTests
             new FakeSource("good", ArtifactKind.Agent, Global, "survivor"),
         ]);
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { "survivor" },
             all.Select(a => a.Name).ToArray(),
             "the throwing source contributes nothing, and its neighbour is unaffected");
@@ -302,7 +301,7 @@ public sealed class ArtifactResolverTests
     /// because a resolver that only wrapped the <c>Enumerate()</c> call would catch nothing and this
     /// is the test that would notice.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AnIoFailureMidEnumerationIsSwallowed()
     {
         FakeSource bad = new("bad", ArtifactKind.Rule, Global, "a", "b")
@@ -310,7 +309,7 @@ public sealed class ArtifactResolverTests
             ThrowAfterFirst = new IOException("the disk went away"),
         };
 
-        Assert.AreEqual(0, ArtifactResolver.Resolve([bad]).Count);
+        Assert.Empty(ArtifactResolver.Resolve([bad]));
     }
 
     /// <summary>
@@ -318,7 +317,7 @@ public sealed class ArtifactResolverTests
     /// hostile — a missing directory, a denied ACL, an unsupported path — not a source with a bug in
     /// it, which should surface rather than silently produce an incomplete page.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AProgrammingErrorInASourceIsNotSwallowed()
     {
         FakeSource broken = new("broken", ArtifactKind.Agent, Global, "a", "b")
@@ -326,11 +325,11 @@ public sealed class ArtifactResolverTests
             ThrowAfterFirst = new InvalidOperationException("bug"),
         };
 
-        Assert.ThrowsExactly<InvalidOperationException>(
+        Assert.Throws<InvalidOperationException>(
             () => ArtifactResolver.Resolve([broken]));
     }
 
-    [TestMethod]
+    [Fact]
     public void ANullSourceInTheListIsSkipped()
     {
         IReadOnlyList<ResolvedArtifact> all = ArtifactResolver.Resolve([
@@ -338,7 +337,7 @@ public sealed class ArtifactResolverTests
             new FakeSource("g", ArtifactKind.Agent, Global, "build"),
         ]);
 
-        Assert.AreEqual(1, all.Count);
+        Assert.Single(all);
     }
 
     // ── The chain's own invariants ───────────────────────────────────────────────────────────────
@@ -348,7 +347,7 @@ public sealed class ArtifactResolverTests
     /// <see cref="IndexOutOfRangeException"/> waiting to happen. The resolver never produces one —
     /// a name only exists because something declared it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EveryResolvedArtifactHasAtLeastOneEntry()
     {
         IReadOnlyList<ResolvedArtifact> all = ArtifactResolver.Resolve([
@@ -356,19 +355,18 @@ public sealed class ArtifactResolverTests
             new FakeSource("p", ArtifactKind.Skill, Project, "c"),
         ]);
 
-        Assert.AreEqual(3, all.Count);
-        Assert.IsTrue(all.All(a => a.Entries.Count >= 1));
+        Assert.Equal(3, all.Count);
+        Assert.True(all.All(a => a.Entries.Count >= 1));
     }
 
     /// <summary>
     /// A source contributing nothing is normal — most conventional directories do not exist on any
     /// given machine — and must not produce a phantom artifact.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AnEmptySourceContributesNothing()
     {
-        Assert.AreEqual(
-            0,
-            ArtifactResolver.Resolve([new FakeSource("empty", ArtifactKind.Plan, Global)]).Count);
+        Assert.Empty(
+            ArtifactResolver.Resolve([new FakeSource("empty", ArtifactKind.Plan, Global)]));
     }
 }

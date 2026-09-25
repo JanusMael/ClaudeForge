@@ -46,10 +46,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// could not load — the one failure mode a guard must not have.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class ItemsSourceBoundListBoxesTests
 {
-    [TestMethod]
+    [Fact]
     public void EveryItemsSourceBoundListBoxNamesItsGeneratedItems()
     {
         string repoRoot = FindRepoRoot();
@@ -61,7 +60,7 @@ public sealed class ItemsSourceBoundListBoxesTests
         // example changed, because the one it named (OpenCodeForge's search results) is gone.
         // Naming a subject that no longer exists is how a reader concludes the guard covers
         // something it does not.
-        Assert.IsTrue(bound.Count >= 1,
+        Assert.True(bound.Count >= 1,
             "expected at least 1 ItemsSource-bound ListBox with an ItemTemplate x:DataType, "
             + $"found {bound.Count}. The scan is broken, not the repo.");
 
@@ -256,7 +255,7 @@ public sealed class ItemsSourceBoundListBoxesTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

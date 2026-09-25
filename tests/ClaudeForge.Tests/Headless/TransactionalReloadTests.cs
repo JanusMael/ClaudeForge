@@ -44,16 +44,16 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// <c>[Ignore]</c>d with the diagnosis rather than deleted or weakened.
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class TransactionalReloadTests
+public sealed class TransactionalReloadTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public TransactionalReloadTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_h1_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -73,8 +73,7 @@ public sealed class TransactionalReloadTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -88,6 +87,12 @@ public sealed class TransactionalReloadTests
         {
             /* best effort — file-system indexer may hold transient locks */
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private string CcSettingsPath => Path.Combine(_sandbox, ".claude", "settings.json");
@@ -107,7 +112,7 @@ public sealed class TransactionalReloadTests
 
     // ── H-1 contract tests ─────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAllWorkspacesAsync_ValidReload_SwapsSdkClients()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -121,26 +126,26 @@ public sealed class TransactionalReloadTests
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? firstCc = vm.ClaudeCodeSdk;
             AgentConfigClientCore? firstDt = vm.ClaudeDesktopSdk;
-            Assert.IsNotNull(firstCc);
-            Assert.IsNotNull(firstDt);
+            Assert.NotNull(firstCc);
+            Assert.NotNull(firstDt);
 
             // Mutate the file (still valid JSON) and reload.
             await File.WriteAllTextAsync(CcSettingsPath, """{"model":"sonnet"}""");
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.IsNotNull(vm.ClaudeCodeSdk);
-            Assert.IsNotNull(vm.ClaudeDesktopSdk);
-            Assert.AreNotSame(firstCc, vm.ClaudeCodeSdk,
+            Assert.NotNull(vm.ClaudeCodeSdk);
+            Assert.NotNull(vm.ClaudeDesktopSdk);
+            MessageAssert.NotSame(firstCc, vm.ClaudeCodeSdk,
                 "Valid reload must produce a fresh CC SDK client.");
-            Assert.AreNotSame(firstDt, vm.ClaudeDesktopSdk,
+            MessageAssert.NotSame(firstDt, vm.ClaudeDesktopSdk,
                 "Valid reload must produce a fresh DT SDK client.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAllWorkspacesAsync_MalformedJson_KeepsExistingWorkspace()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -150,8 +155,8 @@ public sealed class TransactionalReloadTests
             await vm.LoadAllWorkspacesAsync();
             AgentConfigClientCore? origCc = vm.ClaudeCodeSdk;
             AgentConfigClientCore? origDt = vm.ClaudeDesktopSdk;
-            Assert.IsNotNull(origCc);
-            Assert.IsNotNull(origDt);
+            Assert.NotNull(origCc);
+            Assert.NotNull(origDt);
 
             // Simulate the external-editor truncate-then-rewrite race:
             // settings.json is briefly invalid JSON.  A file-watcher fire
@@ -166,22 +171,22 @@ public sealed class TransactionalReloadTests
             // ClaudeCodeSdk would have been disposed and replaced
             // with a fresh (empty) client — origCc would no longer be the
             // same reference.
-            Assert.AreSame(origCc, vm.ClaudeCodeSdk,
+            MessageAssert.Same(origCc, vm.ClaudeCodeSdk,
                 "Malformed JSON parse must NOT replace the in-memory CC SDK.");
-            Assert.AreSame(origDt, vm.ClaudeDesktopSdk,
+            MessageAssert.Same(origDt, vm.ClaudeDesktopSdk,
                 "Malformed JSON parse must NOT replace the in-memory DT SDK either.");
 
             // Verify the user-facing status message reflects the failure.
-            Assert.IsNotNull(vm.StatusMessage);
-            StringAssert.Contains(vm.StatusMessage!, "settings.json",
+            Assert.NotNull(vm.StatusMessage);
+            MessageAssert.Contains("settings.json", vm.StatusMessage!,
                 "StatusMessage should name the offending file.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task LoadAllWorkspacesAsync_OneProductValidOneMalformed_KeepsBoth()
     {
         bool ran = await Session.Dispatch(async () =>
@@ -201,14 +206,14 @@ public sealed class TransactionalReloadTests
 
             await vm.LoadAllWorkspacesAsync();
 
-            Assert.AreSame(origCc, vm.ClaudeCodeSdk,
+            MessageAssert.Same(origCc, vm.ClaudeCodeSdk,
                 "Even though CC is valid, DT's parse failure must roll back the swap.");
-            Assert.AreSame(origDt, vm.ClaudeDesktopSdk,
+            MessageAssert.Same(origDt, vm.ClaudeDesktopSdk,
                 "DT must stay at its existing SDK reference.");
             return true;
         }, CancellationToken.None);
 
-        Assert.IsTrue(ran);
+        Assert.True(ran);
     }
 
     // ── Test doubles ────────────────────────────────────────────────────

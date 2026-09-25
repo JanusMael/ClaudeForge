@@ -24,21 +24,20 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 ///         the same tag does NOT duplicate-add.</item>
 /// </list>
 /// </summary>
-[TestClass]
-public sealed class UpdateBannerViewModelTests
+public sealed class UpdateBannerViewModelTests : IDisposable
 {
     private string _sandbox = null!;
 
-    [TestInitialize]
-    public void Init()
+    public UpdateBannerViewModelTests() => Init();
+
+    private void Init()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_updatebanner_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
         PlatformPaths.TestUserProfileOverride = _sandbox;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_sandbox))
@@ -48,32 +47,38 @@ public sealed class UpdateBannerViewModelTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     // ── Default state ───────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Default_State_HasBannerHidden()
     {
         UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
 
-        Assert.IsFalse(vm.IsVisible, "Banner must default to hidden.");
-        Assert.IsNull(vm.LatestTagName);
-        Assert.IsNull(vm.ReleaseUrl);
-        Assert.IsFalse(vm.HasReleaseUrl);
+        Assert.False(vm.IsVisible, "Banner must default to hidden.");
+        Assert.Null(vm.LatestTagName);
+        Assert.Null(vm.ReleaseUrl);
+        Assert.False(vm.HasReleaseUrl);
     }
 
     // ── ApplyResult contracts ───────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ApplyResult_NoUpdate_LeavesBannerHidden()
     {
         UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
         vm.ApplyResult(UpdateCheckResult.NoUpdate());
 
-        Assert.IsFalse(vm.IsVisible);
-        Assert.IsNull(vm.LatestTagName);
+        Assert.False(vm.IsVisible);
+        Assert.Null(vm.LatestTagName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyResult_UpdateAvailable_NotDismissed_SurfacesBanner()
     {
         UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
@@ -82,15 +87,15 @@ public sealed class UpdateBannerViewModelTests
             new Version(2, 0, 0),
             "https://github.com/x/y/releases/tag/v2.0.0"));
 
-        Assert.IsTrue(vm.IsVisible,
+        Assert.True(vm.IsVisible,
             "Banner must surface when a tagged update is available and not previously dismissed.");
-        Assert.AreEqual("v2.0.0", vm.LatestTagName);
-        Assert.AreEqual("https://github.com/x/y/releases/tag/v2.0.0", vm.ReleaseUrl);
-        Assert.IsTrue(vm.HasReleaseUrl,
+        Assert.Equal("v2.0.0", vm.LatestTagName);
+        Assert.Equal("https://github.com/x/y/releases/tag/v2.0.0", vm.ReleaseUrl);
+        Assert.True(vm.HasReleaseUrl,
             "HasReleaseUrl must reflect the populated URL — bound to the View's HyperlinkButton IsVisible.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyResult_UpdateAvailable_NoReleaseUrl_SurfacesBannerWithoutLinkButton()
     {
         UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
@@ -99,14 +104,14 @@ public sealed class UpdateBannerViewModelTests
             new Version(2, 0, 0),
             releaseUrl: null));
 
-        Assert.IsTrue(vm.IsVisible,
+        Assert.True(vm.IsVisible,
             "Missing html_url must not block the banner — the user still needs to know about the update.");
-        Assert.IsNull(vm.ReleaseUrl);
-        Assert.IsFalse(vm.HasReleaseUrl,
+        Assert.Null(vm.ReleaseUrl);
+        Assert.False(vm.HasReleaseUrl,
             "HasReleaseUrl=false drives the HyperlinkButton's IsVisible binding — button hides cleanly.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyResult_TagAlreadyDismissed_SuppressesBanner()
     {
         // Seed the persisted dismiss list with the tag we're about to apply.
@@ -119,12 +124,12 @@ public sealed class UpdateBannerViewModelTests
             new Version(2, 0, 0),
             "https://github.com/x/y/releases/tag/v2.0.0"));
 
-        Assert.IsFalse(vm.IsVisible,
+        Assert.False(vm.IsVisible,
             "Banner must stay hidden when the tag is in the persisted dismiss list — " +
             "per-version dismiss contract.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyResult_NewerTagThanDismissed_StillSurfaces()
     {
         // User dismissed v1.0.0 earlier; v2.0.0 is now available.
@@ -138,12 +143,12 @@ public sealed class UpdateBannerViewModelTests
             new Version(2, 0, 0),
             "https://github.com/x/y/releases/tag/v2.0.0"));
 
-        Assert.IsTrue(vm.IsVisible,
+        Assert.True(vm.IsVisible,
             "A NEWER tag than the dismissed one must surface — dismiss is per-version, not 'dismiss forever'.");
-        Assert.AreEqual("v2.0.0", vm.LatestTagName);
+        Assert.Equal("v2.0.0", vm.LatestTagName);
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyResult_EmptyTagName_LeavesBannerHidden()
     {
         // Defensive: an UpdateAvailable result with empty tag (shouldn't
@@ -156,13 +161,13 @@ public sealed class UpdateBannerViewModelTests
             LatestVersion: new Version(2, 0, 0),
             ReleaseUrl: "https://x"));
 
-        Assert.IsFalse(vm.IsVisible,
+        Assert.False(vm.IsVisible,
             "Empty tag must not surface a banner — we'd have no value to render in the title.");
     }
 
     // ── Dismiss contracts ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_HidesBannerAndPersistsTag()
     {
         UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
@@ -170,18 +175,18 @@ public sealed class UpdateBannerViewModelTests
             "v2.0.0",
             new Version(2, 0, 0),
             "https://github.com/x/y/releases/tag/v2.0.0"));
-        Assert.IsTrue(vm.IsVisible, "Setup: banner must be visible before dismiss.");
+        Assert.True(vm.IsVisible, "Setup: banner must be visible before dismiss.");
 
         vm.DismissCommand.Execute(null);
 
-        Assert.IsFalse(vm.IsVisible, "Dismiss must hide the banner.");
+        Assert.False(vm.IsVisible, "Dismiss must hide the banner.");
 
         WindowState persisted = WindowStateService.Load(ClaudeEnvironment.Empty);
-        CollectionAssert.Contains(persisted.DismissedUpdateVersions, "v2.0.0",
+        MessageAssert.Contains("v2.0.0", persisted.DismissedUpdateVersions,
             "Dismissed tag MUST be persisted so the next launch suppresses the banner for this version.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_TagAlreadyInList_DoesNotDuplicate()
     {
         // Seed with the tag already dismissed (could happen via an
@@ -200,11 +205,11 @@ public sealed class UpdateBannerViewModelTests
         vm.DismissCommand.Execute(null);
 
         WindowState persisted = WindowStateService.Load(ClaudeEnvironment.Empty);
-        Assert.AreEqual(1, persisted.DismissedUpdateVersions.Count(t => t == "v2.0.0"),
+        MessageAssert.Equal(1, persisted.DismissedUpdateVersions.Count(t => t == "v2.0.0"),
             "Dismiss must be idempotent — the tag must appear exactly once in the list.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_WithNullTagName_JustHidesBanner_NoPersistenceChange()
     {
         // Defensive: banner is normally hidden when LatestTagName is
@@ -214,15 +219,15 @@ public sealed class UpdateBannerViewModelTests
 
         vm.DismissCommand.Execute(null);
 
-        Assert.IsFalse(vm.IsVisible);
+        Assert.False(vm.IsVisible);
         WindowState persisted = WindowStateService.Load(ClaudeEnvironment.Empty);
-        Assert.AreEqual(0, persisted.DismissedUpdateVersions.Count,
+        MessageAssert.Equal(0, persisted.DismissedUpdateVersions.Count,
             "Dismissing with no tag must not pollute the persisted list with empty / null entries.");
     }
 
     // ── Dismissed event (stops the host's periodic re-check loop) ────────
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_RaisesDismissedEvent_SoHostCanStopRecheckTimer()
     {
         UpdateBannerViewModel vm = new(ClaudeEnvironment.Empty);
@@ -230,19 +235,19 @@ public sealed class UpdateBannerViewModelTests
             "v2.0.0",
             new Version(2, 0, 0),
             "https://github.com/x/y/releases/tag/v2.0.0"));
-        Assert.IsTrue(vm.IsVisible, "Setup: banner must be visible before dismiss.");
+        Assert.True(vm.IsVisible, "Setup: banner must be visible before dismiss.");
 
         int raised = 0;
         vm.Dismissed += (_, _) => raised++;
 
         vm.DismissCommand.Execute(null);
 
-        Assert.AreEqual(1, raised,
+        MessageAssert.Equal(1, raised,
             "A genuine dismiss MUST raise Dismissed exactly once so MainWindowViewModel stops the " +
             "4-hourly re-check loop.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Dismiss_WithNullTagName_DoesNotRaiseDismissedEvent()
     {
         // The defensive null-tag hide is not a genuine dismiss — it must not
@@ -253,7 +258,7 @@ public sealed class UpdateBannerViewModelTests
 
         vm.DismissCommand.Execute(null);
 
-        Assert.IsFalse(raised,
+        Assert.False(raised,
             "The null-tag defensive hide must NOT raise Dismissed — no real banner was dismissed, so " +
             "the periodic loop should keep running.");
     }

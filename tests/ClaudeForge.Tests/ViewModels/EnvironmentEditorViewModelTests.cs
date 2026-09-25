@@ -57,7 +57,6 @@ internal sealed class FakeEnvironmentProvider : IEnvironmentProvider
 // Tests
 // ---------------------------------------------------------------------------
 
-[TestClass]
 public class EnvironmentEditorViewModelTests
 {
     private static SettingsWorkspace MakeWorkspace(string userJson = "{}")
@@ -85,7 +84,7 @@ public class EnvironmentEditorViewModelTests
     // Refresh / AllEntries
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Refresh_PopulatesEntriesFromAllLayers()
     {
         // EnvironmentEditorViewModel.Refresh only consults the provider's
@@ -97,7 +96,7 @@ public class EnvironmentEditorViewModelTests
         // platforms.  Skip rather than assert.
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Machine-scope env vars are Windows-only — production code skips them on macOS/Linux.");
+            Assert.Skip("Machine-scope env vars are Windows-only — production code skips them on macOS/Linux.");
         }
 
         FakeEnvironmentProvider provider = new();
@@ -108,12 +107,12 @@ public class EnvironmentEditorViewModelTests
         EnvironmentEditorViewModel vm = new(provider, null);
 
         HashSet<string> names = vm.AllEntries.Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        Assert.IsTrue(names.Contains("MACHINE_VAR"), "MACHINE_VAR expected");
-        Assert.IsTrue(names.Contains("USER_VAR"), "USER_VAR expected");
-        Assert.IsTrue(names.Contains("PATH"), "PATH expected");
+        Assert.True(names.Contains("MACHINE_VAR"), "MACHINE_VAR expected");
+        Assert.True(names.Contains("USER_VAR"), "USER_VAR expected");
+        Assert.True(names.Contains("PATH"), "PATH expected");
     }
 
-    [TestMethod]
+    [Fact]
     public void Refresh_MergesClaudeEnvFromWorkspace()
     {
         FakeEnvironmentProvider provider = new();
@@ -123,15 +122,15 @@ public class EnvironmentEditorViewModelTests
 
         EnvVarEntry? entry = vm.AllEntries.FirstOrDefault(e =>
             string.Equals(e.Name, "ANTHROPIC_API_KEY", StringComparison.OrdinalIgnoreCase));
-        Assert.IsNotNull(entry);
-        Assert.AreEqual("sk-test", entry.ClaudeValue);
+        Assert.NotNull(entry);
+        Assert.Equal("sk-test", entry.ClaudeValue);
     }
 
     // -----------------------------------------------------------------------
     // Priority: Process > Claude > User > Machine
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void EffectiveValue_ProcessWinsOverAll()
     {
         FakeEnvironmentProvider provider = new();
@@ -143,11 +142,11 @@ public class EnvironmentEditorViewModelTests
         EnvironmentEditorViewModel vm = new(provider, client);
 
         EnvVarEntry entry = vm.AllEntries.First(e => e.Name.Equals("PATH", StringComparison.OrdinalIgnoreCase));
-        Assert.AreEqual("process-path", entry.EffectiveValue);
-        Assert.AreEqual("Process", entry.EffectiveSource);
+        Assert.Equal("process-path", entry.EffectiveValue);
+        Assert.Equal("Process", entry.EffectiveSource);
     }
 
-    [TestMethod]
+    [Fact]
     public void EffectiveValue_ClaudeWinsOverUserAndMachine()
     {
         FakeEnvironmentProvider provider = new();
@@ -158,15 +157,15 @@ public class EnvironmentEditorViewModelTests
         EnvironmentEditorViewModel vm = new(provider, client);
 
         EnvVarEntry entry = vm.AllEntries.First(e => e.Name.Equals("MY_VAR", StringComparison.OrdinalIgnoreCase));
-        Assert.AreEqual("claude-val", entry.EffectiveValue);
-        Assert.AreEqual("Claude", entry.EffectiveSource);
+        Assert.Equal("claude-val", entry.EffectiveValue);
+        Assert.Equal("Claude", entry.EffectiveSource);
     }
 
     // -----------------------------------------------------------------------
     // IsOverridden
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void IsOverridden_TrueWhenMultipleLayersDefineVar()
     {
         // Machine + User layer overlap requires Machine to be readable.
@@ -175,7 +174,7 @@ public class EnvironmentEditorViewModelTests
         // override condition can't be observed on Linux / macOS.
         if (!OperatingSystem.IsWindows())
         {
-            Assert.Inconclusive("Machine-scope env vars are Windows-only — production code skips them on macOS/Linux.");
+            Assert.Skip("Machine-scope env vars are Windows-only — production code skips them on macOS/Linux.");
         }
 
         FakeEnvironmentProvider provider = new();
@@ -184,10 +183,10 @@ public class EnvironmentEditorViewModelTests
 
         EnvironmentEditorViewModel vm = new(provider, null);
         EnvVarEntry entry = vm.AllEntries.First(e => e.Name.Equals("CLAUDE_MODEL", StringComparison.OrdinalIgnoreCase));
-        Assert.IsTrue(entry.IsOverridden);
+        Assert.True(entry.IsOverridden);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsOverridden_FalseWhenOnlyOneLayer()
     {
         FakeEnvironmentProvider provider = new();
@@ -195,14 +194,14 @@ public class EnvironmentEditorViewModelTests
 
         EnvironmentEditorViewModel vm = new(provider, null);
         EnvVarEntry entry = vm.AllEntries.First(e => e.Name.Equals("UNIQUE_VAR", StringComparison.OrdinalIgnoreCase));
-        Assert.IsFalse(entry.IsOverridden);
+        Assert.False(entry.IsOverridden);
     }
 
     // -----------------------------------------------------------------------
     // FilteredEntries — allowlist + ShowAll + text filter
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void FilteredEntries_AllowlistFiltersOutObscureVars()
     {
         FakeEnvironmentProvider provider = new();
@@ -213,13 +212,13 @@ public class EnvironmentEditorViewModelTests
         // ShowAll is false by default
         List<string> names = vm.FilteredEntries.Select(e => e.Name).ToList();
 
-        Assert.IsTrue(names.Any(n => n.Equals("PATH", StringComparison.OrdinalIgnoreCase)),
+        Assert.True(names.Any(n => n.Equals("PATH", StringComparison.OrdinalIgnoreCase)),
             "PATH should be visible in allowlist mode");
-        Assert.IsFalse(names.Any(n => n.Equals("OBSCURE_ZZZZ", StringComparison.OrdinalIgnoreCase)),
+        Assert.False(names.Any(n => n.Equals("OBSCURE_ZZZZ", StringComparison.OrdinalIgnoreCase)),
             "OBSCURE_ZZZZ should be hidden in allowlist mode");
     }
 
-    [TestMethod]
+    [Fact]
     public void FilteredEntries_ShowAllExposesEverything()
     {
         FakeEnvironmentProvider provider = new();
@@ -228,10 +227,10 @@ public class EnvironmentEditorViewModelTests
         EnvironmentEditorViewModel vm = new(provider, null) { ShowAll = true };
 
         List<string> names = vm.FilteredEntries.Select(e => e.Name).ToList();
-        Assert.IsTrue(names.Any(n => n.Equals("OBSCURE_ZZZZ", StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains(names, n => n.Equals("OBSCURE_ZZZZ", StringComparison.OrdinalIgnoreCase));
     }
 
-    [TestMethod]
+    [Fact]
     public void FilteredEntries_TextFilterNarrowsResults()
     {
         FakeEnvironmentProvider provider = new();
@@ -245,15 +244,15 @@ public class EnvironmentEditorViewModelTests
         };
 
         List<string> names = vm.FilteredEntries.Select(e => e.Name).ToList();
-        Assert.IsTrue(names.Any(n => n.Contains("CLAUDE", StringComparison.OrdinalIgnoreCase)));
-        Assert.IsFalse(names.Any(n => n.Equals("ANTHROPIC_KEY", StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains(names, n => n.Contains("CLAUDE", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(names, n => n.Equals("ANTHROPIC_KEY", StringComparison.OrdinalIgnoreCase));
     }
 
     // -----------------------------------------------------------------------
     // SaveEdit → writes to Claude workspace
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void SaveEdit_ConfigScopeAdapter_WritesToWorkspace()
     {
         FakeEnvironmentProvider provider = new();
@@ -271,15 +270,15 @@ public class EnvironmentEditorViewModelTests
         // Workspace should now have env.PATH = "/custom/bin" in the User doc
         LayeredValue layered = client.GetLayeredValueSnapshot("env");
         JsonObject? envObj = layered.GetValueAt(ConfigScope.User) as JsonObject;
-        Assert.IsNotNull(envObj);
-        Assert.AreEqual("/custom/bin", envObj["PATH"]?.GetValue<string>());
+        Assert.NotNull(envObj);
+        Assert.Equal("/custom/bin", envObj["PATH"]?.GetValue<string>());
     }
 
     // -----------------------------------------------------------------------
     // RemoveFromScope → clears the variable from Claude env
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void RemoveFromScope_ConfigScopeAdapter_RemovesFromWorkspace()
     {
         FakeEnvironmentProvider provider = new();
@@ -295,14 +294,14 @@ public class EnvironmentEditorViewModelTests
         LayeredValue layered = client.GetLayeredValueSnapshot("env");
         // env object at user scope should be empty or gone
         JsonObject? envObj = layered.GetValueAt(ConfigScope.User) as JsonObject;
-        Assert.IsTrue(envObj == null || !envObj.ContainsKey("MY_KEY"));
+        Assert.True(envObj == null || !envObj.ContainsKey("MY_KEY"));
     }
 
     // -----------------------------------------------------------------------
     // AddNew — adds entry and selects it
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void AddNew_ConfigScopeAdapter_AddsEntryAndSelectsIt()
     {
         FakeEnvironmentProvider provider = new();
@@ -315,21 +314,21 @@ public class EnvironmentEditorViewModelTests
 
         vm.AddNewCommand.Execute(null);
 
-        Assert.IsNotNull(vm.SelectedEntry);
-        Assert.AreEqual("MY_NEW_VAR", vm.SelectedEntry.Name, ignoreCase: true,
-            message: "Newly added entry should be selected");
+        Assert.NotNull(vm.SelectedEntry);
+        MessageAssert.Equal("MY_NEW_VAR", vm.SelectedEntry.Name, true,
+            "Newly added entry should be selected");
 
         LayeredValue layered = client.GetLayeredValueSnapshot("env");
         JsonObject? envObj = layered.GetValueAt(ConfigScope.User) as JsonObject;
-        Assert.IsNotNull(envObj);
-        Assert.IsTrue(envObj.ContainsKey("MY_NEW_VAR"));
+        Assert.NotNull(envObj);
+        Assert.True(envObj.ContainsKey("MY_NEW_VAR"));
     }
 
     // -----------------------------------------------------------------------
     // SyncEditValue — detail pane updates when selection changes
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void SyncEditValue_ShowsClaudeValueWhenScopeIsClaudeAndEntryHasClaudeValue()
     {
         FakeEnvironmentProvider provider = new();
@@ -340,10 +339,10 @@ public class EnvironmentEditorViewModelTests
         vm.SelectedEntry = vm.AllEntries.First(e =>
             e.Name.Equals("ANTHROPIC_API_KEY", StringComparison.OrdinalIgnoreCase));
 
-        Assert.AreEqual("sk-abc", vm.EditValue);
+        Assert.Equal("sk-abc", vm.EditValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void SyncEditValue_ClearsEditValueWhenNothingSelected()
     {
         FakeEnvironmentProvider provider = new();
@@ -351,25 +350,25 @@ public class EnvironmentEditorViewModelTests
 
         vm.SelectedEntry = null;
 
-        Assert.IsNull(vm.EditValue);
+        Assert.Null(vm.EditValue);
     }
 
     // ── Suggested environment variables ───────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SuggestedEnvVars_AppearInAllEntries_WhenNotAlreadyPresent()
     {
         FakeEnvironmentProvider provider = new();
         EnvironmentEditorViewModel vm = new(provider, null,
             suggestedEnvVarNames: ["CLAUDE_CODE_TIMEOUT_MS", "ANTHROPIC_BASE_URL"]);
 
-        Assert.IsTrue(vm.AllEntries.Any(e => e.Name == "CLAUDE_CODE_TIMEOUT_MS"),
+        Assert.True(vm.AllEntries.Any(e => e.Name == "CLAUDE_CODE_TIMEOUT_MS"),
             "Suggested var must appear in AllEntries.");
-        Assert.IsTrue(vm.AllEntries.Any(e => e.Name == "ANTHROPIC_BASE_URL"),
+        Assert.True(vm.AllEntries.Any(e => e.Name == "ANTHROPIC_BASE_URL"),
             "Suggested var must appear in AllEntries.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SuggestedEnvVars_AreMarked_IsFromSuggestion()
     {
         FakeEnvironmentProvider provider = new();
@@ -377,11 +376,11 @@ public class EnvironmentEditorViewModelTests
             suggestedEnvVarNames: ["CLAUDE_CODE_TIMEOUT_MS"]);
 
         EnvVarEntry entry = vm.AllEntries.Single(e => e.Name == "CLAUDE_CODE_TIMEOUT_MS");
-        Assert.IsTrue(entry.IsFromSuggestion);
-        Assert.IsNull(entry.EffectiveValue, "Suggested-only var has no effective value.");
+        Assert.True(entry.IsFromSuggestion);
+        MessageAssert.Null(entry.EffectiveValue, "Suggested-only var has no effective value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SuggestedEnvVars_NotDuplicated_WhenAlreadyInEnvironment()
     {
         FakeEnvironmentProvider provider = new();
@@ -392,12 +391,12 @@ public class EnvironmentEditorViewModelTests
         // Should appear exactly once, and IsFromSuggestion should be false
         // (the real value from Process takes precedence).
         List<EnvVarEntry> entries = vm.AllEntries.Where(e => e.Name == "CLAUDE_CODE_TIMEOUT_MS").ToList();
-        Assert.AreEqual(1, entries.Count, "Must not be duplicated.");
-        Assert.IsFalse(entries[0].IsFromSuggestion,
+        MessageAssert.Equal(1, entries.Count, "Must not be duplicated.");
+        Assert.False(entries[0].IsFromSuggestion,
             "Entry already present in environment must not be flagged as suggestion.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SuggestedEnvVars_ShownInFilteredEntries_EvenWhenShowAllFalse()
     {
         FakeEnvironmentProvider provider = new();
@@ -407,7 +406,7 @@ public class EnvironmentEditorViewModelTests
         vm.ShowAll = false;
 
         // Suggested vars should be visible regardless of the ShowAll flag.
-        Assert.IsTrue(vm.FilteredEntries.Any(e => e.Name == "CLAUDE_CODE_TIMEOUT_MS"),
+        Assert.True(vm.FilteredEntries.Any(e => e.Name == "CLAUDE_CODE_TIMEOUT_MS"),
             "Suggested vars must appear in FilteredEntries even when ShowAll=false.");
     }
 
@@ -429,7 +428,7 @@ public class EnvironmentEditorViewModelTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void ApplyValue_WhenSetVariableThrowsUnauthorized_SetsStatusMessageAndDoesNotThrow()
     {
         ThrowingEnvironmentProvider provider = new();
@@ -442,12 +441,12 @@ public class EnvironmentEditorViewModelTests
 
         vm.SaveEditCommand.Execute(null);
 
-        Assert.IsNotNull(vm.StatusMessage, "StatusMessage should be set after access denied.");
-        Assert.IsTrue(vm.StatusMessage!.Contains("Access denied"),
+        MessageAssert.NotNull(vm.StatusMessage, "StatusMessage should be set after access denied.");
+        Assert.True(vm.StatusMessage!.Contains("Access denied"),
             $"StatusMessage should contain 'Access denied' but was: {vm.StatusMessage}");
     }
 
-    [TestMethod]
+    [Fact]
     public void NewEnvKey_WithSpacesInKey_SetsNewVarNameIsValidFalse()
     {
         FakeEnvironmentProvider provider = new();
@@ -455,11 +454,11 @@ public class EnvironmentEditorViewModelTests
 
         vm.NewVarName = "MY VAR";
 
-        Assert.IsFalse(vm.NewVarNameIsValid,
+        Assert.False(vm.NewVarNameIsValid,
             "A key containing spaces should be flagged as invalid.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NewEnvKey_ValidName_SetsNewVarNameIsValidTrue()
     {
         FakeEnvironmentProvider provider = new();
@@ -467,11 +466,11 @@ public class EnvironmentEditorViewModelTests
 
         vm.NewVarName = "VALID_VAR_123";
 
-        Assert.IsTrue(vm.NewVarNameIsValid,
+        Assert.True(vm.NewVarNameIsValid,
             "A well-formed env-var name should be flagged as valid.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NewEnvKey_EmptyString_NewVarNameIsValidTrue()
     {
         FakeEnvironmentProvider provider = new();
@@ -479,7 +478,7 @@ public class EnvironmentEditorViewModelTests
 
         vm.NewVarName = string.Empty;
 
-        Assert.IsTrue(vm.NewVarNameIsValid,
+        Assert.True(vm.NewVarNameIsValid,
             "An empty name (not yet typed) should be treated as valid/unset.");
     }
 }

@@ -17,7 +17,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// findings in this refactor, so the multi-source case is asserted here deliberately.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class SaveDialogBuilderTests
 {
     private static SaveDialogText Text => ClaudeSaveDialogText.Create();
@@ -37,32 +36,32 @@ public sealed class SaveDialogBuilderTests
         return client;
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_NothingDirty_ReturnsNull()
     {
-        Assert.IsNull(SaveDialogBuilder.Build([new DirtySource(MakeClient(), "Claude Code")], Text),
+        MessageAssert.Null(SaveDialogBuilder.Build([new DirtySource(MakeClient(), "Claude Code")], Text),
             "A save with no content difference must not raise a dialog at all.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_OneChange_ProducesOneSectionCarryingTheDiff()
     {
         SaveChangesDialogViewModel? dlg =
             SaveDialogBuilder.Build([new DirtySource(DirtyClient(), "Claude Code")], Text);
 
-        Assert.IsNotNull(dlg);
-        Assert.AreEqual(1, dlg!.Sections.Count);
-        Assert.AreEqual("Claude Code", dlg.Sections[0].WorkspaceName,
+        Assert.NotNull(dlg);
+        Assert.Single(dlg!.Sections);
+        MessageAssert.Equal("Claude Code", dlg.Sections[0].WorkspaceName,
             "The section is grouped under the name the caller paired with the client.");
-        Assert.AreEqual("user", dlg.Sections[0].ScopeText);
-        Assert.IsTrue(dlg.Sections[0].Entries.Any(e => e.Key == "model"));
+        Assert.Equal("user", dlg.Sections[0].ScopeText);
+        Assert.Contains(dlg.Sections[0].Entries, e => e.Key == "model");
     }
 
     /// <summary>
     /// The multi-source case. Every other fixture in the suite builds one client, so
     /// a builder that stopped after the first source would look perfectly healthy.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Build_TwoSources_ProducesASectionForEachInOrder()
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
@@ -72,14 +71,14 @@ public sealed class SaveDialogBuilderTests
             ],
             Text);
 
-        Assert.IsNotNull(dlg);
-        CollectionAssert.AreEqual(
+        Assert.NotNull(dlg);
+        MessageAssert.SequenceEqual(
             new[] { "First Product", "Second Product" },
             dlg!.Sections.Select(s => s.WorkspaceName).ToArray(),
             "Both sources must contribute, in the order they were handed over.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_SkipsASourceWhoseDocumentsHaveNoRealDiff()
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
@@ -89,38 +88,38 @@ public sealed class SaveDialogBuilderTests
             ],
             Text);
 
-        Assert.IsNotNull(dlg);
-        CollectionAssert.AreEqual(
+        Assert.NotNull(dlg);
+        MessageAssert.SequenceEqual(
             new[] { "Dirty Product" },
             dlg!.Sections.Select(s => s.WorkspaceName).ToArray(),
             "A source with nothing to write must not contribute an empty section.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_RestoreContext_SwitchesModeAndEveryPieceOfWordingWithIt()
     {
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
             [new DirtySource(DirtyClient(), "Claude Code")], Text, isRestoreContext: true);
 
-        Assert.IsNotNull(dlg);
-        Assert.AreEqual(SaveDialogMode.Restore, dlg!.Mode);
-        Assert.AreEqual(Text.WillBeRestoredTo, dlg.ActionVerb);
-        Assert.AreEqual(Text.WillBeRestoredTo, dlg.Sections[0].ActionVerb,
+        Assert.NotNull(dlg);
+        Assert.Equal(SaveDialogMode.Restore, dlg!.Mode);
+        Assert.Equal(Text.WillBeRestoredTo, dlg.ActionVerb);
+        MessageAssert.Equal(Text.WillBeRestoredTo, dlg.Sections[0].ActionVerb,
             "The section carries the verb too, so it renders without reaching back to the dialog.");
-        Assert.AreEqual(Text.RestoreTitle, dlg.WindowTitle);
-        Assert.AreEqual(Text.RestoreConfirmButton, dlg.ConfirmButtonLabel);
+        Assert.Equal(Text.RestoreTitle, dlg.WindowTitle);
+        Assert.Equal(Text.RestoreConfirmButton, dlg.ConfirmButtonLabel);
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_SaveContext_UsesTheSaveWording()
     {
         SaveChangesDialogViewModel? dlg =
             SaveDialogBuilder.Build([new DirtySource(DirtyClient(), "Claude Code")], Text);
 
-        Assert.IsNotNull(dlg);
-        Assert.AreEqual(SaveDialogMode.Save, dlg!.Mode);
-        Assert.AreEqual(Text.WillBeWrittenTo, dlg.Sections[0].ActionVerb);
-        Assert.AreEqual(Text.SaveTitle, dlg.WindowTitle);
+        Assert.NotNull(dlg);
+        Assert.Equal(SaveDialogMode.Save, dlg!.Mode);
+        Assert.Equal(Text.WillBeWrittenTo, dlg.Sections[0].ActionVerb);
+        Assert.Equal(Text.SaveTitle, dlg.WindowTitle);
     }
 
     /// <summary>
@@ -134,7 +133,7 @@ public sealed class SaveDialogBuilderTests
     /// derived from what it is checking cannot detect that thing moving.
     /// </para>
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Build_GivesEveryEntryTheAccessibleNameForItsOwnKind()
     {
         // A baseline that already has the key makes the edit a Modified rather than
@@ -150,42 +149,42 @@ public sealed class SaveDialogBuilderTests
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
             [new DirtySource(DirtyClient("outputStyle", "concise"), "Added"), new DirtySource(modified, "Modified")], Text);
 
-        Assert.IsNotNull(dlg);
+        Assert.NotNull(dlg);
         List<SaveChangeEntryViewModel> entries = dlg!.Sections.SelectMany(s => s.Entries).ToList();
-        Assert.IsTrue(entries.Count > 0, "Precondition: there is at least one entry.");
+        Assert.True(entries.Count > 0, "Precondition: there is at least one entry.");
 
         bool sawAdded = false;
         bool sawModified = false;
         foreach (SaveChangeEntryViewModel e in entries)
         {
-            Assert.IsFalse(string.IsNullOrWhiteSpace(e.KindAccessibleName),
+            Assert.False(string.IsNullOrWhiteSpace(e.KindAccessibleName),
                 $"Entry '{e.Key}' has no screen-reader name for its change pill.");
 
             switch (e.Kind)
             {
                 case ChangeKind.Added:
-                    Assert.AreEqual(Text.KindAdded, e.KindAccessibleName);
+                    Assert.Equal(Text.KindAdded, e.KindAccessibleName);
                     sawAdded = true;
                     break;
                 case ChangeKind.Removed:
-                    Assert.AreEqual(Text.KindRemoved, e.KindAccessibleName);
+                    Assert.Equal(Text.KindRemoved, e.KindAccessibleName);
                     break;
                 default:
-                    Assert.AreEqual(Text.KindModified, e.KindAccessibleName);
+                    Assert.Equal(Text.KindModified, e.KindAccessibleName);
                     sawModified = true;
                     break;
             }
         }
 
-        Assert.IsTrue(sawAdded, "Precondition: the fixture produced an added change.");
-        Assert.IsTrue(sawModified, "Precondition: the fixture produced a modified change.");
+        Assert.True(sawAdded, "Precondition: the fixture produced an added change.");
+        Assert.True(sawModified, "Precondition: the fixture produced a modified change.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_ShortensPathsUnderTheHomeDirectory_AndLeavesOthersAlone()
     {
         string home = PlatformPaths.UserProfile;
-        Assert.IsFalse(string.IsNullOrEmpty(home), "Precondition: a home directory is resolvable.");
+        Assert.False(string.IsNullOrEmpty(home), "Precondition: a home directory is resolvable.");
 
         AgentConfigClientCore inside = MakeClient(Path.Combine(home, ".claude", "settings.json"));
         inside.SetValue("model", "opus");
@@ -197,19 +196,19 @@ public sealed class SaveDialogBuilderTests
         SaveChangesDialogViewModel? dlg = SaveDialogBuilder.Build(
             [new DirtySource(inside, "Inside"), new DirtySource(outside, "Outside")], Text);
 
-        Assert.IsNotNull(dlg);
+        Assert.NotNull(dlg);
         string insidePath = dlg!.Sections.Single(s => s.WorkspaceName == "Inside").FilePath;
         string outsidePath = dlg.Sections.Single(s => s.WorkspaceName == "Outside").FilePath;
 
-        Assert.IsTrue(insidePath.StartsWith('~'),
+        Assert.True(insidePath.StartsWith('~'),
             $"A path under the home directory is shown with a leading '~'; got '{insidePath}'.");
-        Assert.IsFalse(insidePath.Contains('\\'),
+        Assert.False(insidePath.Contains('\\'),
             "Separators are normalised to '/' so the display matches the scope-legend table.");
-        Assert.IsFalse(outsidePath.StartsWith('~'),
+        Assert.False(outsidePath.StartsWith('~'),
             $"A path outside the user profile is shown verbatim; got '{outsidePath}'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Build_TruncatesLongValues_ButKeepsTheFullOneForTheTooltip()
     {
         string longValue = new('x', 200);
@@ -219,12 +218,12 @@ public sealed class SaveDialogBuilderTests
         SaveChangesDialogViewModel? dlg =
             SaveDialogBuilder.Build([new DirtySource(client, "Claude Code")], Text);
 
-        Assert.IsNotNull(dlg);
+        Assert.NotNull(dlg);
         SaveChangeEntryViewModel entry = dlg!.Sections[0].Entries.Single(e => e.Key == "model");
 
-        Assert.IsTrue(entry.NewValue!.EndsWith('…'), "The displayed value is truncated.");
-        Assert.IsTrue(entry.NewValue.Length < entry.FullNewValue!.Length,
+        Assert.True(entry.NewValue!.EndsWith('…'), "The displayed value is truncated.");
+        Assert.True(entry.NewValue.Length < entry.FullNewValue!.Length,
             "The untruncated value is kept so the hover tooltip can show all of it.");
-        StringAssert.Contains(entry.FullNewValue, longValue);
+        OrdinalAssert.Contains(longValue, entry.FullNewValue);
     }
 }

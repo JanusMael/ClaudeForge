@@ -23,14 +23,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// <para>
 /// Pattern for adding a new SYNCHRONOUS headless test — the two below:
 /// <code>
-/// [TestMethod]
+/// [Fact]
 /// public Task MyTest() =&gt; Session.Dispatch(() =&gt;
 /// {
 ///     // Now on the headless UI thread.  Construct controls and fire
 ///     // dispatcher work as if you were in a real app.
 ///     var window = new Window { Width = 800, Height = 600 };
 ///     window.Show();
-///     Assert.IsTrue(window.IsVisible);
+///     Assert.True(window.IsVisible);
 ///     window.Close();
 /// }, CancellationToken.None);
 /// </code>
@@ -47,7 +47,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// from the lambda</b> so it binds <c>Dispatch&lt;T&gt;(Func&lt;Task&lt;T&gt;&gt;, …)</c>, which
 /// unwraps properly:
 /// <code>
-/// [TestMethod]
+/// [Fact]
 /// public async Task MyAsyncTest()
 /// {
 ///     string result = await Session.Dispatch(async () =&gt;
@@ -57,7 +57,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 ///         return vm.SomeValue;          // ← the return is what makes this observable
 ///     }, CancellationToken.None);
 ///
-///     Assert.AreEqual("expected", result);
+///     Assert.Equal("expected", result);
 /// }
 /// </code>
 /// <c>Headless/SavePreservationTests.cs</c> is the worked example. Whichever shape you
@@ -65,13 +65,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// actually reports Failed before trusting a green run.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class SampleHeadlessTests
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
-    [TestMethod]
+    [Fact]
     public Task Headless_Dispatcher_RunsActionOnUIThread()
     {
         return Session.Dispatch(() =>
@@ -80,12 +79,12 @@ public sealed class SampleHeadlessTests
             // says so.  This is the canonical "harness is alive" smoke
             // test — a regression on this method means the headless
             // session itself didn't spin up.
-            Assert.IsTrue(Dispatcher.UIThread.CheckAccess(),
+            Assert.True(Dispatcher.UIThread.CheckAccess(),
                 "Action body must execute on the headless UI thread.");
         }, CancellationToken.None);
     }
 
-    [TestMethod]
+    [Fact]
     public Task Headless_Window_LayoutCompletes()
     {
         return Session.Dispatch(() =>
@@ -101,9 +100,9 @@ public sealed class SampleHeadlessTests
             };
             window.Show();
 
-            Assert.AreEqual(400, window.Width);
-            Assert.AreEqual(300, window.Height);
-            Assert.IsTrue(window.IsVisible);
+            Assert.Equal(400, window.Width);
+            Assert.Equal(300, window.Height);
+            Assert.True(window.IsVisible);
 
             window.Close();
         }, CancellationToken.None);

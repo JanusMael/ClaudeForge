@@ -10,12 +10,11 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// lock the collector's dedupe/order contract and the factory's report+notice
 /// wiring (and that a CLASSIFIED shape is neither flagged nor reported).
 /// </summary>
-[TestClass]
 public class UnsupportedShapeTests
 {
     // ── UnsupportedShapeCollector ───────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Collector_DedupesByPath_FirstDisplayNameWins_AndSnapshotIsPathOrdered()
     {
         UnsupportedShapeCollector collector = new();
@@ -24,24 +23,24 @@ public class UnsupportedShapeTests
         collector.Report("a.path", "A-again"); // duplicate path → ignored
 
         IReadOnlyList<UnsupportedShape> snap = collector.Snapshot();
-        Assert.AreEqual(2, snap.Count, "Duplicate paths must be collapsed.");
-        Assert.AreEqual("a.path", snap[0].JsonPath, "Snapshot must be path-ordered.");
-        Assert.AreEqual("A", snap[0].DisplayName, "First display name wins on a duplicate path.");
-        Assert.AreEqual("b.path", snap[1].JsonPath);
+        MessageAssert.Equal(2, snap.Count, "Duplicate paths must be collapsed.");
+        MessageAssert.Equal("a.path", snap[0].JsonPath, "Snapshot must be path-ordered.");
+        MessageAssert.Equal("A", snap[0].DisplayName, "First display name wins on a duplicate path.");
+        Assert.Equal("b.path", snap[1].JsonPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Collector_HasAny_TracksReports()
     {
         UnsupportedShapeCollector collector = new();
-        Assert.IsFalse(collector.HasAny, "Empty collector must report HasAny == false.");
+        Assert.False(collector.HasAny, "Empty collector must report HasAny == false.");
         collector.Report("x", null);
-        Assert.IsTrue(collector.HasAny);
+        Assert.True(collector.HasAny);
     }
 
     // ── DefaultEditorFactory report + per-field notice ──────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Factory_UnclassifiableShape_ReportsToSink_AndTagsEditorWithNotice()
     {
         UnsupportedShapeCollector collector = new();
@@ -53,15 +52,15 @@ public class UnsupportedShapeTests
         SchemaNode weird = new SchemaNode("foo.weird", "weird") { ValueType = SchemaValueType.Complex };
         var editor = factory.Create(weird, ConfigScope.User);
 
-        Assert.AreEqual("JsonRawPropertyEditorViewModel", editor.GetType().Name,
+        MessageAssert.Equal("JsonRawPropertyEditorViewModel", editor.GetType().Name,
             "An unclassifiable shape must fall back to the validated raw-JSON editor.");
-        Assert.IsFalse(string.IsNullOrEmpty(editor.UnsupportedShapeNotice),
+        Assert.False(string.IsNullOrEmpty(editor.UnsupportedShapeNotice),
             "The raw-fallback editor must carry the per-field unsupported-shape notice (drives the warning badge).");
-        Assert.IsTrue(collector.HasAny, "The factory must report the unsupported shape to the sink.");
-        Assert.AreEqual("foo.weird", collector.Snapshot().Single().JsonPath);
+        Assert.True(collector.HasAny, "The factory must report the unsupported shape to the sink.");
+        Assert.Equal("foo.weird", collector.Snapshot().Single().JsonPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Factory_ClassifiableShape_DoesNotReport_AndHasNoNotice()
     {
         UnsupportedShapeCollector collector = new();
@@ -75,12 +74,12 @@ public class UnsupportedShapeTests
         };
         var editor = factory.Create(enumNode, ConfigScope.User);
 
-        Assert.AreEqual("EnumPropertyEditorViewModel", editor.GetType().Name);
-        Assert.IsNull(editor.UnsupportedShapeNotice, "A classified shape must not carry the unsupported-shape notice.");
-        Assert.IsFalse(collector.HasAny, "A classified shape must not be reported as unsupported.");
+        Assert.Equal("EnumPropertyEditorViewModel", editor.GetType().Name);
+        MessageAssert.Null(editor.UnsupportedShapeNotice, "A classified shape must not carry the unsupported-shape notice.");
+        Assert.False(collector.HasAny, "A classified shape must not be reported as unsupported.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Factory_NoSink_StillTagsNotice_DoesNotThrow()
     {
         // The notice is intrinsic to the raw fallback; the sink is optional.
@@ -89,7 +88,7 @@ public class UnsupportedShapeTests
 
         var editor = factory.Create(weird, ConfigScope.User);
 
-        Assert.AreEqual("JsonRawPropertyEditorViewModel", editor.GetType().Name);
-        Assert.IsFalse(string.IsNullOrEmpty(editor.UnsupportedShapeNotice));
+        Assert.Equal("JsonRawPropertyEditorViewModel", editor.GetType().Name);
+        Assert.False(string.IsNullOrEmpty(editor.UnsupportedShapeNotice));
     }
 }

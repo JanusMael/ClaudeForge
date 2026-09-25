@@ -29,7 +29,6 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// parser and 3 of the branch's failed against main's, so neither side was a superset and the
 /// implementation here is the union. See <c>YamlFrontMatterBlockScalarTests</c> for the sibling.
 /// </remarks>
-[TestClass]
 public sealed class YamlFrontMatterRealFileBlockScalarTests
 {
     /// <summary>
@@ -48,12 +47,12 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
 
     // ── Parsing ──────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void FoldedBlockScalar_YieldsTheProse_NotTheHeaderToken()
     {
         FrontMatter fm = YamlFrontMatter.Parse(FoldedSkill);
 
-        Assert.AreEqual(
+        MessageAssert.Equal(
             "Fetch, vet, and act on review feedback left on a pull request. "
             + "Use this WHENEVER the developer says there is review feedback.",
             fm.FindScalar("description"),
@@ -61,16 +60,16 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
             + "'>-' header token is what put the literal '>-' in the skills list.");
     }
 
-    [TestMethod]
+    [Fact]
     public void FoldedBlockScalar_IsNotMistakenForTheHeaderToken()
     {
         FrontMatter fm = YamlFrontMatter.Parse(FoldedSkill);
 
-        Assert.AreNotEqual(">-", fm.FindScalar("description"),
+        MessageAssert.NotEqual(">-", fm.FindScalar("description"),
             "The block-scalar header must never surface as the value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LiteralBlockScalar_PreservesInteriorNewlines()
     {
         string input =
@@ -81,11 +80,11 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
             "  line two\n" +
             "---\n";
 
-        Assert.AreEqual("line one\nline two", YamlFrontMatter.Parse(input).FindScalar("description"),
+        MessageAssert.Equal("line one\nline two", YamlFrontMatter.Parse(input).FindScalar("description"),
             "A literal ('|') block keeps its newlines; only the folded ('>') form joins lines.");
     }
 
-    [TestMethod]
+    [Fact]
     public void FoldedBlockScalar_BlankLineBecomesAParagraphBreak()
     {
         string input =
@@ -96,11 +95,11 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
             "  para two\n" +
             "---\n";
 
-        Assert.AreEqual("para one\npara two", YamlFrontMatter.Parse(input).FindScalar("description"),
+        MessageAssert.Equal("para one\npara two", YamlFrontMatter.Parse(input).FindScalar("description"),
             "In a folded block a blank line folds to a single newline, separating paragraphs.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ClipChomping_KeepsExactlyOneTrailingNewline()
     {
         string input =
@@ -109,11 +108,11 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
             "  body\n" +
             "---\n";
 
-        Assert.AreEqual("body\n", YamlFrontMatter.Parse(input).FindScalar("description"),
+        MessageAssert.Equal("body\n", YamlFrontMatter.Parse(input).FindScalar("description"),
             "Default (clip) chomping keeps a single trailing newline; '-' would strip it.");
     }
 
-    [TestMethod]
+    [Fact]
     public void BlockScalar_DoesNotSwallowTheNextKey()
     {
         string input =
@@ -125,20 +124,20 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
 
         FrontMatter fm = YamlFrontMatter.Parse(input);
 
-        Assert.AreEqual("the description", fm.FindScalar("description"),
+        MessageAssert.Equal("the description", fm.FindScalar("description"),
             "The block ends at the first line that is not more-indented than the block.");
-        Assert.AreEqual("sonnet", fm.FindScalar("model"),
+        MessageAssert.Equal("sonnet", fm.FindScalar("model"),
             "A sibling key after the block must still parse as its own field.");
     }
 
     // ── Round-trip ───────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void UnmodifiedBlockScalar_RoundTripsByteForByte()
     {
         FrontMatter fm = YamlFrontMatter.Parse(FoldedSkill);
 
-        Assert.AreEqual(FoldedSkill, YamlFrontMatter.Compose(fm),
+        MessageAssert.Equal(FoldedSkill, YamlFrontMatter.Compose(fm),
             "An untouched block-scalar field keeps its RawText, so the file is unchanged on save.");
     }
 
@@ -148,50 +147,50 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
     /// edit the field re-rendered as a quoted one-liner while those orphaned lines
     /// were still emitted after it — appending the old prose to the new value.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void EditingABlockScalar_DoesNotStrandTheOldContinuationLines()
     {
         FrontMatter edited = YamlFrontMatter.Parse(FoldedSkill).WithScalar("description", "A new description.");
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "A new description.",
+        MessageAssert.Contains("A new description.", composed,
             "The edited value must reach the file.");
-        Assert.IsFalse(composed.Contains("Fetch, vet, and act", StringComparison.Ordinal),
+        Assert.False(composed.Contains("Fetch, vet, and act", StringComparison.Ordinal),
             "The replaced prose must not survive as orphaned lines below the new value — "
             + "that silently appends the old description to the new one.");
-        Assert.IsFalse(composed.Contains("\">-\"", StringComparison.Ordinal),
+        Assert.False(composed.Contains("\">-\"", StringComparison.Ordinal),
             "The header token must never be written back as a quoted scalar value.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditedBlockScalar_ReRendersAsABlockScalar_KeepingTheOriginalStyle()
     {
         FrontMatter edited = YamlFrontMatter.Parse(FoldedSkill).WithScalar("description", "A new description.");
         string composed = YamlFrontMatter.Compose(edited);
 
-        StringAssert.Contains(composed, "description: >-",
+        MessageAssert.Contains("description: >-", composed,
             "A field that arrived as a folded block should be written back as one, so an "
             + "edit through the GUI does not reformat the file into a long single line.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditedBlockScalar_ReParsesToTheEditedValue()
     {
         FrontMatter edited = YamlFrontMatter.Parse(FoldedSkill).WithScalar("description", "A new description.");
 
-        Assert.AreEqual("A new description.",
+        MessageAssert.Equal("A new description.",
             YamlFrontMatter.Parse(YamlFrontMatter.Compose(edited)).FindScalar("description"),
             "Compose → Parse must return exactly what was set: the edit has to survive a save/load cycle.");
     }
 
-    [TestMethod]
+    [Fact]
     public void MultiLineValueSetOnAPlainField_RendersAsALiteralBlock()
     {
         FrontMatter fm = YamlFrontMatter.Parse("---\nname: t\n---\n")
                                         .WithScalar("notes", "first\nsecond");
         string composed = YamlFrontMatter.Compose(fm);
 
-        Assert.AreEqual("first\nsecond", YamlFrontMatter.Parse(composed).FindScalar("notes"),
+        MessageAssert.Equal("first\nsecond", YamlFrontMatter.Parse(composed).FindScalar("notes"),
             "A newline-bearing value cannot be a plain scalar; it must round-trip through a block.");
     }
 
@@ -219,53 +218,53 @@ public sealed class YamlFrontMatterRealFileBlockScalarTests
 
         """;
 
-    [TestMethod]
+    [Fact]
     public void RealSkillFile_FoldsToTheProseShownOnGitHub()
     {
         string? description = YamlFrontMatter.Parse(RealSkill).FindScalar("description");
 
-        StringAssert.StartsWith(description, "Fetch, vet, and act on review feedback left on a pull request —",
+        MessageAssert.StartsWith("Fetch, vet, and act on review feedback left on a pull request —", description,
             "The folded value begins at the prose, never at the '>-' header.");
-        StringAssert.Contains(description, "on a PR: \"address the PR feedback\"",
+        MessageAssert.Contains("on a PR: \"address the PR feedback\"", description,
             "Folding joins the source lines with a single space, so a sentence split across "
             + "two lines reads continuously — and a colon-space inside the prose is harmless here.");
-        Assert.IsFalse(description!.Contains('\n'),
+        Assert.False(description!.Contains('\n'),
             "This block has no blank lines, so it folds to exactly one logical line.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RealSkillFile_RoundTripsByteForByte()
     {
-        Assert.AreEqual(RealSkill, YamlFrontMatter.Compose(YamlFrontMatter.Parse(RealSkill)),
+        MessageAssert.Equal(RealSkill, YamlFrontMatter.Compose(YamlFrontMatter.Parse(RealSkill)),
             "Opening a skill in the editor and saving without edits must not touch the file.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RealSkillFile_EditedDescription_StaysAFoldedBlockAndDropsTheOldProse()
     {
         string composed = YamlFrontMatter.Compose(
             YamlFrontMatter.Parse(RealSkill).WithScalar("description", "A concise replacement description."));
 
-        StringAssert.Contains(composed, "description: >-",
+        MessageAssert.Contains("description: >-", composed,
             "The folded style is preserved, so the file's shape does not churn on edit.");
-        StringAssert.Contains(composed, "  A concise replacement description.",
+        MessageAssert.Contains("  A concise replacement description.", composed,
             "The new prose is indented as block content.");
-        Assert.IsFalse(composed.Contains("greptile", StringComparison.Ordinal),
+        Assert.False(composed.Contains("greptile", StringComparison.Ordinal),
             "None of the replaced prose may survive underneath the new value.");
-        Assert.AreEqual("A concise replacement description.",
+        MessageAssert.Equal("A concise replacement description.",
             YamlFrontMatter.Parse(composed).FindScalar("description"),
             "And the edit survives a save/load cycle intact.");
     }
 
     // ── Typed projection ─────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void SkillFrontMatter_SurfacesTheFoldedDescription()
     {
         SkillFrontMatter skill = SkillFrontMatter.From(YamlFrontMatter.Parse(FoldedSkill));
 
-        Assert.AreEqual("address-pr-feedback", skill.Name);
-        StringAssert.StartsWith(skill.Description, "Fetch, vet, and act",
+        Assert.Equal("address-pr-feedback", skill.Name);
+        MessageAssert.StartsWith("Fetch, vet, and act", skill.Description,
             "The typed projection reads through FindScalar, so it inherits the block-scalar fix — "
             + "this is what the skills list and the detail pane bind to.");
     }

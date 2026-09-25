@@ -26,7 +26,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// now guards the real ordering behaviourally.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ModelPropertyPromotionTests
 {
     private static JsonSchemaNode LoadBundledClaudeCodeRoot()
@@ -39,7 +38,7 @@ public sealed class ModelPropertyPromotionTests
         // enriched description.  Production goes through the same merge
         // step via SchemaRegistry.GetSchemaAsync's bundled-resource branch.
         byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
-        Assert.IsNotNull(bytes, "Bundled schema resource must exist.");
+        MessageAssert.NotNull(bytes, "Bundled schema resource must exist.");
         string json = Encoding.UTF8.GetString(bytes!);
 
         BuildOptions opts = new() { SchemaRegistry = new Json.Schema.SchemaRegistry() };
@@ -47,29 +46,29 @@ public sealed class ModelPropertyPromotionTests
         return schema.Root!;
     }
 
-    [TestMethod]
+    [Fact]
     public void Model_Promotes_ToEnum_WithExamplesAndDefault()
     {
         JsonSchemaNode root = LoadBundledClaudeCodeRoot();
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(root);
 
         SchemaNode? model = top.FirstOrDefault(n => n.Name == "model");
-        Assert.IsNotNull(model, "model property must exist at top level of schema");
+        MessageAssert.NotNull(model, "model property must exist at top level of schema");
 
-        Assert.AreEqual(SchemaValueType.Enum, model!.ValueType,
+        MessageAssert.Equal(SchemaValueType.Enum, model!.ValueType,
             "string + examples must promote to Enum so the UI shows an AutoCompleteBox.");
 
-        Assert.AreEqual("sonnet", model.DefaultValue,
+        MessageAssert.Equal("sonnet", model.DefaultValue,
             "Default of 'sonnet' is required for the '(inherits: sonnet)' watermark.");
 
-        Assert.IsTrue(model.EnumValues.Count >= 4,
+        Assert.True(model.EnumValues.Count >= 4,
             $"Examples should provide at least four suggestions; got {model.EnumValues.Count}.");
-        CollectionAssert.Contains(model.EnumValues.ToArray(), "sonnet");
-        CollectionAssert.Contains(model.EnumValues.ToArray(), "opus");
-        CollectionAssert.Contains(model.EnumValues.ToArray(), "haiku");
+        Assert.Contains("sonnet", model.EnumValues.ToArray());
+        Assert.Contains("opus", model.EnumValues.ToArray());
+        Assert.Contains("haiku", model.EnumValues.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Model_CarriesEnumValueDescriptions_FromDescriptionsResource()
     {
         // The descriptions resource (Assets/Descriptions/claude-code-settings.enumdescriptions.json)
@@ -84,17 +83,17 @@ public sealed class ModelPropertyPromotionTests
             SchemaTreeBuilder.BuildTopLevel(root, knownPaths: null, flagAllAsNew: false, descriptions);
         SchemaNode model = top.First(n => n.Name == "model");
 
-        Assert.IsTrue(model.EnumValueDescriptions.Count >= 6,
+        Assert.True(model.EnumValueDescriptions.Count >= 6,
             $"Expected per-value descriptions from the descriptions resource; got {model.EnumValueDescriptions.Count}.");
 
         // Every promoted picker value should have a tooltip (no item left bare).
         foreach (string value in model.EnumValues)
         {
-            Assert.IsTrue(model.EnumValueDescriptions.ContainsKey(value),
+            Assert.True(model.EnumValueDescriptions.ContainsKey(value),
                 $"Model picker value '{value}' has no tooltip description.");
         }
 
-        Assert.IsTrue(model.EnumValueDescriptions.TryGetValue("opusplan", out string? plan)
+        Assert.True(model.EnumValueDescriptions.TryGetValue("opusplan", out string? plan)
                       && plan.Contains("plan", StringComparison.OrdinalIgnoreCase),
             "opusplan should be described as the plan/execute hybrid.");
     }

@@ -11,13 +11,13 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// Non-<c>.bak</c> files MUST survive untouched — the whole point is
 /// the user's real config keeps working after the cleanup.
 /// </summary>
-[TestClass]
-public sealed class RestoreSidecarCleanupTests
+public sealed class RestoreSidecarCleanupTests : IDisposable
 {
     private string _fakeHome = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public RestoreSidecarCleanupTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(), "sidecar-cleanup-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_fakeHome);
@@ -25,8 +25,7 @@ public sealed class RestoreSidecarCleanupTests
         Directory.CreateDirectory(Path.Combine(_fakeHome, ".claude"));
     }
 
-    [TestCleanup]
-    public void TearDown()
+    private void TearDown()
     {
         PlatformPaths.TestUserProfileOverride = null;
         try
@@ -42,7 +41,13 @@ public sealed class RestoreSidecarCleanupTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        TearDown();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void Run_DeletesPreRestoreSidecars_PreservesEditorStyleBakAndRealFiles()
     {
         string home = Path.Combine(_fakeHome, ".claude");
@@ -83,27 +88,27 @@ public sealed class RestoreSidecarCleanupTests
 
         RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(home);
 
-        Assert.AreEqual(4, result.FilesDeleted,
+        MessageAssert.Equal(4, result.FilesDeleted,
             "Expected exactly the 4 pre-restore sidecars to be deleted (settings.json, agent-a, " +
             "compounded chain, SKILL.md).  The editor-style hand-edited.md.bak must NOT be touched.");
-        Assert.AreEqual(0, result.Failures, "No I/O failures expected on the sandbox.");
-        Assert.IsTrue(result.BytesReclaimed > 0, "Reclaimed-byte count should reflect the deleted files.");
+        MessageAssert.Equal(0, result.Failures, "No I/O failures expected on the sandbox.");
+        Assert.True(result.BytesReclaimed > 0, "Reclaimed-byte count should reflect the deleted files.");
 
         // Real files must survive.
-        Assert.IsTrue(File.Exists(Path.Combine(home, "settings.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(agents, "agent-a.md")));
-        Assert.IsTrue(File.Exists(Path.Combine(agents, "agent-b.md")));
-        Assert.IsTrue(File.Exists(Path.Combine(skill, "SKILL.md")));
+        Assert.True(File.Exists(Path.Combine(home, "settings.json")));
+        Assert.True(File.Exists(Path.Combine(agents, "agent-a.md")));
+        Assert.True(File.Exists(Path.Combine(agents, "agent-b.md")));
+        Assert.True(File.Exists(Path.Combine(skill, "SKILL.md")));
         // Editor-style hand-rolled .bak MUST survive — this is the
         // whitelist-narrowing contract.
-        Assert.IsTrue(File.Exists(handEdited),
+        Assert.True(File.Exists(handEdited),
             "hand-edited.md.bak doesn't match the .pre-restore-… pattern and must NOT be touched.");
 
         // No pre-restore sidecars should remain at any depth.
         List<string> leftoverSidecars = Directory.EnumerateFiles(home, "*.bak", SearchOption.AllDirectories)
                                                  .Where(p => RestoreSidecarCleanup.LooksLikeRestoreSidecar(Path.GetFileName(p)))
                                                  .ToList();
-        Assert.AreEqual(0, leftoverSidecars.Count,
+        MessageAssert.Equal(0, leftoverSidecars.Count,
             $"All restore sidecars should be gone.  Leftovers: {string.Join(", ", leftoverSidecars)}");
     }
 
@@ -113,46 +118,46 @@ public sealed class RestoreSidecarCleanupTests
     /// ~/.claude/ as collateral damage.  Narrowed to the exact pattern
     /// RestoreEngine produces; this test pins the discrimination contract.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void LooksLikeRestoreSidecar_MatchesOnlyRestoreEnginePattern()
     {
         // Matches: stamped .pre-restore-… sidecars at any depth in the
         // suffix chain.
-        Assert.IsTrue(RestoreSidecarCleanup.LooksLikeRestoreSidecar(
+        Assert.True(RestoreSidecarCleanup.LooksLikeRestoreSidecar(
             "settings.json.pre-restore-20260101-120000.bak"));
-        Assert.IsTrue(RestoreSidecarCleanup.LooksLikeRestoreSidecar(
+        Assert.True(RestoreSidecarCleanup.LooksLikeRestoreSidecar(
             "foo.md.pre-restore-20260101-120000.bak.pre-restore-20260201-090000.bak"));
 
         // Misses: editor-style and hand-rolled .bak files have no
         // `.pre-restore-{stamp}.` segment.
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar("notes.md.bak"));
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar("config.toml.bak"));
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar("my-backup.bak"));
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar("notes.md.bak"));
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar("config.toml.bak"));
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar("my-backup.bak"));
 
         // Misses: malformed stamps (length-wrong, non-digit) — defensive
         // against future format changes accidentally matching.
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar("foo.pre-restore-20260101.bak"));
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar("foo.pre-restore-yyyymmdd-hhmmss.bak"));
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar("foo.pre-restore-X.bak"));
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar("foo.pre-restore-20260101.bak"));
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar("foo.pre-restore-yyyymmdd-hhmmss.bak"));
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar("foo.pre-restore-X.bak"));
 
         // Misses: pattern not at end (anchored on $).
-        Assert.IsFalse(RestoreSidecarCleanup.LooksLikeRestoreSidecar(
+        Assert.False(RestoreSidecarCleanup.LooksLikeRestoreSidecar(
             "foo.pre-restore-20260101-120000.bak.txt"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Run_OnMissingHome_ReturnsZeroSummary()
     {
         string missing = Path.Combine(_fakeHome, ".claude", "does-not-exist");
         RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(missing);
 
-        Assert.AreEqual(0, result.FilesScanned);
-        Assert.AreEqual(0, result.FilesDeleted);
-        Assert.AreEqual(0, result.BytesReclaimed);
-        Assert.AreEqual(0, result.Failures);
+        Assert.Equal(0, result.FilesScanned);
+        Assert.Equal(0, result.FilesDeleted);
+        Assert.Equal(0, result.BytesReclaimed);
+        Assert.Equal(0, result.Failures);
     }
 
-    [TestMethod]
+    [Fact]
     public void Run_OnTreeWithoutSidecars_DeletesNothing()
     {
         string home = Path.Combine(_fakeHome, ".claude");
@@ -161,10 +166,10 @@ public sealed class RestoreSidecarCleanupTests
 
         RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(home);
 
-        Assert.AreEqual(0, result.FilesScanned, "EnumerateFiles('*.bak') should have produced no matches.");
-        Assert.AreEqual(0, result.FilesDeleted);
-        Assert.IsTrue(File.Exists(Path.Combine(home, "settings.json")));
-        Assert.IsTrue(File.Exists(Path.Combine(home, "claude.md")));
+        MessageAssert.Equal(0, result.FilesScanned, "EnumerateFiles('*.bak') should have produced no matches.");
+        Assert.Equal(0, result.FilesDeleted);
+        Assert.True(File.Exists(Path.Combine(home, "settings.json")));
+        Assert.True(File.Exists(Path.Combine(home, "claude.md")));
     }
 
     /// <summary>
@@ -176,7 +181,7 @@ public sealed class RestoreSidecarCleanupTests
     /// retry-after-clear-readonly behaviour so the next cleanup run
     /// actually finishes the job.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Run_ReadOnlySidecar_DeletedAfterClearingAttribute()
     {
         string home = Path.Combine(_fakeHome, ".claude");
@@ -188,11 +193,11 @@ public sealed class RestoreSidecarCleanupTests
         {
             RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(home);
 
-            Assert.AreEqual(1, result.FilesDeleted,
+            MessageAssert.Equal(1, result.FilesDeleted,
                 "Read-only sidecar should be deleted on retry after clearing the read-only attribute.");
-            Assert.AreEqual(0, result.Failures,
+            MessageAssert.Equal(0, result.Failures,
                 "No failures expected once the retry path handled the read-only attribute.");
-            Assert.IsFalse(File.Exists(readOnlyBak),
+            Assert.False(File.Exists(readOnlyBak),
                 "The read-only file should no longer exist after cleanup.");
         }
         finally
@@ -207,7 +212,7 @@ public sealed class RestoreSidecarCleanupTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void Run_ProgressCallback_FiresEvery1000Deletions()
     {
         string home = Path.Combine(_fakeHome, ".claude");
@@ -228,8 +233,8 @@ public sealed class RestoreSidecarCleanupTests
         List<int> progressTicks = new();
         RestoreSidecarCleanup.Result result = RestoreSidecarCleanup.Run(home, onProgress: progressTicks.Add);
 
-        Assert.AreEqual(sidecarCount, result.FilesDeleted);
-        CollectionAssert.AreEqual(new[] { 1000, 2000 }, progressTicks,
+        Assert.Equal(sidecarCount, result.FilesDeleted);
+        MessageAssert.SequenceEqual(new[] { 1000, 2000 }, progressTicks,
             "Progress should fire exactly at the 1 000 / 2 000 deletion boundaries.");
     }
 }

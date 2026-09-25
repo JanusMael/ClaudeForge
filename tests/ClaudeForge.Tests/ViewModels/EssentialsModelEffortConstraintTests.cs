@@ -12,7 +12,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// reload) — it filters the dropdown + shows an advisory; coercion (and the
 /// editing-scope override write) happens ONLY on a genuine user model change.
 /// </summary>
-[TestClass]
 public sealed class EssentialsModelEffortConstraintTests
 {
     private static ClaudeConfigClientBase MakeClient(string userJson)
@@ -39,59 +38,59 @@ public sealed class EssentialsModelEffortConstraintTests
 
     // ── Load never writes (the phantom-dirty regression) ──────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task Load_ValidCombo_StaysClean()
     {
         (_, ClaudeConfigClientBase client) = await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"high"}""");
-        Assert.IsFalse(client.HasUnsavedChanges, "A valid persisted combo must not dirty the workspace on load.");
+        Assert.False(client.HasUnsavedChanges, "A valid persisted combo must not dirty the workspace on load.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Load_InvalidCombo_DoesNotWriteOrDirty_ButAdvises()
     {
         (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-sonnet-4-6","effortLevel":"xhigh"}""");
 
-        Assert.IsFalse(client.HasUnsavedChanges, "Load must not write a coercion — no phantom dirty state.");
-        Assert.AreEqual("xhigh", client.GetEffective<string>("effortLevel"), "On-disk effort is untouched on load.");
-        Assert.AreEqual("xhigh", Effort(vm).EnumValue, "The persisted (now-unsupported) value stays visible.");
-        Assert.IsTrue(Effort(vm).ShowConstraintNotice, "An advisory explains the unsupported value.");
-        CollectionAssert.Contains(Effort(vm).FilteredOptions.ToList(), "xhigh", "Current value remains selectable on load.");
-        CollectionAssert.DoesNotContain(Effort(vm).FilteredOptions.ToList(), "max", "Session-only max is still omitted.");
+        Assert.False(client.HasUnsavedChanges, "Load must not write a coercion — no phantom dirty state.");
+        MessageAssert.Equal("xhigh", client.GetEffective<string>("effortLevel"), "On-disk effort is untouched on load.");
+        MessageAssert.Equal("xhigh", Effort(vm).EnumValue, "The persisted (now-unsupported) value stays visible.");
+        Assert.True(Effort(vm).ShowConstraintNotice, "An advisory explains the unsupported value.");
+        MessageAssert.Contains("xhigh", Effort(vm).FilteredOptions.ToList(), "Current value remains selectable on load.");
+        MessageAssert.DoesNotContain("max", Effort(vm).FilteredOptions.ToList(), "Session-only max is still omitted.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task Load_HaikuPlusEffort_DisablesAndAdvises_DoesNotDrop_NorDirty()
     {
         (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-haiku-4-5","effortLevel":"high"}""");
 
-        Assert.IsTrue(Effort(vm).EnumDisabled, "Haiku exposes no effort → control disabled.");
-        Assert.AreEqual(0, Effort(vm).FilteredOptions.Count);
-        Assert.IsTrue(Effort(vm).ShowConstraintNotice);
-        Assert.AreEqual("high", client.GetEffective<string>("effortLevel"),
+        Assert.True(Effort(vm).EnumDisabled, "Haiku exposes no effort → control disabled.");
+        Assert.Empty(Effort(vm).FilteredOptions);
+        Assert.True(Effort(vm).ShowConstraintNotice);
+        MessageAssert.Equal("high", client.GetEffective<string>("effortLevel"),
             "Load must NOT drop the persisted effort (only a user model change does).");
-        Assert.IsFalse(client.HasUnsavedChanges, "No phantom dirty state on load.");
+        Assert.False(client.HasUnsavedChanges, "No phantom dirty state on load.");
     }
 
     // ── User model change DOES coerce + write ─────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public async Task UserChange_InvalidEffort_CoercesToNearestAnalog_AndDirties()
     {
         (EssentialsViewModel vm, ClaudeConfigClientBase client) =
             await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"xhigh"}""");
-        Assert.IsFalse(client.HasUnsavedChanges);
+        Assert.False(client.HasUnsavedChanges);
 
         ChangeModel(vm, "claude-sonnet-4-6"); // drops xhigh
 
-        Assert.AreEqual("high", Effort(vm).EnumValue, "xhigh coerces to the nearest analog (high).");
-        Assert.AreEqual("high", client.GetEffective<string>("effortLevel"), "Coercion persists as an editing-scope override.");
-        Assert.IsTrue(Effort(vm).ShowConstraintNotice, "A notice explains the auto-change.");
-        Assert.IsTrue(client.HasUnsavedChanges, "A user-driven coercion is a real, savable change.");
+        MessageAssert.Equal("high", Effort(vm).EnumValue, "xhigh coerces to the nearest analog (high).");
+        MessageAssert.Equal("high", client.GetEffective<string>("effortLevel"), "Coercion persists as an editing-scope override.");
+        Assert.True(Effort(vm).ShowConstraintNotice, "A notice explains the auto-change.");
+        Assert.True(client.HasUnsavedChanges, "A user-driven coercion is a real, savable change.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UserChange_ToHaiku_DropsExplicitEffort()
     {
         (EssentialsViewModel vm, ClaudeConfigClientBase client) =
@@ -99,13 +98,13 @@ public sealed class EssentialsModelEffortConstraintTests
 
         ChangeModel(vm, "claude-haiku-4-5");
 
-        Assert.IsTrue(Effort(vm).EnumDisabled);
-        Assert.IsTrue(string.IsNullOrEmpty(client.GetEffective<string>("effortLevel")),
+        Assert.True(Effort(vm).EnumDisabled);
+        Assert.True(string.IsNullOrEmpty(client.GetEffective<string>("effortLevel")),
             "A user switch to a no-effort model drops the explicit effort.");
-        Assert.IsTrue(client.HasUnsavedChanges);
+        Assert.True(client.HasUnsavedChanges);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task UserChange_StillValidEffort_NoCoercionNoNotice()
     {
         (EssentialsViewModel vm, ClaudeConfigClientBase client) =
@@ -113,27 +112,27 @@ public sealed class EssentialsModelEffortConstraintTests
 
         ChangeModel(vm, "claude-sonnet-4-6"); // still supports high
 
-        Assert.AreEqual("high", Effort(vm).EnumValue);
-        Assert.AreEqual("high", client.GetEffective<string>("effortLevel"));
-        Assert.IsFalse(Effort(vm).ShowConstraintNotice);
+        Assert.Equal("high", Effort(vm).EnumValue);
+        Assert.Equal("high", client.GetEffective<string>("effortLevel"));
+        Assert.False(Effort(vm).ShowConstraintNotice);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task EffortOptions_NarrowToEffectiveModel_OnUserChange()
     {
         (EssentialsViewModel vm, _) = await OpenAsync("""{"model":"claude-opus-4-8","effortLevel":"high"}""");
-        CollectionAssert.Contains(Effort(vm).FilteredOptions.ToList(), "xhigh", "Opus 4.8 supports xhigh.");
+        MessageAssert.Contains("xhigh", Effort(vm).FilteredOptions.ToList(), "Opus 4.8 supports xhigh.");
 
         ChangeModel(vm, "claude-sonnet-4-6");
-        CollectionAssert.DoesNotContain(Effort(vm).FilteredOptions.ToList(), "xhigh", "Sonnet 4.6 drops xhigh.");
+        MessageAssert.DoesNotContain("xhigh", Effort(vm).FilteredOptions.ToList(), "Sonnet 4.6 drops xhigh.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ModelIndicator_IsPopulated_ForKnownModel()
     {
         (EssentialsViewModel vm, _) = await OpenAsync("""{"model":"claude-opus-4-8"}""");
         string summary = Effort(vm).ModelSupportSummary;
-        Assert.IsFalse(string.IsNullOrWhiteSpace(summary), "Indicator must be populated.");
-        StringAssert.Contains(summary, "Opus 4.8", "Indicator shows the model's brand label.");
+        Assert.False(string.IsNullOrWhiteSpace(summary), "Indicator must be populated.");
+        MessageAssert.Contains("Opus 4.8", summary, "Indicator shows the model's brand label.");
     }
 }

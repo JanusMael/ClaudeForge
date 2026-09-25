@@ -69,9 +69,9 @@ jobs:
 
       - name: Test
         run: >
-          dotnet test ClaudeForge.slnx
+          dotnet test --solution ClaudeForge.slnx
           --no-build -c Debug
-          --logger "trx;LogFileName=results.trx"
+          --report-trx
           --results-directory ./test-results
 
       - name: Upload test results
@@ -279,7 +279,7 @@ jobs:
       - name: Test the solution against the published packages
         env:
           NuGetPackageSourceCredentials_github: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
-        run: dotnet test ClaudeForge.slnx -c Release -p:UseSharedPackages=true
+        run: dotnet test --solution ClaudeForge.slnx -c Release -p:UseSharedPackages=true
 
       # ⭐ A real trimmed publish, so ILLink's whole-program pass runs over the PACKAGED shared
       # libraries rather than the project-built ones. It fails on NETSDK1144 for any IL2xxx that

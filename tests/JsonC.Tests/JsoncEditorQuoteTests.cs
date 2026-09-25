@@ -20,14 +20,13 @@ namespace Bennewitz.Ninja.JsonC.Tests;
 /// the serializer would have produced" rather than "looks about right".
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class JsoncEditorQuoteTests
 {
     /// <summary>
     /// Member names that exercise every escaping rule that differs between a naive
     /// <c>"\"" + name + "\""</c> and real JSON string encoding.
     /// </summary>
-    private static IEnumerable<string[]> NastyNames()
+    public static IEnumerable<string[]> NastyNames()
     {
         yield return ["model"];                       // the ordinary case
         yield return [string.Empty];
@@ -52,8 +51,8 @@ public sealed class JsoncEditorQuoteTests
         yield return ["a".PadRight(200, 'x')];        // past the writer's initial buffer
     }
 
-    [TestMethod]
-    [DynamicData(nameof(NastyNames))]
+    [Theory]
+    [MemberData(nameof(NastyNames))]
     public void Quote_MatchesTheSerializerExactly(string name)
     {
         // The oracle: what the forbidden reflection-based overload would have written.
@@ -61,7 +60,7 @@ public sealed class JsoncEditorQuoteTests
         string expected = JsonSerializer.Serialize(name);
 #pragma warning restore IL2026
 
-        Assert.AreEqual(expected, JsoncEditor.Quote(name),
+        MessageAssert.Equal(expected, JsoncEditor.Quote(name),
             $"Quote must escape exactly as the serializer does. Input: {name.Length} char(s).");
     }
 
@@ -71,7 +70,7 @@ public sealed class JsoncEditorQuoteTests
     /// serializer substitutes U+FFFD. Asserted separately because it is a *behaviour* claim,
     /// not just another escaping case.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Quote_HandlesALoneSurrogate_TheSameWayTheSerializerDoes()
     {
         string loneHighSurrogate = "before\uD800after";
@@ -80,7 +79,7 @@ public sealed class JsoncEditorQuoteTests
         string expected = JsonSerializer.Serialize(loneHighSurrogate);
 #pragma warning restore IL2026
 
-        Assert.AreEqual(expected, JsoncEditor.Quote(loneHighSurrogate));
+        Assert.Equal(expected, JsoncEditor.Quote(loneHighSurrogate));
     }
 
     /// <summary>
@@ -88,16 +87,16 @@ public sealed class JsoncEditorQuoteTests
     /// straight into <c>"{Quote(key)}: {rendered}"</c>. A bare escaped value with no surrounding
     /// quotes would produce syntactically invalid JSONC that only shows up on reload.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Quote_AlwaysReturnsAQuotedToken()
     {
         foreach (string[] row in NastyNames())
         {
             string quoted = JsoncEditor.Quote(row[0]);
 
-            Assert.IsTrue(quoted.Length >= 2, $"'{row[0]}' produced '{quoted}'.");
-            Assert.IsTrue(quoted.StartsWith('"'), $"'{row[0]}' produced '{quoted}'.");
-            Assert.IsTrue(quoted.EndsWith('"'), $"'{row[0]}' produced '{quoted}'.");
+            Assert.True(quoted.Length >= 2, $"'{row[0]}' produced '{quoted}'.");
+            Assert.True(quoted.StartsWith('"'), $"'{row[0]}' produced '{quoted}'.");
+            Assert.True(quoted.EndsWith('"'), $"'{row[0]}' produced '{quoted}'.");
         }
     }
 }

@@ -13,7 +13,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// editor list unless a value is already set at some scope (so users can
 /// still remove legacy values).
 /// </summary>
-[TestClass]
 public sealed class SchemaDeprecatedTests
 {
     private static JsonSchemaNode LoadBundledClaudeCodeRoot()
@@ -22,7 +21,7 @@ public sealed class SchemaDeprecatedTests
         string resourceName = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
 
         using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        Assert.IsNotNull(stream, $"Embedded resource '{resourceName}' must exist.");
+        MessageAssert.NotNull(stream, $"Embedded resource '{resourceName}' must exist.");
         using StreamReader reader = new(stream!);
         string json = reader.ReadToEnd();
 
@@ -31,20 +30,20 @@ public sealed class SchemaDeprecatedTests
         return schema.Root!;
     }
 
-    [TestMethod]
+    [Fact]
     public void IncludeCoAuthoredBy_IsFlagged_Deprecated_ByDescriptionHeuristic()
     {
         JsonSchemaNode root = LoadBundledClaudeCodeRoot();
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(root);
 
         SchemaNode? node = top.FirstOrDefault(n => n.Name == "includeCoAuthoredBy");
-        Assert.IsNotNull(node, "includeCoAuthoredBy property must exist at top level of the schema");
+        MessageAssert.NotNull(node, "includeCoAuthoredBy property must exist at top level of the schema");
 
-        Assert.IsTrue(node!.IsDeprecated,
+        Assert.True(node!.IsDeprecated,
             "The description begins with 'DEPRECATED' so the heuristic should mark IsDeprecated=true.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NonDeprecatedSibling_Is_NotFlagged()
     {
         JsonSchemaNode root = LoadBundledClaudeCodeRoot();
@@ -52,12 +51,12 @@ public sealed class SchemaDeprecatedTests
 
         // `model` has no DEPRECATED prefix and no deprecated keyword.
         SchemaNode? node = top.FirstOrDefault(n => n.Name == "model");
-        Assert.IsNotNull(node);
-        Assert.IsFalse(node!.IsDeprecated,
+        Assert.NotNull(node);
+        Assert.False(node!.IsDeprecated,
             "Non-deprecated properties must not carry the IsDeprecated flag.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExplicitDeprecatedKeyword_Wins_OverDescriptionHeuristic()
     {
         // A tiny synthetic schema proves the JSON-Schema keyword is honored
@@ -80,13 +79,13 @@ public sealed class SchemaDeprecatedTests
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(schema.Root!);
 
         SchemaNode legacy = top.Single(n => n.Name == "legacyField");
-        Assert.IsTrue(legacy.IsDeprecated,
+        Assert.True(legacy.IsDeprecated,
             "deprecated:true keyword must set IsDeprecated=true regardless of description.");
     }
 
     // ── IsUndocumented ────────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void UndocumentedPrefix_SetsFlag_AndStripsPrefix()
     {
         const string schemaJson = """
@@ -106,15 +105,15 @@ public sealed class SchemaDeprecatedTests
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(schema.Root!);
 
         SchemaNode node = top.Single(n => n.Name == "hiddenProp");
-        Assert.IsTrue(node.IsUndocumented,
+        Assert.True(node.IsUndocumented,
             "Description starting with 'UNDOCUMENTED' must set IsUndocumented=true.");
-        Assert.IsFalse(node.Description?.StartsWith("UNDOCUMENTED", StringComparison.OrdinalIgnoreCase) ?? false,
+        Assert.False(node.Description?.StartsWith("UNDOCUMENTED", StringComparison.OrdinalIgnoreCase) ?? false,
             "The 'UNDOCUMENTED' prefix must be stripped from the Description.");
-        Assert.IsTrue(node.Description?.Contains("Internal property") ?? false,
+        Assert.True(node.Description?.Contains("Internal property") ?? false,
             "The rest of the description must be preserved.");
     }
 
-    [TestMethod]
+    [Fact]
     public void NonUndocumented_NotFlagged()
     {
         const string schemaJson = """
@@ -130,10 +129,10 @@ public sealed class SchemaDeprecatedTests
         JsonSchema schema = JsonSchema.FromText(schemaJson, opts);
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(schema.Root!);
 
-        Assert.IsFalse(top.Single().IsUndocumented);
+        Assert.False(top.Single().IsUndocumented);
     }
 
-    [TestMethod]
+    [Fact]
     public void MidDescriptionUndocumented_SetsFlag_AndStripsMarker()
     {
         // When "UNDOCUMENTED:" appears mid-description (not at the start) the flag
@@ -156,22 +155,22 @@ public sealed class SchemaDeprecatedTests
         IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(schema.Root!);
 
         SchemaNode node = top.Single(n => n.Name == "modeEnum");
-        Assert.IsTrue(node.IsUndocumented,
+        Assert.True(node.IsUndocumented,
             "UNDOCUMENTED mid-description must set IsUndocumented=true.");
-        Assert.IsFalse(
+        Assert.False(
             node.Description?.Contains("UNDOCUMENTED", StringComparison.OrdinalIgnoreCase) ?? false,
             "The UNDOCUMENTED marker must be stripped from Description.");
-        Assert.IsTrue(node.Description?.Contains("\"turbo\"") ?? false,
+        Assert.True(node.Description?.Contains("\"turbo\"") ?? false,
             "The text that followed the UNDOCUMENTED marker must be preserved.");
-        Assert.IsTrue(node.Description?.Contains("\"fast\"") ?? false,
+        Assert.True(node.Description?.Contains("\"fast\"") ?? false,
             "Earlier parts of the description (before the marker) must be preserved.");
-        Assert.IsTrue(node.Description?.Contains("experimental hidden mode") ?? false,
+        Assert.True(node.Description?.Contains("experimental hidden mode") ?? false,
             "The sentence after the marker must be preserved in full.");
     }
 
     // ── SuggestedEnvVars ──────────────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_FindsClaudeAndAnthropicTokens()
     {
         // Simulates the real `env` property description.
@@ -181,32 +180,32 @@ public sealed class SchemaDeprecatedTests
 
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(desc);
 
-        CollectionAssert.Contains(result.ToList(), "CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS");
-        CollectionAssert.Contains(result.ToList(), "ANTHROPIC_API_KEY");
+        Assert.Contains("CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS", result.ToList());
+        Assert.Contains("ANTHROPIC_API_KEY", result.ToList());
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_ReturnsEmpty_WhenNoEnvVarPhrase()
     {
         // Without "environment variable" in the text, no suggestions should be returned.
         const string desc = "CLAUDE_CODE_TIMEOUT_MS controls something.";
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(desc);
-        Assert.AreEqual(0, result.Count,
+        MessageAssert.Equal(0, result.Count,
             "Tokens should only be extracted when description mentions 'environment variable'.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_ReturnsEmpty_ForGenericTokens()
     {
         // Tokens named without an explicit "=" assignment and without ANTHROPIC_/CLAUDE
         // are not returned — prevents surfacing every generic constant like NODE_ENV.
         const string desc = "Set environment variables like PATH, HOME, NODE_ENV.";
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(desc);
-        Assert.AreEqual(0, result.Count,
+        MessageAssert.Equal(0, result.Count,
             "Generic tokens without ANTHROPIC_/CLAUDE or assignment syntax should not be suggested.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_ExtractsFromAssignmentSyntax_WithoutEnvVarPhrase()
     {
         // Variables documented as "Set NAME=value" (e.g. from Claude Code's updater channel
@@ -214,22 +213,22 @@ public sealed class SchemaDeprecatedTests
         // extracted even when the description does not contain "environment variable".
         const string desc = "Set DISABLE_AUTOUPDATER=1 to disable updates entirely.";
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(desc);
-        Assert.AreEqual(1, result.Count,
+        MessageAssert.Equal(1, result.Count,
             "Assignment-syntax env var should be extracted.");
-        Assert.AreEqual("DISABLE_AUTOUPDATER", result[0]);
+        Assert.Equal("DISABLE_AUTOUPDATER", result[0]);
     }
 
-    [TestMethod]
+    [Fact]
     public void ExtractSuggestedEnvVarNames_ExtractsMultipleAssignmentVars()
     {
         // Multiple "NAME=value" assignments in one description should all be extracted.
         const string desc = "Set MAX_THINKING_TOKENS=8000 or API_TIMEOUT_MS=30000 to tune behavior.";
         IReadOnlyList<string> result = SchemaTreeBuilder.ExtractSuggestedEnvVarNames(desc);
-        Assert.IsTrue(result.Contains("MAX_THINKING_TOKENS"), "MAX_THINKING_TOKENS should be extracted.");
-        Assert.IsTrue(result.Contains("API_TIMEOUT_MS"), "API_TIMEOUT_MS should be extracted.");
+        Assert.True(result.Contains("MAX_THINKING_TOKENS"), "MAX_THINKING_TOKENS should be extracted.");
+        Assert.True(result.Contains("API_TIMEOUT_MS"), "API_TIMEOUT_MS should be extracted.");
     }
 
-    [TestMethod]
+    [Fact]
     public void CollectSuggestedEnvVars_Deduplicates_AcrossNodes()
     {
         const string schemaJson = """
@@ -254,9 +253,9 @@ public sealed class SchemaDeprecatedTests
         IReadOnlyList<string> all = SchemaTreeBuilder.CollectSuggestedEnvVars(top);
 
         // CLAUDE_CODE_X appears in both nodes — should only be in the result once.
-        Assert.AreEqual(1, all.Count(v => v == "CLAUDE_CODE_X"),
+        MessageAssert.Equal(1, all.Count(v => v == "CLAUDE_CODE_X"),
             "Duplicate suggestions across nodes must be de-duplicated.");
-        Assert.IsTrue(all.Contains("ANTHROPIC_Y"));
+        OrdinalAssert.Contains("ANTHROPIC_Y", all);
     }
 
     // Note: a bundled-schema smoke test for IsUndocumented was removed because all

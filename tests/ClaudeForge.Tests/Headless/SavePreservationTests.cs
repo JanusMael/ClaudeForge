@@ -39,8 +39,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Headless;
 /// canaried with a deliberate failure to confirm they really do go red.</b>
 /// </para>
 /// </summary>
-[TestClass]
-public sealed class SavePreservationTests
+public sealed class SavePreservationTests : IDisposable
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
@@ -71,8 +70,9 @@ public sealed class SavePreservationTests
 
     private string _sandbox = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public SavePreservationTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_save_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -90,8 +90,7 @@ public sealed class SavePreservationTests
         File.WriteAllText(PlatformPaths.DesktopConfigPath, "{}");
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         // DebugFlags is process-global static state; leaking --writer into the next
         // test would silently change how it saves.
@@ -110,9 +109,15 @@ public sealed class SavePreservationTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private string CcSettingsPath => Path.Combine(_sandbox, ".claude", "settings.json");
 
-    [TestMethod]
+    [Fact]
     public async Task GuiSave_PreservesCommentsFormattingAndKeyOrder()
     {
         string after = await Session.Dispatch(
@@ -120,13 +125,13 @@ public sealed class SavePreservationTests
             {
                 using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
-                Assert.IsNotNull(vm.ClaudeCodeSdk, "Precondition: the CC SDK client must be loaded.");
+                MessageAssert.NotNull(vm.ClaudeCodeSdk, "Precondition: the CC SDK client must be loaded.");
 
                 // The load must not have collapsed the commented file to empty. This is
                 // the data-loss bug Phase 2 fixed: a comment made LoadAsync throw, the
                 // throw became an empty JsonObject, and the next save wrote that over
                 // the user's file.
-                Assert.AreEqual("sonnet", vm.ClaudeCodeSdk.GetEffective<string>("model"),
+                MessageAssert.Equal("sonnet", vm.ClaudeCodeSdk.GetEffective<string>("model"),
                     "The commented file must load with its values intact, not as empty.");
 
                 vm.ClaudeCodeSdk.SetValue("cleanupPeriodDays", 45, ConfigScope.User);
@@ -136,21 +141,21 @@ public sealed class SavePreservationTests
             },
             CancellationToken.None);
 
-        Assert.AreEqual(45, TopLevelInt(after, "cleanupPeriodDays"),
+        MessageAssert.Equal(45, TopLevelInt(after, "cleanupPeriodDays"),
             "The edit must actually reach disk, or the preservation assertions below are vacuous.");
 
-        StringAssert.Contains(after, "// Top-of-file comment that must survive a save.",
+        MessageAssert.Contains("// Top-of-file comment that must survive a save.", after,
             "The GUI save path must preserve line comments.");
-        StringAssert.Contains(after, "/* Block comment above the value the test edits. */",
+        MessageAssert.Contains("/* Block comment above the value the test edits. */", after,
             "The GUI save path must preserve block comments.");
-        StringAssert.Contains(after, "// Comment inside a nested object.",
+        MessageAssert.Contains("// Comment inside a nested object.", after,
             "A comment inside a nested object must survive editing a sibling key.");
 
-        Assert.AreEqual(2, ChangedLineCount(CommentedSettings, after),
+        MessageAssert.Equal(2, ChangedLineCount(CommentedSettings, after),
             "A one-value edit must rewrite exactly two meaningful lines (old value out, new "
             + "value in). More than that means the document was re-serialized rather than edited.");
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "model", "cleanupPeriodDays", "env", "permissions" },
             TopLevelKeys(after).Where(k => k != "//").ToArray(),
             "Key order must be preserved exactly.");
@@ -162,7 +167,7 @@ public sealed class SavePreservationTests
     /// rests on — that re-emitting an unchanged key costs nothing on disk — rather than
     /// inferring it from the diffing code.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public async Task GuiSave_RewritingAWholeObject_TouchesOnlyTheKeyThatChanged()
     {
         string after = await Session.Dispatch(
@@ -170,7 +175,7 @@ public sealed class SavePreservationTests
             {
                 using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
-                Assert.IsNotNull(vm.ClaudeCodeSdk);
+                Assert.NotNull(vm.ClaudeCodeSdk);
 
                 // Exactly the shape the object editor now produces: the edited key plus every
                 // key it carried across, written as one object rather than as a leaf path.
@@ -186,24 +191,24 @@ public sealed class SavePreservationTests
             },
             CancellationToken.None);
 
-        StringAssert.Contains(after, "\"changed\"",
+        MessageAssert.Contains("\"changed\"", after,
             "The edit must reach disk, or everything below is vacuous.");
-        StringAssert.Contains(after, "\"CARRIED\"",
+        MessageAssert.Contains("\"CARRIED\"", after,
             "The carried key must be written — it was not in the file before.");
-        StringAssert.Contains(after, "// Comment inside a nested object.",
+        MessageAssert.Contains("// Comment inside a nested object.", after,
             "Re-emitting a whole object must not re-serialize it: the comment INSIDE env is "
             + "what a wholesale replacement would destroy, and the F9 fix hands the writer a "
             + "whole object on every save that touches one.");
-        StringAssert.Contains(after, "// Top-of-file comment that must survive a save.",
+        MessageAssert.Contains("// Top-of-file comment that must survive a save.", after,
             "And the rest of the document is untouched.");
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "model", "cleanupPeriodDays", "env", "permissions" },
             TopLevelKeys(after).Where(k => k != "//").ToArray(),
             "Key order must survive an object-level write exactly as it does a leaf one.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task GuiSave_WithWriterLegacy_IsLossy_SoTheHatchesCostIsMeasured()
     {
         // The contrast case. --writer legacy is a one-release escape hatch whose cost
@@ -212,14 +217,14 @@ public sealed class SavePreservationTests
         // (DebugFlags -> SelectedConfigWriter -> FromExistingWorkspace -> save) rather
         // than merely parsed. When the hatch is removed, delete this test with it.
         DebugFlags.Initialize(["--writer", "legacy"]);
-        Assert.AreEqual("legacy", DebugFlags.ConfigWriterName, "Precondition: the flag must parse.");
+        MessageAssert.Equal("legacy", DebugFlags.ConfigWriterName, "Precondition: the flag must parse.");
 
         string after = await Session.Dispatch(
             async () =>
             {
                 using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
-                Assert.IsNotNull(vm.ClaudeCodeSdk);
+                Assert.NotNull(vm.ClaudeCodeSdk);
 
                 vm.ClaudeCodeSdk.SetValue("cleanupPeriodDays", 45, ConfigScope.User);
                 await vm.SaveForBackupOrRestoreAsync(isRestoreContext: false);
@@ -228,15 +233,15 @@ public sealed class SavePreservationTests
             },
             CancellationToken.None);
 
-        Assert.AreEqual(45, TopLevelInt(after, "cleanupPeriodDays"),
+        MessageAssert.Equal(45, TopLevelInt(after, "cleanupPeriodDays"),
             "The legacy writer must still write the value — it is lossy, not broken.");
-        Assert.IsFalse(after.Contains("// Top-of-file comment", StringComparison.Ordinal),
+        Assert.False(after.Contains("// Top-of-file comment", StringComparison.Ordinal),
             "--writer legacy re-serializes the whole document, so comments are expected to be "
             + "lost. If this now passes, the hatch no longer differs from the default and the "
             + "preservation test above may be passing for the wrong reason.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task GuiSave_WritesEveryProductsChanges_NotJustTheFirstSection()
     {
         // Written because nothing covered it. Phase 4d replaced MainWindowViewModel's two
@@ -250,7 +255,7 @@ public sealed class SavePreservationTests
                 using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
 
-                Assert.AreEqual(2, vm.Sections.Count(s => s.Client is not null),
+                MessageAssert.Equal(2, vm.Sections.Count(s => s.Client is not null),
                     "Precondition: both product sections must be open, or a one-product save "
                     + "would satisfy the assertions below by default.");
 
@@ -266,15 +271,15 @@ public sealed class SavePreservationTests
             },
             CancellationToken.None);
 
-        Assert.AreEqual(45, TopLevelInt(after.Cc, "cleanupPeriodDays"),
+        MessageAssert.Equal(45, TopLevelInt(after.Cc, "cleanupPeriodDays"),
             "Claude Code's edit must reach disk.");
-        StringAssert.Contains(after.Dt, "\"theme\"",
+        MessageAssert.Contains("\"theme\"", after.Dt,
             "Claude Desktop's edit must reach disk too. If only Claude Code's did, a lifecycle "
             + "loop is covering one section instead of all of them — which is exactly what the "
             + "two named fields this list replaced made easy to get wrong.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task HasUnsavedChanges_TrueWhenOnlyTheLastSectionIsDirty()
     {
         // The counter-direction, and the cheaper half of the same hole: a "first product
@@ -286,7 +291,7 @@ public sealed class SavePreservationTests
             {
                 using MainWindowViewModel vm = BuildViewModel();
                 await vm.LoadAllWorkspacesAsync();
-                Assert.IsFalse(vm.HasUnsavedChanges, "Precondition: a fresh load is clean.");
+                Assert.False(vm.HasUnsavedChanges, "Precondition: a fresh load is clean.");
 
                 vm.Sections[^1].Client!.SetValue(
                     "preferences", new JsonObject { ["theme"] = "dark" }, ConfigScope.User);
@@ -295,7 +300,7 @@ public sealed class SavePreservationTests
             },
             CancellationToken.None);
 
-        Assert.IsTrue(dirty,
+        Assert.True(dirty,
             "An edit to the last product section must mark the window dirty. If it does not, "
             + "the dirty check stops at the first section and the user cannot save the change.");
     }

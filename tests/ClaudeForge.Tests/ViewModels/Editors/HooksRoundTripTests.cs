@@ -11,7 +11,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 /// pairs. Earlier code assumed <c>command</c> lived on the outer object, leaving the
 /// command column blank for every existing user's hooks.
 /// </summary>
-[TestClass]
 public class HooksRoundTripTests
 {
     private static SchemaNode HooksSchema()
@@ -29,7 +28,7 @@ public class HooksRoundTripTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedShape_PopulatesCommandValue()
     {
         // Real Claude Code shape per the schema's own `examples`:
@@ -57,13 +56,13 @@ public class HooksRoundTripTests
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
         HookEventGroup group = vm.EventGroups.First(g => g.EventName == "PostToolUse");
-        Assert.AreEqual(1, group.Hooks.Count);
-        Assert.AreEqual("Edit|Write", group.Hooks[0].Matcher);
-        Assert.AreEqual(HookCommandType.Command, group.Hooks[0].CommandType);
-        Assert.AreEqual("prettier --write", group.Hooks[0].CommandValue);
+        Assert.Single(group.Hooks);
+        Assert.Equal("Edit|Write", group.Hooks[0].Matcher);
+        Assert.Equal(HookCommandType.Command, group.Hooks[0].CommandType);
+        Assert.Equal("prettier --write", group.Hooks[0].CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedShape_MultipleInnerHooksPerMatcher()
     {
         JsonObject obj = new()
@@ -86,14 +85,14 @@ public class HooksRoundTripTests
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
         HookEventGroup group = vm.EventGroups.First(g => g.EventName == "PreToolUse");
-        Assert.AreEqual(2, group.Hooks.Count);
-        Assert.IsTrue(group.Hooks.All(h => h.Matcher == "Bash"));
-        CollectionAssert.AreEqual(
+        Assert.Equal(2, group.Hooks.Count);
+        Assert.True(group.Hooks.All(h => h.Matcher == "Bash"));
+        Assert.Equal(
             new[] { "echo a", "echo b" },
             group.Hooks.Select(h => h.CommandValue).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void NestedShape_PromptAndUrlTypes()
     {
         JsonObject obj = new()
@@ -116,14 +115,14 @@ public class HooksRoundTripTests
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
         HookEventGroup group = vm.EventGroups.First(g => g.EventName == "PermissionRequest");
-        Assert.AreEqual(2, group.Hooks.Count);
-        Assert.AreEqual(HookCommandType.Prompt, group.Hooks[0].CommandType);
-        Assert.AreEqual("Continue?", group.Hooks[0].CommandValue);
-        Assert.AreEqual(HookCommandType.Url, group.Hooks[1].CommandType);
-        Assert.AreEqual("https://example.com", group.Hooks[1].CommandValue);
+        Assert.Equal(2, group.Hooks.Count);
+        Assert.Equal(HookCommandType.Prompt, group.Hooks[0].CommandType);
+        Assert.Equal("Continue?", group.Hooks[0].CommandValue);
+        Assert.Equal(HookCommandType.Url, group.Hooks[1].CommandType);
+        Assert.Equal("https://example.com", group.Hooks[1].CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void LegacyFlatShape_StillParses()
     {
         // Older/hand-edited settings files may have flat `{matcher, command}` outer objects.
@@ -139,12 +138,12 @@ public class HooksRoundTripTests
         vm.LoadFromLayered(LayeredWith(obj), ConfigScope.User);
 
         HookEventGroup group = vm.EventGroups.First(g => g.EventName == "Stop");
-        Assert.AreEqual(1, group.Hooks.Count);
-        Assert.AreEqual("*", group.Hooks[0].Matcher);
-        Assert.AreEqual("echo bye", group.Hooks[0].CommandValue);
+        Assert.Single(group.Hooks);
+        Assert.Equal("*", group.Hooks[0].Matcher);
+        Assert.Equal("echo bye", group.Hooks[0].CommandValue);
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_EmitsNestedShape()
     {
         JsonObject original = new()
@@ -166,25 +165,25 @@ public class HooksRoundTripTests
         vm.LoadFromLayered(LayeredWith(original), ConfigScope.User);
 
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(emitted);
+        Assert.NotNull(emitted);
 
         JsonArray? pre = emitted!["PreToolUse"] as JsonArray;
-        Assert.IsNotNull(pre);
+        Assert.NotNull(pre);
         JsonObject? outer = pre![0] as JsonObject;
-        Assert.IsNotNull(outer);
-        Assert.AreEqual("Bash", outer!["matcher"]?.GetValue<string>());
+        Assert.NotNull(outer);
+        Assert.Equal("Bash", outer!["matcher"]?.GetValue<string>());
 
         JsonArray? inner = outer["hooks"] as JsonArray;
-        Assert.IsNotNull(inner);
-        Assert.AreEqual(1, inner!.Count);
+        Assert.NotNull(inner);
+        Assert.Single(inner!);
 
         JsonObject? innerObj = inner[0] as JsonObject;
-        Assert.IsNotNull(innerObj);
-        Assert.AreEqual("command", innerObj!["type"]?.GetValue<string>());
-        Assert.AreEqual("echo hi", innerObj["command"]?.GetValue<string>());
+        Assert.NotNull(innerObj);
+        Assert.Equal("command", innerObj!["type"]?.GetValue<string>());
+        Assert.Equal("echo hi", innerObj["command"]?.GetValue<string>());
     }
 
-    [TestMethod]
+    [Fact]
     public void RoundTrip_GroupsByMatcher()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
@@ -203,14 +202,14 @@ public class HooksRoundTripTests
 
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
         JsonArray? pre = emitted!["PreToolUse"] as JsonArray;
-        Assert.IsNotNull(pre);
-        Assert.AreEqual(2, pre!.Count); // two matcher groups
+        Assert.NotNull(pre);
+        Assert.Equal(2, pre!.Count); // two matcher groups
 
         JsonObject? bashGroup = pre.Cast<JsonObject>().First(o => o["matcher"]!.GetValue<string>() == "Bash");
         JsonObject? editGroup = pre.Cast<JsonObject>().First(o => o["matcher"]!.GetValue<string>() == "Edit");
 
-        Assert.AreEqual(2, (bashGroup["hooks"] as JsonArray)!.Count);
-        Assert.AreEqual(1, (editGroup["hooks"] as JsonArray)!.Count);
+        Assert.Equal(2, (bashGroup["hooks"] as JsonArray)!.Count);
+        Assert.Single((editGroup["hooks"] as JsonArray)!);
     }
 
     // ── per-row Headers + AllowedEnvVars round-trip via the GUI flow ──
@@ -231,7 +230,7 @@ public class HooksRoundTripTests
     /// and asserts BOTH headers and allowedEnvVars survive the editor's
     /// emission path.  Failure on the headers branch is the smoking gun.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AddHook_UrlWithHeaderAndAllowedEnvVar_BothSurviveToJsonValue()
     {
         HooksEditorViewModel vm = new(HooksSchema(), ConfigScope.User);
@@ -253,24 +252,24 @@ public class HooksRoundTripTests
         entry.AddAllowedEnvVarCommand.Execute(null);
 
         // Sanity — both collections were populated by the AddXxx commands.
-        Assert.AreEqual(1, entry.Headers.Count, "AddHeader did not append to Headers.");
-        Assert.AreEqual(1, entry.AllowedEnvVars.Count, "AddAllowedEnvVar did not append to AllowedEnvVars.");
+        MessageAssert.Equal(1, entry.Headers.Count, "AddHeader did not append to Headers.");
+        MessageAssert.Equal(1, entry.AllowedEnvVars.Count, "AddAllowedEnvVar did not append to AllowedEnvVars.");
 
         // The smoking-gun assertion: emitted JSON must contain both keys.
         JsonObject? emitted = vm.ToJsonValue() as JsonObject;
-        Assert.IsNotNull(emitted);
+        Assert.NotNull(emitted);
         JsonObject inner = emitted!["PreToolUse"]!.AsArray()[0]!.AsObject()
             ["hooks"]!.AsArray()[0]!.AsObject();
 
         string pretty = emitted.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-        Assert.IsTrue(inner.ContainsKey("headers"),
+        Assert.True(inner.ContainsKey("headers"),
             $"Emitted hook MUST include 'headers'. Got:\n{pretty}");
-        Assert.AreEqual("Bearer xyz",
+        Assert.Equal("Bearer xyz",
             inner["headers"]!.AsObject()["Authorization"]!.GetValue<string>());
 
-        Assert.IsTrue(inner.ContainsKey("allowedEnvVars"),
+        Assert.True(inner.ContainsKey("allowedEnvVars"),
             $"Emitted hook MUST include 'allowedEnvVars'. Got:\n{pretty}");
-        Assert.AreEqual("SECRET_TOKEN",
+        Assert.Equal("SECRET_TOKEN",
             inner["allowedEnvVars"]!.AsArray()[0]!.GetValue<string>());
     }
 
@@ -283,7 +282,7 @@ public class HooksRoundTripTests
     /// editor sees BOTH the header and the allowedEnvVar — i.e. that the
     /// data survives the full live-write + reload round-trip.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void AddHook_UrlWithHeaderAndAllowedEnvVar_SurvivesSdkBackedReload()
     {
         // Build empty workspace + SDK client.
@@ -312,7 +311,7 @@ public class HooksRoundTripTests
 
         // Simulate the live-write SettingsGroupEditorViewModel performs.
         JsonNode? emitted = vm1.ToJsonValue();
-        Assert.IsNotNull(emitted, "Editor must emit hooks JSON.");
+        MessageAssert.NotNull(emitted, "Editor must emit hooks JSON.");
         client.SetValue("hooks", emitted!, ConfigScope.User);
 
         // Pretty-printed snapshot for failure diagnostics.
@@ -321,9 +320,9 @@ public class HooksRoundTripTests
         // Sanity — the workspace's stored hooks include both keys.
         JsonObject stored = doc.Root["hooks"]!.AsObject()["PreToolUse"]!.AsArray()[0]!.AsObject()
             ["hooks"]!.AsArray()[0]!.AsObject();
-        Assert.IsTrue(stored.ContainsKey("headers"),
+        Assert.True(stored.ContainsKey("headers"),
             $"workspace.Root must have 'headers' after live-write. Got:\n{pretty}");
-        Assert.IsTrue(stored.ContainsKey("allowedEnvVars"),
+        Assert.True(stored.ContainsKey("allowedEnvVars"),
             $"workspace.Root must have 'allowedEnvVars' after live-write. Got:\n{pretty}");
 
         // Second editor — fresh load from the same workspace (simulates reload).
@@ -337,21 +336,21 @@ public class HooksRoundTripTests
         vm2.LoadFromLayered(layered2, ConfigScope.User);
 
         HookEventGroup group2 = vm2.EventGroups.First(g => g.EventName == "PreToolUse");
-        Assert.AreEqual(1, group2.Hooks.Count);
+        Assert.Single(group2.Hooks);
         HookEntry entry2 = group2.Hooks[0];
 
-        Assert.AreEqual(HookCommandType.Url, entry2.CommandType);
-        Assert.AreEqual("Bash", entry2.Matcher);
-        Assert.AreEqual("https://example.com/hook", entry2.CommandValue);
+        Assert.Equal(HookCommandType.Url, entry2.CommandType);
+        Assert.Equal("Bash", entry2.Matcher);
+        Assert.Equal("https://example.com/hook", entry2.CommandValue);
 
-        Assert.AreEqual(1, entry2.Headers.Count,
+        MessageAssert.Equal(1, entry2.Headers.Count,
             $"Reloaded entry MUST have 1 header. Got {entry2.Headers.Count}. JSON:\n{pretty}");
-        Assert.AreEqual("Authorization", entry2.Headers[0].Key);
-        Assert.AreEqual("Bearer xyz", entry2.Headers[0].Value);
+        Assert.Equal("Authorization", entry2.Headers[0].Key);
+        Assert.Equal("Bearer xyz", entry2.Headers[0].Value);
 
-        Assert.AreEqual(1, entry2.AllowedEnvVars.Count,
+        MessageAssert.Equal(1, entry2.AllowedEnvVars.Count,
             $"Reloaded entry MUST have 1 allowedEnvVar. Got {entry2.AllowedEnvVars.Count}. JSON:\n{pretty}");
-        Assert.AreEqual("SECRET_TOKEN", entry2.AllowedEnvVars[0]);
+        Assert.Equal("SECRET_TOKEN", entry2.AllowedEnvVars[0]);
     }
 
     // =====================================================================
@@ -394,7 +393,7 @@ public class HooksRoundTripTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingExistingHeaderValueCell_FiresMarkModified()
     {
         // Subscription-gap test: editing the Value of an already-loaded
@@ -405,18 +404,18 @@ public class HooksRoundTripTests
         vm.LoadFromLayered(LayeredWith(HooksWithUrlHookAndHeaderAndEnvVar()), ConfigScope.User);
 
         HookEntry entry = vm.EventGroups.First(g => g.EventName == "PreToolUse").Hooks[0];
-        Assert.AreEqual(1, entry.Headers.Count, "precondition: header is loaded");
+        MessageAssert.Equal(1, entry.Headers.Count, "precondition: header is loaded");
 
         // Reset IsModified to simulate the post-save state (no pending changes).
         vm.IsModified = false;
 
         entry.Headers[0].Value = "Bearer NEW_VALUE";
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Editing an existing HookHeaderEntry's Value cell MUST fire MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EditingExistingHeaderKeyCell_FiresMarkModified()
     {
         // Same gap as the Value test, but for the Key column.
@@ -428,11 +427,11 @@ public class HooksRoundTripTests
 
         entry.Headers[0].Key = "X-Custom-Header";
 
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Editing an existing HookHeaderEntry's Key cell MUST fire MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RemovingHeaderViaCommand_FiresMarkModified()
     {
         // Subscription-gap test: removing a header via the row's × button
@@ -448,12 +447,12 @@ public class HooksRoundTripTests
 
         entry.RemoveHeaderCommand.Execute(hdr);
 
-        Assert.AreEqual(0, entry.Headers.Count, "precondition: header was actually removed");
-        Assert.IsTrue(vm.IsModified,
+        MessageAssert.Equal(0, entry.Headers.Count, "precondition: header was actually removed");
+        Assert.True(vm.IsModified,
             "Removing a header via × button MUST fire MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void RemovingAllowedEnvVarViaCommand_FiresMarkModified()
     {
         // Same gap as the header-remove test, but for AllowedEnvVars.
@@ -469,13 +468,13 @@ public class HooksRoundTripTests
 
         entry.RemoveAllowedEnvVarCommand.Execute(name);
 
-        Assert.AreEqual(0, entry.AllowedEnvVars.Count,
+        MessageAssert.Equal(0, entry.AllowedEnvVars.Count,
             "precondition: env-var was actually removed");
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "Removing an allowed env-var via × button MUST fire MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TypingInNewHeaderKeyOrValue_DoesNotFireMarkModified()
     {
         // Transient-field filter test: NewHeaderKey / NewHeaderValue back the
@@ -493,11 +492,11 @@ public class HooksRoundTripTests
         entry.NewHeaderKey = "Content-Type";
         entry.NewHeaderValue = "application/json";
 
-        Assert.IsFalse(vm.IsModified,
+        Assert.False(vm.IsModified,
             "Typing in the NewHeader buffer (without clicking +) MUST NOT fire MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TypingInNewAllowedEnvVar_DoesNotFireMarkModified()
     {
         // Same filter-rule as the NewHeaderKey test but for the env-var input.
@@ -509,11 +508,11 @@ public class HooksRoundTripTests
 
         entry.NewAllowedEnvVar = "ANOTHER_TOKEN";
 
-        Assert.IsFalse(vm.IsModified,
+        Assert.False(vm.IsModified,
             "Typing in NewAllowedEnvVar (without clicking +) MUST NOT fire MarkModified.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddHeaderCommand_AfterReset_FiresMarkModifiedOnceViaCollectionChanged()
     {
         // Combined test: AddHeader's full flow exercises both the new
@@ -532,13 +531,13 @@ public class HooksRoundTripTests
         entry.NewHeaderKey = "X-Trace-Id";
         entry.NewHeaderValue = "abc-123";
         // Filtered: still false.
-        Assert.IsFalse(vm.IsModified, "buffer typing must stay clean");
+        Assert.False(vm.IsModified, "buffer typing must stay clean");
 
         entry.AddHeaderCommand.Execute(null);
 
-        Assert.AreEqual(2, entry.Headers.Count,
+        MessageAssert.Equal(2, entry.Headers.Count,
             "AddHeader should append the new entry to Headers");
-        Assert.IsTrue(vm.IsModified,
+        Assert.True(vm.IsModified,
             "AddHeader's Headers.Add MUST fire MarkModified via OnNestedCollectionChanged.");
     }
 }

@@ -3,14 +3,14 @@ using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 
-[TestClass]
-public class UserMemoryServiceTests
+public class UserMemoryServiceTests : IDisposable
 {
     private string _fakeHome = null!;
     private string _claudeHome => Path.Combine(_fakeHome, ".claude");
 
-    [TestInitialize]
-    public void Setup()
+    public UserMemoryServiceTests() => Setup();
+
+    private void Setup()
     {
         _fakeHome = Path.Combine(Path.GetTempPath(),
             "claudeforge-test-" + Path.GetRandomFileName());
@@ -18,8 +18,7 @@ public class UserMemoryServiceTests
         PlatformPaths.TestUserProfileOverride = _fakeHome;
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         if (Directory.Exists(_fakeHome))
@@ -35,6 +34,12 @@ public class UserMemoryServiceTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private void Write(string relPath, string content)
     {
         string full = Path.Combine(_claudeHome, relPath);
@@ -44,14 +49,14 @@ public class UserMemoryServiceTests
 
     // -----------------------------------------------------------------------
 
-    [TestMethod]
+    [Fact]
     public void Empty_ClaudeHome_YieldsEmptyList()
     {
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
-        Assert.AreEqual(0, files.Count);
+        Assert.Empty(files);
     }
 
-    [TestMethod]
+    [Fact]
     public void PrimaryMemory_BothCLAUDEAndAGENTS_BothAppear()
     {
         Write("CLAUDE.md", "# claude\nbody");
@@ -59,13 +64,13 @@ public class UserMemoryServiceTests
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
         List<UserMemoryFile> primary = files.Where(f => f.Category == UserMemoryCategory.PrimaryMemory).ToList();
-        Assert.AreEqual(2, primary.Count);
-        CollectionAssert.AreEquivalent(
+        Assert.Equal(2, primary.Count);
+        MessageAssert.SameElements(
             new[] { "CLAUDE", "AGENTS" },
             primary.Select(f => f.DisplayName).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Subagent_AgentsDirectory_SurfacesMdFiles()
     {
         Write("agents/code-reviewer.md", "# reviewer\nlooks at code");
@@ -73,20 +78,20 @@ public class UserMemoryServiceTests
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
         List<UserMemoryFile> subagents = files.Where(f => f.Category == UserMemoryCategory.Subagent).ToList();
-        Assert.AreEqual(2, subagents.Count);
+        Assert.Equal(2, subagents.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subagent_NonMdFiles_AreIgnored()
     {
         Write("agents/notes.txt", "irrelevant");
         Write("agents/agent.md", "# real");
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
-        Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.Subagent));
+        Assert.Single(files, f => f.Category == UserMemoryCategory.Subagent);
     }
 
-    [TestMethod]
+    [Fact]
     public void Hook_AnyExtension_Surfaces()
     {
         // hooks/ uses "*" so .sh / .py / .js / no-extension all qualify.
@@ -97,10 +102,10 @@ public class UserMemoryServiceTests
         List<UserMemoryFile> hooks = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                       .Where(f => f.Category == UserMemoryCategory.Hook)
                                                       .ToList();
-        Assert.AreEqual(3, hooks.Count);
+        Assert.Equal(3, hooks.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void Rules_AreEnumeratedRecursively()
     {
         Write("rules/common/security.md", "...");
@@ -110,10 +115,10 @@ public class UserMemoryServiceTests
         List<UserMemoryFile> rules = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                       .Where(f => f.Category == UserMemoryCategory.Rule)
                                                       .ToList();
-        Assert.AreEqual(3, rules.Count);
+        Assert.Equal(3, rules.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void Skills_OnlySkillMd_Surfaces()
     {
         Write("skills/python-patterns/SKILL.md", "# python patterns\n...");
@@ -123,11 +128,11 @@ public class UserMemoryServiceTests
         List<UserMemoryFile> skills = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                        .Where(f => f.Category == UserMemoryCategory.Skill)
                                                        .ToList();
-        Assert.AreEqual(1, skills.Count);
-        StringAssert.EndsWith(skills[0].AbsolutePath, "SKILL.md");
+        Assert.Single(skills);
+        OrdinalAssert.EndsWith("SKILL.md", skills[0].AbsolutePath);
     }
 
-    [TestMethod]
+    [Fact]
     public void Skills_DisplayName_UsesParentDirectory_NotFileBaseName()
     {
         // Each skill's text file is named exactly SKILL.md with the actual
@@ -142,23 +147,23 @@ public class UserMemoryServiceTests
                                                        .OrderBy(f => f.DisplayName)
                                                        .ToList();
 
-        Assert.AreEqual(2, skills.Count);
-        Assert.AreEqual("git-flow", skills[0].DisplayName);
-        Assert.AreEqual("python-patterns", skills[1].DisplayName);
+        Assert.Equal(2, skills.Count);
+        Assert.Equal("git-flow", skills[0].DisplayName);
+        Assert.Equal("python-patterns", skills[1].DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_FirstNonEmptyLine_StripsHeaderHash()
     {
         Write("CLAUDE.md", "\n\n# Claude Code Guide\nrest of file");
         UserMemoryFile primary = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                   .Single(f => f.Category == UserMemoryCategory.PrimaryMemory);
-        Assert.AreEqual("Claude Code Guide", primary.Subtitle);
+        Assert.Equal("Claude Code Guide", primary.Subtitle);
     }
 
     // ── Smoke-driven (2026-05-05) subtitle-quality tests ─────────────────
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_SkipsMarkdownHorizontalRule()
     {
         // The original heuristic returned "---" as the subtitle for any file
@@ -168,10 +173,10 @@ public class UserMemoryServiceTests
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.Category == UserMemoryCategory.Subagent
                                                              && f.DisplayName == "horizontal-rule");
-        Assert.AreEqual("After the rule", entry.Subtitle);
+        Assert.Equal("After the rule", entry.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_PrefersYamlFrontMatterDescription()
     {
         // Many agents/*.md files in the wild open with YAML front-matter
@@ -186,12 +191,12 @@ public class UserMemoryServiceTests
             + "Body content here.");
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.DisplayName == "code-reviewer");
-        Assert.AreEqual(
+        Assert.Equal(
             "Reviews code for quality, security, and maintainability.",
             entry.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_FallsBackToYamlNameWhenNoDescription()
     {
         Write("agents/named.md",
@@ -201,10 +206,10 @@ public class UserMemoryServiceTests
             + "# Body");
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.DisplayName == "named");
-        Assert.AreEqual("My Agent", entry.Subtitle);
+        Assert.Equal("My Agent", entry.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_SkipsBareJsonOpener_AndUsesNextDescriptiveLine()
     {
         // For a JSON file whose first line is "{", continue past it to
@@ -218,11 +223,11 @@ public class UserMemoryServiceTests
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.Category == UserMemoryCategory.Hook
                                                              && f.DisplayName == "config");
-        Assert.IsNotNull(entry.Subtitle);
-        Assert.AreNotEqual("{", entry.Subtitle);
+        Assert.NotNull(entry.Subtitle);
+        Assert.NotEqual("{", entry.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_SkipsCodeFenceOpener()
     {
         Write("plans/fenced.md",
@@ -231,22 +236,22 @@ public class UserMemoryServiceTests
             + "```");
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.DisplayName == "fenced");
-        Assert.AreEqual("Real plan content", entry.Subtitle);
+        Assert.Equal("Real plan content", entry.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_TrimmedAt120Chars_WithEllipsis()
     {
         string longLine = new('a', 130);
         Write("plans/long.md", longLine);
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.DisplayName == "long");
-        Assert.IsNotNull(entry.Subtitle);
-        Assert.IsTrue(entry.Subtitle!.Length <= 121); // 120 + ellipsis char
-        Assert.IsTrue(entry.Subtitle.EndsWith('…'));
+        Assert.NotNull(entry.Subtitle);
+        Assert.True(entry.Subtitle!.Length <= 121); // 120 + ellipsis char
+        Assert.True(entry.Subtitle.EndsWith('…'));
     }
 
-    [TestMethod]
+    [Fact]
     public void Subtitle_AllNoiseFile_ReturnsNull()
     {
         // A file that contains nothing but separators / structural noise
@@ -255,10 +260,10 @@ public class UserMemoryServiceTests
         Write("plans/empty-noise.md", "---\n***\n```\n");
         UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
                                                 .Single(f => f.DisplayName == "empty-noise");
-        Assert.IsNull(entry.Subtitle);
+        Assert.Null(entry.Subtitle);
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectMemory_WhenProjectRootProvided_Included()
     {
         string projectRoot = Path.Combine(_fakeHome, "myproject");
@@ -266,18 +271,18 @@ public class UserMemoryServiceTests
         File.WriteAllText(Path.Combine(projectRoot, "CLAUDE.md"), "# project");
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
-        Assert.AreEqual(1, files.Count(f => f.Category == UserMemoryCategory.ProjectMemory));
+        Assert.Single(files, f => f.Category == UserMemoryCategory.ProjectMemory);
     }
 
-    [TestMethod]
+    [Fact]
     public void ProjectMemory_NoRoot_Excluded()
     {
         Write("CLAUDE.md", "# top");
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot: null);
-        Assert.AreEqual(0, files.Count(f => f.Category == UserMemoryCategory.ProjectMemory));
+        Assert.DoesNotContain(files, f => f.Category == UserMemoryCategory.ProjectMemory);
     }
 
-    [TestMethod]
+    [Fact]
     public void CrossToolMemory_CodexAndGemini_Probed()
     {
         Directory.CreateDirectory(Path.Combine(_fakeHome, ".codex"));
@@ -287,30 +292,30 @@ public class UserMemoryServiceTests
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
         List<UserMemoryFile> cross = files.Where(f => f.Category == UserMemoryCategory.CrossToolMemory).ToList();
-        Assert.AreEqual(2, cross.Count);
+        Assert.Equal(2, cross.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ReadAsync_ReturnsContent_WhenFileExists()
     {
         Write("CLAUDE.md", "hello world");
         string path = Path.Combine(_claudeHome, "CLAUDE.md");
 
         string? text = await UserMemoryService.ReadAsync(path, CancellationToken.None);
-        Assert.AreEqual("hello world", text);
+        Assert.Equal("hello world", text);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ReadAsync_ReturnsNull_WhenMissing()
     {
         string path = Path.Combine(_claudeHome, "missing.md");
         string? text = await UserMemoryService.ReadAsync(path, CancellationToken.None);
-        Assert.IsNull(text);
+        Assert.Null(text);
     }
 
     // ── Configuration category ────────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void Configuration_UserScopeJsonFiles_AreDiscovered()
     {
         Write("settings.json", "{}");
@@ -331,14 +336,14 @@ public class UserMemoryServiceTests
             .OrderBy(n => n, StringComparer.Ordinal)
             .ToArray();
 
-        CollectionAssert.AreEquivalent(
+        MessageAssert.SameElements(
             new[] { ".claude.json", "mcp.json", "settings.json" },
             names,
             "Every USER-scope config file must be discoverable — and managed policy is not one, "
             + "because it lives in a system directory shared by every user on the machine.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Configuration_KeepsFileExtension_UnlikeMemoryEntries()
     {
         // Memory entries strip the extension (CLAUDE.md -> "CLAUDE"); config entries must
@@ -348,10 +353,10 @@ public class UserMemoryServiceTests
         UserMemoryFile config = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
             .Single(f => f.Category == UserMemoryCategory.Configuration);
 
-        Assert.AreEqual("settings.json", config.DisplayName);
+        Assert.Equal("settings.json", config.DisplayName);
     }
 
-    [TestMethod]
+    [Fact]
     public void Configuration_ProjectScope_IsSuffixed_SoItDoesNotLookLikeTheUserFile()
     {
         Write("settings.json", "{}");
@@ -365,12 +370,12 @@ public class UserMemoryServiceTests
             .Select(f => f.DisplayName)
             .ToArray();
 
-        CollectionAssert.Contains(names, "settings.json");
-        CollectionAssert.Contains(names, "settings.json (project)");
-        CollectionAssert.Contains(names, "settings.local.json (project)");
+        Assert.Contains("settings.json", names);
+        Assert.Contains("settings.json (project)", names);
+        Assert.Contains("settings.local.json (project)", names);
     }
 
-    [TestMethod]
+    [Fact]
     public void Configuration_CredentialsFile_IsNeverListed()
     {
         // Credentials hold live auth tokens; a one-click "open" for them in a browsable
@@ -380,7 +385,7 @@ public class UserMemoryServiceTests
 
         IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
 
-        Assert.IsFalse(
+        Assert.False(
             files.Any(f => f.AbsolutePath.Contains("credentials", StringComparison.OrdinalIgnoreCase)),
             "The credentials file must never be surfaced in the inventory.");
     }

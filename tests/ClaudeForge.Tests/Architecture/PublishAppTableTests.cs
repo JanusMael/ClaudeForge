@@ -33,7 +33,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// reason. The smoke gate failing to find any log file is what catches that one, and it says so.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class PublishAppTableTests
 {
     private const string TableRelativePath = PublishAppTable.RelativePath;
@@ -93,7 +92,7 @@ public sealed class PublishAppTableTests
         return apps;
     }
 
-    [TestMethod]
+    [Fact]
     public void TableParses_SoThisTestIsNotVacuous()
     {
         List<PublishAppTable.Row> rows = ReadTable(FindRepoRoot());
@@ -102,7 +101,7 @@ public sealed class PublishAppTableTests
         // 1 is still a real assertion, because the failure this guards against is the regex
         // silently reading NOTHING, which would make every other test in this class pass without
         // checking anything. Restore 2 when OpenCodeForge rejoins.
-        Assert.IsTrue(
+        Assert.True(
             rows.Count >= 1,
             $"Parsed {rows.Count} row(s) out of {TableRelativePath}, expected at least the one "
             + "shipping app. Either the table's shape changed and this regex no longer reads it, "
@@ -110,14 +109,14 @@ public sealed class PublishAppTableTests
             + "without checking anything.");
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryShippingAppHasAPublishAppRow()
     {
         string repoRoot = FindRepoRoot();
         List<PublishAppTable.Row> rows = ReadTable(repoRoot);
         List<string> apps = ShippingAppProjects(repoRoot);
 
-        Assert.IsTrue(
+        Assert.True(
             apps.Count > 0,
             "Found no app projects (OutputType Exe/WinExe) under src/. This test would pass "
             + "without checking anything.");
@@ -128,14 +127,14 @@ public sealed class PublishAppTableTests
 
         List<string> unpublishable = [.. apps.Where(a => !declared.Contains(a))];
 
-        Assert.IsTrue(
+        Assert.True(
             unpublishable.Count == 0,
             $"{unpublishable.Count} app project(s) have no row in {TableRelativePath}, so no "
             + "publish script can build them and nothing but a release attempt would tell you:\n  "
             + string.Join("\n  ", unpublishable.Order(StringComparer.Ordinal)));
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryPublishAppRowNamesAProjectThatExists()
     {
         string repoRoot = FindRepoRoot();
@@ -152,7 +151,7 @@ public sealed class PublishAppTableTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             broken.Count == 0,
             $"{broken.Count} row(s) in {TableRelativePath} point at a project that does not "
             + "exist:\n  " + string.Join("\n  ", broken));
@@ -174,13 +173,13 @@ public sealed class PublishAppTableTests
     /// test for — which is why this does.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryAppDeclaresItsOwnAssemblyProduct()
     {
         string repoRoot = FindRepoRoot();
         List<PublishAppTable.Row> apps = ReadTable(repoRoot);
 
-        Assert.IsTrue(apps.Count > 0, "No apps parsed; this test would check nothing.");
+        Assert.True(apps.Count > 0, "No apps parsed; this test would check nothing.");
 
         List<string> problems = [];
         foreach (PublishAppTable.Row app in apps)
@@ -213,7 +212,7 @@ public sealed class PublishAppTableTests
             }
         }
 
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     /// <summary>
@@ -234,7 +233,7 @@ public sealed class PublishAppTableTests
     /// comparison would either reject the second app or be weakened until it accepted anything.
     /// </para>
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void EveryRowsStartupTokenIsWhatTheAppActuallyLogs()
     {
         string repoRoot = FindRepoRoot();
@@ -249,13 +248,13 @@ public sealed class PublishAppTableTests
                 Path.Combine(repoRoot, row.ProjectPath.Replace('/', Path.DirectorySeparatorChar)))!;
             string programPath = Path.Combine(projectDir, "Program.cs");
 
-            Assert.IsTrue(
+            Assert.True(
                 File.Exists(programPath),
                 $"{row.Name}: no Program.cs at '{programPath}'. This check cannot read the startup "
                 + "line, so it would silently vouch for a token nothing produces.");
 
             Match startup = StartupLogRegex.Match(File.ReadAllText(programPath));
-            Assert.IsTrue(
+            Assert.True(
                 startup.Success,
                 $"{row.Name}: no `Log.Information(\"Starting …\")` call found in Program.cs. Either "
                 + "the app stopped logging a startup line — which makes the smoke gate unable to "
@@ -296,11 +295,11 @@ public sealed class PublishAppTableTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             checkedCount > 0,
             "No startup tokens were checked. This test would pass without guarding anything.");
 
-        Assert.IsTrue(
+        Assert.True(
             mismatches.Count == 0,
             $"{mismatches.Count} row(s) declare a startup token the app never writes. "
             + "Smoke-PublishedBinary.ps1 fails a publish when it cannot find that token, so this "

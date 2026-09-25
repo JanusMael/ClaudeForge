@@ -10,7 +10,6 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
 /// block that calls <c>process.Kill(entireProcessTree: true)</c> (the A2 fix), and the method
 /// must return <see langword="null"/> without hanging or propagating an unhandled exception.
 /// </summary>
-[TestClass]
 public sealed class ProductVersionProbeTests
 {
     /// <summary>
@@ -32,8 +31,7 @@ public sealed class ProductVersionProbeTests
     /// Win32Exception (process failed to start) or via the timeout path — without
     /// propagating an unhandled exception to the caller.
     /// </summary>
-    [TestMethod]
-    [Timeout(30000)]
+    [Fact(Timeout = 30000)]
     public async Task TryGetClaudeCodeVersionAsync_NonExistentBinary_ReturnsNullWithoutException()
     {
         Stopwatch sw = Stopwatch.StartNew();
@@ -41,13 +39,13 @@ public sealed class ProductVersionProbeTests
             "/this/path/does/not/exist/claude.exe");
         sw.Stop();
 
-        Assert.IsNull(result,
+        MessageAssert.Null(result,
             "A nonexistent binary must cause the probe to return null.");
 
         // A missing binary must fail through the synchronous Win32Exception from
         // Process.Start, not by burning the probe's 2 000 ms internal deadline.
         // The bound discriminates between those two paths; it is not a perf budget.
-        Assert.IsTrue(sw.ElapsedMilliseconds < 2000,
+        Assert.True(sw.ElapsedMilliseconds < 2000,
             $"Probe took {sw.ElapsedMilliseconds} ms — should have failed fast.");
     }
 
@@ -76,8 +74,7 @@ public sealed class ProductVersionProbeTests
     /// test actually has, and far below the ~120 s the command would run for if the
     /// kill silently stopped working.
     /// </remarks>
-    [TestMethod]
-    [Timeout(30000)]
+    [Fact(Timeout = 30000)]
     public async Task TryGetVersionAsync_SlowProcess_KilledAfterTimeoutReturnsNull()
     {
         ProductVersionProbe.ResolvedCommand slow =
@@ -91,16 +88,16 @@ public sealed class ProductVersionProbeTests
             slow, TestProbeTimeoutMs, pid => startedPid = pid);
         sw.Stop();
 
-        Assert.IsNull(result,
+        MessageAssert.Null(result,
             "Slow process must be killed after the internal timeout and the method must return null.");
-        Assert.AreNotEqual(0, startedPid,
+        MessageAssert.NotEqual(0, startedPid,
             "The probe should have started a process — the test seam never fired.");
 
         // ~120 s if the deadline never fired; a small multiple of TestProbeTimeoutMs if it did.
-        Assert.IsTrue(sw.ElapsedMilliseconds < 10000,
+        Assert.True(sw.ElapsedMilliseconds < 10000,
             $"Probe took {sw.ElapsedMilliseconds} ms — the {TestProbeTimeoutMs} ms deadline did not fire.");
 
-        Assert.IsTrue(WaitForProcessExit(startedPid, ExitPollBudget),
+        Assert.True(WaitForProcessExit(startedPid, ExitPollBudget),
             $"Process {startedPid} was still running after the probe returned — "
             + "the Kill(entireProcessTree: true) in the finally block did not take effect.");
     }

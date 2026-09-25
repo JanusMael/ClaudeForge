@@ -39,13 +39,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// <c>NullableAttribute</c>'s byte encoding — worth knowing about, not worth pretending is covered.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class PublicSurfaceBaselineTests
 {
     /// <summary>Where the baselines live, relative to the repo root.</summary>
     private static readonly string[] BaselineDir = ["tests", "ClaudeForge.Tests", "Architecture", "PublicSurface"];
 
-    [TestMethod]
+    [Fact]
     public void EveryPackableAssembly_MatchesItsCheckedInSurfaceBaseline()
     {
         string repoRoot = FindRepoRoot();
@@ -54,7 +53,7 @@ public sealed class PublicSurfaceBaselineTests
         // ⚠ Premise before claim. An empty list, or one whose assemblies are not beside the test,
         // would make every assertion below vacuously true — the shape of guard that reports green
         // for years while measuring nothing.
-        Assert.IsTrue(packable.Count > 0,
+        Assert.True(packable.Count > 0,
             "No project under src/ declares <IsPackable>true</IsPackable>, so this guard has "
             + "nothing to compare and would pass no matter what the packages expose.");
 

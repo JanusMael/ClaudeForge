@@ -23,12 +23,11 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Views;
 /// confirmed by running the app.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class BackupProductCheckboxBindingTests
 {
     private const string ViewFileName = "BackupRestoreView.axaml";
 
-    [TestMethod]
+    [Fact]
     public void ProductCheckboxes_BindToTheViewModelMembersThatStillExist()
     {
         XDocument doc = XDocument.Load(Path.Combine(ViewsDirectory(), ViewFileName));
@@ -37,7 +36,7 @@ public sealed class BackupProductCheckboxBindingTests
                                    .Where(e => e.Name.LocalName == "ItemsControl")
                                    .SingleOrDefault(e =>
                                        (string?)e.Attribute("ItemsSource") == "{Binding SelectableProducts}")
-                                ?? throw new AssertFailedException(
+                                ?? throw new Xunit.Sdk.XunitException(
                                        "No ItemsControl bound to SelectableProducts. Either the products list "
                                        + "was renamed on the view-model without updating the markup, or the "
                                        + "per-product checkboxes went back to being hardcoded.");
@@ -45,10 +44,10 @@ public sealed class BackupProductCheckboxBindingTests
         XElement checkBox = itemsControl.Descendants()
                                         .Single(e => e.Name.LocalName == "CheckBox");
 
-        Assert.AreEqual("{Binding IsSelected}", (string?)checkBox.Attribute("IsChecked"),
+        MessageAssert.Equal("{Binding IsSelected}", (string?)checkBox.Attribute("IsChecked"),
             "The checkbox must two-way bind IsSelected, or toggling it changes nothing and "
             + "the backup silently covers products the user deselected.");
-        Assert.AreEqual("{Binding DisplayName}", (string?)checkBox.Attribute("Content"),
+        MessageAssert.Equal("{Binding DisplayName}", (string?)checkBox.Attribute("Content"),
             "The label comes from the item view-model, which resolves it from the resource "
             + "table — that is how the nine locale translations survived the move out of markup.");
 
@@ -56,14 +55,14 @@ public sealed class BackupProductCheckboxBindingTests
         // template the name has to be bound, since there is no longer a static per-product
         // label in the markup to point at. Attached-property attributes carry a literal dot
         // in their LocalName — XDocument reads them unmangled in the default xmlns.
-        Assert.AreEqual("{Binding DisplayName}",
+        MessageAssert.Equal("{Binding DisplayName}",
             checkBox.Attributes()
                     .SingleOrDefault(a => a.Name.LocalName == "AutomationProperties.Name")?.Value,
             "AutomationProperties.Name must bind DisplayName so a screen reader announces "
             + "each product rather than an unnamed checkbox.");
     }
 
-    [TestMethod]
+    [Fact]
     public void TheRetiredPerProductBindingsAreGone()
     {
         // Counter-direction: if the old bindings were left behind alongside the new list, the
@@ -82,7 +81,7 @@ public sealed class BackupProductCheckboxBindingTests
                                               || v.Contains("IncludeClaudeDesktop", StringComparison.Ordinal))
                                   .ToList();
 
-        Assert.AreEqual(0, retired.Count,
+        MessageAssert.Equal(0, retired.Count,
             "These view-model members no longer exist, so any binding to them is dead: "
             + string.Join(" | ", retired));
     }

@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 ///         instead of stack-overflowing.</item>
 /// </list>
 /// </remarks>
-[TestClass]
 public sealed class PropertyEditorBridgeDefaultsTests
 {
     private static SchemaNode S(string name)
@@ -37,7 +36,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
     // ── ToJsonValue default ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_DefaultPath_ConvertsToValueResultViaJsonCurrency()
     {
         // FUTURE-style leaf: overrides library ToValue() only, leaves the
@@ -50,36 +49,36 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
         JsonNode? json = leaf.ToJsonValue();
 
-        Assert.IsNotNull(json);
-        Assert.AreEqual("42", json.ToJsonString(),
+        Assert.NotNull(json);
+        MessageAssert.Equal("42", json.ToJsonString(),
             "Default ToJsonValue must round-trip ToValue() through JsonCurrency.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_DefaultPath_PreservesNullValue()
     {
         LibraryToValueOnlyLeaf leaf = new(S("x"), ConfigScope.User) { Value = null };
 
-        Assert.IsNull(leaf.ToJsonValue(),
+        MessageAssert.Null(leaf.ToJsonValue(),
             "ToValue=null must round-trip to ToJsonValue=null via JsonCurrency.ToJsonNode.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_LeafOverridesNeither_ThrowsWithDiagnostic()
     {
         BothDefaultsLeaf leaf = new(S("x"), ConfigScope.User);
 
-        InvalidOperationException ex = Assert.ThrowsExactly<InvalidOperationException>(() => leaf.ToJsonValue());
+        InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => leaf.ToJsonValue());
 
-        StringAssert.Contains(ex.Message, "BothDefaultsLeaf",
+        MessageAssert.Contains("BothDefaultsLeaf", ex.Message,
             "Diagnostic must name the offending leaf type.");
-        StringAssert.Contains(ex.Message, "ToJsonValue",
+        MessageAssert.Contains("ToJsonValue", ex.Message,
             "Diagnostic must mention the App-side override option.");
-        StringAssert.Contains(ex.Message, "ToValue",
+        MessageAssert.Contains("ToValue", ex.Message,
             "Diagnostic must mention the library-side override option.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ToJsonValue_AppSideOverride_ShortCircuitsBeforeDefault()
     {
         // EXISTING-style leaf: overrides ToJsonValue directly. The new
@@ -91,14 +90,14 @@ public sealed class PropertyEditorBridgeDefaultsTests
         };
 
         JsonNode? json = leaf.ToJsonValue();
-        Assert.IsNotNull(json);
-        Assert.AreEqual("\"hello\"", json.ToJsonString(),
+        Assert.NotNull(json);
+        MessageAssert.Equal("\"hello\"", json.ToJsonString(),
             "Existing-style leaves' ToJsonValue overrides must take precedence over the new default.");
     }
 
     // ── LoadFromLayered default ──────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_DefaultPath_DelegatesToLoadFromValueWithLayeredValueAdapter()
     {
         // FUTURE-style leaf: overrides library LoadFromValue only.  When a
@@ -118,24 +117,24 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
         leaf.LoadFromLayered(layered, ConfigScope.User);
 
-        Assert.IsNotNull(leaf.LastReceivedValue,
+        MessageAssert.NotNull(leaf.LastReceivedValue,
             "Default LoadFromLayered must invoke library LoadFromValue.");
-        Assert.IsInstanceOfType<LayeredValueAdapter>(leaf.LastReceivedValue,
+        MessageAssert.IsAssignableFrom<LayeredValueAdapter>(leaf.LastReceivedValue,
             "Wrapped value must be a LayeredValueAdapter so adapters that "
             + "type-test for the underlying LayeredValue can recover it.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromLayered_LeafOverridesNeither_ThrowsWithDiagnostic()
     {
         BothDefaultsLeaf leaf = new(S("x"), ConfigScope.User);
         LayeredValue layered = new("x", []);
 
         InvalidOperationException ex =
-            Assert.ThrowsExactly<InvalidOperationException>(() => leaf.LoadFromLayered(layered, ConfigScope.User));
+            Assert.Throws<InvalidOperationException>(() => leaf.LoadFromLayered(layered, ConfigScope.User));
 
-        StringAssert.Contains(ex.Message, "LoadFromLayered");
-        StringAssert.Contains(ex.Message, "LoadFromValue");
+        OrdinalAssert.Contains("LoadFromLayered", ex.Message);
+        OrdinalAssert.Contains("LoadFromValue", ex.Message);
     }
 
     // ── Legacy bridge aliases (Schema / JsonPath / IsManagedLocked) ──
@@ -146,7 +145,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
     // expect the original SchemaNode type rather than the library's
     // IEditorSchema.  These were uncovered until now.
 
-    [TestMethod]
+    [Fact]
     public void Schema_LegacyAlias_ReturnsConstructorSchemaNode()
     {
         // The base library exposes Schema typed as IEditorSchema.  The
@@ -157,23 +156,23 @@ public sealed class PropertyEditorBridgeDefaultsTests
         SchemaNode schema = S("authToken");
         LibraryToValueOnlyLeaf leaf = new(schema, ConfigScope.User);
 
-        Assert.AreSame(schema, leaf.Schema,
+        MessageAssert.Same(schema, leaf.Schema,
             "App-bridge Schema getter must return the original SchemaNode reference, not a re-wrapped IEditorSchema.");
     }
 
-    [TestMethod]
+    [Fact]
     public void JsonPath_LegacyAlias_MatchesLibraryPath()
     {
         // JsonPath is the legacy name for the library's Path property.
         // Both must agree — they are the same dot-separated route.
         LibraryToValueOnlyLeaf leaf = new(S("auth.token"), ConfigScope.User);
 
-        Assert.AreEqual(leaf.Path, leaf.JsonPath,
+        MessageAssert.Equal(leaf.Path, leaf.JsonPath,
             "JsonPath must mirror the library's Path so legacy bindings keep working.");
-        Assert.AreEqual("auth.token", leaf.JsonPath);
+        Assert.Equal("auth.token", leaf.JsonPath);
     }
 
-    [TestMethod]
+    [Fact]
     public void IsManagedLocked_LegacyAlias_MatchesIsLocked()
     {
         // IsManagedLocked is the legacy name for IsLocked (the library
@@ -181,7 +180,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
         // for the lock state live elsewhere; this just locks the alias.
         LibraryToValueOnlyLeaf leaf = new(S("x"), ConfigScope.User);
 
-        Assert.AreEqual(leaf.IsLocked, leaf.IsManagedLocked,
+        MessageAssert.Equal(leaf.IsLocked, leaf.IsManagedLocked,
             "IsManagedLocked must mirror IsLocked so legacy bindings keep working.");
     }
 
@@ -195,7 +194,7 @@ public sealed class PropertyEditorBridgeDefaultsTests
     // that hand the bridge a raw IEditorValue.  These tests exercise that
     // path so coverage reflects the contract.
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_NonAdapterIEditorValue_SynthesizesLayeredViaFallback()
     {
         // Pass a non-LayeredValueAdapter fake to a leaf that overrides ONLY
@@ -210,14 +209,14 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
         leaf.LoadFromValue(fakeValue, userScope);
 
-        Assert.IsNotNull(leaf.LastLayered,
+        MessageAssert.NotNull(leaf.LastLayered,
             "BuildFallbackLayeredValue must have synthesised a LayeredValue and dispatched it.");
-        Assert.AreEqual(1, leaf.LastLayered!.Entries.Count,
+        MessageAssert.Equal(1, leaf.LastLayered!.Entries.Count,
             "Single defined scope → single synthesised entry.");
-        Assert.AreEqual(ConfigScope.User, leaf.LastLayered.Entries[0].Scope);
+        Assert.Equal(ConfigScope.User, leaf.LastLayered.Entries[0].Scope);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_NonAdapter_EmptyValue_FallbackProducesEmptyEntries()
     {
         // No scope has defined this property → BuildFallbackLayeredValue
@@ -228,14 +227,14 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
         leaf.LoadFromValue(fakeValue, userScope);
 
-        Assert.IsNotNull(leaf.LastLayered);
-        Assert.AreEqual(0, leaf.LastLayered!.Entries.Count,
+        Assert.NotNull(leaf.LastLayered);
+        MessageAssert.Equal(0, leaf.LastLayered!.Entries.Count,
             "Empty fake → no entries in the synthesised LayeredValue.");
-        Assert.IsNull(leaf.LastLayered.EffectiveScope,
+        MessageAssert.Null(leaf.LastLayered.EffectiveScope,
             "Empty fake → no EffectiveScope.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadFromValue_NonAdapter_MultiScope_FallbackPreservesAllEntries()
     {
         // Two scopes defined → fallback synthesises both entries.  The
@@ -249,10 +248,10 @@ public sealed class PropertyEditorBridgeDefaultsTests
 
         leaf.LoadFromValue(fakeValue, userScope);
 
-        Assert.IsNotNull(leaf.LastLayered);
-        Assert.AreEqual(2, leaf.LastLayered!.Entries.Count,
+        Assert.NotNull(leaf.LastLayered);
+        MessageAssert.Equal(2, leaf.LastLayered!.Entries.Count,
             "Both scope entries must round-trip through BuildFallbackLayeredValue.");
-        Assert.IsNotNull(leaf.LastLayered.EffectiveScope,
+        MessageAssert.NotNull(leaf.LastLayered.EffectiveScope,
             "Multi-scope fake → EffectiveScope must be populated.");
     }
 

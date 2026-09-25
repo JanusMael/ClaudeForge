@@ -27,7 +27,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// thing being checked.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class WingetManifestTests
 {
     private const string ManifestDir = "packaging/winget";
@@ -50,13 +49,13 @@ public sealed class WingetManifestTests
     private static string ManifestPath(string repoRoot, string fileName) =>
         Path.Combine(repoRoot, ManifestDir.Replace('/', Path.DirectorySeparatorChar), fileName);
 
-    [TestMethod]
+    [Fact]
     public void EveryAppHasACompleteManifestSet()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
         List<PublishAppTable.Row> apps = PublishAppTable.Read(repoRoot);
 
-        Assert.IsTrue(apps.Count > 0, "No apps parsed; this test would check nothing.");
+        Assert.True(apps.Count > 0, "No apps parsed; this test would check nothing.");
 
         List<string> missing = [];
         foreach (PublishAppTable.Row app in apps)
@@ -82,19 +81,19 @@ public sealed class WingetManifestTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             missing.Count == 0,
             $"{missing.Count} winget manifest file(s) are missing, so that app cannot be "
             + "submitted to the catalog:\n  " + string.Join("\n  ", missing));
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryManifestDeclaresThePackageIdItsFilenameClaims()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
         string dir = Path.Combine(repoRoot, ManifestDir.Replace('/', Path.DirectorySeparatorChar));
 
-        Assert.IsTrue(Directory.Exists(dir), $"'{ManifestDir}' not found.");
+        Assert.True(Directory.Exists(dir), $"'{ManifestDir}' not found.");
 
         List<string> problems = [];
         int checkedCount = 0;
@@ -124,14 +123,14 @@ public sealed class WingetManifestTests
             }
         }
 
-        Assert.IsTrue(checkedCount > 0, "No manifests were checked.");
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(checkedCount > 0, "No manifests were checked.");
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     /// <summary>
     /// Each installer manifest's URLs address that app's own tag shape and asset names.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void InstallerUrlsUseTheAppsOwnTagPrefixAndAssetNames()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
@@ -153,7 +152,7 @@ public sealed class WingetManifestTests
                 .Matches(text)
                 .Select(m => m.Groups["url"].Value)];
 
-            Assert.IsTrue(
+            Assert.True(
                 urls.Count > 0,
                 $"{app.WingetPackageId}.installer.yaml declares no InstallerUrl, so winget has "
                 + "nothing to download.");
@@ -208,10 +207,10 @@ public sealed class WingetManifestTests
             }
         }
 
-        Assert.IsTrue(
+        Assert.True(
             checkedCount > 0,
             "No InstallerUrls were checked, so this test guarded nothing.");
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
     /// <summary>
@@ -223,7 +222,7 @@ public sealed class WingetManifestTests
     /// single winget-pkgs PR once there were two. This asserts the selection stays unambiguous:
     /// no package id may be a prefix of another, or "$id.*" filters would overlap.
     /// </remarks>
-    [TestMethod]
+    [Fact]
     public void NoPackageIdIsAPrefixOfAnother()
     {
         string repoRoot = PublishAppTable.FindRepoRoot();
@@ -249,6 +248,6 @@ public sealed class WingetManifestTests
             }
         }
 
-        Assert.IsTrue(problems.Count == 0, string.Join("\n", problems));
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 }

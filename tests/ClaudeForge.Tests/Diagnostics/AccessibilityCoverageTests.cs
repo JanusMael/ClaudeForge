@@ -33,13 +33,12 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Diagnostics;
 /// comes out lower than expected means the walker can no longer reach something.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class AccessibilityCoverageTests
 {
     private static HeadlessUnitTestSession Session =>
         HeadlessUnitTestSession.GetOrStartForAssembly(Assembly.GetExecutingAssembly());
 
-    [TestMethod]
+    [Fact]
     public Task FatalErrorDialog_EveryInteractiveControlIsNamed()
     {
         return Session.Dispatch(() =>
@@ -51,7 +50,7 @@ public sealed class AccessibilityCoverageTests
         }, CancellationToken.None);
     }
 
-    [TestMethod]
+    [Fact]
     public Task NonFatalNoticeDialog_EveryInteractiveControlIsNamed()
     {
         return Session.Dispatch(() =>
@@ -63,7 +62,7 @@ public sealed class AccessibilityCoverageTests
         }, CancellationToken.None);
     }
 
-    [TestMethod]
+    [Fact]
     public Task LiveTailWindow_EveryInteractiveControlIsNamed()
     {
         return Session.Dispatch(() =>
@@ -75,7 +74,7 @@ public sealed class AccessibilityCoverageTests
         }, CancellationToken.None);
     }
 
-    [TestMethod]
+    [Fact]
     public Task LiveLogWindow_EveryInteractiveControlIsNamed()
     {
         return Session.Dispatch(() =>
@@ -151,7 +150,7 @@ public sealed class AccessibilityCoverageTests
                 "accessibility invariant in the root AGENTS.md.\n");
         }
 
-        Assert.AreEqual(expectedControls, interactive.Count,
+        MessageAssert.Equal(expectedControls, interactive.Count,
             $"{owner}: the walker found {interactive.Count} interactive controls " +
             $"but this test expects {expectedControls}. If you added or removed a control, update " +
             "the expected count here. If the count dropped without a removal, the walker no longer " +

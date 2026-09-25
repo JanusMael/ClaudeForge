@@ -15,7 +15,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Services;
 /// arranging.
 /// </para>
 /// </summary>
-[TestClass]
 public sealed class SchemaPageLayoutTests
 {
     private static SchemaNode Node(string name)
@@ -39,7 +38,7 @@ public sealed class SchemaPageLayoutTests
         };
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_EmitsPagesInTheDeclaredOrder_NotSchemaOrderAndNotAlphabetically()
     {
         SchemaPageLayout layout = Layout(
@@ -60,12 +59,12 @@ public sealed class SchemaPageLayoutTests
         // ignored PageOrder entirely left it green.
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("paint"), Node("bolt")]);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "Parts", "Finish" },
             pages.Select(p => p.Title).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_SkipsDeclaredPagesThatGotNoProperties()
     {
         SchemaPageLayout layout = Layout(
@@ -74,13 +73,13 @@ public sealed class SchemaPageLayoutTests
 
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("bolt")]);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "Parts" },
             pages.Select(p => p.Title).ToArray(),
             "A page with nothing on it must not become an empty nav node.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_SendsUnmappedPropertiesToTheFallbackPage()
     {
         SchemaPageLayout layout = Layout(
@@ -90,7 +89,7 @@ public sealed class SchemaPageLayoutTests
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("bolt"), Node("mystery")]);
 
         SchemaPage fallback = pages.Single(p => p.Title == "Everything Else");
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "mystery" },
             fallback.Nodes.Select(n => n.Name).ToArray(),
             "A schema property nobody filed must still be reachable.");
@@ -100,7 +99,7 @@ public sealed class SchemaPageLayoutTests
     /// The fallback page is ordinary once it appears in the order list — it must not
     /// get shunted to the end just because it is the catch-all.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void Arrange_KeepsTheFallbackPageInItsDeclaredPosition()
     {
         SchemaPageLayout layout = Layout(
@@ -109,12 +108,12 @@ public sealed class SchemaPageLayoutTests
 
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("paint"), Node("mystery")]);
 
-        CollectionAssert.AreEqual(
+        Assert.Equal(
             new[] { "Everything Else", "Finish" },
             pages.Select(p => p.Title).ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_AppendsUndeclaredPagesAlphabetically_AfterTheOrderedOnes()
     {
         // "Zebra" and "Alpha" are named by the map but missing from the order list —
@@ -130,13 +129,13 @@ public sealed class SchemaPageLayoutTests
 
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("stripe"), Node("ant"), Node("bolt")]);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "Parts", "Alpha", "Zebra" },
             pages.Select(p => p.Title).ToArray(),
             "Declared pages first in declared order, then the rest sorted — never dropped.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_PreservesSchemaOrderWithinAPage()
     {
         SchemaPageLayout layout = Layout(
@@ -150,13 +149,13 @@ public sealed class SchemaPageLayoutTests
 
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("c"), Node("a"), Node("b")]);
 
-        CollectionAssert.AreEqual(
+        MessageAssert.SequenceEqual(
             new[] { "c", "a", "b" },
             pages.Single().Nodes.Select(n => n.Name).ToArray(),
             "Property order on a page is the schema's, not alphabetical.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_AttachesTheDeclaredDescription_AndEmptyWhenThereIsNone()
     {
         SchemaPageLayout layout = Layout(
@@ -170,19 +169,19 @@ public sealed class SchemaPageLayoutTests
 
         IReadOnlyList<SchemaPage> pages = layout.Arrange([Node("bolt"), Node("paint")]);
 
-        Assert.AreEqual("Nuts and bolts.", pages.Single(p => p.Title == "Parts").Description);
-        Assert.AreEqual(string.Empty, pages.Single(p => p.Title == "Finish").Description,
+        Assert.Equal("Nuts and bolts.", pages.Single(p => p.Title == "Parts").Description);
+        MessageAssert.Equal(string.Empty, pages.Single(p => p.Title == "Finish").Description,
             "A page with no declared description gets an empty one, not a missing key throw.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Arrange_EmptySchema_ProducesNoPages()
     {
         SchemaPageLayout layout = Layout(
             new Dictionary<string, string>(StringComparer.Ordinal) { ["bolt"] = "Parts" },
             ["Parts"]);
 
-        Assert.AreEqual(0, layout.Arrange([]).Count);
+        Assert.Empty(layout.Arrange([]));
     }
 
     // ── This app's own layout ─────────────────────────────────────────────
@@ -193,18 +192,18 @@ public sealed class SchemaPageLayoutTests
     /// alphabetically after the ordered pages — so a typo moves a whole page to the
     /// bottom of the tree and changes nothing else. Nothing else would catch that.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ClaudeLayout_EveryMappedPageIsAlsoOrdered()
     {
         SchemaPageLayout layout = NavigationTreeBuilder.Layout;
 
         foreach (string page in layout.PropertyToPage.Values.Distinct())
         {
-            CollectionAssert.Contains(layout.PageOrder.ToList(), page,
+            MessageAssert.Contains(page, layout.PageOrder.ToList(),
                 $"Page '{page}' is filed onto by the property map but missing from the page order.");
         }
 
-        CollectionAssert.Contains(layout.PageOrder.ToList(), layout.FallbackPage,
+        MessageAssert.Contains(layout.FallbackPage, layout.PageOrder.ToList(),
             "The catch-all page must be ordered too, or unmapped settings land at the bottom of the tree.");
     }
 
@@ -212,14 +211,14 @@ public sealed class SchemaPageLayoutTests
     /// The other direction: a description keyed to a page title that no longer exists
     /// is dead text nobody will ever see, and reads as coverage that is not there.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void ClaudeLayout_EveryDescriptionKeyIsARealPage()
     {
         SchemaPageLayout layout = NavigationTreeBuilder.Layout;
 
         foreach (string title in layout.PageDescriptions.Keys)
         {
-            CollectionAssert.Contains(layout.PageOrder.ToList(), title,
+            MessageAssert.Contains(title, layout.PageOrder.ToList(),
                 $"Description keyed to '{title}', which is not a page in the order list.");
         }
     }

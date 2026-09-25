@@ -26,7 +26,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
 /// respect to casing. The scope object here is the one the app really hands the classifier.
 /// </para>
 /// </remarks>
-[TestClass]
 public sealed class ClaudeDangerTableTests
 {
     private static readonly IEditorScope ProjectScope = ConfigScopeAdapter.For(ConfigScope.Project);
@@ -35,13 +34,13 @@ public sealed class ClaudeDangerTableTests
 
     // ── Coverage: the anti-rot guard ──────────────────────────────────────────
 
-    [TestMethod]
+    [Fact]
     public void EverySettingsSchemaKeyIsClassified()
     {
         IReadOnlyCollection<string> keys = SettingsSchemaKeys();
 
         // A scan that finds nothing proves nothing.
-        Assert.IsTrue(keys.Count >= 100,
+        Assert.True(keys.Count >= 100,
             $"only {keys.Count} top-level keys read from claude-code-settings.json; the schema "
             + "reader is broken, not the table. It had 142 when this table was written.");
 
@@ -68,14 +67,14 @@ public sealed class ClaudeDangerTableTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void EveryClassifiedPathExplainsItself()
     {
         foreach (string pattern in ClaudeDangerTable.Settings.ClassifiedPaths)
         {
             string path = pattern.Replace("*", "x", StringComparison.Ordinal);
 
-            Assert.IsFalse(
+            Assert.False(
                 string.IsNullOrWhiteSpace(
                     ClaudeDangerTable.Settings.Classify(path, UserScope, null).Explanation),
                 $"pattern '{pattern}' produced no explanation. Every rule must be able to tell "
@@ -83,7 +82,7 @@ public sealed class ClaudeDangerTableTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void NoClassifiedPathIsAStaleSchemaKey()
     {
         // A nested refinement is legitimately absent from the top-level list, so only single-segment
@@ -95,7 +94,7 @@ public sealed class ClaudeDangerTableTests
             .Where(p => !p.Contains('.', StringComparison.Ordinal))
             .Where(p => !keys.Contains(p))];
 
-        Assert.IsTrue(stale.Count == 0,
+        Assert.True(stale.Count == 0,
             $"{stale.Count} rule(s) name a top-level key the schema no longer has: "
             + $"{string.Join(", ", stale)}. Either the key was renamed upstream (move the rule) or "
             + "it is gone (delete it) — a rule matching nothing is dead weight that still reads as "
@@ -104,111 +103,111 @@ public sealed class ClaudeDangerTableTests
 
     // ── Tiers: the keys whose classification is the whole point ──────────────
 
-    [TestMethod]
-    [DataRow("permissions", AppSeverity.Critical)]
-    [DataRow("permissions.defaultMode", AppSeverity.Critical)]
-    [DataRow("permissions.allow", AppSeverity.Critical)]
-    [DataRow("permissions.disableBypassPermissionsMode", AppSeverity.Critical)]
-    [DataRow("sandbox", AppSeverity.Critical)]
-    [DataRow("sandbox.enabled", AppSeverity.Critical)]
-    [DataRow("hooks", AppSeverity.Critical)]
-    [DataRow("apiKeyHelper", AppSeverity.Critical)]
-    [DataRow("statusLine", AppSeverity.Critical)]
-    [DataRow("enableAllProjectMcpServers", AppSeverity.Critical)]
-    [DataRow("enabledPlugins", AppSeverity.Critical)]
-    [DataRow("env", AppSeverity.Caution)]
-    [DataRow("extraKnownMarketplaces", AppSeverity.Caution)]
-    [DataRow("skipDangerousModePermissionPrompt", AppSeverity.Critical)]
-    [DataRow("remoteControlAtStartup", AppSeverity.Critical)]
-    [DataRow("respectGitignore", AppSeverity.Caution)]
-    [DataRow("cleanupPeriodDays", AppSeverity.Caution)]
-    [DataRow("fastMode", AppSeverity.Caution)]
-    [DataRow("model", AppSeverity.Info)]
-    [DataRow("includeCoAuthoredBy", AppSeverity.Info)]
-    [DataRow("theme", AppSeverity.Neutral)]
-    [DataRow("$schema", AppSeverity.Neutral)]
+    [Theory]
+    [InlineData("permissions", AppSeverity.Critical)]
+    [InlineData("permissions.defaultMode", AppSeverity.Critical)]
+    [InlineData("permissions.allow", AppSeverity.Critical)]
+    [InlineData("permissions.disableBypassPermissionsMode", AppSeverity.Critical)]
+    [InlineData("sandbox", AppSeverity.Critical)]
+    [InlineData("sandbox.enabled", AppSeverity.Critical)]
+    [InlineData("hooks", AppSeverity.Critical)]
+    [InlineData("apiKeyHelper", AppSeverity.Critical)]
+    [InlineData("statusLine", AppSeverity.Critical)]
+    [InlineData("enableAllProjectMcpServers", AppSeverity.Critical)]
+    [InlineData("enabledPlugins", AppSeverity.Critical)]
+    [InlineData("env", AppSeverity.Caution)]
+    [InlineData("extraKnownMarketplaces", AppSeverity.Caution)]
+    [InlineData("skipDangerousModePermissionPrompt", AppSeverity.Critical)]
+    [InlineData("remoteControlAtStartup", AppSeverity.Critical)]
+    [InlineData("respectGitignore", AppSeverity.Caution)]
+    [InlineData("cleanupPeriodDays", AppSeverity.Caution)]
+    [InlineData("fastMode", AppSeverity.Caution)]
+    [InlineData("model", AppSeverity.Info)]
+    [InlineData("includeCoAuthoredBy", AppSeverity.Info)]
+    [InlineData("theme", AppSeverity.Neutral)]
+    [InlineData("$schema", AppSeverity.Neutral)]
     public void KeyHasExpectedTier(string path, AppSeverity expected)
     {
-        Assert.AreEqual(expected,
+        MessageAssert.Equal(expected,
             ClaudeDangerTable.Settings.Classify(path, UserScope, null).Severity,
             $"'{path}' is classified at the wrong tier.");
     }
 
     // ── Predicates: is the value held right now the unsafe one? ──────────────
 
-    [TestMethod]
+    [Fact]
     public void BypassPermissionsIsFlaggedAndAcceptEditsIsNot()
     {
-        Assert.IsTrue(
+        Assert.True(
             ClaudeDangerTable.Settings
                 .Classify("permissions.defaultMode", UserScope, "bypassPermissions").IsDangerNow,
             "bypassPermissions approves every tool call and must read as unsafe right now.");
 
-        Assert.IsFalse(
+        Assert.False(
             ClaudeDangerTable.Settings
                 .Classify("permissions.defaultMode", UserScope, "acceptEdits").IsDangerNow,
             "acceptEdits still prompts for anything beyond edits — flagging it would train the "
             + "user to ignore the banner.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AnUnscopedAllowRuleIsFlaggedButAScopedOneIsNot()
     {
-        Assert.IsTrue(Allow("Bash").IsDangerNow, "A bare tool name grants every call to it.");
-        Assert.IsTrue(Allow("Bash(*)").IsDangerNow, "A wildcard argument grants every command.");
-        Assert.IsTrue(Allow("Bash(:*)").IsDangerNow, "So does a bare prefix wildcard.");
+        Assert.True(Allow("Bash").IsDangerNow, "A bare tool name grants every call to it.");
+        Assert.True(Allow("Bash(*)").IsDangerNow, "A wildcard argument grants every command.");
+        Assert.True(Allow("Bash(:*)").IsDangerNow, "So does a bare prefix wildcard.");
 
-        Assert.IsFalse(Allow("Bash(git log:*)").IsDangerNow,
+        Assert.False(Allow("Bash(git log:*)").IsDangerNow,
             "A scoped rule is the RECOMMENDED form. Flagging it would make the correct answer "
             + "look like the dangerous one.");
-        Assert.IsFalse(Allow("Read(src/**)").IsDangerNow);
+        Assert.False(Allow("Read(src/**)").IsDangerNow);
 
         static DangerAssessment Allow(string rule) =>
             ClaudeDangerTable.Settings.Classify("permissions.allow", UserScope, new object?[] { rule });
     }
 
-    [TestMethod]
+    [Fact]
     public void ASandboxSwitchedOffIsFlaggedAndOneSwitchedOnIsNot()
     {
-        Assert.IsTrue(ClaudeDangerTable.Settings.Classify("sandbox.enabled", UserScope, false).IsDangerNow);
-        Assert.IsFalse(ClaudeDangerTable.Settings.Classify("sandbox.enabled", UserScope, true).IsDangerNow);
+        Assert.True(ClaudeDangerTable.Settings.Classify("sandbox.enabled", UserScope, false).IsDangerNow);
+        Assert.False(ClaudeDangerTable.Settings.Classify("sandbox.enabled", UserScope, true).IsDangerNow);
     }
 
-    [TestMethod]
+    [Fact]
     public void ARespectedGitignoreIsSafeAndAnIgnoredOneIsNot()
     {
-        Assert.IsTrue(ClaudeDangerTable.Settings.Classify("respectGitignore", UserScope, false).IsDangerNow,
+        Assert.True(ClaudeDangerTable.Settings.Classify("respectGitignore", UserScope, false).IsDangerNow,
             "With gitignore ignored the picker offers exactly the files secrets live in.");
-        Assert.IsFalse(ClaudeDangerTable.Settings.Classify("respectGitignore", UserScope, true).IsDangerNow);
+        Assert.False(ClaudeDangerTable.Settings.Classify("respectGitignore", UserScope, true).IsDangerNow);
     }
 
-    [TestMethod]
+    [Fact]
     public void OnlyASecretShapedEnvKeyIsFlagged()
     {
-        Assert.IsTrue(Env("ANTHROPIC_API_KEY").IsDangerNow, "A key name is a credential name.");
-        Assert.IsTrue(Env("MY_TOKEN").IsDangerNow);
-        Assert.IsTrue(Env("db_password").IsDangerNow, "Case must not matter.");
-        Assert.IsTrue(Env("OPENAI_APIKEY").IsDangerNow, "No separator before KEY must still hit.");
+        Assert.True(Env("ANTHROPIC_API_KEY").IsDangerNow, "A key name is a credential name.");
+        Assert.True(Env("MY_TOKEN").IsDangerNow);
+        Assert.True(Env("db_password").IsDangerNow, "Case must not matter.");
+        Assert.True(Env("OPENAI_APIKEY").IsDangerNow, "No separator before KEY must still hit.");
 
-        Assert.IsFalse(Env("MAX_OUTPUT_TOKENS").IsDangerNow,
+        Assert.False(Env("MAX_OUTPUT_TOKENS").IsDangerNow,
             "⚠ This one is load-bearing: 'TOKENS' contains 'TOKEN', but a token BUDGET is not a "
             + "credential — and MAX_OUTPUT_TOKENS is a real key the Essentials page writes itself. "
             + "A substring match flags it, and a dot on a value the app set for you is the false "
             + "positive that teaches people to ignore dots.");
-        Assert.IsFalse(Env("MAX_THINKING_TOKENS").IsDangerNow);
-        Assert.IsFalse(Env("DISABLE_TELEMETRY").IsDangerNow);
+        Assert.False(Env("MAX_THINKING_TOKENS").IsDangerNow);
+        Assert.False(Env("DISABLE_TELEMETRY").IsDangerNow);
 
         static DangerAssessment Env(string name) =>
             ClaudeDangerTable.Settings.Classify(
                 "env", UserScope, new Dictionary<string, object?> { [name] = "x" });
     }
 
-    [TestMethod]
+    [Fact]
     public void ABareWildcardHookUrlIsFlaggedButARealPatternIsNot()
     {
-        Assert.IsTrue(Urls("*").IsDangerNow,
+        Assert.True(Urls("*").IsDangerNow,
             "An allowlist of '*' allows every destination while looking like a restriction.");
-        Assert.IsFalse(Urls("https://hooks.example.com/*").IsDangerNow,
+        Assert.False(Urls("https://hooks.example.com/*").IsDangerNow,
             "A pattern with a real host is the intended use.");
 
         static DangerAssessment Urls(string pattern) =>
@@ -216,7 +215,7 @@ public sealed class ClaudeDangerTableTests
                 "allowedHttpHookUrls", UserScope, new object?[] { pattern });
     }
 
-    [TestMethod]
+    [Fact]
     public void AHardeningKeyNeverClaimsToBeWrongRightNow()
     {
         // Their unsafe state is ABSENCE, and absence is also the default for everyone who has
@@ -230,21 +229,21 @@ public sealed class ClaudeDangerTableTests
         {
             foreach (object? value in new object?[] { true, false, null })
             {
-                Assert.IsFalse(ClaudeDangerTable.Settings.Classify(key, UserScope, value).IsDangerNow,
+                Assert.False(ClaudeDangerTable.Settings.Classify(key, UserScope, value).IsDangerNow,
                     $"'{key}' points the SAFE way, so no value of it is 'wrong right now'. It "
                     + "still carries a tier, which is the signal that it matters.");
             }
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void AConfiguredHooksBlockIsNotItselfFlagged()
     {
         DangerAssessment a = ClaudeDangerTable.Settings.Classify(
             "hooks", UserScope, new Dictionary<string, object?> { ["PreToolUse"] = "x" });
 
-        Assert.AreEqual(AppSeverity.Critical, a.Severity, "It still deserves the dot.");
-        Assert.IsFalse(a.IsDangerNow,
+        MessageAssert.Equal(AppSeverity.Critical, a.Severity, "It still deserves the dot.");
+        Assert.False(a.IsDangerNow,
             "Having hooks configured is the normal state of a real installation. A standing red "
             + "banner on every machine is a banner nobody reads.");
     }
@@ -268,10 +267,10 @@ public sealed class ClaudeDangerTableTests
     /// it would put the warning on the correct answer.
     /// </para>
     /// </remarks>
-    [TestMethod]
-    [DataRow("env")]
-    [DataRow("extraKnownMarketplaces")]
-    [DataRow("permissions.additionalDirectories")]
+    [Theory]
+    [InlineData("env")]
+    [InlineData("extraKnownMarketplaces")]
+    [InlineData("permissions.additionalDirectories")]
     public void AnEscalatingKeyIsWorseOnlyInTheCommittedProjectFile(string path)
     {
         object? value = path switch
@@ -285,18 +284,18 @@ public sealed class ClaudeDangerTableTests
         AppSeverity atLocal = ClaudeDangerTable.Settings.Classify(path, LocalScope, value).Severity;
         AppSeverity atProject = ClaudeDangerTable.Settings.Classify(path, ProjectScope, value).Severity;
 
-        Assert.AreEqual(AppSeverity.Caution, atUser,
+        MessageAssert.Equal(AppSeverity.Caution, atUser,
             $"Premise: '{path}' must be BELOW Critical at a private scope, or the escalation "
             + "below cannot be observed and the rule's EscalatesAt is a silent no-op.");
-        Assert.AreEqual(AppSeverity.Caution, atLocal,
+        MessageAssert.Equal(AppSeverity.Caution, atLocal,
             "settings.local.json is git-ignored, so it is not published and must not escalate.");
-        Assert.AreEqual(AppSeverity.Critical, atProject,
+        MessageAssert.Equal(AppSeverity.Critical, atProject,
             $"'{path}' in the committed .claude/settings.json is shared with everyone who can "
             + "read the repo, and must escalate. If this fails, check the scope id the adapter "
             + $"reports ('{ProjectScope.Id}') against what IsGitCommittedScope compares.");
     }
 
-    [TestMethod]
+    [Fact]
     public void ANullScopeDoesNotEscalate()
     {
         // An unknown scope is not evidence of danger, and the predicate must tolerate null.
@@ -305,23 +304,23 @@ public sealed class ClaudeDangerTableTests
             scope: null,
             new Dictionary<string, object?> { ["internal"] = "x" });
 
-        Assert.AreEqual(AppSeverity.Caution, a.Severity,
+        MessageAssert.Equal(AppSeverity.Caution, a.Severity,
             "An unknown scope is not evidence of danger, so the key keeps its base tier rather "
             + "than escalating. The predicate must also tolerate the null rather than throwing.");
     }
 
     // ── Inheritance: the mechanism the per-top-level-key table relies on ─────
 
-    [TestMethod]
+    [Fact]
     public void ANestedPathWithNoRuleInheritsItsAncestorsTier()
     {
         DangerAssessment a = ClaudeDangerTable.Settings.Classify(
             "sandbox.network.allowUnixSockets", UserScope, true);
 
-        Assert.AreEqual(AppSeverity.Critical, a.Severity,
+        MessageAssert.Equal(AppSeverity.Critical, a.Severity,
             "An unlisted path under sandbox must inherit sandbox's tier — that inheritance is what "
             + "makes a table of top-level keys cover a nested schema.");
-        Assert.IsFalse(a.IsDangerNow,
+        Assert.False(a.IsDangerNow,
             "But an INHERITED assessment must never claim a specific value is wrong: the "
             + "ancestor's predicate was written for the ancestor's value.");
     }
@@ -345,7 +344,7 @@ public sealed class ClaudeDangerTableTests
             dir = dir.Parent;
         }
 
-        Assert.IsNotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
+        MessageAssert.NotNull(dir, "could not locate the repository root (ClaudeForge.slnx)");
         return dir.FullName;
     }
 }

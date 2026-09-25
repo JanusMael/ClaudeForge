@@ -12,14 +12,14 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 /// keyed by their parent directory name, and the front-matter
 /// <c>description</c> surfaces as the list subtitle.
 /// </summary>
-[TestClass]
-public sealed class EditableMemoryServiceTests
+public sealed class EditableMemoryServiceTests : IDisposable
 {
     private string _sandbox = string.Empty;
     private string _project = string.Empty;
 
-    [TestInitialize]
-    public void Setup()
+    public EditableMemoryServiceTests() => Setup();
+
+    private void Setup()
     {
         _sandbox = Path.Combine(Path.GetTempPath(), "claudetest_editmem_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandbox);
@@ -29,8 +29,7 @@ public sealed class EditableMemoryServiceTests
         Directory.CreateDirectory(_project);
     }
 
-    [TestCleanup]
-    public void Cleanup()
+    private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         foreach (string dir in new[] { _sandbox, _project })
@@ -49,6 +48,12 @@ public sealed class EditableMemoryServiceTests
         }
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static void WriteFile(string path, string content)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -57,7 +62,7 @@ public sealed class EditableMemoryServiceTests
 
     private string Home => Path.Combine(_sandbox, ".claude");
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_UserScopeAgent_IsDiscoveredWritable()
     {
         WriteFile(Path.Combine(Home, "agents", "reviewer.md"),
@@ -66,14 +71,14 @@ public sealed class EditableMemoryServiceTests
         var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
 
         EditableMemoryEntry agent = entries.Single(e => e.Category == UserMemoryCategory.Subagent);
-        Assert.AreEqual("reviewer", agent.DisplayName);
-        Assert.AreEqual(EditableMemoryScope.User, agent.Scope);
-        Assert.IsTrue(agent.IsWritable, "User-scope agents must be writable.");
-        Assert.AreEqual("User", agent.Source, "User-scope source label is 'User'.");
+        Assert.Equal("reviewer", agent.DisplayName);
+        Assert.Equal(EditableMemoryScope.User, agent.Scope);
+        Assert.True(agent.IsWritable, "User-scope agents must be writable.");
+        MessageAssert.Equal("User", agent.Source, "User-scope source label is 'User'.");
         // Description is loaded lazily now (stat-only snapshot) — see LoadDescription tests.
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_UserScopeSkill_DisplayNameIsParentDirectory()
     {
         WriteFile(Path.Combine(Home, "skills", "pdf-tools", "SKILL.md"),
@@ -82,13 +87,13 @@ public sealed class EditableMemoryServiceTests
         var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
 
         EditableMemoryEntry skill = entries.Single(e => e.Category == UserMemoryCategory.Skill);
-        Assert.AreEqual("pdf-tools", skill.DisplayName,
+        MessageAssert.Equal("pdf-tools", skill.DisplayName,
             "A skill's display name is its parent directory, not the literal 'SKILL'.");
-        Assert.AreEqual(EditableMemoryScope.User, skill.Scope);
-        Assert.IsTrue(skill.IsWritable);
+        Assert.Equal(EditableMemoryScope.User, skill.Scope);
+        Assert.True(skill.IsWritable);
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_UserScopeSlashCommand_IsDiscovered()
     {
         WriteFile(Path.Combine(Home, "commands", "summarise.md"),
@@ -97,28 +102,28 @@ public sealed class EditableMemoryServiceTests
         var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
 
         EditableMemoryEntry cmd = entries.Single(e => e.Category == UserMemoryCategory.SlashCommand);
-        Assert.AreEqual("summarise", cmd.DisplayName);
-        Assert.AreEqual("User", cmd.Source);
+        Assert.Equal("summarise", cmd.DisplayName);
+        Assert.Equal("User", cmd.Source);
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_ProjectScope_DiscoveredWhenProjectRootGiven()
     {
         WriteFile(Path.Combine(_project, ".claude", "agents", "proj-agent.md"),
             "---\nname: proj-agent\n---\n\nBody.\n");
 
         // Without projectRoot → not found.
-        Assert.IsFalse(EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Any(e => e.DisplayName == "proj-agent"),
+        Assert.False(EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Any(e => e.DisplayName == "proj-agent"),
             "Project-scope artifacts must NOT appear when no projectRoot is passed.");
 
         // With projectRoot → found, Project scope, writable.
         EditableMemoryEntry entry = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty, _project)
             .Single(e => e.DisplayName == "proj-agent");
-        Assert.AreEqual(EditableMemoryScope.Project, entry.Scope);
-        Assert.IsTrue(entry.IsWritable, "Project-scope artifacts are writable.");
+        Assert.Equal(EditableMemoryScope.Project, entry.Scope);
+        Assert.True(entry.IsWritable, "Project-scope artifacts are writable.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_PluginSkill_IsReadOnly()
     {
         // Plugin layout nests SKILL.md at varying depth; the walk is recursive.
@@ -128,13 +133,13 @@ public sealed class EditableMemoryServiceTests
         EditableMemoryEntry skill = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty)
             .Single(e => e.Category == UserMemoryCategory.Skill && e.Scope == EditableMemoryScope.Plugin);
 
-        Assert.AreEqual("widget", skill.DisplayName);
-        Assert.IsFalse(skill.IsWritable, "Plugin-provided skills must be read-only.");
-        Assert.AreEqual("some-marketplace/cool-plugin", skill.Source,
+        Assert.Equal("widget", skill.DisplayName);
+        Assert.False(skill.IsWritable, "Plugin-provided skills must be read-only.");
+        MessageAssert.Equal("some-marketplace/cool-plugin", skill.Source,
             "Plugin source is the path segments under plugins/ before the skills/ dir.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_PluginSkill_MarketplacesSegmentStripped()
     {
         // Claude Code installs marketplace plugins at plugins/marketplaces/<mkt>/<plugin>/…
@@ -146,11 +151,11 @@ public sealed class EditableMemoryServiceTests
         EditableMemoryEntry skill = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty)
             .Single(e => e.Category == UserMemoryCategory.Skill && e.Scope == EditableMemoryScope.Plugin);
 
-        Assert.AreEqual("acme-mkt/cool-plugin", skill.Source,
+        MessageAssert.Equal("acme-mkt/cool-plugin", skill.Source,
             "'marketplaces/' prefix must be stripped; only the marketplace name + plugin id are shown.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_PluginAgentsAndCommands_AreReadOnly()
     {
         WriteFile(Path.Combine(Home, "plugins", "p", "agents", "pa.md"), "---\nname: pa\n---\n\nB.\n");
@@ -160,11 +165,11 @@ public sealed class EditableMemoryServiceTests
             .Where(e => e.Scope == EditableMemoryScope.Plugin)
             .ToList();
 
-        Assert.IsTrue(plugin.Any(e => e is { Category: UserMemoryCategory.Subagent, DisplayName: "pa", IsWritable: false }));
-        Assert.IsTrue(plugin.Any(e => e is { Category: UserMemoryCategory.SlashCommand, DisplayName: "pc", IsWritable: false }));
+        Assert.Contains(plugin, e => e is { Category: UserMemoryCategory.Subagent, DisplayName: "pa", IsWritable: false });
+        Assert.Contains(plugin, e => e is { Category: UserMemoryCategory.SlashCommand, DisplayName: "pc", IsWritable: false });
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_AllThreeScopes_CoexistInOneSnapshot()
     {
         WriteFile(Path.Combine(Home, "agents", "user-a.md"), "---\nname: user-a\n---\n\nB.\n");
@@ -173,56 +178,56 @@ public sealed class EditableMemoryServiceTests
 
         var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty, _project);
 
-        Assert.IsTrue(entries.Any(e => e is { DisplayName: "user-a", Scope: EditableMemoryScope.User }));
-        Assert.IsTrue(entries.Any(e => e is { DisplayName: "proj-a", Scope: EditableMemoryScope.Project }));
-        Assert.IsTrue(entries.Any(e => e is { DisplayName: "plug-s", Scope: EditableMemoryScope.Plugin }));
+        Assert.Contains(entries, e => e is { DisplayName: "user-a", Scope: EditableMemoryScope.User });
+        Assert.Contains(entries, e => e is { DisplayName: "proj-a", Scope: EditableMemoryScope.Project });
+        Assert.Contains(entries, e => e is { DisplayName: "plug-s", Scope: EditableMemoryScope.Plugin });
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_NoClaudeDir_ReturnsEmpty_NeverThrows()
     {
         // Fresh sandbox with no ~/.claude content at all.
         var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
-        Assert.AreEqual(0, entries.Count);
+        Assert.Empty(entries);
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadDescription_ReturnsFrontMatterDescription()
     {
         string path = Path.Combine(Home, "agents", "d.md");
         WriteFile(path, "---\nname: d\ndescription: The description\n---\n\nBody.\n");
 
-        Assert.AreEqual("The description", EditableMemoryService.LoadDescription(path));
+        Assert.Equal("The description", EditableMemoryService.LoadDescription(path));
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadDescription_AbsentKey_ReturnsNull()
     {
         string path = Path.Combine(Home, "agents", "nd.md");
         WriteFile(path, "---\nname: nd\n---\n\nBody.\n");
 
-        Assert.IsNull(EditableMemoryService.LoadDescription(path),
+        MessageAssert.Null(EditableMemoryService.LoadDescription(path),
             "Absent description front-matter key → null (UI shows '(no description)').");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadDescription_MissingFile_ReturnsNull()
     {
-        Assert.IsNull(EditableMemoryService.LoadDescription(Path.Combine(Home, "agents", "ghost.md")));
+        Assert.Null(EditableMemoryService.LoadDescription(Path.Combine(Home, "agents", "ghost.md")));
     }
 
     /// <summary>
     /// ⛔ Before block scalars were read, this returned the literal <c>"&gt;-"</c> as the row's
     /// subtitle — the shape 14 of the measured skills use.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void LoadDescription_FoldedBlockScalar_ReturnsTheFoldedText()
     {
         string path = Path.Combine(Home, "agents", "folded.md");
         WriteFile(path,
             "---\nname: folded\ndescription: >-\n  Reviews code and\n  reports findings.\n---\n\nBody.\n");
 
-        Assert.AreEqual("Reviews code and reports findings.",
+        Assert.Equal("Reviews code and reports findings.",
             EditableMemoryService.LoadDescription(path));
     }
 
@@ -230,28 +235,28 @@ public sealed class EditableMemoryServiceTests
     /// ⚠ Clip chomping (a bare <c>&gt;</c>) legitimately ends the value in a newline. This is a
     /// one-line subtitle, so it is trimmed rather than inheriting it.
     /// </summary>
-    [TestMethod]
+    [Fact]
     public void LoadDescription_ClipChompedBlockScalar_HasNoTrailingNewline()
     {
         string path = Path.Combine(Home, "agents", "clipped.md");
         WriteFile(path, "---\nname: clipped\ndescription: >\n  Reviews code.\n---\n\nBody.\n");
 
-        Assert.AreEqual("Reviews code.", EditableMemoryService.LoadDescription(path),
+        MessageAssert.Equal("Reviews code.", EditableMemoryService.LoadDescription(path),
             "A subtitle must not carry the block scalar's trailing newline.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadDescription_EmptyBlockScalar_ReturnsNull()
     {
         string path = Path.Combine(Home, "agents", "empty-block.md");
         WriteFile(path, "---\nname: empty-block\ndescription: >-\n---\n\nBody.\n");
 
-        Assert.IsNull(EditableMemoryService.LoadDescription(path),
+        MessageAssert.Null(EditableMemoryService.LoadDescription(path),
             "A block scalar with no body declares nothing — the row must show '(no description)', "
             + "not the marker.");
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_IsStatOnly_DoesNotPopulateDescriptionEagerly()
     {
         // The entry record no longer carries a description — discovery is
@@ -260,10 +265,10 @@ public sealed class EditableMemoryServiceTests
         // record has no Description member; the assertion below pins Source.)
         WriteFile(Path.Combine(Home, "agents", "x.md"), "---\nname: x\ndescription: y\n---\n\nB.\n");
         EditableMemoryEntry e = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Single(x => x.DisplayName == "x");
-        Assert.AreEqual("User", e.Source);
+        Assert.Equal("User", e.Source);
     }
 
-    [TestMethod]
+    [Fact]
     public void Snapshot_PluginWalk_SkipsNodeModules()
     {
         // A SKILL.md buried in node_modules must NOT be picked up — the walk
@@ -279,22 +284,22 @@ public sealed class EditableMemoryServiceTests
             .Select(e => e.DisplayName)
             .ToList();
 
-        CollectionAssert.Contains(skills, "real");
-        CollectionAssert.DoesNotContain(skills, "x", "node_modules must be skipped during the plugin walk.");
+        Assert.Contains("real", skills);
+        MessageAssert.DoesNotContain("x", skills, "node_modules must be skipped during the plugin walk.");
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ReadAsync_ReturnsContent_ThenNullForMissing()
     {
         string path = Path.Combine(Home, "agents", "r.md");
         WriteFile(path, "---\nname: r\n---\n\nHello.\n");
 
         string? content = await EditableMemoryService.ReadAsync(path, CancellationToken.None);
-        Assert.IsNotNull(content);
-        StringAssert.Contains(content!, "Hello.");
+        Assert.NotNull(content);
+        OrdinalAssert.Contains("Hello.", content!);
 
         string? missing = await EditableMemoryService.ReadAsync(
             Path.Combine(Home, "agents", "does-not-exist.md"), CancellationToken.None);
-        Assert.IsNull(missing, "ReadAsync returns null for a missing file rather than throwing.");
+        MessageAssert.Null(missing, "ReadAsync returns null for a missing file rather than throwing.");
     }
 }

@@ -8,20 +8,19 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// in the editor UI. Uses a temp directory for isolation from the real
 /// <c>~/.claude/cache/</c>.
 /// </summary>
-[TestClass]
-public sealed class SchemaSnapshotServiceTests
+public sealed class SchemaSnapshotServiceTests : IDisposable
 {
     private string _tempDir = null!;
 
-    [TestInitialize]
-    public void SetUp()
+    public SchemaSnapshotServiceTests() => SetUp();
+
+    private void SetUp()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"ccg-snapshot-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
     }
 
-    [TestCleanup]
-    public void TearDown()
+    private void TearDown()
     {
         if (Directory.Exists(_tempDir))
         {
@@ -29,19 +28,25 @@ public sealed class SchemaSnapshotServiceTests
         }
     }
 
-    [TestMethod]
+    public void Dispose()
+    {
+        TearDown();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
     public void LoadSnapshot_FirstRun_ReturnsEmptySet()
     {
         SchemaSnapshotService svc = new(_tempDir);
 
         HashSet<string> snap = svc.LoadSnapshot("claude-code-settings");
 
-        Assert.IsNotNull(snap);
-        Assert.AreEqual(0, snap.Count,
+        Assert.NotNull(snap);
+        MessageAssert.Equal(0, snap.Count,
             "First run must return an empty set so every property badges as NEW.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SaveThenLoad_RoundTripsPaths()
     {
         SchemaSnapshotService svc = new(_tempDir);
@@ -50,10 +55,10 @@ public sealed class SchemaSnapshotServiceTests
         svc.SaveSnapshot("claude-code-settings", paths);
         HashSet<string> loaded = svc.LoadSnapshot("claude-code-settings");
 
-        CollectionAssert.AreEquivalent(paths, loaded.ToArray());
+        MessageAssert.SameElements(paths, loaded.ToArray());
     }
 
-    [TestMethod]
+    [Fact]
     public void SecondRun_AfterSave_YieldsNoNewProperties()
     {
         // Seed: pretend we saw a set last time
@@ -66,11 +71,11 @@ public sealed class SchemaSnapshotServiceTests
         string[] currentPaths = ["model", "permissions.defaultMode"];
         string[] newPaths = currentPaths.Where(p => !snap.Contains(p)).ToArray();
 
-        Assert.AreEqual(0, newPaths.Length,
+        MessageAssert.Equal(0, newPaths.Length,
             "After saving and reloading, nothing should be flagged new on the next launch.");
     }
 
-    [TestMethod]
+    [Fact]
     public void AddPropertyBetweenRuns_MarksOnlyNewOne()
     {
         SchemaSnapshotService svc = new(_tempDir);
@@ -82,11 +87,11 @@ public sealed class SchemaSnapshotServiceTests
         string[] currentPaths = ["model", "permissions.defaultMode", "outputStyle"];
         string[] newPaths = currentPaths.Where(p => !snap.Contains(p)).ToArray();
 
-        CollectionAssert.AreEqual(new[] { "outputStyle" }, newPaths,
+        MessageAssert.SequenceEqual(new[] { "outputStyle" }, newPaths,
             "Only the freshly-added property should be flagged new.");
     }
 
-    [TestMethod]
+    [Fact]
     public void LoadSnapshot_CorruptFile_ReturnsEmptySet()
     {
         SchemaSnapshotService svc = new(_tempDir);
@@ -94,11 +99,11 @@ public sealed class SchemaSnapshotServiceTests
 
         HashSet<string> snap = svc.LoadSnapshot("claude-code-settings");
 
-        Assert.AreEqual(0, snap.Count,
+        MessageAssert.Equal(0, snap.Count,
             "Corrupt snapshot must be treated as first-run rather than crashing the app.");
     }
 
-    [TestMethod]
+    [Fact]
     public void SaveSnapshot_Deduplicates()
     {
         SchemaSnapshotService svc = new(_tempDir);
@@ -107,7 +112,7 @@ public sealed class SchemaSnapshotServiceTests
         svc.SaveSnapshot("claude-code-settings", paths);
         HashSet<string> loaded = svc.LoadSnapshot("claude-code-settings");
 
-        Assert.AreEqual(2, loaded.Count,
+        MessageAssert.Equal(2, loaded.Count,
             "Duplicates in the input enumerable must be collapsed on disk.");
     }
 }
