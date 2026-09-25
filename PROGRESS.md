@@ -144,7 +144,7 @@ the defect.
 | `main` | #77–#85 merged by 2026-09-25 (admin, merge commits, over the two red-by-construction jobs only); the xUnit move and all its follow-ups are in. ⓘ `git log -1` is the answer for HEAD |
 | Suite | **3,298 · 0 failed · 10–11 skipped**, xUnit v3 on MTP, across **seven** test assemblies (= seven test csproj), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
 | CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion`. They were RED by construction at `2026.3.922` (NU1101: its `LayeredEditors.*` dependencies no longer exist); the pin to `2026.3.925` is what clears them |
-| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.924`** |
+| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.925`** (test-only; rule ids now `BNXQ`, and this repo adopts only `BNXQ1001`) |
 
 **Next, in order:**
 

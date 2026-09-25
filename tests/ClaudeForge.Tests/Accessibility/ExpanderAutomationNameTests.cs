@@ -36,7 +36,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// </summary>
 /// <remarks>
 /// <para>
-/// ⭐⭐ <b>The scan itself now comes from <c>Bennewitz.Ninja.XamlQuality</c> (<c>XQ1001</c>); this
+/// ⭐⭐ <b>The scan itself now comes from <c>Bennewitz.Ninja.XamlQuality</c> (<c>BNXQ1001</c>); this
 /// class supplies the repository's scope and the assertion.</b> The 126 lines it replaced walked
 /// <c>src/</c>, parsed each <c>.axaml</c> and checked attributes by hand. Keeping that copy meant
 /// maintaining a second implementation of a rule another repository already had to fix.
@@ -55,10 +55,10 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// therefore ours, and so is the premise check — the rule cannot know what "enough" means here.
 /// </para>
 /// <para>
-/// ⓘ <b>The rule catalogue is ONE rule today.</b> <c>XQ1001</c> is the whole of it; the
-/// <c>IXamlRule</c> extension point is real and tested but the library of rules is not. Adopted
-/// here for this guard and as somewhere to put rules that would otherwise be written inline —
-/// not as a linter.
+/// ⓘ <b>This repository adopts ONE rule of the six in 2026.3.925</b> (<c>BNXQ1001</c>–<c>BNXQ1006</c>).
+/// Adopted here for this guard and as somewhere to put rules that would otherwise be written
+/// inline — not as a linter. The others are unevaluated against this tree; adopting one can
+/// surface findings, so each is its own change.
 /// </para>
 /// </remarks>
 public sealed class ExpanderAutomationNameTests
