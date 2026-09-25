@@ -198,7 +198,7 @@ fallback — which mirrors the light value, so nothing else can tell).
 `ThemeDictionaries`, and a themed key looked up with a null variant
 resolves to nothing — the caller silently takes its fallback hex. Use
 `ResolveThemed`. See "A THEMED resource looked up with a null variant
-resolves to NOTHING" in `AVALONIA-GOTCHAS.md`.
+resolves to NOTHING" in XamlQuality's `docs/avalonia-gotchas.md`.
 
 Guards: `AppSeverityTokenCoverageTests` (every member declared in both
 variants of both apps, and light ≠ dark) and
@@ -770,7 +770,7 @@ entirely different Avalonia 12 app:
    and `FocusOnRequest` are framework-agnostic and isolate you from
    Avalonia 12 API churn.
 
-4. **Copy `docs/AVALONIA-GOTCHAS.md`** — context that saved hours of
+4. **Read XamlQuality's `docs/avalonia-gotchas.md`** — context that saved hours of
    iteration.
 
 5. **Don't copy** `Resources/ScopeTheme.axaml` colours blindly — they're

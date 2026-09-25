@@ -29,7 +29,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Views;
 /// keys undefined under bare Semi, some of them <c>StaticResource</c>, which
 /// throws at template load — but the Fluent and Simple compat dictionaries
 /// merged in <c>App.axaml</c> now define every one of them.  See
-/// <c>docs/AVALONIA-GOTCHAS.md</c>, "AvaloniaEdit under Semi resolves only
+/// XamlQuality's <c>docs/avalonia-gotchas.md</c>, "AvaloniaEdit under Semi resolves only
 /// with the compat dictionaries".
 /// </para>
 /// </summary>

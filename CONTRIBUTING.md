@@ -123,7 +123,7 @@ The Release build is trimmed for size. Every PR that adds code MUST publish clea
 dotnet publish src/ClaudeForge -c Release -r win-x64
 ```
 
-Common foot-guns documented in [TRIMMING.md](./TRIMMING.md) and [docs/AVALONIA-GOTCHAS.md](./docs/AVALONIA-GOTCHAS.md). Highlights:
+Common foot-guns documented in [TRIMMING.md](./TRIMMING.md) and [XamlQuality's avalonia-gotchas.md](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md). Highlights:
 
 - New `JsonSerializer.Serialize/Deserialize` calls must use a source-generated context (`AppJsonContext` / `CoreJsonContext`).
 - `JsonArray.Add(...)` calls cast to `(JsonNode?)` to force the safe overload.
@@ -221,7 +221,7 @@ Be respectful. Disagree without being personal. Assume good faith from reviewers
 - **`AGENTS.md`** — hard invariants table, "if you do X also touch Y" checklists, test seams, anti-patterns.
 - **`TRIMMING.md`** — trim safety policy and per-package safety stories.
 - **`PLATFORM.md`** — `PlatformInfo` decision tree, debug flags table, redirectable-vs-platform-intrinsic API guide.
-- **`docs/`** — feature-specific deep-dives (`ESSENTIALS-PAGE.md`, `LINUX-DESKTOP-INTEGRATION.md`, `AVALONIA-GOTCHAS.md`, `CLAUDECTX-COMPATIBILITY.md`).
+- **`docs/`** — feature-specific deep-dives (`ESSENTIALS-PAGE.md`, `LINUX-DESKTOP-INTEGRATION.md`, `CLAUDECTX-COMPATIBILITY.md`).
 
 If you find an inaccuracy in any of these as you work, please fix it. Stale docs are worse than missing docs.
 

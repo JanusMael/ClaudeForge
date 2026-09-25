@@ -73,7 +73,7 @@ ClaudeForge is a local-only tool. The app does not:
 
 - Send telemetry or analytics anywhere.
 - Phone home for updates (releases are pulled from GitHub explicitly by the
-  user — see [`docs/AVALONIA-GOTCHAS.md`](./docs/AVALONIA-GOTCHAS.md) and
+  user — see [XamlQuality's `avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md) and
   [CLAUDE.md](./CLAUDE.md) for the no-auto-update rationale).
 - Read or write files outside the user's `~/.claude/`, the open project's
   `.claude/`, and (for Sanitized backups) the user-chosen backup directory.
