@@ -22,15 +22,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 public sealed class ConfigScopeAdapterTests
 {
     /// <summary>
-    /// Each test starts with no other ladder's scopes wrapped. Several tests below wrap an
-    /// <c>other-product</c> ladder that also has a <c>Project</c> rung, and the adapter's cache is
-    /// process-wide, so without this a foreign <c>"project"</c> resolves to whichever ladder was
-    /// wrapped first — an order dependence xUnit exposed (see
-    /// <see cref="ConfigScopeAdapter.ForgetNonDefaultLaddersForTesting"/>).
-    /// </summary>
-    public ConfigScopeAdapterTests() => ConfigScopeAdapter.ForgetNonDefaultLaddersForTesting();
-
-    /// <summary>
     /// The mapping is exercised for <b>every</b> scope rather than a sampled one, because
     /// the failure mode being guarded is an off-by-one that leaves most entries correct.
     /// </summary>
@@ -92,23 +83,42 @@ public sealed class ConfigScopeAdapterTests
         }
     }
 
-    /// <summary>
-    /// The id-based fallback exists for test doubles that implement
-    /// <see cref="IEditorScope"/> without being a <see cref="ConfigScopeAdapter"/>. It now
-    /// resolves against <see cref="ConfigScope.All"/> instead of a hand-written list of
-    /// four ids, so it cannot drift out of step with the ladder.
-    /// </summary>
+    /// <summary>Every wrapper maps back to exactly the scope it wraps, on any ladder.</summary>
+    /// <remarks>
+    /// <see cref="ConfigScope"/> is a record struct whose equality includes its ladder, so
+    /// <c>Equal</c> tells two ladders' same-named rungs apart (see
+    /// <see cref="TwoLaddersWithTheSameRungName_DoNotCollide"/>); <c>Same</c> could never pass on a struct.
+    /// </remarks>
     [Fact]
-    public void ToConfigScope_ResolvesRealWrappersAndForeignScopesAlike()
+    public void ToConfigScope_ReturnsTheWrappedScope_OnAnyLadder()
     {
-        foreach (ConfigScope scope in ConfigScope.All)
+        foreach (ConfigScope scope in ConfigScope.All.Concat(OtherProductLadder().All))
         {
-            Assert.Equal(scope, ConfigScopeAdapter.ToConfigScope(ConfigScopeAdapter.For(scope)));
-            Assert.Equal(scope, ConfigScopeAdapter.ToConfigScope(new ForeignScope(scope.ToString().ToLowerInvariant())));
+            MessageAssert.Equal(scope, ConfigScopeAdapter.ToConfigScope(ConfigScopeAdapter.For(scope)),
+                $"'{scope.DisplayName}' on ladder '{scope.Ladder}' must map back to itself, not to a same-named rung.");
         }
+    }
 
-        Assert.Throws<ArgumentException>(
-            () => ConfigScopeAdapter.ToConfigScope(new ForeignScope("not-a-scope")));
+    /// <summary>
+    /// A scope that is not a <see cref="ConfigScopeAdapter"/> is refused — including one whose id
+    /// names a real rung.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ An id-based fallback used to resolve it, and with two ladders sharing <c>Project</c> the
+    /// answer depended on which ladder the process had wrapped first: this class needed a reset seam
+    /// in its constructor to stay order-independent under xUnit. No production scope ever took that
+    /// path (the adapter is the only <see cref="IEditorScope"/> in the product, and the library
+    /// defines none), so the fallback was removed rather than disambiguated.
+    /// </remarks>
+    [Fact]
+    public void ToConfigScope_RefusesAForeignScope_EvenOneNamingARealRung()
+    {
+        _ = ConfigScopeAdapter.For(OtherProductLadder().ScopeAt(2));   // a second "Project" is wrapped
+
+        foreach (string id in (string[])["project", "user", "not-a-scope"])
+        {
+            Assert.Throws<ArgumentException>(() => ConfigScopeAdapter.ToConfigScope(new ForeignScope(id)));
+        }
     }
 
     /// <summary>A non-<see cref="ConfigScopeAdapter"/> implementation, as a test fake would supply.</summary>
