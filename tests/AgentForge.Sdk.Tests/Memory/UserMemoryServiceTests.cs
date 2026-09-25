@@ -161,6 +161,30 @@ public class UserMemoryServiceTests : IDisposable
         Assert.Equal("Claude Code Guide", primary.Subtitle);
     }
 
+    /// <summary>
+    /// The subtitle read runs in the background on every memory-editor refresh, so it must share
+    /// with a writer: one holding the file (an editor mid-save) must not blank the subtitle, and
+    /// the read must not lock that writer out.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ It opened with <c>FileShare.Read</c>. After a reload it reaches <c>settings.json</c>, and a
+    /// write landing during it failed "being used by another process" — <c>ReloadHardeningTests</c>'
+    /// timing flake, whose holder a first-chance stack capture named as this read. The sharing check
+    /// is symmetric, so this deterministic direction guards both. ⓘ Windows-only enforcement.
+    /// </remarks>
+    [Fact]
+    public void Subtitle_StillReads_WhileAWriterHoldsTheFile()
+    {
+        Write("CLAUDE.md", "# Claude Code Guide\nrest of file");
+        using FileStream writer = new(Path.Combine(_claudeHome, "CLAUDE.md"), FileMode.Open, FileAccess.Write, FileShare.Read);
+
+        UserMemoryFile primary = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+                                                  .Single(f => f.Category == UserMemoryCategory.PrimaryMemory);
+
+        MessageAssert.Equal("Claude Code Guide", primary.Subtitle,
+            "A writer holding the file must not blank its subtitle; the preview read shares write access.");
+    }
+
     // ── Smoke-driven (2026-05-05) subtitle-quality tests ─────────────────
 
     [Fact]

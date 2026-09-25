@@ -82,6 +82,35 @@ public sealed class ConfigFileLoadFailureTests : IDisposable
             + "was never parsed.");
     }
 
+    /// <summary>
+    /// A writer holding the file open — the agent saving its own settings, an editor mid-save —
+    /// must not turn a load into a failure, and the load must not lock the writer out either.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ The loader read through <c>File.ReadAllTextAsync</c>, which shares READ only, so on Windows
+    /// the two collide in both directions: a load while a writer holds the file fails (this test),
+    /// and a write while a load holds it fails "being used by another process" (measured: 28,987
+    /// writer failures in 5 s against that read, 0 against this one). The sharing check is
+    /// symmetric, so this deterministic direction guards both. ⓘ Only Windows enforces FileShare
+    /// between processes; elsewhere this passes either way.
+    /// </remarks>
+    [Fact]
+    public async Task AFileHeldOpenByAWriter_StillLoads()
+    {
+        string path = Path.Combine(_dir, "settings.json");
+        await File.WriteAllTextAsync(path, """{"model":"sonnet"}""", TestContext.Current.CancellationToken);
+
+        await using FileStream writer = new(path, FileMode.Open, FileAccess.Write, FileShare.Read);
+        SettingsDocument doc = await ConfigFileLoader.LoadAsync(
+            new DiscoveredFile(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
+                               Exists: true, IsReadOnly: false),
+            TestContext.Current.CancellationToken);
+
+        MessageAssert.Null(doc.LoadFailure,
+            "A writer holding the file is not a corrupt file: the load must read it, not report a failure.");
+        Assert.Single(doc.Root);
+    }
+
     [Fact]
     public async Task ValidJson_IsNotFlagged()
     {

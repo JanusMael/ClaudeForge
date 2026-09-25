@@ -14,6 +14,17 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
+## [Unreleased]
+
+### Fixed
+
+- **Reloading no longer blocks anyone else from saving your settings.** While ClaudeForge read
+  a settings file — to reload it, or to show its first line on the Memory page — it held it
+  against writers, so Claude Code saving its own `settings.json`, or your editor saving one,
+  could fail with "the process cannot access the file because it is being used by another
+  process" if it landed at that moment. ClaudeForge now reads without locking writers out. A file caught half-written is treated like a malformed one: the reload
+  keeps the settings it already had.
+
 ## [2026.3.922] - 2026-09-22
 
 ### Added
