@@ -56,7 +56,7 @@ public sealed class ReleaseTagSchemeTests
     public async Task ClaudeForge_ResolvesItsOwnLatest_NotTheSiblingAtTheTopOfTheList()
     {
         UpdateCheckResult result = await Checker(ReleaseTagScheme.Unprefixed, MixedReleases)
-            .CheckAsync(new Version(2026, 3, 724));
+            .CheckAsync(new Version(2026, 3, 724), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable);
         MessageAssert.Equal("v2026.3.810", result.LatestTagName,
@@ -71,7 +71,7 @@ public sealed class ReleaseTagSchemeTests
     public async Task OpenCodeForge_ResolvesItsOwnLatest_FromTheSameList()
     {
         UpdateCheckResult result = await Checker(OpenCodeForge, MixedReleases)
-            .CheckAsync(new Version(2026, 4, 100));
+            .CheckAsync(new Version(2026, 4, 100), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable);
         Assert.Equal("opencodeforge-v2026.4.101", result.LatestTagName);
@@ -87,7 +87,7 @@ public sealed class ReleaseTagSchemeTests
         UpdateCheckResult result = await Checker(
             OpenCodeForge,
             """[ { "tag_name": "v2026.3.810", "html_url": "https://x/cf-810" } ]""")
-            .CheckAsync(new Version(1, 0, 0));
+            .CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable,
             "OpenCodeForge has published nothing here. Offering ClaudeForge's release to an "
@@ -158,7 +158,7 @@ public sealed class ReleaseTagSchemeTests
               { "tag_name": "v9.9.8", "draft": true       },
               { "tag_name": "v2.0.0", "html_url": "https://x/stable" }
             ]
-            """).CheckAsync(new Version(1, 0, 0));
+            """).CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal("v2.0.0", result.LatestTagName,
             "A pre-release or draft must never raise the banner — the old endpoint filtered "
@@ -174,7 +174,7 @@ public sealed class ReleaseTagSchemeTests
     {
         UpdateCheckResult result = await Checker(
             ReleaseTagScheme.Unprefixed, """[ { "tag_name": "v2.0.0" } ]""")
-            .CheckAsync(new Version(1, 0, 0));
+            .CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable);
     }
@@ -191,7 +191,7 @@ public sealed class ReleaseTagSchemeTests
               { "tag_name": "v2.0.1", "html_url": "https://x/late-patch" },
               { "tag_name": "v3.0.0", "html_url": "https://x/newest"     }
             ]
-            """).CheckAsync(new Version(1, 0, 0));
+            """).CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.Equal("v3.0.0", result.LatestTagName);
         Assert.Equal("https://x/newest", result.ReleaseUrl);
@@ -203,7 +203,7 @@ public sealed class ReleaseTagSchemeTests
     {
         UpdateCheckResult result = await Checker(
             ReleaseTagScheme.Unprefixed, """{ "message": "rate limit exceeded" }""")
-            .CheckAsync(new Version(1, 0, 0));
+            .CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -212,7 +212,7 @@ public sealed class ReleaseTagSchemeTests
     public async Task EmptyReleaseList_IsNoUpdate()
     {
         Assert.False((await Checker(ReleaseTagScheme.Unprefixed, "[]")
-            .CheckAsync(new Version(1, 0, 0))).IsUpdateAvailable);
+            .CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken)).IsUpdateAvailable);
     }
 
     // ── the User-Agent, which used to name one app for all of them ───────────

@@ -215,7 +215,7 @@ public class BackupClientTests : IDisposable
             null, CancellationToken.None);
 
         // Sleep briefly so the second archive's filename timestamp differs.
-        await Task.Delay(1_100);
+        await Task.Delay(1_100, TestContext.Current.CancellationToken);
 
         BackupArchive second = await client.Backup.CreateAsync(
             new BackupRequest(BackupMode.SettingsOnly, _backupDir, IncludeCredentials: false),

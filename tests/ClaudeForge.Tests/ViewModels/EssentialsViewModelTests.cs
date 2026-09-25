@@ -734,7 +734,7 @@ public sealed class EssentialsViewModelTests
         // GetVariables, about to block on the closed gate) before disposing — so the
         // refresh is provably suspended at the probe, holding the refresh gate, when
         // Dispose runs.
-        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)),
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken),
             "The parked refresh never reached the env-var probe.");
 
         vm.Dispose();

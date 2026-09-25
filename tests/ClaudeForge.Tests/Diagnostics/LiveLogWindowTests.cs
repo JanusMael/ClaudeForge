@@ -45,7 +45,7 @@ public sealed class LiveLogWindowTests
         Task[] tasks = Enumerable.Range(0, 50)
                                  .Select(i => Task.Run(() => LiveLogWindow.EnqueueLog($"msg {i}")))
                                  .ToArray();
-        Task.WaitAll(tasks);
+        Task.WaitAll(tasks, TestContext.Current.CancellationToken);
     }
 
     [Fact]

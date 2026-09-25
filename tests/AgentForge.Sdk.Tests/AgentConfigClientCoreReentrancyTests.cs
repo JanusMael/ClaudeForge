@@ -81,7 +81,7 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
         // into the SDK on the same thread that just called SetValue.
         using TestConfigClient client = new();
         Task openTask = client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
-        openTask.Wait(TimeSpan.FromSeconds(10));
+        openTask.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
         bool handlerRan = false;
         client.Changed += (_, _) =>
@@ -95,8 +95,8 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
 
         // Bound by a generous timeout — a regression would manifest as
         // the test hanging.
-        bool done = Task.Run(() => { client.SetValue("model", "opus", ConfigScope.User); })
-                        .Wait(TimeSpan.FromSeconds(5));
+        bool done = Task.Run(() => { client.SetValue("model", "opus", ConfigScope.User); }, TestContext.Current.CancellationToken)
+                        .Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.True(done, "SetValue must complete; reentrant lock is broken if this hangs.");
         Assert.True(handlerRan, "Changed handler must have fired.");
@@ -109,7 +109,7 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
         // another GetEffective. This is the read-then-read variant.
         using TestConfigClient client = new();
         Task openTask = client.OpenAsync(projectRoot: null, ct: CancellationToken.None);
-        openTask.Wait(TimeSpan.FromSeconds(10));
+        openTask.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
         client.SetValue("model", "sonnet", ConfigScope.User);
 
@@ -125,8 +125,8 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
             nestedRead = true;
         };
 
-        bool done = Task.Run(() => { client.SetValue("model", "opus", ConfigScope.User); })
-                        .Wait(TimeSpan.FromSeconds(5));
+        bool done = Task.Run(() => { client.SetValue("model", "opus", ConfigScope.User); }, TestContext.Current.CancellationToken)
+                        .Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.True(done);
         Assert.True(nestedRead);
@@ -149,16 +149,16 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
             {
                 client.SetValue("a", $"t1-{i}", ConfigScope.User);
             }
-        });
+        }, TestContext.Current.CancellationToken);
         Task t2 = Task.Run(() =>
         {
             for (int i = 0; i < iterations; i++)
             {
                 client.SetValue("b", $"t2-{i}", ConfigScope.User);
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await Task.WhenAll(t1, t2).WaitAsync(TimeSpan.FromSeconds(15));
+        await Task.WhenAll(t1, t2).WaitAsync(TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken);
 
         // Final values reflect last iteration on each thread.
         Assert.Equal($"t1-{iterations - 1}", client.GetEffective<string>("a"));
@@ -174,7 +174,7 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
         // depth counter. A bug in the depth math would either deadlock
         // or release the lock prematurely.
         using TestConfigClient client = new();
-        client.OpenAsync(projectRoot: null, ct: CancellationToken.None).Wait(TimeSpan.FromSeconds(10));
+        client.OpenAsync(projectRoot: null, ct: CancellationToken.None).Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
         int handlerInvocations = 0;
         client.Changed += (_, e) =>
@@ -192,15 +192,15 @@ public sealed class AgentConfigClientCoreReentrancyTests : IDisposable
             }
         };
 
-        bool done = Task.Run(() => { client.SetValue("model", "outer", ConfigScope.User); })
-                        .Wait(TimeSpan.FromSeconds(5));
+        bool done = Task.Run(() => { client.SetValue("model", "outer", ConfigScope.User); }, TestContext.Current.CancellationToken)
+                        .Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.True(done, "Nested re-entry must not deadlock.");
         Assert.True(handlerInvocations >= 2, "Outer + nested SetValue both fire Changed.");
 
         // After full unwinding the lock must be free — verified by a
         // fresh write succeeding without hanging.
-        Task.Run(() => client.SetValue("post", "x", ConfigScope.User)).Wait(TimeSpan.FromSeconds(5));
+        Task.Run(() => client.SetValue("post", "x", ConfigScope.User), TestContext.Current.CancellationToken).Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal("x", client.GetEffective<string>("post"));
     }
 }

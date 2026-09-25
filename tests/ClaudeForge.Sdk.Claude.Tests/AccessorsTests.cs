@@ -70,7 +70,7 @@ public class AccessorsTests : IDisposable
 
         // Verify the on-disk JSON uses the documented camelCase string.
         await client.SaveAsync(force: true, CancellationToken.None);
-        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
+        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("\"defaultMode\": \"acceptEdits\"", json);
     }
 
@@ -207,7 +207,7 @@ public class AccessorsTests : IDisposable
             Headers: new Dictionary<string, string> { ["Authorization"] = "Bearer redacted" }));
 
         await client.SaveAsync(force: true, CancellationToken.None);
-        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
+        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("\"type\": \"streamable-http\"", json);
         OrdinalAssert.Contains("\"url\": \"https://example.com/mcp\"", json);
     }
@@ -291,7 +291,7 @@ public class AccessorsTests : IDisposable
             "anthropic-experimental/everything-claude-code"));
 
         await client.SaveAsync(force: true, CancellationToken.None);
-        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
+        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("\"source\": \"github\"", json);
         OrdinalAssert.Contains("\"repository\": \"anthropic-experimental/everything-claude-code\"", json);
     }

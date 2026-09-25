@@ -175,7 +175,7 @@ public class ClaudeCodeClientLifecycleTests : IDisposable
         string settingsPath = Path.Combine(_tempDir, ".claude", "settings.json");
         Assert.True(File.Exists(settingsPath),
             $"settings.json should have been written to {settingsPath}.");
-        string json = await File.ReadAllTextAsync(settingsPath);
+        string json = await File.ReadAllTextAsync(settingsPath, TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("claude-sonnet-4", json);
     }
 
@@ -381,9 +381,9 @@ public class ClaudeCodeClientLifecycleTests : IDisposable
         Directory.CreateDirectory(projectRoot);
         Directory.CreateDirectory(Path.Combine(projectRoot, ".claude"));
         await File.WriteAllTextAsync(
-            Path.Combine(projectRoot, ".claude", "settings.json"), "{}");
+            Path.Combine(projectRoot, ".claude", "settings.json"), "{}", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
-            Path.Combine(projectRoot, ".claude", "settings.local.json"), "{}");
+            Path.Combine(projectRoot, ".claude", "settings.local.json"), "{}", TestContext.Current.CancellationToken);
 
         using ClaudeCodeClient client = new(ClaudeEnvironment.Empty);
         await client.OpenAsync(projectRoot, CancellationToken.None);

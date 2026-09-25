@@ -78,7 +78,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
         Assert.True(File.Exists(dest));
@@ -101,7 +101,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
@@ -118,7 +118,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded);
 
         // Independently re-open and parse the manifest to confirm on-disk shape.
@@ -127,7 +127,7 @@ public sealed class BackupEngineTests : IDisposable
         ZipArchiveEntry? manifestEntry = archive.GetEntry("manifest.json");
         Assert.NotNull(manifestEntry);
 
-        await using Stream ms = await manifestEntry!.OpenAsync();
+        await using Stream ms = await manifestEntry!.OpenAsync(TestContext.Current.CancellationToken);
         BackupManifest? manifest = JsonSerializer.Deserialize(ms, BackupJsonContext.Default.BackupManifest);
         Assert.NotNull(manifest);
         Assert.Equal("backup", manifest!.Kind);
@@ -150,12 +150,12 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = first,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = second,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         // Force the second one to have a later LastWriteTime.
         File.SetLastWriteTimeUtc(first, DateTime.UtcNow.AddSeconds(-10));
@@ -181,7 +181,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = path,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            });
+            }, ct: TestContext.Current.CancellationToken);
             File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddDays(-5 + i));
         }
 
@@ -192,7 +192,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = trigger,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             KeepLast = 2,
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         int remaining = Directory.GetFiles(backupDir, "backup-*.zip").Length;
         MessageAssert.Equal(2, remaining,
@@ -204,25 +204,25 @@ public sealed class BackupEngineTests : IDisposable
     {
         // Name it with the "backup-*" prefix so BackupEngine.List() finds it.
         string dest = Path.Combine(_fakeHome, "backup-round.zip");
-        string original = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"));
+        string original = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"), TestContext.Current.CancellationToken);
 
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
 
         // Mutate the live settings — restore should roll it back.
-        await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"), "{\"theme\":\"light\"}");
+        await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"), "{\"theme\":\"light\"}", TestContext.Current.CancellationToken);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.Single(entries);
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded, restore.Message);
 
-        string restored = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"));
+        string restored = await File.ReadAllTextAsync(Path.Combine(_fakeHome, ".claude", "settings.json"), TestContext.Current.CancellationToken);
         Assert.Equal(original, restored);
 
         // ⚠ This assertion was INVERTED for F8, deliberately. It used to require exactly one
@@ -265,7 +265,7 @@ public sealed class BackupEngineTests : IDisposable
         // Create a nested backup that would be included if the engine weren't smart.
         string nested = Path.Combine(_fakeHome, ".claude", "backups", "backup-old.zip");
         Directory.CreateDirectory(Path.GetDirectoryName(nested)!);
-        await File.WriteAllTextAsync(nested, "fake zip contents");
+        await File.WriteAllTextAsync(nested, "fake zip contents", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "top.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -273,7 +273,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded);
 
         List<string> entries = ListEntries(dest);
@@ -289,8 +289,8 @@ public sealed class BackupEngineTests : IDisposable
         // not config).
         string cacheDir = Path.Combine(_fakeHome, ".claude", "cache");
         Directory.CreateDirectory(cacheDir);
-        await File.WriteAllTextAsync(Path.Combine(cacheDir, "ClaudeForge-gui-state.json"), """{"w":1440}""");
-        await File.WriteAllTextAsync(Path.Combine(cacheDir, "other.dat"), "blob");
+        await File.WriteAllTextAsync(Path.Combine(cacheDir, "ClaudeForge-gui-state.json"), """{"w":1440}""", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(cacheDir, "other.dat"), "blob", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "no-cache.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -298,7 +298,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
@@ -324,19 +324,19 @@ public sealed class BackupEngineTests : IDisposable
         // Top-level .bak (caught by ShouldSkipHomeFile).
         await File.WriteAllTextAsync(
             Path.Combine(home, "settings.json.pre-restore-20260101-120000.bak"),
-            "(old settings sidecar)");
+            "(old settings sidecar)", TestContext.Current.CancellationToken);
 
         // Nested .bak in agents/ (caught by ZipArchiveWriter.EnumerateRecursive).
         string agents = Path.Combine(home, "agents");
         Directory.CreateDirectory(agents);
-        await File.WriteAllTextAsync(Path.Combine(agents, "my-agent.md"), "real agent");
+        await File.WriteAllTextAsync(Path.Combine(agents, "my-agent.md"), "real agent", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
             Path.Combine(agents, "my-agent.md.pre-restore-20260101-120000.bak"),
-            "(old agent sidecar)");
+            "(old agent sidecar)", TestContext.Current.CancellationToken);
 
         // Plain *.bak — same convention, also excluded.
         await File.WriteAllTextAsync(Path.Combine(agents, "hand-edited.md.bak"),
-            "(editor-style bak)");
+            "(editor-style bak)", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "bak-excluded.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -344,7 +344,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
@@ -373,7 +373,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = backupDest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(createResult.Succeeded, createResult.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(backupDir);
@@ -393,7 +393,7 @@ public sealed class BackupEngineTests : IDisposable
         List<BackupProgress> reports = new();
         SyncProgress<BackupProgress> progress = new(p => reports.Add(p));
 
-        RestoreResult restoreResult = await TestBackupEngine.Default.RestoreAsync(entries[0], progress);
+        RestoreResult restoreResult = await TestBackupEngine.Default.RestoreAsync(entries[0], progress, TestContext.Current.CancellationToken);
         Assert.True(restoreResult.Succeeded, restoreResult.Message);
 
         // Find "Applying restore…" and count distinct reports that come after it.
@@ -429,29 +429,29 @@ public sealed class BackupEngineTests : IDisposable
         // downloads/ — update binaries (e.g. claude-2.0.0-win32-x64.exe)
         string downloadsDir = Path.Combine(claudeDir, "downloads");
         Directory.CreateDirectory(downloadsDir);
-        await File.WriteAllTextAsync(Path.Combine(downloadsDir, "claude-2.0.0-win32-x64.exe"), "MZ");
+        await File.WriteAllTextAsync(Path.Combine(downloadsDir, "claude-2.0.0-win32-x64.exe"), "MZ", TestContext.Current.CancellationToken);
 
         // statsig/ — telemetry & feature-flag data
         string statsigDir = Path.Combine(claudeDir, "statsig");
         Directory.CreateDirectory(statsigDir);
-        await File.WriteAllTextAsync(Path.Combine(statsigDir, "user_config.json"), """{"flags":{}}""");
+        await File.WriteAllTextAsync(Path.Combine(statsigDir, "user_config.json"), """{"flags":{}}""", TestContext.Current.CancellationToken);
 
         // shell-snapshots/ — ephemeral bash command snapshots
         string shellSnapshotsDir = Path.Combine(claudeDir, "shell-snapshots");
         Directory.CreateDirectory(shellSnapshotsDir);
-        await File.WriteAllTextAsync(Path.Combine(shellSnapshotsDir, "snapshot.jsonl"), """{"cmd":"ls"}""");
+        await File.WriteAllTextAsync(Path.Combine(shellSnapshotsDir, "snapshot.jsonl"), """{"cmd":"ls"}""", TestContext.Current.CancellationToken);
 
         // local/ — Claude Code binary install directory
         string localDir = Path.Combine(claudeDir, "local");
         Directory.CreateDirectory(localDir);
-        await File.WriteAllTextAsync(Path.Combine(localDir, "claude.exe"), "MZ");
+        await File.WriteAllTextAsync(Path.Combine(localDir, "claude.exe"), "MZ", TestContext.Current.CancellationToken);
 
         // cache/ — schema / app cache, regenerated on demand. ⚠ Added when the eight skip `if`s
         // became ClaudeHomeSkipRules: it was the one rule of the seven with no test, so a typo in
         // its row would have shipped an app-cache directory into every user's archive silently.
         string cacheDir = Path.Combine(claudeDir, "cache");
         Directory.CreateDirectory(cacheDir);
-        await File.WriteAllTextAsync(Path.Combine(cacheDir, "schema.json"), """{"cached":true}""");
+        await File.WriteAllTextAsync(Path.Combine(cacheDir, "schema.json"), """{"cached":true}""", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "no-runtime.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -459,7 +459,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
@@ -498,7 +498,7 @@ public sealed class BackupEngineTests : IDisposable
         // Argument validation is contract — null request is a programmer
         // error, not a runtime "expected failure", and is allowed to throw.
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            TestBackupEngine.Default.CreateAsync(null!));
+            TestBackupEngine.Default.CreateAsync(null!, ct: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -509,7 +509,7 @@ public sealed class BackupEngineTests : IDisposable
         string desktopDir = PlatformPaths.DesktopConfigDir;
         Directory.CreateDirectory(desktopDir);
         string desktopCfg = PlatformPaths.DesktopConfigPath;
-        await File.WriteAllTextAsync(desktopCfg, """{"theme":"system"}""");
+        await File.WriteAllTextAsync(desktopCfg, """{"theme":"system"}""", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "desktop-only.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -517,7 +517,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
@@ -534,16 +534,16 @@ public sealed class BackupEngineTests : IDisposable
     {
         string desktopDir = PlatformPaths.DesktopConfigDir;
         Directory.CreateDirectory(desktopDir);
-        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""");
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""", TestContext.Current.CancellationToken);
 
         // A profile + the .desktop-current pointer.
         string profilesDir = PlatformPaths.DesktopProfilesDirectory;
         Directory.CreateDirectory(Path.Combine(profilesDir, "work"));
         await File.WriteAllTextAsync(
             Path.Combine(profilesDir, "work", "claude_desktop_config.json"),
-            """{"profile":"work"}""");
+            """{"profile":"work"}""", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
-            PlatformPaths.DesktopCurrentProfileFilePath, "work");
+            PlatformPaths.DesktopCurrentProfileFilePath, "work", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "desktop-profiles.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -551,7 +551,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded);
         List<string> entries = ListEntries(dest);
@@ -574,13 +574,13 @@ public sealed class BackupEngineTests : IDisposable
         // reading.
         string desktopDir = PlatformPaths.DesktopConfigDir;
         Directory.CreateDirectory(desktopDir);
-        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""");
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""", TestContext.Current.CancellationToken);
 
         string profilesDir = PlatformPaths.DesktopProfilesDirectory;
         Directory.CreateDirectory(Path.Combine(profilesDir, "work"));
         string profileConfig = Path.Combine(profilesDir, "work", "claude_desktop_config.json");
-        await File.WriteAllTextAsync(profileConfig, """{"profile":"work"}""");
-        await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "work");
+        await File.WriteAllTextAsync(profileConfig, """{"profile":"work"}""", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "work", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "backup-desktop-roundtrip.zip");
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -588,23 +588,23 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
 
         // Mutate both so a no-op restore cannot pass.
-        await File.WriteAllTextAsync(profileConfig, """{"profile":"CLOBBERED"}""");
-        await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "clobbered");
+        await File.WriteAllTextAsync(profileConfig, """{"profile":"CLOBBERED"}""", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, "clobbered", TestContext.Current.CancellationToken);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.Single(entries);
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded, restore.Message);
 
-        MessageAssert.Contains("\"work\"", await File.ReadAllTextAsync(profileConfig),
+        MessageAssert.Contains("\"work\"", await File.ReadAllTextAsync(profileConfig, TestContext.Current.CancellationToken),
             "The profiles subtree must restore, not just the top-level Desktop config.");
         MessageAssert.Equal("work",
-            await File.ReadAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath),
+            await File.ReadAllTextAsync(PlatformPaths.DesktopCurrentProfileFilePath, TestContext.Current.CancellationToken),
             "The .desktop-current pointer is a single file, not a directory — a row that gets that "
             + "wrong restores nothing and still succeeds.");
     }
@@ -624,7 +624,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
@@ -651,7 +651,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
         List<string> entries = ListEntries(dest);
@@ -673,7 +673,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
         Assert.True(File.Exists(dest));
@@ -741,20 +741,20 @@ public sealed class BackupEngineTests : IDisposable
         // least one warning naming that property.
         await File.WriteAllTextAsync(
             Path.Combine(_fakeHome, ".claude", "settings.json"),
-            "{\"cleanupPeriodDays\":\"not-a-number\"}");
+            "{\"cleanupPeriodDays\":\"not-a-number\"}", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "backup-violation.zip");
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
         Assert.Single(entries);
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded,
             "Restore must succeed even when validation finds violations — "
             + "validation is informational, not gating.");
@@ -777,11 +777,11 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
 
         Assert.True(restore.Succeeded);
         // ValidationWarnings is null OR empty when nothing violates.
@@ -802,21 +802,21 @@ public sealed class BackupEngineTests : IDisposable
         // crashing — `if (!Directory.Exists(schemasDir)) return warnings;`.
         await File.WriteAllTextAsync(
             Path.Combine(_fakeHome, ".claude", "settings.json"),
-            "{\"cleanupPeriodDays\":\"would-violate-but-no-schema\"}");
+            "{\"cleanupPeriodDays\":\"would-violate-but-no-schema\"}", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "backup-noschemas.zip");
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded);
 
         // Strip every Schemas/ entry from the zip after creation.
         StripZipEntries(dest, e => e.FullName.StartsWith("Schemas/", StringComparison.Ordinal));
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded,
             "Restore from a pre-Schemas backup must still succeed — old backups are valid.");
 
@@ -839,7 +839,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded);
 
         // Mangle one schema entry's content to be unparseable.
@@ -847,7 +847,7 @@ public sealed class BackupEngineTests : IDisposable
             "{ this is not / valid : JSON ");
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded,
             "A corrupt bundled schema must not abort the restore — validation is informational.");
     }
@@ -866,7 +866,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded);
 
         // Valid JSON, invalid schema: `type` must be a string or array of strings, not a number,
@@ -875,7 +875,7 @@ public sealed class BackupEngineTests : IDisposable
             """{ "$schema": "http://json-schema.org/draft-07/schema#", "type": 12345 }""");
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded,
             "A bundled schema that is valid JSON but an invalid JSON-Schema must not abort the restore.");
     }
@@ -892,7 +892,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded);
 
         // The bundled archive's settings.json appears under
@@ -901,7 +901,7 @@ public sealed class BackupEngineTests : IDisposable
             "{ corrupt JSON without close brace");
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded,
             "Restore must tolerate a corrupt settings file in the backup — validation skips it silently.");
 
@@ -935,21 +935,21 @@ public sealed class BackupEngineTests : IDisposable
         const string violatesDesktop = """{"preferences":"not-an-object"}""";
 
         // ClaudeCode/claude.json  (top-level, non-recursive row)
-        await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude.json"), violatesClaudeCode);
+        await File.WriteAllTextAsync(Path.Combine(_fakeHome, ".claude.json"), violatesClaudeCode, TestContext.Current.CancellationToken);
         // ClaudeCode/claude-dir/settings.json + settings.local.json  (recursive row, both names)
         await File.WriteAllTextAsync(
-            Path.Combine(_fakeHome, ".claude", "settings.json"), violatesClaudeCode);
+            Path.Combine(_fakeHome, ".claude", "settings.json"), violatesClaudeCode, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
-            Path.Combine(_fakeHome, ".claude", "settings.local.json"), violatesClaudeCode);
+            Path.Combine(_fakeHome, ".claude", "settings.local.json"), violatesClaudeCode, TestContext.Current.CancellationToken);
 
         // ClaudeDesktop/claude_desktop_config.json  (top-level, non-recursive row)
         Directory.CreateDirectory(PlatformPaths.DesktopConfigDir);
-        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, violatesDesktop);
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, violatesDesktop, TestContext.Current.CancellationToken);
         // ClaudeDesktop/profiles/work/...  (recursive row)
         Directory.CreateDirectory(Path.Combine(PlatformPaths.DesktopProfilesDirectory, "work"));
         await File.WriteAllTextAsync(
             Path.Combine(PlatformPaths.DesktopProfilesDirectory, "work", "claude_desktop_config.json"),
-            violatesDesktop);
+            violatesDesktop, TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "backup-both-products.zip");
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -957,11 +957,11 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded, "Validation is informational — restore must still succeed.");
         MessageAssert.NotNull(restore.ValidationWarnings, "Five violating config files must produce warnings.");
 
@@ -1031,7 +1031,7 @@ public sealed class BackupEngineTests : IDisposable
         // unrecognised value raw. So a changed folder name produces archives that look wrong
         // in the UI without any test noticing.
         Directory.CreateDirectory(PlatformPaths.DesktopConfigDir);
-        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""");
+        await File.WriteAllTextAsync(PlatformPaths.DesktopConfigPath, """{"theme":"system"}""", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "clients-manifest.zip");
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -1039,7 +1039,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
         Assert.NotNull(create.Manifest);
 
@@ -1072,7 +1072,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
 
         MessageAssert.SequenceEqual(
@@ -1116,7 +1116,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
 
@@ -1145,7 +1145,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
 
@@ -1172,7 +1172,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded, result.Message);
 
@@ -1230,7 +1230,7 @@ public sealed class BackupEngineTests : IDisposable
                                                                               }
                                                                             }
                                                                           }
-                                                                          """);
+                                                                          """, TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "sanitized.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -1238,7 +1238,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
 
         // The settings.json entry in the archive must NOT contain the raw
@@ -1267,7 +1267,7 @@ public sealed class BackupEngineTests : IDisposable
         // mode it must be skipped regardless.
         string home = Path.Combine(_fakeHome, ".claude");
         await File.WriteAllTextAsync(Path.Combine(home, ".credentials.json"),
-            """{"token": "anthropic-oauth-token-abc"}""");
+            """{"token": "anthropic-oauth-token-abc"}""", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "sanitized-no-creds.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -1276,7 +1276,7 @@ public sealed class BackupEngineTests : IDisposable
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             IncludeCredentials = true, // user opted in — sanitized still wins
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
 
         List<string> entries = ListEntries(dest);
@@ -1288,7 +1288,7 @@ public sealed class BackupEngineTests : IDisposable
         await using FileStream fs = File.OpenRead(dest);
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
         ZipArchiveEntry manifestEntry = archive.GetEntry("manifest.json")!;
-        await using Stream ms = await manifestEntry.OpenAsync();
+        await using Stream ms = await manifestEntry.OpenAsync(TestContext.Current.CancellationToken);
         BackupManifest manifest = JsonSerializer.Deserialize(ms, BackupJsonContext.Default.BackupManifest)!;
         Assert.False(manifest.IncludedCredentials,
             "Manifest must declare credentials excluded in Sanitized mode.");
@@ -1304,13 +1304,13 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded);
 
         await using FileStream fs = File.OpenRead(dest);
         await using ZipArchive archive = new(fs, ZipArchiveMode.Read);
         ZipArchiveEntry manifestEntry = archive.GetEntry("manifest.json")!;
-        await using Stream ms = await manifestEntry.OpenAsync();
+        await using Stream ms = await manifestEntry.OpenAsync(TestContext.Current.CancellationToken);
         BackupManifest manifest = JsonSerializer.Deserialize(ms, BackupJsonContext.Default.BackupManifest)!;
 
         Assert.True(manifest.Warnings.Any(w =>
@@ -1338,14 +1338,14 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = backupDest,
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(create.Succeeded, create.Message);
 
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(backupDir);
         Assert.Single(entries);
         Assert.Equal(BackupMode.Sanitized, entries[0].Manifest!.Mode);
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0]);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entries[0], ct: TestContext.Current.CancellationToken);
 
         Assert.False(restore.Succeeded, "Sanitized backups must not be restorable.");
         Assert.True(restore.Message.Contains("sanitized", StringComparison.OrdinalIgnoreCase),
@@ -1395,7 +1395,7 @@ public sealed class BackupEngineTests : IDisposable
         Directory.CreateDirectory(hooksDir);
         await File.WriteAllTextAsync(
             Path.Combine(hooksDir, "post-prompt.sh"),
-            "#!/bin/bash\nexport ANTHROPIC_API_KEY=sk-ant-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+            "#!/bin/bash\nexport ANTHROPIC_API_KEY=sk-ant-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "sanitized-with-hook.zip");
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
@@ -1403,7 +1403,7 @@ public sealed class BackupEngineTests : IDisposable
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
 
         string hookEntryName = ListEntries(dest)
@@ -1445,7 +1445,7 @@ public sealed class BackupEngineTests : IDisposable
         Directory.CreateDirectory(srcDir);
         for (int i = 0; i < fileCount; i++)
         {
-            await File.WriteAllTextAsync(Path.Combine(srcDir, $"f{i}.txt"), $"content-{i}");
+            await File.WriteAllTextAsync(Path.Combine(srcDir, $"f{i}.txt"), $"content-{i}", TestContext.Current.CancellationToken);
         }
 
         string dest = Path.Combine(_fakeHome, "parallel.zip");
@@ -1465,7 +1465,7 @@ public sealed class BackupEngineTests : IDisposable
         };
 
         Stopwatch sw = Stopwatch.StartNew();
-        await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: parallel);
+        await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: parallel, ct: TestContext.Current.CancellationToken);
         sw.Stop();
 
         MessageAssert.Equal(fileCount, hits, "Every queued source entry must be transformed.");
@@ -1474,7 +1474,7 @@ public sealed class BackupEngineTests : IDisposable
             $"Actual: {sw.ElapsedMilliseconds} ms; serial floor would be {worstCaseMs} ms.");
 
         // Sanity: the precomputed strings actually land in the archive.
-        await writer.CommitAsync();
+        await writer.CommitAsync(ct: TestContext.Current.CancellationToken);
         string sample = ReadEntryText(dest, "x/f0.txt");
         Assert.Equal("transformed:f0.txt", sample);
     }
@@ -1489,8 +1489,8 @@ public sealed class BackupEngineTests : IDisposable
         Directory.CreateDirectory(srcDir);
         string goodPath = Path.Combine(srcDir, "good.txt");
         string badPath = Path.Combine(srcDir, "bad.txt");
-        await File.WriteAllTextAsync(goodPath, "good");
-        await File.WriteAllTextAsync(badPath, "bad");
+        await File.WriteAllTextAsync(goodPath, "good", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(badPath, "bad", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "per-file-exc.zip");
         await using ZipArchiveWriter writer = ZipArchiveWriter.Create(dest);
@@ -1500,7 +1500,7 @@ public sealed class BackupEngineTests : IDisposable
             ? throw new IOException("simulated per-file failure")
             : "ok";
 
-        await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: 2);
+        await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: 2, ct: TestContext.Current.CancellationToken);
 
         Assert.True(writer.SkippedFiles.Any(p => p.EndsWith("bad.txt", StringComparison.Ordinal)),
             "Failed transformer file must appear in SkippedFiles.");
@@ -1508,7 +1508,7 @@ public sealed class BackupEngineTests : IDisposable
         // The commit must still succeed (and bad.txt will fail again on
         // the synchronous fallback path, adding to SkippedFiles a 2nd
         // time — that's expected mirroring of the non-precompute path).
-        await writer.CommitAsync();
+        await writer.CommitAsync(ct: TestContext.Current.CancellationToken);
         Assert.True(File.Exists(dest));
     }
 
@@ -1583,8 +1583,8 @@ public sealed class BackupEngineTests : IDisposable
         Directory.CreateDirectory(srcDir);
         string oomPath = Path.Combine(srcDir, "oom.json");
         string safePath = Path.Combine(srcDir, "safe.json");
-        await File.WriteAllTextAsync(oomPath, """{"k":"v"}""");
-        await File.WriteAllTextAsync(safePath, """{"k":"v"}""");
+        await File.WriteAllTextAsync(oomPath, """{"k":"v"}""", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(safePath, """{"k":"v"}""", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_fakeHome, "oom-proxy.zip");
         await using ZipArchiveWriter writer = ZipArchiveWriter.Create(dest);
@@ -1595,12 +1595,12 @@ public sealed class BackupEngineTests : IDisposable
             : """{"k":"redacted"}""";
 
         // Precompute should record the failure without throwing.
-        await writer.PrecomputeTransformsAsync();
+        await writer.PrecomputeTransformsAsync(ct: TestContext.Current.CancellationToken);
         Assert.True(writer.SkippedFiles.Any(p => p.EndsWith("oom.json", StringComparison.Ordinal)),
             "OOM during transform must add the file to SkippedFiles.");
 
         // Commit must still succeed for the other file.
-        long bytes = await writer.CommitAsync();
+        long bytes = await writer.CommitAsync(ct: TestContext.Current.CancellationToken);
         Assert.True(bytes > 0);
         Assert.True(File.Exists(dest));
     }
@@ -1644,7 +1644,7 @@ public sealed class BackupEngineTests : IDisposable
                 Mode = BackupMode.SettingsOnly,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projectRoot },
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
             Assert.True(result.Succeeded, result.Message);
             Assert.True(File.Exists(dest));
@@ -1736,7 +1736,7 @@ public sealed class BackupEngineTests : IDisposable
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 // NO explicit project — exercises the "Full backup with no
                 // project selected" path the user asked about.
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
             Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
@@ -1790,7 +1790,7 @@ public sealed class BackupEngineTests : IDisposable
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
             Assert.True(result.Succeeded, result.Message);
             Assert.NotNull(result.Manifest);
@@ -1836,7 +1836,7 @@ public sealed class BackupEngineTests : IDisposable
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
             Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
@@ -1877,7 +1877,7 @@ public sealed class BackupEngineTests : IDisposable
                 Mode = BackupMode.Full,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projShared },  // same path also in .claude.json
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
             Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);
@@ -1940,7 +1940,7 @@ public sealed class BackupEngineTests : IDisposable
                 Mode = BackupMode.SettingsOnly,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projectRoot },
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
             Assert.True(result.Succeeded, result.Message);
             List<string> entries = ListEntries(dest);

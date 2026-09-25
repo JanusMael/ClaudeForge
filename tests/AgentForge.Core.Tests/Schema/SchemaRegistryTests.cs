@@ -43,8 +43,8 @@ public sealed class SchemaRegistryTests
     {
         using SchemaRegistry registry = OfflineRegistry();
 
-        await registry.GetClaudeDesktopConfigNodeAsync(); // first — registers globally
-        await registry.GetClaudeDesktopConfigNodeAsync(); // second — must hit memory cache
+        await registry.GetClaudeDesktopConfigNodeAsync(TestContext.Current.CancellationToken); // first — registers globally
+        await registry.GetClaudeDesktopConfigNodeAsync(TestContext.Current.CancellationToken); // second — must hit memory cache
     }
 
     [Fact]
@@ -53,8 +53,8 @@ public sealed class SchemaRegistryTests
     {
         using SchemaRegistry registry = OfflineRegistry();
 
-        await registry.GetClaudeCodeSettingsNodeAsync();
-        await registry.GetClaudeCodeSettingsNodeAsync();
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -65,12 +65,12 @@ public sealed class SchemaRegistryTests
         using SchemaRegistry registry = OfflineRegistry();
 
         // First pass (startup)
-        await registry.GetClaudeCodeSettingsNodeAsync();
-        await registry.GetClaudeDesktopConfigNodeAsync();
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetClaudeDesktopConfigNodeAsync(TestContext.Current.CancellationToken);
 
         // Second pass (Open Project / Reload / profile change)
-        await registry.GetClaudeCodeSettingsNodeAsync();
-        await registry.GetClaudeDesktopConfigNodeAsync();
+        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetClaudeDesktopConfigNodeAsync(TestContext.Current.CancellationToken);
     }
 
     // -----------------------------------------------------------------------
@@ -81,7 +81,7 @@ public sealed class SchemaRegistryTests
     public async Task GetClaudeCodeSettingsNodeAsync_ReturnsBundledSchema_WithProperties()
     {
         using SchemaRegistry registry = OfflineRegistry();
-        JsonSchemaNode node = await registry.GetClaudeCodeSettingsNodeAsync();
+        JsonSchemaNode node = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
 
         MessageAssert.NotNull(node, "Root schema node should not be null");
     }
@@ -90,7 +90,7 @@ public sealed class SchemaRegistryTests
     public async Task GetClaudeDesktopConfigNodeAsync_ReturnsBundledSchema_NotNull()
     {
         using SchemaRegistry registry = OfflineRegistry();
-        JsonSchemaNode node = await registry.GetClaudeDesktopConfigNodeAsync();
+        JsonSchemaNode node = await registry.GetClaudeDesktopConfigNodeAsync(TestContext.Current.CancellationToken);
 
         MessageAssert.NotNull(node, "Root schema node should not be null");
     }

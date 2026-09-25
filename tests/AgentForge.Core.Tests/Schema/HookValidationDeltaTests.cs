@@ -102,7 +102,7 @@ public sealed class HookValidationDeltaTests
             }),
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"Pre-existing valid hooks + unrelated edit must report zero errors.\n{FormatErrors(errors)}");
@@ -131,7 +131,7 @@ public sealed class HookValidationDeltaTests
                 new JsonObject { ["type"] = "command" }),
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             "User scenario: pre-existing invalid hook + unrelated edit. Delta filter " +
@@ -158,7 +158,7 @@ public sealed class HookValidationDeltaTests
         };
         ws.SetValue("hooks", hooks, ConfigScope.User);
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "User-introduced invalid hooks MUST be reported (delta filter only strips baseline-equal errors).");
@@ -215,7 +215,7 @@ public sealed class HookValidationDeltaTests
             ["SessionEnd"] = HookEventArray("", [.. sessionEndHooks]),
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"User scenario reproduction must produce zero errors. If errors > 0, " +
@@ -242,8 +242,8 @@ public sealed class HookValidationDeltaTests
         SettingsWorkspace workspace1 = WorkspaceWithBaselineHooks((JsonObject)hookData.DeepClone());
         SettingsWorkspace workspace2 = WorkspaceWithBaselineHooks((JsonObject)hookData.DeepClone());
 
-        IReadOnlyList<SchemaValidationError> errors1 = await registry.ValidateWorkspaceAsync(workspace1, isClaudeCode: true);
-        IReadOnlyList<SchemaValidationError> errors2 = await registry.ValidateWorkspaceAsync(workspace2, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors1 = await registry.ValidateWorkspaceAsync(workspace1, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors2 = await registry.ValidateWorkspaceAsync(workspace2, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(errors1.Count, errors2.Count,
             "Validator must produce the same error count for identical input.");

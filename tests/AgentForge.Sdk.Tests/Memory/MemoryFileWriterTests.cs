@@ -51,19 +51,19 @@ public sealed class MemoryFileWriterTests : IDisposable
         await MemoryFileWriter.WriteAsync(path, content, CancellationToken.None);
 
         Assert.True(File.Exists(path));
-        Assert.Equal(content, await File.ReadAllTextAsync(path));
+        Assert.Equal(content, await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task WriteAsync_ExistingFile_ReplacesContent()
     {
         string path = Path.Combine(_dir, "existing.md");
-        await File.WriteAllTextAsync(path, "OLD CONTENT");
+        await File.WriteAllTextAsync(path, "OLD CONTENT", TestContext.Current.CancellationToken);
 
         const string updated = "---\nname: bar\n---\n\nNew body.\n";
         await MemoryFileWriter.WriteAsync(path, updated, CancellationToken.None);
 
-        Assert.Equal(updated, await File.ReadAllTextAsync(path));
+        Assert.Equal(updated, await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class MemoryFileWriterTests : IDisposable
         string path = Path.Combine(_dir, "nobom.md");
         await MemoryFileWriter.WriteAsync(path, "name: foo\n", CancellationToken.None);
 
-        byte[] bytes = await File.ReadAllBytesAsync(path);
+        byte[] bytes = await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken);
         // UTF-8 BOM is EF BB BF — must NOT be present.
         bool hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
         Assert.False(hasBom, "Artifact files must be written UTF-8 without a BOM.");

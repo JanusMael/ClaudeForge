@@ -45,13 +45,13 @@ public sealed class ZipArchiveWriterTests : IDisposable
     {
         string dest = Path.Combine(_scratch, "test.zip");
         string src = Path.Combine(_scratch, "input.txt");
-        await File.WriteAllTextAsync(src, "hello");
+        await File.WriteAllTextAsync(src, "hello", TestContext.Current.CancellationToken);
 
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddFile(src, "ClaudeCode/claude.json");
             w.AddTextEntry("manifest.json", "{\"kind\":\"backup\"}");
-            await w.CommitAsync();
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
         }
 
         await using FileStream fs = File.OpenRead(dest);
@@ -86,12 +86,12 @@ public sealed class ZipArchiveWriterTests : IDisposable
     public async Task Commit_OverwritesExistingFinalFile()
     {
         string dest = Path.Combine(_scratch, "replace.zip");
-        await File.WriteAllTextAsync(dest, "pre-existing bytes");
+        await File.WriteAllTextAsync(dest, "pre-existing bytes", TestContext.Current.CancellationToken);
 
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddTextEntry("a.txt", "one");
-            await w.CommitAsync();
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
         }
 
         await using FileStream fs = File.OpenRead(dest);
@@ -127,7 +127,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         string dest = Path.Combine(_scratch, "idempotent.zip");
         ZipArchiveWriter w = ZipArchiveWriter.Create(dest);
         w.AddTextEntry("a.txt", "hello");
-        await w.CommitAsync();
+        await w.CommitAsync(ct: TestContext.Current.CancellationToken);
 
         // First dispose (simulates the implicit await-using cleanup).
         await w.DisposeAsync();
@@ -182,15 +182,15 @@ public sealed class ZipArchiveWriterTests : IDisposable
     {
         string srcDir = Path.Combine(_scratch, "proj");
         Directory.CreateDirectory(srcDir);
-        await File.WriteAllTextAsync(Path.Combine(srcDir, "app.cs"), "code");
-        await File.WriteAllTextAsync(Path.Combine(srcDir, "debug.log"), "log data");
-        await File.WriteAllTextAsync(Path.Combine(srcDir, ".gitignore"), "*.log\n");
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "app.cs"), "code", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "debug.log"), "log data", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(srcDir, ".gitignore"), "*.log\n", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_scratch, "gi-basic.zip");
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "proj");
-            await w.CommitAsync();
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
         }
 
         List<string> entries = GetEntryNames(dest);
@@ -204,15 +204,15 @@ public sealed class ZipArchiveWriterTests : IDisposable
         string srcDir = Path.Combine(_scratch, "proj2");
         string subDir = Path.Combine(srcDir, "logs");
         Directory.CreateDirectory(subDir);
-        await File.WriteAllTextAsync(Path.Combine(srcDir, "app.cs"), "code");
-        await File.WriteAllTextAsync(Path.Combine(subDir, "service.log"), "log");
-        await File.WriteAllTextAsync(Path.Combine(srcDir, ".gitignore"), "*.log\n");
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "app.cs"), "code", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(subDir, "service.log"), "log", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(srcDir, ".gitignore"), "*.log\n", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_scratch, "gi-inherit.zip");
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "proj2");
-            await w.CommitAsync();
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
         }
 
         List<string> entries = GetEntryNames(dest);
@@ -226,15 +226,15 @@ public sealed class ZipArchiveWriterTests : IDisposable
     {
         string srcDir = Path.Combine(_scratch, "proj3");
         Directory.CreateDirectory(srcDir);
-        await File.WriteAllTextAsync(Path.Combine(srcDir, "debug.log"), "noise");
-        await File.WriteAllTextAsync(Path.Combine(srcDir, "important.log"), "keep me");
-        await File.WriteAllTextAsync(Path.Combine(srcDir, ".gitignore"), "*.log\n!important.log\n");
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "debug.log"), "noise", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "important.log"), "keep me", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(srcDir, ".gitignore"), "*.log\n!important.log\n", TestContext.Current.CancellationToken);
 
         string dest = Path.Combine(_scratch, "gi-negation.zip");
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "proj3");
-            await w.CommitAsync();
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
         }
 
         List<string> entries = GetEntryNames(dest);
@@ -262,7 +262,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
 
         string srcDir = Path.Combine(_scratch, "src");
         Directory.CreateDirectory(srcDir);
-        await File.WriteAllTextAsync(Path.Combine(srcDir, "real.txt"), "hi");
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "real.txt"), "hi", TestContext.Current.CancellationToken);
 
         // Create a symlink pointing outside the directory.
         string linkTarget = Path.Combine(_scratch, "outside");
@@ -283,7 +283,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         {
             w.AddDirectory(srcDir, "src");
             MessageAssert.Equal(1, w.SkippedSymlinks.Count, "Symlink should have been detected and skipped.");
-            await w.CommitAsync();
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
         }
 
         await using FileStream fs = File.OpenRead(dest);

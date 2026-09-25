@@ -113,7 +113,7 @@ public sealed class ApplyToWorkspaceDeadlockRegressionTests
         {
             vm.ApplyToWorkspace();
             return true;
-        }).WaitAsync(TimeSpan.FromSeconds(5));
+        }).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         Assert.True(done);
         Assert.Equal("x-a", workspace.GetLayeredValue("a").EffectiveValue!.GetValue<string>());

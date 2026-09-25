@@ -83,7 +83,7 @@ public sealed class HookSchemaShapeTests
             ["command"] = "echo hello",
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"Valid command hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
@@ -99,7 +99,7 @@ public sealed class HookSchemaShapeTests
             ["prompt"] = "Be careful with destructive commands",
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"Valid prompt hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
@@ -115,7 +115,7 @@ public sealed class HookSchemaShapeTests
             ["prompt"] = "Verify the change is safe",
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"Valid agent hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
@@ -131,7 +131,7 @@ public sealed class HookSchemaShapeTests
             ["url"] = "https://hooks.example.com/notify",
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"Valid http hook must pass. Got {errors.Count}:\n{FormatErrors(errors)}");
@@ -149,7 +149,7 @@ public sealed class HookSchemaShapeTests
             // command property intentionally missing
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "A command hook with no command field MUST fail validation when introduced as a new entry.");
@@ -165,7 +165,7 @@ public sealed class HookSchemaShapeTests
             ["banana"] = "yellow",
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "A hook with an unknown type MUST fail validation (no anyOf branch matches).");
@@ -184,7 +184,7 @@ public sealed class HookSchemaShapeTests
             ["command"] = "echo", // forbidden on prompt branch
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "A prompt hook with a command field MUST fail validation.");
@@ -208,7 +208,7 @@ public sealed class HookSchemaShapeTests
             ["timeout"] = 30,
         });
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             "A valid command hook must not leak anyOf branch failures into the user-visible error list.");

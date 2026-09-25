@@ -874,7 +874,7 @@ public sealed class BackupRestoreViewModelTests
         BackupRestoreViewModel vm = new(dialog, BackupPageTestOptions.Create());
 
         string tmp = Path.Combine(Path.GetTempPath(), "drop-" + Guid.NewGuid().ToString("N") + ".txt");
-        await File.WriteAllTextAsync(tmp, "not a zip");
+        await File.WriteAllTextAsync(tmp, "not a zip", TestContext.Current.CancellationToken);
 
         try
         {
@@ -960,7 +960,7 @@ public sealed class BackupRestoreViewModelTests
         // the live ~/.claude profile, which this test must not do.
         string fakeHome = Path.Combine(Path.GetTempPath(), "vt-home-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(fakeHome, ".claude"));
-        await File.WriteAllTextAsync(Path.Combine(fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""");
+        await File.WriteAllTextAsync(Path.Combine(fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""", TestContext.Current.CancellationToken);
         PlatformPaths.TestUserProfileOverride = fakeHome;
         BackupEngine.InvalidateListCache();
 
@@ -971,7 +971,7 @@ public sealed class BackupRestoreViewModelTests
             {
                 DestinationZipPath = zipPath,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            });
+            }, ct: TestContext.Current.CancellationToken);
             Assert.True(created.Succeeded, "Test prerequisite: backup must create.");
 
             StubDialogService dialog = new() { ConfirmReturns = false }; // user cancels
@@ -1010,7 +1010,7 @@ public sealed class BackupRestoreViewModelTests
         // proceed with the restore.
         string fakeHome = Path.Combine(Path.GetTempPath(), "vt-home-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(fakeHome, ".claude"));
-        await File.WriteAllTextAsync(Path.Combine(fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""");
+        await File.WriteAllTextAsync(Path.Combine(fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""", TestContext.Current.CancellationToken);
         PlatformPaths.TestUserProfileOverride = fakeHome;
         BackupEngine.InvalidateListCache();
 
@@ -1021,7 +1021,7 @@ public sealed class BackupRestoreViewModelTests
             {
                 DestinationZipPath = zipPath,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            });
+            }, ct: TestContext.Current.CancellationToken);
             Assert.True(created.Succeeded);
 
             // Wire up a sentinel for "did we proceed past the confirm prompt?"

@@ -491,7 +491,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         CreateProfile("p");
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         await File.WriteAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json"),
-            """{"changed":"true"}""");
+            """{"changed":"true"}""", TestContext.Current.CancellationToken);
 
         StubDialogService dlg = new() { ConfirmReturns = false };
         ProfilesViewModel vm = NewVm(dlg);
@@ -504,7 +504,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         // Profile's settings.json should NOT contain the live-state edit
         // because the user cancelled.
         string profileSettings = await File.ReadAllTextAsync(
-            Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"));
+            Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"), TestContext.Current.CancellationToken);
         MessageAssert.Equal("{}", profileSettings,
             "User declined the sync confirm — profile state must remain unchanged.");
     }
@@ -515,7 +515,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         CreateProfile("p");
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         await File.WriteAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json"),
-            """{"model":"haiku"}""");
+            """{"model":"haiku"}""", TestContext.Current.CancellationToken);
 
         StubDialogService dlg = new() { ConfirmReturns = true };
         ProfilesViewModel vm = NewVm(dlg);
@@ -527,7 +527,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         Assert.Equal(1, dlg.ConfirmCalls);
         // Profile settings.json now contains the live state.
         string profileSettings = await File.ReadAllTextAsync(
-            Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"));
+            Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("haiku", profileSettings,
             "Confirmed sync must overwrite the profile from the live files.");
     }
@@ -617,7 +617,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         // never runs; live settings.json stays untouched.
         CreateProfile("p");
         await File.WriteAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json"),
-            """{"live":"original"}""");
+            """{"live":"original"}""", TestContext.Current.CancellationToken);
 
         StubDialogService dlg = new() { ConfirmReturns = false };
         ProfilesViewModel vm = NewVm(dlg);
@@ -628,7 +628,7 @@ public sealed class ProfilesViewModelTests : IDisposable
 
         Assert.Equal(1, dlg.ConfirmCalls);
         MessageAssert.Equal("""{"live":"original"}""",
-            await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json")),
+            await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json"), TestContext.Current.CancellationToken),
             "Decline must preserve live settings.json.");
     }
 
@@ -641,9 +641,9 @@ public sealed class ProfilesViewModelTests : IDisposable
         // profile, which is a no-op here since no profile is active).
         CreateProfile("p");
         await File.WriteAllTextAsync(Path.Combine(_sandbox, ".claude", "profiles", "p", "settings.json"),
-            """{"from":"profile"}""");
+            """{"from":"profile"}""", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json"),
-            """{"from":"live"}""");
+            """{"from":"live"}""", TestContext.Current.CancellationToken);
 
         StubDialogService dlg = new() { ConfirmReturns = true };
         ProfilesViewModel vm = NewVm(dlg);
@@ -654,7 +654,7 @@ public sealed class ProfilesViewModelTests : IDisposable
 
         Assert.Equal(1, dlg.ConfirmCalls);
         MessageAssert.Equal("""{"from":"profile"}""",
-            await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json")),
+            await File.ReadAllTextAsync(Path.Combine(_sandbox, ".claude", "settings.json"), TestContext.Current.CancellationToken),
             "Confirmed apply must copy profile settings.json into the live location.");
         MessageAssert.Equal("p", ProfileEngine.ReadCurrentProfileName(ClaudeEnvironment.Empty),
             "Apply must update the active-profile pointer.");
@@ -712,7 +712,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         Assert.Equal(1, dlg.PickSaveFileCalls);
         Assert.True(File.Exists(destPath),
             $"Export must have written the profile JSON to {destPath}.");
-        string content = await File.ReadAllTextAsync(destPath);
+        string content = await File.ReadAllTextAsync(destPath, TestContext.Current.CancellationToken);
         MessageAssert.Contains("\"name\"", content,
             "Exported file must contain the ExportedProfile envelope.");
         MessageAssert.NotNull(vm.StatusMessage,
@@ -742,7 +742,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         CreateProfile("p");
         string exportPath = Path.Combine(_sandbox, "exports", "p.json");
         Directory.CreateDirectory(Path.GetDirectoryName(exportPath)!);
-        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "p", exportPath);
+        await ProfileEngine.ExportProfileAsync(ClaudeEnvironment.Empty, "p", exportPath, TestContext.Current.CancellationToken);
 
         // Delete the profile so import can re-create it.
         Directory.Delete(Path.Combine(_sandbox, ".claude", "profiles", "p"), recursive: true);

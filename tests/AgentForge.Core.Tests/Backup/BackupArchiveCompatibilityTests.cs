@@ -120,7 +120,7 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
     {
         BackupEntry entry = StageFixture();
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry, ct: TestContext.Current.CancellationToken);
 
         Assert.True(restore.Succeeded,
             "A backup written by a shipped build must keep restoring. " + restore.Message);
@@ -128,13 +128,13 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
         // ~/.claude.json — the product root file.
         string claudeJson = Path.Combine(_fakeHome, ".claude.json");
         Assert.True(File.Exists(claudeJson), "ClaudeCode/claude.json must land at ~/.claude.json.");
-        OrdinalAssert.Contains("\"fixture\"", await File.ReadAllTextAsync(claudeJson));
+        OrdinalAssert.Contains("\"fixture\"", await File.ReadAllTextAsync(claudeJson, TestContext.Current.CancellationToken));
 
         // ~/.claude/settings.json — the claude-dir subtree.
         string settings = Path.Combine(_fakeHome, ".claude", "settings.json");
         Assert.True(File.Exists(settings),
             "ClaudeCode/claude-dir/settings.json must land at ~/.claude/settings.json.");
-        OrdinalAssert.Contains("\"opus\"", await File.ReadAllTextAsync(settings));
+        OrdinalAssert.Contains("\"opus\"", await File.ReadAllTextAsync(settings, TestContext.Current.CancellationToken));
 
         // A nested file under claude-dir, to prove the subtree is walked rather than one level.
         Assert.True(
@@ -150,7 +150,7 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
         // the first product would look green everywhere else.
         BackupEntry entry = StageFixture();
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry, ct: TestContext.Current.CancellationToken);
         Assert.True(restore.Succeeded, restore.Message);
 
         Assert.True(File.Exists(PlatformPaths.DesktopConfigPath),

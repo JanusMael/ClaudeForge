@@ -84,7 +84,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2.0.0","html_url":"https://github.com/foo/bar/releases/tag/v2.0.0"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable,
             "Newer remote version must trigger the banner.");
@@ -101,7 +101,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v1.0.0","html_url":"x"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable,
             "Same-version-as-current must NOT trigger the banner.");
@@ -114,7 +114,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v1.0.0","html_url":"x"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(2, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(2, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable,
             "Local version > remote latest must NOT trigger the banner.");
@@ -130,7 +130,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2026.5.524.0","html_url":"x"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(2026, 5, 523, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(2026, 5, 523, 0), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable,
             "Build-number-only bumps (last component) must trigger the banner.");
@@ -222,7 +222,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeThrowingChecker(
             new HttpRequestException("simulated network failure"));
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
         Assert.Null(result.LatestTagName);
@@ -237,7 +237,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeThrowingChecker(
             new TaskCanceledException("simulated timeout"));
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -252,7 +252,7 @@ public sealed class GithubReleaseCheckerTests
             HttpStatusCode.Forbidden,
             """{"message":"API rate limit exceeded"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -264,7 +264,7 @@ public sealed class GithubReleaseCheckerTests
         // Collapses to no-update; the user is not blocked by a missing repo.
         GithubReleaseChecker checker = MakeChecker(HttpStatusCode.NotFound);
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -276,7 +276,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2.0.0"""); // deliberately truncated
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -289,7 +289,7 @@ public sealed class GithubReleaseCheckerTests
         // Response with no tag_name at all — odd, but graceful.
         GithubReleaseChecker checker = MakeCheckerOne("""{"html_url":"x"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -300,7 +300,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"","html_url":"x"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }
@@ -313,7 +313,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"v2.0.0"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable);
         Assert.Equal("v2.0.0", result.LatestTagName);
@@ -328,7 +328,7 @@ public sealed class GithubReleaseCheckerTests
         GithubReleaseChecker checker = MakeCheckerOne(
             """{"tag_name":"alpha-1","html_url":"x"}""");
 
-        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0));
+        UpdateCheckResult result = await checker.CheckAsync(new Version(1, 0, 0), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable);
     }

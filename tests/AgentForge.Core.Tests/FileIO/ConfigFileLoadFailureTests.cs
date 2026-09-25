@@ -113,7 +113,7 @@ public sealed class ConfigFileLoadFailureTests : IDisposable
         SettingsDocument doc = await ConfigFileLoader.LoadAsync(
             new DiscoveredFile(ConfigScope.User, ConfigFileType.ClaudeCodeSettings,
                                Path.Combine(_dir, "absent.json"),
-                               Exists: false, IsReadOnly: false));
+                               Exists: false, IsReadOnly: false), TestContext.Current.CancellationToken);
 
         Assert.Null(doc.LoadFailure);
         Assert.Empty(doc.Root);
@@ -141,8 +141,8 @@ public sealed class ConfigFileLoadFailureTests : IDisposable
     {
         string good = Path.Combine(_dir, "good.json");
         string bad = Path.Combine(_dir, "bad.json");
-        await File.WriteAllTextAsync(good, """{"model":"sonnet"}""");
-        await File.WriteAllTextAsync(bad, """{"permissions": """);
+        await File.WriteAllTextAsync(good, """{"model":"sonnet"}""", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(bad, """{"permissions": """, TestContext.Current.CancellationToken);
 
         SettingsWorkspace ws = await ConfigFileLoader.LoadWorkspaceAsync(
             [
@@ -151,7 +151,7 @@ public sealed class ConfigFileLoadFailureTests : IDisposable
                 new DiscoveredFile(ConfigScope.Project, ConfigFileType.ClaudeCodeSettings, bad,
                                    Exists: true, IsReadOnly: false),
             ],
-            TestMergePolicy.Inferring);
+            TestMergePolicy.Inferring, TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(2, ws.Documents.Count, "Both documents still load — nothing throws.");
         MessageAssert.SequenceEqual(
@@ -166,14 +166,14 @@ public sealed class ConfigFileLoadFailureTests : IDisposable
     public async Task FailedDocuments_IsEmpty_ForACleanLoad()
     {
         string good = Path.Combine(_dir, "good.json");
-        await File.WriteAllTextAsync(good, """{"model":"sonnet"}""");
+        await File.WriteAllTextAsync(good, """{"model":"sonnet"}""", TestContext.Current.CancellationToken);
 
         SettingsWorkspace ws = await ConfigFileLoader.LoadWorkspaceAsync(
             [
                 new DiscoveredFile(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, good,
                                    Exists: true, IsReadOnly: false),
             ],
-            TestMergePolicy.Inferring);
+            TestMergePolicy.Inferring, TestContext.Current.CancellationToken);
 
         Assert.False(ws.FailedDocuments.Any());
     }

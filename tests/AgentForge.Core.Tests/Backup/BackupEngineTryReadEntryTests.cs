@@ -95,7 +95,7 @@ public sealed class BackupEngineTryReadEntryTests : IDisposable
         {
             DestinationZipPath = zipPath,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, "Test prerequisite: backup must be creatable.");
 
         BackupEntry? entry = TestBackupEngine.Default.TryReadEntry(zipPath);

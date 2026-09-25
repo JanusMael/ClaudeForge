@@ -413,7 +413,7 @@ public sealed class AgentsSkillsDeepPathTests : IDisposable
 
         // And the file on disk is untouched, because nothing was saved.
         string onDisk = await File.ReadAllTextAsync(
-            Path.Combine(Home, "skills", "pdf", "SKILL.md"));
+            Path.Combine(Home, "skills", "pdf", "SKILL.md"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("description: original", onDisk);
     }
 

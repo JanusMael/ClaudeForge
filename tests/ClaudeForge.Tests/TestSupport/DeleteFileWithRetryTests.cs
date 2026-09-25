@@ -88,7 +88,7 @@ public sealed class DeleteFileWithRetryTests : IDisposable
         }
         finally
         {
-            released.Wait(TimeSpan.FromSeconds(5));
+            released.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
             releaser.Join(TimeSpan.FromSeconds(5));
             hold.Dispose();
         }
