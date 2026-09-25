@@ -107,7 +107,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData("\t")]
     public async Task CreateFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, name));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, name, TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -115,7 +115,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData(" ")]
     public async Task ApplyProfileToLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, name));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, name, ct: TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -123,7 +123,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData(" ")]
     public async Task SyncFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, name));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, name, TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -132,7 +132,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     public async Task CreateDesktopProfileFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            ProfileEngine.CreateDesktopProfileFromLiveAsync(name));
+            ProfileEngine.CreateDesktopProfileFromLiveAsync(name, TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -140,7 +140,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData(" ")]
     public async Task ApplyDesktopProfileToLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyDesktopProfileToLiveAsync(name));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyDesktopProfileToLiveAsync(name, ct: TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -148,7 +148,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData(" ")]
     public async Task SyncDesktopFromLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.SyncDesktopFromLiveAsync(name));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.SyncDesktopFromLiveAsync(name, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     {
         // ArgumentException.ThrowIfNullOrWhiteSpace specifically raises
         // ArgumentNullException for null; ArgumentException for whitespace.
-        await Assert.ThrowsAsync<ArgumentNullException>(() => ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, null!, TestContext.Current.CancellationToken));
     }
 
     // ── Cancellation propagation ─────────────────────────────────────
@@ -167,7 +167,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // Live settings.json must exist so the method actually awaits the file
         // copy — that's the await that observes the cancellation.
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"model":"sonnet"}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"model":"sonnet"}""", TestContext.Current.CancellationToken);
 
         using CancellationTokenSource cts = new();
         await cts.CancelAsync();
@@ -203,7 +203,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         Directory.CreateDirectory(ProfileDir("orphan"));
 
         FileNotFoundException ex = await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "orphan"));
+            ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "orphan", ct: TestContext.Current.CancellationToken));
 
         MessageAssert.Contains("orphan", ex.Message,
             "The error message should name the offending profile.");
@@ -223,20 +223,20 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         CreateProfileWithSettings("B", """{"model":"opus"}""");
 
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"model":"haiku","external":"edit"}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"model":"haiku","external":"edit"}""", TestContext.Current.CancellationToken);
         ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, "A");
 
-        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "B", autoSync: true);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "B", autoSync: true, ct: TestContext.Current.CancellationToken);
 
         // Profile A should now contain the live state (haiku + external edit)
         // because auto-sync ran before the switch to B.
-        string aSettings = await File.ReadAllTextAsync(ProfileSettings("A"));
+        string aSettings = await File.ReadAllTextAsync(ProfileSettings("A"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("haiku", aSettings,
             "Auto-sync must capture live edits into the previously-active profile.");
         OrdinalAssert.Contains("external", aSettings);
 
         // Live now reflects B's state.
-        string liveAfter = await File.ReadAllTextAsync(LiveSettings);
+        string liveAfter = await File.ReadAllTextAsync(LiveSettings, TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("opus", liveAfter);
 
         // CLI-active pointer flipped to B.
@@ -250,14 +250,14 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         CreateProfileWithSettings("B", """{"model":"opus"}""");
 
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"model":"haiku"}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"model":"haiku"}""", TestContext.Current.CancellationToken);
         ProfileEngine.WriteCurrentProfileName(ClaudeEnvironment.Empty, "A");
 
-        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "B", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "B", autoSync: false, ct: TestContext.Current.CancellationToken);
 
         // A's directory must remain at its pre-apply content because we
         // explicitly opted out of auto-sync.
-        string aSettings = await File.ReadAllTextAsync(ProfileSettings("A"));
+        string aSettings = await File.ReadAllTextAsync(ProfileSettings("A"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("sonnet", aSettings,
             "With autoSync=false the previously-active profile must NOT pick up live edits.");
         OrdinalAssert.DoesNotContain("haiku", aSettings);
@@ -282,11 +282,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
             },
             ["unrelated"] = "keep-me",
         };
-        await File.WriteAllTextAsync(ClaudeJsonPath, live.ToJsonString());
+        await File.WriteAllTextAsync(ClaudeJsonPath, live.ToJsonString(), TestContext.Current.CancellationToken);
 
-        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "p", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "p", autoSync: false, ct: TestContext.Current.CancellationToken);
 
-        JsonObject after = JsonNode.Parse(await File.ReadAllTextAsync(ClaudeJsonPath))!.AsObject();
+        JsonObject after = JsonNode.Parse(await File.ReadAllTextAsync(ClaudeJsonPath, TestContext.Current.CancellationToken))!.AsObject();
         Assert.False(after.ContainsKey("mcpServers"),
             "ApplyProfileToLiveAsync must remove mcpServers when the profile has no mcp.json.");
         Assert.True(after.ContainsKey("unrelated"),
@@ -304,7 +304,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         {
             ["github"] = new JsonObject { ["url"] = "https://from-profile.example" },
         };
-        await File.WriteAllTextAsync(ProfileMcp("p"), profileMcp.ToJsonString());
+        await File.WriteAllTextAsync(ProfileMcp("p"), profileMcp.ToJsonString(), TestContext.Current.CancellationToken);
 
         // Live ~/.claude.json starts with a different mcpServers PLUS unrelated keys.
         JsonObject live = new()
@@ -316,11 +316,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
             ["sessionToken"] = "preserve-me",
             ["lastChat"] = 12345,
         };
-        await File.WriteAllTextAsync(ClaudeJsonPath, live.ToJsonString());
+        await File.WriteAllTextAsync(ClaudeJsonPath, live.ToJsonString(), TestContext.Current.CancellationToken);
 
-        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "p", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "p", autoSync: false, ct: TestContext.Current.CancellationToken);
 
-        JsonObject after = JsonNode.Parse(await File.ReadAllTextAsync(ClaudeJsonPath))!.AsObject();
+        JsonObject after = JsonNode.Parse(await File.ReadAllTextAsync(ClaudeJsonPath, TestContext.Current.CancellationToken))!.AsObject();
 
         // mcpServers replaced with the profile's content.
         Assert.True(after.ContainsKey("mcpServers"));
@@ -341,13 +341,13 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     public async Task CreateDesktopProfileFromLiveAsync_CopiesLiveConfigIntoProfile()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(DesktopLiveConfig)!);
-        await File.WriteAllTextAsync(DesktopLiveConfig, """{"theme":"dark"}""");
+        await File.WriteAllTextAsync(DesktopLiveConfig, """{"theme":"dark"}""", TestContext.Current.CancellationToken);
 
-        bool created = await ProfileEngine.CreateDesktopProfileFromLiveAsync("d-test");
+        bool created = await ProfileEngine.CreateDesktopProfileFromLiveAsync("d-test", TestContext.Current.CancellationToken);
 
         Assert.True(created, "Create must report true on first creation.");
         Assert.True(File.Exists(DesktopProfileConfig("d-test")));
-        string copied = await File.ReadAllTextAsync(DesktopProfileConfig("d-test"));
+        string copied = await File.ReadAllTextAsync(DesktopProfileConfig("d-test"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("dark", copied);
     }
 
@@ -358,11 +358,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // profile dir and write {} so the profile is valid.
         Assert.False(File.Exists(DesktopLiveConfig), "Pre-condition: no live config.");
 
-        bool created = await ProfileEngine.CreateDesktopProfileFromLiveAsync("empty");
+        bool created = await ProfileEngine.CreateDesktopProfileFromLiveAsync("empty", TestContext.Current.CancellationToken);
 
         Assert.True(created);
         Assert.True(File.Exists(DesktopProfileConfig("empty")));
-        Assert.Equal("{}", await File.ReadAllTextAsync(DesktopProfileConfig("empty")));
+        Assert.Equal("{}", await File.ReadAllTextAsync(DesktopProfileConfig("empty"), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -370,14 +370,14 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     {
         CreateDesktopProfileWithConfig("dup", """{"existing":true}""");
 
-        bool created = await ProfileEngine.CreateDesktopProfileFromLiveAsync("dup");
+        bool created = await ProfileEngine.CreateDesktopProfileFromLiveAsync("dup", TestContext.Current.CancellationToken);
 
         Assert.False(created,
             "Create must report false (no overwrite) when the profile dir already exists.");
         // Existing content untouched.
         OrdinalAssert.Contains(
             "existing",
-            await File.ReadAllTextAsync(DesktopProfileConfig("dup")));
+            await File.ReadAllTextAsync(DesktopProfileConfig("dup"), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -385,11 +385,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     {
         CreateDesktopProfileWithConfig("d-apply", """{"theme":"light"}""");
 
-        await ProfileEngine.ApplyDesktopProfileToLiveAsync("d-apply", autoSync: false);
+        await ProfileEngine.ApplyDesktopProfileToLiveAsync("d-apply", autoSync: false, ct: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(DesktopLiveConfig));
         OrdinalAssert.Contains(
-            "light", await File.ReadAllTextAsync(DesktopLiveConfig));
+            "light", await File.ReadAllTextAsync(DesktopLiveConfig, TestContext.Current.CancellationToken));
         Assert.Equal("d-apply", ProfileEngine.ReadCurrentDesktopProfileName());
     }
 
@@ -400,7 +400,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         Directory.CreateDirectory(DesktopProfileDir("d-orphan"));
 
         FileNotFoundException ex = await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            ProfileEngine.ApplyDesktopProfileToLiveAsync("d-orphan"));
+            ProfileEngine.ApplyDesktopProfileToLiveAsync("d-orphan", ct: TestContext.Current.CancellationToken));
 
         OrdinalAssert.Contains("d-orphan", ex.Message);
         OrdinalAssert.Contains("claude_desktop_config.json", ex.Message);
@@ -411,11 +411,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     {
         CreateDesktopProfileWithConfig("d-sync", """{"old":true}""");
         Directory.CreateDirectory(Path.GetDirectoryName(DesktopLiveConfig)!);
-        await File.WriteAllTextAsync(DesktopLiveConfig, """{"theme":"system"}""");
+        await File.WriteAllTextAsync(DesktopLiveConfig, """{"theme":"system"}""", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.SyncDesktopFromLiveAsync("d-sync");
+        await ProfileEngine.SyncDesktopFromLiveAsync("d-sync", TestContext.Current.CancellationToken);
 
-        string afterSync = await File.ReadAllTextAsync(DesktopProfileConfig("d-sync"));
+        string afterSync = await File.ReadAllTextAsync(DesktopProfileConfig("d-sync"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("system", afterSync,
             "Sync must overwrite the profile config with the current live content.");
         Assert.False(afterSync.Contains("\"old\""),
@@ -428,10 +428,10 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // No live config exists — the sync should still produce a valid {}.
         Assert.False(File.Exists(DesktopLiveConfig));
 
-        await ProfileEngine.SyncDesktopFromLiveAsync("d-blank");
+        await ProfileEngine.SyncDesktopFromLiveAsync("d-blank", TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(DesktopProfileConfig("d-blank")));
-        Assert.Equal("{}", await File.ReadAllTextAsync(DesktopProfileConfig("d-blank")));
+        Assert.Equal("{}", await File.ReadAllTextAsync(DesktopProfileConfig("d-blank"), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -441,15 +441,15 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         CreateDesktopProfileWithConfig("b", """{"theme":"new-b"}""");
 
         Directory.CreateDirectory(Path.GetDirectoryName(DesktopLiveConfig)!);
-        await File.WriteAllTextAsync(DesktopLiveConfig, """{"theme":"live-edit"}""");
+        await File.WriteAllTextAsync(DesktopLiveConfig, """{"theme":"live-edit"}""", TestContext.Current.CancellationToken);
         ProfileEngine.WriteCurrentDesktopProfileName("a");
 
-        await ProfileEngine.ApplyDesktopProfileToLiveAsync("b", autoSync: true);
+        await ProfileEngine.ApplyDesktopProfileToLiveAsync("b", autoSync: true, ct: TestContext.Current.CancellationToken);
 
         // Profile a should now contain the live state because auto-sync ran.
         MessageAssert.Contains(
             "live-edit",
-            await File.ReadAllTextAsync(DesktopProfileConfig("a")),
+            await File.ReadAllTextAsync(DesktopProfileConfig("a"), TestContext.Current.CancellationToken),
             "Auto-sync must capture live edits into the previously-active Desktop profile.");
         Assert.Equal("b", ProfileEngine.ReadCurrentDesktopProfileName());
     }
@@ -462,10 +462,10 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // No ~/.claude/settings.json exists.  The fallback path should
         // write "{}" into the profile's settings.json so the new profile
         // is at least valid (empty config) rather than missing the file.
-        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "fresh");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "fresh", TestContext.Current.CancellationToken);
 
         Assert.True(created);
-        string content = await File.ReadAllTextAsync(ProfileSettings("fresh"));
+        string content = await File.ReadAllTextAsync(ProfileSettings("fresh"), TestContext.Current.CancellationToken);
         Assert.Equal("{}", content);
     }
 
@@ -473,12 +473,12 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     public async Task CreateFromLiveAsync_WithLiveSettings_CopiesContent()
     {
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"model":"haiku"}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"model":"haiku"}""", TestContext.Current.CancellationToken);
 
-        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "seed");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "seed", TestContext.Current.CancellationToken);
 
         Assert.True(created);
-        string content = await File.ReadAllTextAsync(ProfileSettings("seed"));
+        string content = await File.ReadAllTextAsync(ProfileSettings("seed"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("haiku", content);
     }
 
@@ -486,25 +486,25 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     public async Task CreateFromLiveAsync_WithClaudeMd_CopiesIt()
     {
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, "{}");
-        await File.WriteAllTextAsync(PlatformPaths.ClaudeMdPath(ClaudeEnvironment.Empty), "# Project memory\nSome notes.");
+        await File.WriteAllTextAsync(LiveSettings, "{}", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(PlatformPaths.ClaudeMdPath(ClaudeEnvironment.Empty), "# Project memory\nSome notes.", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "withmd");
+        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "withmd", TestContext.Current.CancellationToken);
 
         string profileMd = Path.Combine(ProfileDir("withmd"), "CLAUDE.md");
         Assert.True(File.Exists(profileMd),
             "When live CLAUDE.md exists, it must be copied into the new profile dir.");
-        OrdinalAssert.Contains("Project memory", await File.ReadAllTextAsync(profileMd));
+        OrdinalAssert.Contains("Project memory", await File.ReadAllTextAsync(profileMd, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task CreateFromLiveAsync_NoClaudeMd_DoesNotCreateOne()
     {
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, "{}");
+        await File.WriteAllTextAsync(LiveSettings, "{}", TestContext.Current.CancellationToken);
         // Deliberately no CLAUDE.md.
 
-        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "nomd");
+        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "nomd", TestContext.Current.CancellationToken);
 
         string profileMd = Path.Combine(ProfileDir("nomd"), "CLAUDE.md");
         Assert.False(File.Exists(profileMd),
@@ -517,7 +517,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // ExtractMcpToProfileAsync side effect: when ~/.claude.json contains
         // mcpServers, the new profile's mcp.json should hold a copy.
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, "{}");
+        await File.WriteAllTextAsync(LiveSettings, "{}", TestContext.Current.CancellationToken);
 
         JsonObject live = new()
         {
@@ -531,14 +531,14 @@ public sealed class ProfileEngineAsyncTests : IDisposable
             },
             ["unrelated"] = "keep",
         };
-        await File.WriteAllTextAsync(ClaudeJsonPath, live.ToJsonString());
+        await File.WriteAllTextAsync(ClaudeJsonPath, live.ToJsonString(), TestContext.Current.CancellationToken);
 
-        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "hasmcp");
+        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "hasmcp", TestContext.Current.CancellationToken);
 
         string profileMcp = ProfileMcp("hasmcp");
         Assert.True(File.Exists(profileMcp),
             "When live ~/.claude.json has mcpServers, profile/mcp.json must be written.");
-        OrdinalAssert.Contains("echo", await File.ReadAllTextAsync(profileMcp));
+        OrdinalAssert.Contains("echo", await File.ReadAllTextAsync(profileMcp, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -548,10 +548,10 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // refuse to overwrite and return false.
         CreateProfileWithSettings("dup", """{"existing":"keep"}""");
 
-        bool result = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "dup");
+        bool result = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "dup", TestContext.Current.CancellationToken);
 
         Assert.False(result);
-        string preserved = await File.ReadAllTextAsync(ProfileSettings("dup"));
+        string preserved = await File.ReadAllTextAsync(ProfileSettings("dup"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("keep", preserved,
             "Pre-existing profile content must NOT be overwritten when Create returns false.");
     }
@@ -563,11 +563,11 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     {
         CreateProfileWithSettings("p", """{"old":"value"}""");
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"new":"value"}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"new":"value"}""", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p");
+        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p", TestContext.Current.CancellationToken);
 
-        string profileSettings = await File.ReadAllTextAsync(ProfileSettings("p"));
+        string profileSettings = await File.ReadAllTextAsync(ProfileSettings("p"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("new", profileSettings,
             "Live settings.json must overwrite the profile's settings.json on sync.");
         Assert.False(profileSettings.Contains("old"),
@@ -582,9 +582,9 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // rather than fail or leave the old content stale.
         CreateProfileWithSettings("p", """{"old":"value"}""");
 
-        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p");
+        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p", TestContext.Current.CancellationToken);
 
-        string profileSettings = await File.ReadAllTextAsync(ProfileSettings("p"));
+        string profileSettings = await File.ReadAllTextAsync(ProfileSettings("p"), TestContext.Current.CancellationToken);
         Assert.Equal("{}", profileSettings);
     }
 
@@ -593,14 +593,14 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     {
         CreateProfileWithSettings("p");
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, "{}");
-        await File.WriteAllTextAsync(PlatformPaths.ClaudeMdPath(ClaudeEnvironment.Empty), "# updated");
+        await File.WriteAllTextAsync(LiveSettings, "{}", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(PlatformPaths.ClaudeMdPath(ClaudeEnvironment.Empty), "# updated", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p");
+        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p", TestContext.Current.CancellationToken);
 
         string profileMd = Path.Combine(ProfileDir("p"), "CLAUDE.md");
         Assert.True(File.Exists(profileMd));
-        OrdinalAssert.Contains("updated", await File.ReadAllTextAsync(profileMd));
+        OrdinalAssert.Contains("updated", await File.ReadAllTextAsync(profileMd, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -610,13 +610,13 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         // Sync should bring the profile in line — no stale CLAUDE.md.
         CreateProfileWithSettings("p");
         string profileMd = Path.Combine(ProfileDir("p"), "CLAUDE.md");
-        await File.WriteAllTextAsync(profileMd, "# stale");
+        await File.WriteAllTextAsync(profileMd, "# stale", TestContext.Current.CancellationToken);
 
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, "{}");
+        await File.WriteAllTextAsync(LiveSettings, "{}", TestContext.Current.CancellationToken);
         // No live CLAUDE.md.
 
-        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p");
+        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "p", TestContext.Current.CancellationToken);
 
         Assert.False(File.Exists(profileMd),
             "When live has no CLAUDE.md, sync must remove the profile's stale copy.");

@@ -335,7 +335,7 @@ public sealed class AgentsSkillsEditorViewModelTests : IDisposable
         Assert.Equal("Read, Grep, Bash", vm.CardTools);
 
         // Confirm it actually hit disk and round-trips.
-        string onDisk = await File.ReadAllTextAsync(path);
+        string onDisk = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("description: new desc", onDisk);
         OrdinalAssert.Contains("tools: Read, Grep, Bash", onDisk);
         OrdinalAssert.Contains("Rewritten body.", onDisk);
@@ -415,7 +415,7 @@ public sealed class AgentsSkillsEditorViewModelTests : IDisposable
         vm.EditDescription = "new";
         await vm.SaveAsync();
 
-        string onDisk = await File.ReadAllTextAsync(path);
+        string onDisk = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
         MessageAssert.Contains("# leading comment", onDisk, "Comments must survive an edit-save.");
         MessageAssert.Contains("x-custom: keep-me", onDisk, "Un-modelled keys must survive an edit-save.");
         OrdinalAssert.Contains("description: new", onDisk);
@@ -458,7 +458,7 @@ public sealed class AgentsSkillsEditorViewModelTests : IDisposable
         Assert.False(vm.IsEditing);
         MessageAssert.Equal("keep", vm.CardDescription, "Card retains the original after cancel.");
 
-        string onDisk = await File.ReadAllTextAsync(path);
+        string onDisk = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
         MessageAssert.Contains("description: keep", onDisk, "Cancelled edits must not touch disk.");
         OrdinalAssert.DoesNotContain("discarded", onDisk);
     }
@@ -476,7 +476,7 @@ public sealed class AgentsSkillsEditorViewModelTests : IDisposable
         vm.EditTools = "";
         await vm.SaveAsync();
 
-        string onDisk = await File.ReadAllTextAsync(path);
+        string onDisk = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
         Assert.False(onDisk.Contains("tools:"), "Clearing the tools field removes the key entirely.");
     }
 
@@ -526,7 +526,7 @@ public sealed class AgentsSkillsEditorViewModelTests : IDisposable
         await vm.SaveAsync();
 
         Assert.False(vm.IsRawMode, "Save exits raw mode.");
-        string onDisk = await File.ReadAllTextAsync(path);
+        string onDisk = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("description: via-raw", onDisk);
         MessageAssert.Contains("x-custom: arbitrary-value", onDisk,
             "An arbitrary key authored in raw mode is written to disk.");

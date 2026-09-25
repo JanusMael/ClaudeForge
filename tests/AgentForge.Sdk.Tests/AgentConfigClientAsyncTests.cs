@@ -198,7 +198,7 @@ public sealed class AgentConfigClientAsyncTests
         await AssertThrowsAsync(() => notOpen.SetValueAsync("model", "x", CancellationToken.None));
 
         Task second = notOpen.SetValueAsync("model", "y", CancellationToken.None);
-        Task finished = await Task.WhenAny(second, Task.Delay(TimeSpan.FromSeconds(2)));
+        Task finished = await Task.WhenAny(second, Task.Delay(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
         MessageAssert.Same(second, finished, "Second async write hung → the state lock was leaked on the first exception.");
         await AssertThrowsAsync(() => second);
     }
@@ -223,7 +223,7 @@ public sealed class AgentConfigClientAsyncTests
                 .Select(i => c.SetValueAsync("model", "v" + i.ToString(System.Globalization.CultureInfo.InvariantCulture), CancellationToken.None))
                 .ToArray();
 
-            bool all = Task.WhenAll(tasks).Wait(TimeSpan.FromSeconds(10));
+            bool all = Task.WhenAll(tasks).Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
             Assert.True(all, "Concurrent async writes deadlocked under a non-pumping SynchronizationContext.");
             MessageAssert.Equal(0, ctx.Posts, "A continuation marshaled back to the captured context — an await is missing ConfigureAwait(false).");
         }

@@ -171,23 +171,23 @@ public sealed class ProfileEngineTests : IDisposable
     public async Task CreateFromLiveAsync_CopiesLiveSettingsIntoProfile()
     {
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"theme":"dark"}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"theme":"dark"}""", TestContext.Current.CancellationToken);
 
-        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "snap");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "snap", TestContext.Current.CancellationToken);
 
         Assert.True(created);
         Assert.True(File.Exists(ProfileSettings("snap")));
-        Assert.Equal("""{"theme":"dark"}""", await File.ReadAllTextAsync(ProfileSettings("snap")));
+        Assert.Equal("""{"theme":"dark"}""", await File.ReadAllTextAsync(ProfileSettings("snap"), TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task CreateFromLiveAsync_NoLiveSettings_WritesEmptyObject()
     {
-        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "blank");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "blank", TestContext.Current.CancellationToken);
 
         Assert.True(created);
         Assert.True(File.Exists(ProfileSettings("blank")));
-        Assert.Equal("{}", (await File.ReadAllTextAsync(ProfileSettings("blank"))).Trim());
+        Assert.Equal("{}", (await File.ReadAllTextAsync(ProfileSettings("blank"), TestContext.Current.CancellationToken)).Trim());
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public sealed class ProfileEngineTests : IDisposable
     {
         CreateProfileWithSettings("existing");
 
-        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "existing");
+        bool created = await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "existing", TestContext.Current.CancellationToken);
 
         Assert.False(created);
     }
@@ -204,13 +204,13 @@ public sealed class ProfileEngineTests : IDisposable
     public async Task CreateFromLiveAsync_ExtractsMcpServersFromClaudeJson()
     {
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, "{}");
-        await File.WriteAllTextAsync(ClaudeJsonPath, """{"mcpServers":{"myserver":{"command":"npx"}}}""");
+        await File.WriteAllTextAsync(LiveSettings, "{}", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(ClaudeJsonPath, """{"mcpServers":{"myserver":{"command":"npx"}}}""", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "withMcp");
+        await ProfileEngine.CreateFromLiveAsync(ClaudeEnvironment.Empty, "withMcp", TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(ProfileMcp("withMcp")));
-        JsonObject? mcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("withMcp"))) as JsonObject;
+        JsonObject? mcp = JsonNode.Parse(await File.ReadAllTextAsync(ProfileMcp("withMcp"), TestContext.Current.CancellationToken)) as JsonObject;
         Assert.NotNull(mcp);
         Assert.True(mcp.ContainsKey("myserver"));
     }
@@ -222,11 +222,11 @@ public sealed class ProfileEngineTests : IDisposable
     {
         CreateProfileWithSettings("prod", """{"env":"prod"}""");
 
-        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "prod", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "prod", autoSync: false, ct: TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(LiveSettings));
-        Assert.Equal("""{"env":"prod"}""", await File.ReadAllTextAsync(LiveSettings));
-        Assert.Equal("prod", (await File.ReadAllTextAsync(CurrentFile)).Trim());
+        Assert.Equal("""{"env":"prod"}""", await File.ReadAllTextAsync(LiveSettings, TestContext.Current.CancellationToken));
+        Assert.Equal("prod", (await File.ReadAllTextAsync(CurrentFile, TestContext.Current.CancellationToken)).Trim());
     }
 
     [Fact]
@@ -234,9 +234,9 @@ public sealed class ProfileEngineTests : IDisposable
     {
         CreateProfileWithSettings("minimal");
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveClaudeMd, "# old instructions");
+        await File.WriteAllTextAsync(LiveClaudeMd, "# old instructions", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "minimal", autoSync: false);
+        await ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "minimal", autoSync: false, ct: TestContext.Current.CancellationToken);
 
         Assert.False(File.Exists(LiveClaudeMd));
     }
@@ -249,11 +249,11 @@ public sealed class ProfileEngineTests : IDisposable
         // Create a profile, apply it, then externally modify live settings, then sync.
         CreateProfileWithSettings("dev", """{"theme":"light"}""");
         Directory.CreateDirectory(ClaudeHome);
-        await File.WriteAllTextAsync(LiveSettings, """{"theme":"dark","newKey":true}""");
+        await File.WriteAllTextAsync(LiveSettings, """{"theme":"dark","newKey":true}""", TestContext.Current.CancellationToken);
 
-        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "dev");
+        await ProfileEngine.SyncFromLiveAsync(ClaudeEnvironment.Empty, "dev", TestContext.Current.CancellationToken);
 
-        string synced = await File.ReadAllTextAsync(ProfileSettings("dev"));
+        string synced = await File.ReadAllTextAsync(ProfileSettings("dev"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("dark", synced);
         OrdinalAssert.Contains("newKey", synced);
     }

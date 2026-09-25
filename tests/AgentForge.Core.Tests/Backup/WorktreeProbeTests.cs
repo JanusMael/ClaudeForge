@@ -82,7 +82,7 @@ public sealed class WorktreeProbeTests : IDisposable
         ]);
         WorktreeProbe probe = new(runner);
 
-        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project]);
+        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project], TestContext.Current.CancellationToken);
 
         Assert.Single(result.Worktrees);
         Assert.Equal(Path.GetFullPath(outside), result.Worktrees[0].WorktreePath);
@@ -98,7 +98,7 @@ public sealed class WorktreeProbeTests : IDisposable
         FakeRunner runner = new([]);
         WorktreeProbe probe = new(runner);
 
-        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([notAGit]);
+        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([notAGit], TestContext.Current.CancellationToken);
 
         Assert.Empty(result.Worktrees);
         Assert.Equal(0, runner.Calls); // Never invoked git
@@ -113,7 +113,7 @@ public sealed class WorktreeProbeTests : IDisposable
         FakeRunner runner = new(null); // simulates 'git' missing / timeout
         WorktreeProbe probe = new(runner);
 
-        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project]);
+        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project], TestContext.Current.CancellationToken);
         Assert.Empty(result.Worktrees);
         Assert.True(result.GitMissing, "GitMissing should be true when runner returns null.");
     }
@@ -130,7 +130,7 @@ public sealed class WorktreeProbeTests : IDisposable
 
         // Simulate the .git file that git creates for linked worktrees.
         string dotGitFile = Path.Combine(project, ".git");
-        await File.WriteAllTextAsync(dotGitFile, "gitdir: /some/repo/.git/worktrees/feature");
+        await File.WriteAllTextAsync(dotGitFile, "gitdir: /some/repo/.git/worktrees/feature", TestContext.Current.CancellationToken);
 
         // Set up an external worktree that should be discovered.
         string external = Path.Combine(_scratch, "external");
@@ -142,7 +142,7 @@ public sealed class WorktreeProbeTests : IDisposable
         ]);
         WorktreeProbe probe = new(runner);
 
-        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project]);
+        WorktreeDiscoveryResult result = await probe.DiscoverExternalAsync([project], TestContext.Current.CancellationToken);
 
         // git must have been invoked — proves the .git file was accepted as a valid marker.
         MessageAssert.Equal(1, runner.Calls,

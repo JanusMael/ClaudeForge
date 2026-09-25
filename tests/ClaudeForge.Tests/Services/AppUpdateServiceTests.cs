@@ -75,11 +75,11 @@ public sealed class AppUpdateServiceTests : IDisposable
         DebugFlags.Initialize(["--simulate-update"]);
         // Default WindowState (no override file) → CheckForUpdatesOnLaunch=true.
 
-        UpdateCheckResult first = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult first = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.True(first.IsUpdateAvailable,
             "Setup: first call must produce an UpdateAvailable (so we know the second isn't trivially false).");
 
-        UpdateCheckResult second = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult second = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.False(second.IsUpdateAvailable,
             "Second call to CheckOncePerLaunchAsync MUST collapse to NoUpdate — the latch is load-bearing for " +
             "the 'fires exactly once per launch' contract.");
@@ -96,7 +96,7 @@ public sealed class AppUpdateServiceTests : IDisposable
         WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { CheckForUpdatesOnLaunch = false });
         DebugFlags.Initialize(["--simulate-update"]);
 
-        UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
 
         Assert.False(result.IsUpdateAvailable,
             "User opt-out (CheckForUpdatesOnLaunch=false) must override the simulate-update path.");
@@ -116,7 +116,7 @@ public sealed class AppUpdateServiceTests : IDisposable
         Version current = typeof(AppUpdateService).Assembly.GetName().Version
             ?? throw new InvalidOperationException("AppUpdateService assembly has no Version.");
 
-        UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable,
             "Simulate flag must always produce UpdateAvailable — the synth is guaranteed " +
@@ -146,7 +146,7 @@ public sealed class AppUpdateServiceTests : IDisposable
         DebugFlags.Initialize(["--simulate-update"]);
         Version current = typeof(AppUpdateService).Assembly.GetName().Version!;
 
-        UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult result = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(result.LatestVersion);
         MessageAssert.Equal(current.Major, result.LatestVersion!.Major,
@@ -173,15 +173,15 @@ public sealed class AppUpdateServiceTests : IDisposable
     {
         // Consume the latch first via the auto path.
         DebugFlags.Initialize(["--simulate-update"]);
-        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.True(auto.IsUpdateAvailable, "Setup: auto check must produce a result.");
 
         // Auto path is now latched — a second auto call would NoUpdate.
-        UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.False(autoAgain.IsUpdateAvailable, "Setup: auto latch confirmed.");
 
         // Manual must still produce a real result.
-        UpdateCheckResult manual = await AppUpdateService.CheckManualAsync();
+        UpdateCheckResult manual = await AppUpdateService.CheckManualAsync(TestContext.Current.CancellationToken);
         Assert.True(manual.IsUpdateAvailable,
             "CheckManualAsync MUST bypass the once-per-launch latch — the user " +
             "explicitly re-clicked, and is entitled to a fresh answer.");
@@ -198,11 +198,11 @@ public sealed class AppUpdateServiceTests : IDisposable
         WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { CheckForUpdatesOnLaunch = false });
         DebugFlags.Initialize(["--simulate-update"]);
 
-        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.False(auto.IsUpdateAvailable,
             "Setup: auto check must respect the user opt-out (CheckForUpdatesOnLaunch=false).");
 
-        UpdateCheckResult manual = await AppUpdateService.CheckManualAsync();
+        UpdateCheckResult manual = await AppUpdateService.CheckManualAsync(TestContext.Current.CancellationToken);
         Assert.True(manual.IsUpdateAvailable,
             "CheckManualAsync MUST bypass the user-toggle opt-out — clicking the " +
             "button is explicit consent that overrides the auto-check preference.");
@@ -214,7 +214,7 @@ public sealed class AppUpdateServiceTests : IDisposable
         DebugFlags.Initialize(["--simulate-update"]);
         Version current = typeof(AppUpdateService).Assembly.GetName().Version!;
 
-        UpdateCheckResult result = await AppUpdateService.CheckManualAsync();
+        UpdateCheckResult result = await AppUpdateService.CheckManualAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable);
         Assert.NotNull(result.LatestVersion);
@@ -230,9 +230,9 @@ public sealed class AppUpdateServiceTests : IDisposable
     {
         DebugFlags.Initialize(["--simulate-update"]);
 
-        UpdateCheckResult first = await AppUpdateService.CheckManualAsync();
-        UpdateCheckResult second = await AppUpdateService.CheckManualAsync();
-        UpdateCheckResult third = await AppUpdateService.CheckManualAsync();
+        UpdateCheckResult first = await AppUpdateService.CheckManualAsync(TestContext.Current.CancellationToken);
+        UpdateCheckResult second = await AppUpdateService.CheckManualAsync(TestContext.Current.CancellationToken);
+        UpdateCheckResult third = await AppUpdateService.CheckManualAsync(TestContext.Current.CancellationToken);
 
         Assert.True(first.IsUpdateAvailable);
         Assert.True(second.IsUpdateAvailable,
@@ -254,14 +254,14 @@ public sealed class AppUpdateServiceTests : IDisposable
     {
         // Consume the launch latch first via the auto path.
         DebugFlags.Initialize(["--simulate-update"]);
-        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult auto = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.True(auto.IsUpdateAvailable, "Setup: launch check must produce a result.");
 
-        UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync();
+        UpdateCheckResult autoAgain = await AppUpdateService.CheckOncePerLaunchAsync(TestContext.Current.CancellationToken);
         Assert.False(autoAgain.IsUpdateAvailable, "Setup: launch latch confirmed.");
 
         // Periodic must still produce a real result despite the consumed latch.
-        UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
+        UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync(TestContext.Current.CancellationToken);
         Assert.True(periodic.IsUpdateAvailable,
             "CheckPeriodicAsync MUST bypass the once-per-launch latch — it re-checks on a timer, " +
             "so the launch latch (which guards only the single launch kick) must not gate it.");
@@ -276,7 +276,7 @@ public sealed class AppUpdateServiceTests : IDisposable
         WindowStateService.Save(ClaudeEnvironment.Empty, new WindowState { CheckForUpdatesOnLaunch = false });
         DebugFlags.Initialize(["--simulate-update"]);
 
-        UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync();
+        UpdateCheckResult periodic = await AppUpdateService.CheckPeriodicAsync(TestContext.Current.CancellationToken);
 
         Assert.False(periodic.IsUpdateAvailable,
             "CheckPeriodicAsync MUST respect the opt-out (CheckForUpdatesOnLaunch=false) — a background " +
@@ -289,8 +289,8 @@ public sealed class AppUpdateServiceTests : IDisposable
         // Each timer tick is independent — no latch is consumed.
         DebugFlags.Initialize(["--simulate-update"]);
 
-        UpdateCheckResult first = await AppUpdateService.CheckPeriodicAsync();
-        UpdateCheckResult second = await AppUpdateService.CheckPeriodicAsync();
+        UpdateCheckResult first = await AppUpdateService.CheckPeriodicAsync(TestContext.Current.CancellationToken);
+        UpdateCheckResult second = await AppUpdateService.CheckPeriodicAsync(TestContext.Current.CancellationToken);
 
         Assert.True(first.IsUpdateAvailable);
         Assert.True(second.IsUpdateAvailable,
@@ -303,7 +303,7 @@ public sealed class AppUpdateServiceTests : IDisposable
         DebugFlags.Initialize(["--simulate-update"]);
         Version current = typeof(AppUpdateService).Assembly.GetName().Version!;
 
-        UpdateCheckResult result = await AppUpdateService.CheckPeriodicAsync();
+        UpdateCheckResult result = await AppUpdateService.CheckPeriodicAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.IsUpdateAvailable);
         Assert.NotNull(result.LatestVersion);

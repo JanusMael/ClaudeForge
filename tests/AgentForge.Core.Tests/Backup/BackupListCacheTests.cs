@@ -72,7 +72,7 @@ public sealed class BackupListCacheTests : IDisposable
         {
             DestinationZipPath = zipPath,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         // First List: parses + caches.
         IReadOnlyList<BackupEntry> first = TestBackupEngine.Default.List(_fakeHome);
@@ -96,7 +96,7 @@ public sealed class BackupListCacheTests : IDisposable
         {
             DestinationZipPath = zipPath,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         // Prime the cache.
         IReadOnlyList<BackupEntry> first = TestBackupEngine.Default.List(_fakeHome);
@@ -120,7 +120,7 @@ public sealed class BackupListCacheTests : IDisposable
         {
             DestinationZipPath = zipPath,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         // Populate the cache.
         IReadOnlyList<BackupEntry> entries = TestBackupEngine.Default.List(_fakeHome);
@@ -137,7 +137,7 @@ public sealed class BackupListCacheTests : IDisposable
         {
             DestinationZipPath = zipPath,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
         IReadOnlyList<BackupEntry> afterRecreate = TestBackupEngine.Default.List(_fakeHome);
         Assert.Single(afterRecreate);
         MessageAssert.NotNull(afterRecreate[0].Manifest,
@@ -152,7 +152,7 @@ public sealed class BackupListCacheTests : IDisposable
         {
             DestinationZipPath = zipPath,
             Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         IReadOnlyList<BackupEntry> first = TestBackupEngine.Default.List(_fakeHome);
         BackupManifest? firstManifestRef = first[0].Manifest;

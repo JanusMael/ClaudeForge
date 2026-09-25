@@ -16,12 +16,11 @@
              this property an xunit.v3 executable runs xUnit's NATIVE console runner, which does
              not know `report-trx` — so CI would get no .trx files. -->
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-        <!-- ⚠ xUnit1051 ("pass TestContext.Current.CancellationToken") is SUPPRESSED. It flagged 383
-             calls in AgentForge.Core.Tests alone during the MSTest move. Adding a token to each would
-             change how those calls cancel, and plans/00006 decision 5 forbade rewriting tests during
-             the move — the identity proof depended on it. Advisory, not a correctness rule;
-             reconsider it as its own change. -->
-        <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+        <!-- ⓘ xUnit1051 ("pass TestContext.Current.CancellationToken") is ENFORCED. It was suppressed
+             through the MSTest move (plans/00006 decision 5: no test rewrites mid-move), then applied
+             to all 469 sites at once by Bennewitz.Ninja.Templates' scripts/xunit1051-fix.cs, because
+             xUnit's own fixer cannot Fix All and `dotnet format` changes nothing. A new call that
+             takes a token and is not given the test's fails the build (warnings are errors, root props). -->
     </PropertyGroup>
 
     <ItemGroup>

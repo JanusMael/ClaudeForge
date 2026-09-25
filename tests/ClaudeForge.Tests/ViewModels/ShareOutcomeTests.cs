@@ -99,7 +99,7 @@ public sealed class ShareOutcomeTests
     public async Task ShareFile_WhenLaunchFails_IsFailed()
     {
         string path = Path.Combine(Path.GetTempPath(), $"share-outcome-{Guid.NewGuid():N}.txt");
-        await File.WriteAllTextAsync(path, "payload");
+        await File.WriteAllTextAsync(path, "payload", TestContext.Current.CancellationToken);
         try
         {
             DefaultShareService svc = new(NotLaunched);
@@ -122,7 +122,7 @@ public sealed class ShareOutcomeTests
     public async Task ShareFile_WhenLaunchSucceeds_IsRevealedInFileManager()
     {
         string path = Path.Combine(Path.GetTempPath(), $"share-outcome-{Guid.NewGuid():N}.txt");
-        await File.WriteAllTextAsync(path, "payload");
+        await File.WriteAllTextAsync(path, "payload", TestContext.Current.CancellationToken);
         try
         {
             DefaultShareService svc = new(Launched);

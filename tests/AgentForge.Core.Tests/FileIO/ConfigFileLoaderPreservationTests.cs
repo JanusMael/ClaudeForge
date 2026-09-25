@@ -76,9 +76,9 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         (string path, SettingsDocument doc) = await LoadFixtureAsync(original);
 
         doc.Root["model"] = "opus";
-        await ConfigFileLoader.SaveAsync(doc);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
 
-        string after = await File.ReadAllTextAsync(path);
+        string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(original.Replace("\"sonnet\"", "\"opus\""), after,
                         "Only the edited value's span should differ from the original.");
@@ -107,9 +107,9 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         permissions["defaultMode"] = "acceptEdits";
         doc.Root["permissions"] = permissions;
 
-        await ConfigFileLoader.SaveAsync(doc);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
 
-        string after = await File.ReadAllTextAsync(path);
+        string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(original.Replace("\"ask\"", "\"acceptEdits\""), after,
                         "Replacing the parent object in memory must still produce a leaf-level "
@@ -154,9 +154,9 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         (string path, SettingsDocument doc) = await LoadFixtureAsync(original);
 
         doc.Root.Remove("verbose");
-        await ConfigFileLoader.SaveAsync(doc);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
 
-        string after = await File.ReadAllTextAsync(path);
+        string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
         Assert.Equal("{\n  \"model\": \"sonnet\"\n}", after);
     }
@@ -180,9 +180,9 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         (string path, SettingsDocument doc) = await LoadFixtureAsync(original);
 
         doc.Root["model"] = "opus";
-        await ConfigFileLoader.SaveAsync(doc, writer: new LegacySerializingWriter());
+        await ConfigFileLoader.SaveAsync(doc, writer: new LegacySerializingWriter(), ct: TestContext.Current.CancellationToken);
 
-        string after = await File.ReadAllTextAsync(path);
+        string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
         Assert.False(after.Contains("this will not survive", StringComparison.Ordinal),
                        "The legacy writer is lossy by construction — that is why it is the "

@@ -59,7 +59,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
         // Seed a User-scope settings.json with one key so the workspace has
         // a baseline to compare against.
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
-        await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""");
+        await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""", TestContext.Current.CancellationToken);
 
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
@@ -110,7 +110,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
         // refactor of OnAnyWorkspaceChanged or HasActualChanges cannot silently
         // re-introduce the regression.
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
-        await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""");
+        await File.WriteAllTextAsync(settingsPath, """{"model":"sonnet"}""", TestContext.Current.CancellationToken);
 
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
@@ -155,7 +155,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
         // ShowInstallBanner must be false after Initialize.
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
-        await File.WriteAllTextAsync(settingsPath, "{}");
+        await File.WriteAllTextAsync(settingsPath, "{}", TestContext.Current.CancellationToken);
 
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
@@ -234,7 +234,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
             // this machine — we don't assert it, just proceed to the reload.
 
             // Simulate "Code just appeared" (e.g. after Restore drops settings.json).
-            await File.WriteAllTextAsync(settingsPath, "{}");
+            await File.WriteAllTextAsync(settingsPath, "{}", TestContext.Current.CancellationToken);
             await vm.ReloadCommand.ExecuteAsync(null);
 
             Assert.False(vm.ShowInstallBanner,

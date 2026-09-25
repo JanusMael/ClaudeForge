@@ -159,7 +159,7 @@ public sealed class DeepPathReloadTests : IDisposable
 
         // Nothing was saved, so the file is untouched.
         string onDisk = await File.ReadAllTextAsync(
-            Path.Combine(_sandbox, ".claude", "skills", "pdf", "SKILL.md"));
+            Path.Combine(_sandbox, ".claude", "skills", "pdf", "SKILL.md"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("description: PDF tools", onDisk);
 
         vm.Dispose();
@@ -348,7 +348,7 @@ public sealed class DeepPathReloadTests : IDisposable
         string statePath = Path.Combine(_sandbox, ".claude", "cache", "ClaudeForge-gui-state.json");
         if (File.Exists(statePath))
         {
-            string json = await File.ReadAllTextAsync(statePath);
+            string json = await File.ReadAllTextAsync(statePath, TestContext.Current.CancellationToken);
             Assert.False(json.Contains("SENTINEL-UNSAVED-TEXT", StringComparison.Ordinal),
                 "The unsaved edit buffer must never be written to the UI-state file.");
         }

@@ -53,7 +53,7 @@ public sealed class HooksKnownEventTypesParityTests
         foreach (string eventName in HookEventCatalog.CuratedOrder)
         {
             SettingsWorkspace ws = WorkspaceWithEvent(eventName);
-            IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true);
+            IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
 
             // The only acceptable error here is one that does NOT name our
             // event (e.g. a coincidentally-failing branch elsewhere). Any

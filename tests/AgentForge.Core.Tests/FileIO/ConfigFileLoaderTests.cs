@@ -15,7 +15,7 @@ public class ConfigFileLoaderTests
             Exists: false,
             IsReadOnly: false);
 
-        SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+        SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
         Assert.Empty(doc.Root);
         Assert.False(doc.IsDirty);
@@ -27,13 +27,13 @@ public class ConfigFileLoaderTests
         string path = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(path, """{"model":"sonnet","cleanupPeriodDays":30}""");
+            await File.WriteAllTextAsync(path, """{"model":"sonnet","cleanupPeriodDays":30}""", TestContext.Current.CancellationToken);
 
             DiscoveredFile file = new(
                 ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                 Exists: true, IsReadOnly: false);
 
-            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
             Assert.Equal("sonnet", doc.Root["model"]!.GetValue<string>());
             Assert.Equal(30, doc.Root["cleanupPeriodDays"]!.GetValue<int>());
@@ -54,12 +54,12 @@ public class ConfigFileLoaderTests
                 ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                 Exists: false, IsReadOnly: false);
 
-            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
             doc.Root["model"] = "opus";
 
-            await ConfigFileLoader.SaveAsync(doc);
+            await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
 
-            string written = await File.ReadAllTextAsync(path);
+            string written = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
             Assert.True(written.Contains('\n'), "Expected indented JSON with newlines.");
             OrdinalAssert.Contains("opus", written);
             Assert.False(doc.IsDirty);
@@ -80,10 +80,10 @@ public class ConfigFileLoaderTests
             ConfigScope.Managed, ConfigFileType.ClaudeCodeSettings, "/some/path.json",
             Exists: false, IsReadOnly: true);
 
-        SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+        SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            ConfigFileLoader.SaveAsync(doc));
+            ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken));
     }
 
     // ── LoadAsync error / edge paths + workspace helpers ──
@@ -98,12 +98,12 @@ public class ConfigFileLoaderTests
         string path = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(path, "this { is { not / valid JSON");
+            await File.WriteAllTextAsync(path, "this { is { not / valid JSON", TestContext.Current.CancellationToken);
             DiscoveredFile file = new(
                 ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                 Exists: true, IsReadOnly: false);
 
-            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
             Assert.Empty(doc.Root);
             Assert.False(doc.IsDirty);
@@ -122,12 +122,12 @@ public class ConfigFileLoaderTests
         string path = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(path, "42");
+            await File.WriteAllTextAsync(path, "42", TestContext.Current.CancellationToken);
             DiscoveredFile file = new(
                 ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                 Exists: true, IsReadOnly: false);
 
-            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
             Assert.Empty(doc.Root);
         }
@@ -144,12 +144,12 @@ public class ConfigFileLoaderTests
         string path = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(path, "[1, 2, 3]");
+            await File.WriteAllTextAsync(path, "[1, 2, 3]", TestContext.Current.CancellationToken);
             DiscoveredFile file = new(
                 ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                 Exists: true, IsReadOnly: false);
 
-            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
             Assert.Empty(doc.Root);
         }
@@ -171,12 +171,12 @@ public class ConfigFileLoaderTests
         try
         {
             await File.WriteAllTextAsync(path,
-                """{"//":"ClaudeForge wrote this on 2026-05-05","model":"sonnet"}""");
+                """{"//":"ClaudeForge wrote this on 2026-05-05","model":"sonnet"}""", TestContext.Current.CancellationToken);
             DiscoveredFile file = new(
                 ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                 Exists: true, IsReadOnly: false);
 
-            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file);
+            SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
             Assert.False(doc.Root.ContainsKey("//"),
                 "Tool-written metadata stamp must be stripped on load.");
@@ -196,8 +196,8 @@ public class ConfigFileLoaderTests
         string pathB = Path.Combine(Path.GetTempPath(), $"wB_{Guid.NewGuid()}.json");
         try
         {
-            await File.WriteAllTextAsync(pathA, """{"a":1}""");
-            await File.WriteAllTextAsync(pathB, """{"b":2}""");
+            await File.WriteAllTextAsync(pathA, """{"a":1}""", TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(pathB, """{"b":2}""", TestContext.Current.CancellationToken);
 
             List<DiscoveredFile> files =
             [
@@ -205,7 +205,7 @@ public class ConfigFileLoaderTests
                 new(ConfigScope.Project, ConfigFileType.ClaudeCodeSettings, pathB, true, false),
             ];
 
-            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring);
+            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring, TestContext.Current.CancellationToken);
 
             Assert.Equal(2, workspace.Documents.Count);
             // Documents iterate in priority order. Project (= 2) outranks
@@ -236,24 +236,24 @@ public class ConfigFileLoaderTests
         try
         {
             // A starts existing on disk, B does not.
-            await File.WriteAllTextAsync(pathA, """{"existing":"value"}""");
+            await File.WriteAllTextAsync(pathA, """{"existing":"value"}""", TestContext.Current.CancellationToken);
 
             List<DiscoveredFile> files =
             [
                 new(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, pathA, true, false),
                 new(ConfigScope.Project, ConfigFileType.ClaudeCodeSettings, pathB, false, false),
             ];
-            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring);
+            SettingsWorkspace workspace = await ConfigFileLoader.LoadWorkspaceAsync(files, TestMergePolicy.Inferring, TestContext.Current.CancellationToken);
 
             // Mutate ONLY document A — B remains clean.
             SettingsDocument docA = workspace.Documents.Single(d => d.Scope == ConfigScope.User);
             docA.Root["new"] = "set";
             docA.MarkDirty();
 
-            await ConfigFileLoader.SaveDirtyAsync(workspace);
+            await ConfigFileLoader.SaveDirtyAsync(workspace, ct: TestContext.Current.CancellationToken);
 
             // A should be written with the new value.
-            string aText = await File.ReadAllTextAsync(pathA);
+            string aText = await File.ReadAllTextAsync(pathA, TestContext.Current.CancellationToken);
             OrdinalAssert.Contains("\"new\"", aText);
 
             // B should NOT have been written — the file should still not exist.

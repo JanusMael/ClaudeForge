@@ -152,7 +152,7 @@ public sealed class EnvAccessorTests : IDisposable
         client.Env.Set("MY_VAR", "42");
         await client.SaveAsync(force: true, CancellationToken.None);
 
-        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
+        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"), TestContext.Current.CancellationToken);
         OrdinalAssert.Contains("\"env\":", json);
         OrdinalAssert.Contains("\"MY_VAR\": \"42\"", json);
     }
@@ -217,7 +217,7 @@ public sealed class EnvAccessorTests : IDisposable
         client.Env.MaxOutputTokens = 4096;
         await client.SaveAsync(force: true, CancellationToken.None);
 
-        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"));
+        string json = await File.ReadAllTextAsync(Path.Combine(_tempDir, ".claude", "settings.json"), TestContext.Current.CancellationToken);
         MessageAssert.Contains("\"CLAUDE_CODE_MAX_OUTPUT_TOKENS\": \"4096\"", json,
             "MaxOutputTokens must write under CLAUDE_CODE_MAX_OUTPUT_TOKENS, not MAX_OUTPUT_TOKENS.");
     }

@@ -132,7 +132,7 @@ public sealed class SchemaBannerTests : IDisposable
                                                            "allow": ["Read"]
                                                        }
                                                    }
-                                                   """);
+                                                   """, TestContext.Current.CancellationToken);
 
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
         try
