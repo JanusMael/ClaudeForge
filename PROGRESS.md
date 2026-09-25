@@ -141,8 +141,8 @@ the defect.
 
 | | |
 |---|---|
-| `main` | `e719f3e` — #77 (stage two) and #78 (leaked-timer test fix) both merged 2026-09-24, admin, on the maintainer's instruction. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,287 passed · 0 failed · 11 skipped — TOTAL 3,298**, across **seven** test assemblies (= seven test csproj), Debug. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
+| `main` | #77–#85 merged by 2026-09-25 (admin, merge commits, over the two red-by-construction jobs only); the xUnit move and all its follow-ups are in. ⓘ `git log -1` is the answer for HEAD |
+| Suite | **3,298 · 0 failed · 10–11 skipped**, xUnit v3 on MTP, across **seven** test assemblies (= seven test csproj), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
 | ⛔ CI on `main` | `Feed Restore` and `Published Version` are **RED by construction** and stay red until step 1 below: they restore the published AgentForge `2026.3.922`, whose `LayeredEditors.*` dependencies no longer exist here (NU1101 only). Every other job is green |
 | Packages consumed | ScopedEditors / AppServices **`2026.3.924`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.924`** |
 
@@ -175,6 +175,13 @@ the defect.
    2026-09-25 (drift 9: two background reads shared READ only) — very likely the same fault; its own
    stack was never captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
 4. ⓘ Coverage that left with the library and is not yet restored in the ScopedEditors repo: drift 12.
+5. ⏸ **`docs/UI-STYLE-GUIDE.md` §14 → XamlQuality: HOLD the repoint.** The eight §14 entries were sent
+   to XamlQuality 2026-09-25 and all checked on 12.1.3; its drafts await the owner, and two of the
+   headings §14 would point at are changing. It sends the exact headings when they land. Then, in ONE
+   change: repoint §14 (keep only the app-specific inheritance-watermark entry), fix §14's false
+   "`X11PlatformOptions.WmClass` gone" (present and not obsolete on 12.1.3, metadata-probed), and rewrite
+   `AGENTS.md` line 49's tooltip row — it states the 11.0 behaviour; since 11.1.0 a child shows its
+   nearest ancestor's tooltip.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 
