@@ -236,20 +236,42 @@ internal static class MessageAssert
 /// resolution can: a string argument binds the ordinal overload, anything else the generic one,
 /// exactly as it bound MSTest's.
 /// </para>
+/// <para>
+/// ⛔ The generic overloads ask the COLLECTION, as <c>x.Contains(y)</c> and MSTest 4's
+/// <c>Assert.Contains</c> both do, so a dictionary's comparer still decides for its
+/// <c>Keys</c>. xUnit asks a set for itself but compares anything else by the default
+/// equality. Measured on xunit.v3.assert 3.2.2: <c>IsFalse(keys.Contains("A"))</c> over
+/// case-insensitive keys holding <c>"a"</c> fails, and xUnit's <c>DoesNotContain</c> passes.
+/// xUnit's own assertion still runs first on a failure, for its diff.
+/// </para>
 /// </remarks>
 internal static class OrdinalAssert
 {
     public static void Contains(string expectedSubstring, string? actualString) =>
         Assert.Contains(expectedSubstring, actualString, StringComparison.Ordinal);
 
-    public static void Contains<T>(T expected, IEnumerable<T> collection) =>
+    public static void Contains<T>(T expected, IEnumerable<T> collection)
+    {
+        if (System.Linq.Enumerable.Contains(collection, expected))
+        {
+            return;
+        }
         Assert.Contains(expected, collection);
+        throw new XunitException("Assert.Contains() Failure: the collection's own Contains did not find " + expected);
+    }
 
     public static void DoesNotContain(string expectedSubstring, string? actualString) =>
         Assert.DoesNotContain(expectedSubstring, actualString, StringComparison.Ordinal);
 
-    public static void DoesNotContain<T>(T expected, IEnumerable<T> collection) =>
+    public static void DoesNotContain<T>(T expected, IEnumerable<T> collection)
+    {
+        if (!System.Linq.Enumerable.Contains(collection, expected))
+        {
+            return;
+        }
         Assert.DoesNotContain(expected, collection);
+        throw new XunitException("Assert.DoesNotContain() Failure: the collection's own Contains found " + expected);
+    }
 
     public static void StartsWith(string? expectedStart, string? actualString) =>
         Assert.StartsWith(expectedStart, actualString, StringComparison.Ordinal);
