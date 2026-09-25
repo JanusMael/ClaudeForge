@@ -446,6 +446,9 @@ The UI also reported `v2026.3.922.0`.
     | `PackageMetadataTests`, `AssemblyLayeringTests` | `LayeredEditors.` prefix / globs removed — a stale DLL in a test `bin/` would otherwise be scanned as shared code | — |
     | `scripts/verify-feed-restore.ps1` | 11 ids → 6 — it would have failed CI's `feed-restore` | — |
 
+    ⏳ **Filed as [JanusMael/Bennewitz.Ninja.ScopedEditors#5](https://github.com/JanusMael/Bennewitz.Ninja.ScopedEditors/issues/5)**
+    (2026-09-25), with the originals at `ec3a18f`; a session in that repository will port them and report
+    back. Close this drift when it does.
     ⛔ **GAPS — no test anywhere covers these now; restore them IN the ScopedEditors repo:** the
     shared `PropertyEditorWrapper`'s danger banner and glyph sizing, the `LE.*` token
     reference/declaration consistency, and the AXAML accessibility scan of the package's own
