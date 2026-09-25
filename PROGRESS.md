@@ -157,10 +157,20 @@ the defect.
    (see *Where `00006` stands* below). Converter: `Bennewitz.Ninja.Templates` `scripts/mstest-to-xunit.cs`, helpers emitted from `63b7595`.
    ⚠ Its step 5 carries the headless bootstrap as proof of set-up ordering — that premise is FALSE (see
    the headless section), so the bootstrap is not ported; record that as 00006 drift, never in the plan.
-3. ⏳ **Headless flakes still open:** the cross-thread `VerifyAccess` failure (cause unknown; `PerAssembly`
-   tried and parked on local-only branch `fix/headless-perassembly` `d5c660a` — it breaks
-   `MainWindowViewModel`'s `Application.Current is null` seam); and one `GuiSave_WritesEveryProductsChanges…`
-   failure seen once locally, message not captured. ✅ The 2026-09-19 `IOException` on a temp
+3. ⏳ **Headless flakes — NOT REPRODUCIBLE since the xUnit move, and NOT fixed by anything known.**
+   The cross-thread `VerifyAccess` failure (cause unknown; `PerAssembly` tried and parked on local-only
+   branch `fix/headless-perassembly` `d5c660a` — it breaks `MainWindowViewModel`'s
+   `Application.Current is null` seam) was last seen **2026-09-24 02:37, under MSTest**: CI run
+   `35948043969`, Windows only, `SchemaProvenanceBadgeTests.WithAReachableNetwork_ClaudeCodeFetches_DesktopStaysBundled`,
+   `VerifyAccess` thrown from the `Session.Dispatch` call — the app rebuild inside a dispatch, the stack
+   recorded under drift history below. `GuiSave_WritesEveryProductsChanges…` appears nowhere in the CI
+   record since 2026-09-24; its one sighting was local, message not captured. **Measured 2026-09-25,
+   on xUnit v3:** ~139 green `Build & Test` jobs and 0 failed since the move; 30 whole-assembly runs of
+   `ClaudeForge.Tests` under full-core CPU load (~52,000 test executions, 30 seeds) and 12 quiet seeds,
+   all clean. The one other Windows-only CI failure in the window (`36023887188`) was the leaked
+   `StatusController` timer crash #78 fixed. ▶ If either recurs, the full output is what matters: the
+   runner keeps it (`--show-live-output on`, TRX), and the stress-and-capture method that found drift 9
+   is the next step. ✅ The 2026-09-19 `IOException` on a temp
    `settings.json` has the same message and file as the `ReloadHardeningTests` flake captured and fixed
    2026-09-25 (drift 9: two background reads shared READ only) — very likely the same fault; its own
    stack was never captured. #78 removed the leaked-timer test-host crash (13 post-test timers → 0, measured).
