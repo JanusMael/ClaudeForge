@@ -928,5 +928,14 @@ that the rows behind it do.
 | Splitting a flat schema into editor pages: property→page map, page order, the catch-all | `src/AgentForge.Avalonia.Shell/Navigation/SchemaPageLayout.cs`; this app's tables in `src/ClaudeForge/Services/NavigationTreeBuilder.cs` |
 | Global search: trigger rules, pinned synthetic rows, the two editor interfaces search dispatches on | `src/AgentForge.Avalonia.Shell/Search/` (`SearchViewModel.cs`, `SearchTrigger.cs`, `SyntheticSearchEntry.cs`, `SearchableEditors.cs`); this app's table in `src/ClaudeForge/ViewModels/ClaudeSyntheticSearch.cs`; §3 of the ViewModels guide |
 | Share service — hands text / files to the desktop; ⚠ **there is no share sheet**, on any platform | `IShareService` (package `Bennewitz.Ninja.AppServices.Abstractions`), `DefaultShareService` (`Bennewitz.Ninja.AppServices`) (read its remarks first — the MAUI path it used to carry was behind a TFM that never built); view-model integrations in `BackupRestoreViewModel`, `EffectiveSettingsViewModel`, `AboutEditorViewModel` |
+| Making a desktop UI an agent can drive and verify: the method, not this app's gaps | [XamlQuality's `ai-drivable-ui.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/ai-drivable-ui.md); this app's own gaps stay in [`docs/UIA-AUTOMATION-GAPS.md`](./docs/UIA-AUTOMATION-GAPS.md) |
 
 When in doubt, follow the pointer instead of duplicating content here.
+
+⭐ **Avalonia foot-guns and drivable-UI lessons go to XamlQuality, and no copy stays here.**
+`docs/avalonia-gotchas.md` and `docs/ai-drivable-ui.md` in `JanusMael/Bennewitz.Ninja.XamlQuality`
+are the one living copy of each. Send a new finding, or a correction to an entry, to the XamlQuality
+session by message, with the Avalonia/.NET versions and the measurement or source behind it; when
+no such session is running, open an issue in that repository. XamlQuality checks the claim before it
+lands and replies landed, changed or declined. A lesson that holds only for this app stays here, in
+the table above or in its owning doc.
