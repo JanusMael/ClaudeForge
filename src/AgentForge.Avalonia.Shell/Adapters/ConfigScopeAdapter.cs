@@ -73,59 +73,26 @@ public sealed class ConfigScopeAdapter : IEditorScope
         _cache.GetOrAdd(scope, static s => new ConfigScopeAdapter(s));
 
     /// <summary>
-    /// Resolve an <see cref="IEditorScope"/> back to a <see cref="ConfigScope"/>.
-    /// Throws if <paramref name="scope"/> is not a <see cref="ConfigScopeAdapter"/> instance.
-    /// </summary>
-    public static ConfigScope ToConfigScope(IEditorScope scope)
-    {
-        if (scope is ConfigScopeAdapter cs)
-        {
-            return cs.Source;
-        }
-
-        // Fall back to ID-based resolution for fakes / test doubles. Searches every scope this
-        // process has actually wrapped BEFORE the default ladder, so a second product's scope
-        // resolves too — checking only ConfigScope.All would silently answer with the default
-        // ladder's scope of the same name, or throw for one it has no name for.
-        IEnumerable<ConfigScope> candidates = _cache.Keys.Concat(ConfigScope.All);
-        foreach (ConfigScope candidate in candidates)
-        {
-            if (string.Equals(candidate.Id, scope.Id, StringComparison.OrdinalIgnoreCase))
-            {
-                return candidate;
-            }
-        }
-
-        throw new ArgumentException($"Cannot map scope '{scope.Id}' to ConfigScope.", nameof(scope));
-    }
-
-    /// <summary>
-    /// Test seam: forgets every wrapped scope that is NOT on <see cref="ScopeLadder.Default"/>.
+    /// Resolve an <see cref="IEditorScope"/> back to the <see cref="ConfigScope"/> it wraps.
+    /// Throws for anything that is not a <see cref="ConfigScopeAdapter"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <see cref="ToConfigScope"/>'s id fallback searches every scope the process has wrapped, and
-    /// <see cref="_cache"/> is process-wide, so a test that wraps another ladder's <c>Project</c>
-    /// changes what a later test's foreign <c>"project"</c> resolves to. That dependence on test ORDER
-    /// was invisible under MSTest, which ran a class's methods in declaration order, and surfaced
-    /// when the suite moved to xUnit (plans/00006).
-    /// </para>
-    /// <para>
-    /// ⚠ Default-ladder entries are deliberately KEPT: <see cref="For"/> promises one instance per
-    /// scope, production code holds those instances, and replacing them would break reference
-    /// identity for every later test.
-    /// </para>
+    /// ⛔ <b>There is deliberately no id-based fallback.</b> One used to resolve a foreign scope by
+    /// matching its id against every scope the process had wrapped — and once two ladders share a
+    /// rung name (Claude's <c>Project</c> and another product's <c>Project</c>), an id alone cannot
+    /// say which ladder is meant, so the answer depended on which was wrapped FIRST. It only ever
+    /// served test fakes: measured 2026-09-25, <see cref="ConfigScopeAdapter"/> is the only
+    /// <see cref="IEditorScope"/> in every first-party assembly, and the ScopedEditors packages
+    /// define none, so the library can only hand back scopes the host gave it. Refusing a foreign
+    /// scope makes the ambiguity unrepresentable instead of guarding it.
     /// </remarks>
-    internal static void ForgetNonDefaultLaddersForTesting()
-    {
-        foreach (ConfigScope scope in _cache.Keys)
-        {
-            if (!ReferenceEquals(scope.Ladder, ScopeLadder.Default))
-            {
-                _cache.TryRemove(scope, out _);
-            }
-        }
-    }
+    public static ConfigScope ToConfigScope(IEditorScope scope) =>
+        scope is ConfigScopeAdapter cs
+            ? cs.Source
+            : throw new ArgumentException(
+                $"Scope '{scope.Id}' ({scope.GetType().Name}) is not a {nameof(ConfigScopeAdapter)}; "
+                + $"only a scope created by {nameof(ConfigScopeAdapter)}.{nameof(For)} maps back to a {nameof(ConfigScope)}.",
+                nameof(scope));
 
     /// <summary>Single canonical formula: inverts ConfigScope's lower=higher-priority convention.</summary>
     /// <remarks>
