@@ -142,9 +142,9 @@ the defect.
 | | |
 |---|---|
 | `main` | #77–#85 merged by 2026-09-25 (admin, merge commits, over the two red-by-construction jobs only); the xUnit move and all its follow-ups are in. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,298 · 0 failed · 10–11 skipped**, xUnit v3 on MTP, across **seven** test assemblies (= seven test csproj), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
+| Suite | **3,225 · 0 failed · 10–11 skipped**, xUnit v3 on MTP, across **six** test assemblies (= six test csproj; JsonC.Tests' 73 left with plans/00007), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
 | CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion`. They were RED by construction at `2026.3.922` (NU1101: its `LayeredEditors.*` dependencies no longer exist); the pin to `2026.3.925` is what clears them |
-| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.925`** (test-only; rule ids now `BNXQ`, and this repo adopts only `BNXQ1001`) |
+| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.925`** (test-only; rule ids now `BNXQ`, and this repo adopts only `BNXQ1001`) |
 
 **Next, in order:**
 
@@ -181,6 +181,42 @@ the defect.
    app-specific entries (the inheritance watermark; Markdown.Avalonia under Semi, held by XamlQuality
    for lack of a measurable package). Our `NumericUpDown`/`WmClass` entry was false in both halves, and
    `AGENTS.md`'s tooltip row stated Avalonia 11.0 behaviour — both corrected in the same change.
+6. ⏳ **[`plans/00007`](plans/00007-jsonc-moves-to-its-own-repository.md) — JsonC to its own repository.**
+   Phase A is done in [JanusMael/Bennewitz.Ninja.JsonC](https://github.com/JanusMael/Bennewitz.Ninja.JsonC):
+   `2026.3.926` is on nuget.org, verified there against the package rather than the workflow. Phase B,
+   steps 7–10, is #100: `AgentForge.Core` takes `Bennewitz.Ninja.JsonC` at `JsonCVersion` = `2026.3.926`
+   in every mode, and the JsonC source and test projects are gone from this tree (suite 3,225 = 3,298 − 73; the name
+   comparison against `main` shows only JsonC.Tests' 53 methods removed). ▶ **Next: step 11, the next
+   `packages-v…` release (the maintainer's), built against the nuget.org JsonC; then step 12, pin
+   `SharedPackageVersion` to it and delete the temporary JsonC pin in `Directory.Build.targets`'
+   reference switch.** Drift from the plan, recorded here and never in it:
+   - **Decision 7 reversed by measurement.** JsonC is routed to nuget.org ONLY. It is now requested in
+     every mode, and with a GitHub route as well a restore without credentials FAILED (401, exit 1);
+     with nuget.org alone it succeeds. So there is no GitHub route for step 12 to drop.
+   - **What that cost, and the stopgap.** The published `AgentForge.Core 2026.3.925` depends on JsonC
+     `>= 2026.3.925`, which is on the GitHub feed only, so package mode failed on `NU1603` as a
+     warning-as-error (`Feed Restore`, `Published Version`; first CI run on #100). The maintainer chose a
+     direct pin: in package mode the reference switch adds JsonC at `JsonCVersion` to every project that
+     receives a shared package, so restore uses the pin instead of the transitive request. Nothing is
+     suppressed; the second CI run on #100 is 17 of 17 green. It is temporary, and step 12 removes it.
+   - **Step 10's canary premise was false.** A `ProjectReference` back to the deleted JsonC project built
+     green and passed all 80 architecture guards: `TreatWarningsAsErrors` does not reach MSBuild's own
+     `MSB9008`. The root props now escalate that one code, and the canary fails the build.
+     ⚠ `BuildFilePathIntegrityTests` is also blind to BACKSLASH paths: its pattern matches `src/…` only,
+     so the switch's old `src\JsonC\JsonC.csproj` line put back stayed green. That line would be inert (a
+     `Remove` of a missing item), so it is recorded rather than fixed.
+   - **The JsonC side released a day early.** `2026.3.926` was tagged 2026-09-25, the day decision 4
+     ruled out, so its assembly file version reads `2026.3.925.2335`. The version number is still new on
+     nuget.org, so no number means two different packages.
+   - **The import needed three things the plan did not list** (JsonC's `PROGRESS.md` has them):
+     `tests/Shared/MessageAssert.cs`, `NoWarn CS1591`, and an `AssemblyInfo.cs` test grant.
+   - **Stale text corrected on the way:** `src/PACKAGE-README.md`, packed into every AgentForge package,
+     still described the LayeredEditors family and "eleven private" packages; `CONTRIBUTING.md`'s project
+     table still listed `LayeredEditors.*`.
+   - ⓘ **Steps 11–12 may be overtaken.** On 2026-09-28 the maintainer reversed the 2026-09-25 packaging
+     decision: the five `AgentForge.*` move to their own repository too, since the other libraries are
+     public now. That is a new plan, `plans/00008`, which will say whether a `packages-v…` release from
+     here still happens first.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 
@@ -799,7 +835,7 @@ and the plan is frozen, so the correction lives here:
 
 ```
 # ✅ RIGHT — real directory names, wildcarded per family.
-git diff <release> feat/agentforge-opencodeforge -- 'src/AgentForge.*' 'src/LayeredEditors.*' src/JsonC
+git diff <release> feat/agentforge-opencodeforge -- 'src/AgentForge.*' 'src/LayeredEditors.*' 'src/JsonC*'
 ```
 
 ⛔ **The WRONG form cannot be written here, and that is itself the point.** The plan's version names
@@ -867,7 +903,7 @@ about to be published — with nothing failing to say so. The first run (**4,429
 `030ec9e`) was real but is superseded. The fix was cherry-picked to the parked branch and `C0`
 re-run; **the number above is the one that counts.**
 ⚠ **The shared-library trees were proven identical rather than taken from the plan**, as `00003`
-requires — `git diff <both branches> -- src/AgentForge.* src/LayeredEditors.* src/JsonC` is empty,
+requires — `git diff <both branches> -- src/AgentForge.* src/LayeredEditors.* src/JsonC*` is empty,
 and the same command over `src/ClaudeForge` is **not**, so the empty result is a measurement and not
 a bad pathspec. ⚠ `00003` spells the first two as bare family prefixes, which git resolves the same
 way; **spelled that way in this file they red `EveryHardcodedRepoPathInBuildFilesExists`**, because
