@@ -28,7 +28,7 @@
         <!-- ⚠ Keep on xunit.v3's Microsoft.Testing.Platform line (1.9.x for 3.2.2). A newer
              TrxReport pins the platform above what xunit's bundled MSBuild extension can load,
              and the failure reads as an unrelated loader error (measured by the peers). -->
-        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.4.1" />
         <!-- FakeTimeProvider: a clock tests advance by hand, so anything on a
              TimeProvider (StatusController's auto-clear) is deterministic without
              sleeping or pumping a dispatcher. -->
