@@ -185,7 +185,7 @@ the defect.
    Phase A is done in [JanusMael/Bennewitz.Ninja.JsonC](https://github.com/JanusMael/Bennewitz.Ninja.JsonC):
    `2026.3.926` is on nuget.org, verified there against the package rather than the workflow. Phase B,
    steps 7–10, is #100: `AgentForge.Core` takes `Bennewitz.Ninja.JsonC` at `JsonCVersion` = `2026.3.926`
-   in every mode, and `src/JsonC` and `tests/JsonC.Tests` are gone (suite 3,225 = 3,298 − 73; the name
+   in every mode, and the JsonC source and test projects are gone from this tree (suite 3,225 = 3,298 − 73; the name
    comparison against `main` shows only JsonC.Tests' 53 methods removed). ▶ **Next: step 11, the next
    `packages-v…` release (the maintainer's), built against the nuget.org JsonC; then step 12, pin
    `SharedPackageVersion` to it and delete the temporary JsonC pin in `Directory.Build.targets`'
