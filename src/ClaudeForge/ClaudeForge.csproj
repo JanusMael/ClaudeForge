@@ -318,7 +318,7 @@
              package references are required here. -->
         <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
              GHSA-xrw6-gwf8-vvr9. Pin explicitly so NU1605 (downgrade-as-error) is satisfied. -->
-        <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
     </ItemGroup>
 
     <!-- plans/00005: the nuget.org packages that replaced the LayeredEditors projects. -->
