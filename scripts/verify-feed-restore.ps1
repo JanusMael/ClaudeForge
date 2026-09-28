@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Prove the app restores the six shared packages FROM THE PUBLISHED FEED.
+    Prove the app restores the five shared packages FROM THE PUBLISHED FEED.
 
 .DESCRIPTION
     plans/00003, Phase D. D1 asks for evidence that the release consumes the packages on
@@ -43,18 +43,19 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# The six. Listed rather than discovered, deliberately: discovery that finds five and reports
-# five green is the failure this file is guarding against.
+# The five. Listed rather than discovered, deliberately: discovery that finds four and reports
+# four green is the failure this file is guarding against.
 # LIBRARY GUARD NARROWED -- plans/00005. The five bennewitz.ninja.layerededitors.* ids were here;
 # the app now takes that code from the ScopedEditors and AppServices packages on nuget.org,
 # which this feed does not serve.
+# LIBRARY GUARD NARROWED -- plans/00007. bennewitz.ninja.jsonc was the sixth; it now comes from
+# nuget.org, published from its own repository, so this feed is not where it should resolve.
 $expectedIds = @(
     'bennewitz.ninja.agentforge.abstractions'
     'bennewitz.ninja.agentforge.artifacts'
     'bennewitz.ninja.agentforge.avalonia.shell'
     'bennewitz.ninja.agentforge.core'
     'bennewitz.ninja.agentforge.sdk'
-    'bennewitz.ninja.jsonc'
 )
 
 function Get-PinnedVersion {
@@ -72,7 +73,7 @@ Write-Host ('Pinned SharedPackageVersion : ' + $version)
 Write-Host ('Expecting source to contain : ' + $ExpectedSource)
 
 # ⛔ A CONFIGURED LOCAL SOURCE THAT DOES NOT EXIST IS A HARD ERROR, NOT A SKIPPED ONE.
-# nuget.config maps these six ids to both `localfeed` and `github`. On a fresh checkout
+# nuget.config maps these five ids to both `localfeed` and `github`. On a fresh checkout
 # artifacts/ is gitignored, so the folder is absent and the restore dies with
 #   NU1301: The local source '.../artifacts/localfeed' doesn't exist.
 # before it ever reaches the feed. ⓘ Other jobs never see this: in development mode the source

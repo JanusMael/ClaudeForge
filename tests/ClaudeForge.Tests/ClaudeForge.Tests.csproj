@@ -32,12 +32,12 @@
           saving.
 
           ⚠ TEST-ONLY, deliberately. A reference from src/ would become a transitive dependency of
-          all eleven published packages, on an immutable feed. This buys a guard, not a runtime
+          the published packages, on an immutable feed. This buys a guard, not a runtime
           capability.
 
-          ⓘ No nuget.config change: the source mapping routes only AgentForge.*,
-          LayeredEditors.* and JsonC to the private feed, so this id falls to nuget.org's `*`.
-          That is the payoff for naming the two families there instead of a broad prefix.
+          ⓘ No nuget.config change: the source mapping routes only AgentForge.* to the
+          authenticated feed, so this id falls to nuget.org's `*`. That is the payoff for naming
+          the family there instead of a broad prefix.
         -->
         <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.925" />
     </ItemGroup>

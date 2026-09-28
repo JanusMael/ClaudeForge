@@ -799,7 +799,7 @@ and the plan is frozen, so the correction lives here:
 
 ```
 # ✅ RIGHT — real directory names, wildcarded per family.
-git diff <release> feat/agentforge-opencodeforge -- 'src/AgentForge.*' 'src/LayeredEditors.*' src/JsonC
+git diff <release> feat/agentforge-opencodeforge -- 'src/AgentForge.*' 'src/LayeredEditors.*' 'src/JsonC*'
 ```
 
 ⛔ **The WRONG form cannot be written here, and that is itself the point.** The plan's version names
@@ -867,7 +867,7 @@ about to be published — with nothing failing to say so. The first run (**4,429
 `030ec9e`) was real but is superseded. The fix was cherry-picked to the parked branch and `C0`
 re-run; **the number above is the one that counts.**
 ⚠ **The shared-library trees were proven identical rather than taken from the plan**, as `00003`
-requires — `git diff <both branches> -- src/AgentForge.* src/LayeredEditors.* src/JsonC` is empty,
+requires — `git diff <both branches> -- src/AgentForge.* src/LayeredEditors.* src/JsonC*` is empty,
 and the same command over `src/ClaudeForge` is **not**, so the empty result is a measurement and not
 a bad pathspec. ⚠ `00003` spells the first two as bare family prefixes, which git resolves the same
 way; **spelled that way in this file they red `EveryHardcodedRepoPathInBuildFilesExists`**, because
