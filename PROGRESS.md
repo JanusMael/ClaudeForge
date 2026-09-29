@@ -217,6 +217,20 @@ the defect.
      decision: the five `AgentForge.*` move to their own repository too, since the other libraries are
      public now. That is a new plan, `plans/00008`, which will say whether a `packages-v…` release from
      here still happens first.
+7. ✅ **xUnit v4 and Microsoft.Testing.Platform v2** (replaces Dependabot #94 and #99, which could only
+   move together: TRX report 2.x needs platform v2, and xUnit 4 drops platform v1). Two source
+   changes: `CollectionBehavior(DisableTestParallelization = true)` is obsolete-as-error, so the two
+   serial assemblies use `[assembly: Xunit.v3.Parallelization(Mode = ParallelMode.None)]`; and
+   xUnit1069 requires a `[Timeout]` test to observe `TestContext.Current.CancellationToken`, which
+   the two probe tests now do through `WaitAsync` (the probe takes no token). **Measured, not
+   assumed:** test identity unchanged (6 assemblies, 3,015 methods, 3,225 results); peak concurrency
+   from TRX start/end times unchanged, **1** for `ClaudeForge.Tests` and `ClaudeForge.Avalonia.Tests`;
+   xUnit 4's release notes list no weakening of assertion semantics. ⚠ Under platform v2,
+   `dotnet test <sln> -- --report-trx` writes nothing; CI's form, `dotnet test --solution … --report-trx`,
+   does. ⚠ **A pre-existing, load-dependent failure surfaced while measuring**, on `main` as much as
+   here: permission-rule validation has a wall-clock regex timeout, and on a busy machine
+   `Diagnose_WildcardOnlyParens_ExplainsAndSuggests("Bash(***)")` gets "Rule validation timed out"
+   (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Filed as its own task.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 

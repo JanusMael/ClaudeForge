@@ -5,4 +5,8 @@
 // stay serial. DoNotParallelize enforces that even if a global .runsettings
 // enables parallelization. See docs/ASYNC-FIRST-MIGRATION-PLAN.md / the
 // test-parallelism notes.
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+//
+// xUnit v4 replaced CollectionBehavior(DisableTestParallelization = true) with this attribute; the
+// old property is obsolete-as-error there. ParallelMode.None is the same setting: no two test
+// collections run at once.
+[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
