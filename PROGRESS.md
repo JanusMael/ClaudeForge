@@ -231,6 +231,26 @@ the defect.
    here: permission-rule validation has a wall-clock regex timeout, and on a busy machine
    `Diagnose_WildcardOnlyParens_ExplainsAndSuggests("Bash(***)")` gets "Rule validation timed out"
    (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Filed as its own task.
+8. ⏳ **[`plans/00008`](plans/00008-agentforge-becomes-product-neutral.md) — AgentForge becomes
+   product-neutral** (approved 2026-09-29, #104; the move itself is `00009`, drafted after).
+   ✅ **Step 1, the guards:** `ProductNeutralityTests` with `Architecture/ProductNeutrality/allow-list.tsv`
+   — 371 word keys (393 sites in the same 34 files the plan measured), 10 Core resources, 2 shape
+   constructions. The list must match exactly: a site can be removed with the list lowered, never
+   added. Canaried nine ways, each outcome written down first: a new literal in an allowed file, a
+   layout literal in a clean library, a duplicated allowed line, a deleted one, a `//` inside a
+   string, a target-typed `new(…)` inside a lambda and an embedded JSON all turn it red, naming the
+   site; a comment and a `.resx` leave it green (the `.resx` was confirmed embedded, so that green
+   is not vacuous). ▶ **Next: step 2** (`Compare-TestNames.ps1` pairing mode), then step 3 (fixtures).
+   Drift from the plan, recorded here and never in it:
+   - **Decision 1(c) reads compiled IL, not source.** The plan says "a source scan" for
+     `new ScopeLadder(` / `new FootprintCatalog(`; both defaults are built as `{ get; } = new(`, a
+     target-typed property initializer that such a scan never matches (measured: zero hits under
+     `src/`). The guard finds every `newobj` of the two constructors instead, in every spelling.
+   - **The permanent wire-string list holds three, not five, today.** `"ClaudeCode"` and
+     `"ClaudeDesktop"` live in `SchemaRegistry` (`ClaudeCodeArchiveFolder`, the Desktop descriptor),
+     not in `ExportManifest`; they join the permanent list in step 6, when they come to rest there
+     for reading old archives. An entry for a literal the named file does not hold would exempt
+     nothing.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 
