@@ -4,6 +4,10 @@
 minimal in-place edits, so a save changes the bytes the user changed and leaves the rest
 alone.
 
+`JsonC` is the `Bennewitz.Ninja.JsonC` package on nuget.org, from
+[its own repository](https://github.com/JanusMael/Bennewitz.Ninja.JsonC) since plans/00007;
+`JsoncEditWriter` is in `AgentForge.Core` here. The library-level tests below moved with it.
+
 This is the highest-consequence code path in the product: a bug corrupts config for both
 apps. This page is the contract it is held to.
 
@@ -170,7 +174,7 @@ tree with spans, return text edits.
 
 | Area | Where |
 |---|---|
-| Scanner, incl. gapless-coverage property over a nasty corpus | `JsonC.Tests/JsoncScannerTests` |
+| Scanner, incl. gapless-coverage property over a nasty corpus | `JsonC.Tests/JsoncScannerTests`, in the JsonC repository |
 | Comment / formatting / key-order preservation | `…/JsoncEditorPreservationTests` |
 | Insert, remove, nested-path creation | `…/JsoncEditorMutationTests` |
 | Refusal on unparseable input | `…/JsoncEditorSafetyTests` |

@@ -5,6 +5,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- ⛔ TreatWarningsAsErrors DOES NOT REACH MSBuild's OWN WARNINGS, so a ProjectReference to a
+             project that no longer exists is MSB9008, a warning, and the build succeeds having
+             skipped it. Measured in plans/00007 by pointing AgentForge.Core back at the deleted
+             JsonC project: the build and all 80 architecture guards stayed green. Only that one code
+             is escalated, not every MSB warning, because the rest were never measured here. -->
+        <MSBuildWarningsAsErrors>$(MSBuildWarningsAsErrors);MSB9008</MSBuildWarningsAsErrors>
         <!-- ⛔ THE SINGULAR FORM IS LOAD-BEARING, and two projects once believed otherwise.
              src/ClaudeForge and LayeredEditors.Avalonia.Services (since plans/00005 the AppServices
              packages) each declared a plural
@@ -32,7 +38,7 @@
           The DEFAULT product, which is now the shared library family rather than either app.
 
           ⚠ This used to be `ClaudeForge`, which stamped that name into every assembly in the
-          repository — including AgentForge.* and JsonC, which are product-neutral by
+          repository — including AgentForge.*, which is product-neutral by
           design and are consumed by both apps. A shared library reporting itself as one of its
           two consumers is wrong in a file properties dialog, in a crash dump, and in any
           support bundle that lists loaded modules.
@@ -51,7 +57,10 @@
     </PropertyGroup>
 
     <!--
-      ══ THE VERSION OF THE SIX SHARED PACKAGES THE RELEASE CONSUMES ═════════════════════════
+      ══ THE VERSION OF THE FIVE SHARED PACKAGES THE RELEASE CONSUMES ════════════════════════
+
+      Five since plans/00007: the AgentForge.* family. JsonC was the sixth and now has its own
+      repository and its own pin, JsonCVersion, below.
 
       plans/00003, Phase D. This is a COMMITTED PIN, deliberately, and it belongs in the ROOT
       props rather than src/'s: the test projects consume the packages too, and only the root
@@ -99,6 +108,25 @@
     <PropertyGroup>
         <AppServicesVersion>2026.3.924</AppServicesVersion>
         <ScopedEditorsVersion>2026.3.924</ScopedEditorsVersion>
+    </PropertyGroup>
+
+    <!--
+      ══ Bennewitz.Ninja.JsonC, FROM ITS OWN REPOSITORY ══════════════════════════════════════
+
+      plans/00007. JsonC was the sixth shared project here; it now lives in
+      JanusMael/Bennewitz.Ninja.JsonC and publishes to nuget.org. AgentForge.Core takes it as a
+      PackageReference at this version.
+
+      ⛔ NEVER INERT, like the two above: there is no project to fall back to in either mode, so
+      the UseSharedPackages switch must not see it, and every restore reads this pin.
+
+      ⛔ 2026.3.926 IS THE FLOOR. Every JsonC version up to 2026.3.925 exists only on this
+      repository's GitHub feed, from before the move; 2026.3.926 is the first on nuget.org and is
+      the same code (JsonC's PROGRESS.md records the decompile comparison). It carries the
+      IsTrimmable mark, which TrimMode=partial needs for the trim result to cover it.
+    -->
+    <PropertyGroup>
+        <JsonCVersion>2026.3.926</JsonCVersion>
     </PropertyGroup>
 
     <!--

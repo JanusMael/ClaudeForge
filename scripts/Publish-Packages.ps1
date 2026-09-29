@@ -1,13 +1,13 @@
 #!/usr/bin/env pwsh
-# Publish-Packages.ps1 — pack the six shared libraries and push them, once, at one version.
+# Publish-Packages.ps1 — pack the five shared libraries and push them, once, at one version.
 #
 # Plan 00001 work item 6.
 #
 # ══ WHAT MAKES THIS DIFFERENT FROM EVERY OTHER SCRIPT HERE ══
 #
 # ⛔ A PUBLISHED PACKAGE VERSION CANNOT BE REPLACED OR RE-PUSHED. Everything below is shaped by
-# that one fact. A set that fails on package 7 leaves six published and immutable, and the only
-# recovery is bumping all six — which, under a day-resolution CalVer, means waiting for
+# that one fact. A set that fails on package 4 leaves three published and immutable, and the only
+# recovery is bumping all five — which, under a day-resolution CalVer, means waiting for
 # tomorrow. So this script's job is to find every reason to refuse BEFORE the first push, and to
 # refuse loudly rather than push a partial set.
 #
@@ -270,7 +270,7 @@ function Main {
     }
     New-Item -ItemType Directory -Path $output -Force | Out-Null
 
-    # ⚠ NOT -p:UseSharedPackages=true. The six reference each other by project in both modes;
+    # ⚠ NOT -p:UseSharedPackages=true. The five reference each other by project in both modes;
     # asking them to consume packages of themselves that do not exist yet is the one way to make
     # pack fail for a reason that has nothing to do with packing.
     Invoke-Dotnet -What 'pack' -DotnetArgs @(
