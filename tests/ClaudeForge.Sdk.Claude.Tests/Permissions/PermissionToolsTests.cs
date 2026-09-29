@@ -72,8 +72,37 @@ public class PermissionToolsTests
         Assert.False(PermissionTools.RuleRegex.IsMatch("NotARealTool"), "Unknown tool must be rejected.");
         Assert.False(
             PermissionTools.RuleRegex.IsMatch("Bash(*)"),
-            "All-wildcard parens content must be rejected by the strict lookahead.");
+            "All-wildcard parens content must be rejected.");
         Assert.True(PermissionTools.RuleRegex.IsMatch("Bash(git status)"), "A real pattern must be accepted.");
         Assert.True(PermissionTools.RuleRegex.IsMatch("mcp__server__tool"), "mcp__ rules must be accepted.");
+    }
+
+    [Theory]
+    [InlineData("Bash(*)\n")]
+    [InlineData("Bash(?)\n")]
+    [InlineData("Read(*?*)\n")]
+    public void RulePattern_RejectsAllWildcard_EvenWithTrailingNewline(string rule)
+    {
+        // The former lookahead (?=.*[^)*?]) scanned past the closing paren, so the
+        // trailing newline that `$` tolerates satisfied it, and these were accepted.
+        // An exhaustive comparison (53.8M inputs) found this shape as the ONLY
+        // behavioural difference between the lookahead and the current pattern.
+        Assert.False(
+            PermissionTools.RuleRegex.IsMatch(rule),
+            "All-wildcard parens content must be rejected even when a newline follows.");
+    }
+
+    [Fact]
+    public void RuleRegex_IsLinearTime_AndHasNoWallClockTimeout()
+    {
+        // The GUI validates every keystroke with this regex. It used to carry a 100 ms
+        // match timeout, which fired under CPU load on 9-character input and turned
+        // valid rules into "Rule validation timed out" (failing 2 of 6 loaded suite
+        // runs). Linearity now comes from the engine, and a timeout would only put
+        // the load-dependent failure back.
+        Assert.True(
+            PermissionTools.RuleRegex.Options.HasFlag(System.Text.RegularExpressions.RegexOptions.NonBacktracking),
+            "RuleRegex must run on the NonBacktracking engine, which is linear in the input length.");
+        Assert.Equal(System.Text.RegularExpressions.Regex.InfiniteMatchTimeout, PermissionTools.RuleRegex.MatchTimeout);
     }
 }

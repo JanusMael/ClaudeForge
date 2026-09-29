@@ -501,7 +501,7 @@ public partial class PermissionsEditorViewModel : PropertyEditorViewModel, IJson
         // IMPORTANT — schema validation note:
         // The permissionRule regex requires that when parentheses are present, the
         // content contains at least one character that is NOT '*', ')', or '?'
-        // (lookahead: (?=.*[^)*?])).  "Bash(*)" is INVALID — the correct form to allow
+        // (see PermissionTools.RulePattern).  "Bash(*)" is INVALID — the correct form to allow
         // all uses of a tool is the bare name without parentheses: "Bash".
         //
         // Kind-classification rules (every CommonActionItem must opt in explicitly):
