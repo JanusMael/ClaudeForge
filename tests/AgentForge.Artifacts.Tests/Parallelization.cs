@@ -1,8 +1,9 @@
 // Resolution is pure in-memory: the fake sources hold lists, with no static mutable state and no
 // process-global seam. The filesystem source tests do touch disk, but each one creates its own
 // randomly-named temp directory and reads nothing outside it — no shared root, no environment
-// variable, no working-directory dependency. That is the same safest case JsonC.Tests
-// documents, so parallelism applies here for the same reason.
+// variable, no working-directory dependency. That is the same safest case the pure
+// string-in/string-out JSONC tests are (they moved to Bennewitz.Ninja.JsonC's own repository in
+// plans/00007), so parallelism applies here for the same reason.
 //
 // ⓘ Converted by hand from MSTest's method-level [assembly: Parallelize] (plans/00006). xUnit has
 // no method-level mode: it runs test CLASSES in parallel and a class's methods one at a time, so

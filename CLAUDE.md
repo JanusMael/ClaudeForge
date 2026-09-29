@@ -32,40 +32,43 @@ the published product; the second app grew out of it rather than replacing it.
 
 ## How the assemblies layer
 
-Three families and one standalone in this tree, one family consumed as packages, and the prefix
-tells you the layer:
+Two families in this tree and two consumed as packages from their own repositories, and the
+prefix tells you the layer:
 
 - **`Bennewitz.Ninja.ScopedEditors.*`** — the schema-driven editor library, consumed from
   nuget.org with its services in `Bennewitz.Ninja.AppServices.*`. It was `LayeredEditors.*` in
   this tree until plans/00005 moved it to its own repository. Knows about JSON Schema, property
   editors, scopes and layered values. Knows nothing about Claude or OpenCode.
+- **`Bennewitz.Ninja.JsonC`** — a comment- and formatting-preserving JSONC reader plus an
+  edit-based writer, zero dependencies, consumed from nuget.org by `AgentForge.Core` at
+  `JsonCVersion`. It lived in this tree until plans/00007 moved it to
+  [its own repository](https://github.com/JanusMael/Bennewitz.Ninja.JsonC). Named outside
+  `AgentForge.*` deliberately: nothing in it knows what an agent is.
 - **`AgentForge.*`** — product-neutral agent-configuration machinery: the SDK, the settings
   core, backup/restore, artifact resolution, and the Avalonia shell (nav, search, save,
   Essentials cards). Anything here must make sense for *both* products.
-- **`JsonC`** — a comment- and formatting-preserving JSONC reader plus an edit-based writer.
-  Zero dependencies, not even the BCL beyond the framework. ⭐ **A family of one, and named
-  outside `AgentForge.*` deliberately:** nothing in it knows what an agent is, so an
-  `AgentForge` prefix would have shipped a package id that overclaims. It was renamed before
-  the first publish, because a package id is immutable once pushed.
 - **`ClaudeForge.*` / `OpenCode.*`** — the product-specific halves: schema tables, danger
   tables, page layouts, product-shaped editors.
 - **`ClaudeForge` / `OpenCodeForge`** — the two app assemblies. Each is an ordinary consumer of
   everything above.
 
-⚠ **Being a family of one costs FOUR edits, in four uncoupled places.** The package-mode reference
-switch in the root `Directory.Build.targets` selects the shared projects by family prefix, so
-`JsonC` is named there explicitly; `PackageMetadataTests` asserts that selector and the packable
-set agree in both directions; `AssemblyLayeringTests` keeps its *own* selector, which had to be
-widened or `JsonC` would have silently left the layering scan; and **`nuget.config`'s
-`packageSourceMapping`** has to route the id to the private feeds.
+⚠ **A shared project outside the `AgentForge.*` prefix costs FOUR edits, in four uncoupled
+places.** The package-mode reference switch in the root `Directory.Build.targets` selects the
+shared projects by family prefix, so an outsider must be named there explicitly;
+`PackageMetadataTests` asserts that selector and the packable set agree in both directions;
+`AssemblyLayeringTests` keeps its *own* selector, which must be widened or the project silently
+leaves the layering scan; and **`nuget.config`'s `packageSourceMapping`** has to route the id to
+the authenticated feeds. `JsonC` was that outsider until plans/00007, and its rename missed the
+fourth: only the package canary caught it, with `NU1101 "no packages exist with this id"` listing
+only nuget.org and the real feeds under *"were not considered"* — which reads like a missing
+package rather than a mapping gap. ⚠ The broad `Bennewitz.Ninja.*` pattern that would make this
+automatic is unavailable: it would also capture the public `Bennewitz.Ninja.AutoVersioning`, and
+every credential-free clone would then get a 401 from the authenticated feed on a package every
+project references. **Prefer a family prefix for anything new.**
 
-⛔ **The rename missed the fourth and only the package canary caught it.** A normal build never
-asks for these package ids, so nothing local fails. The symptom is `NU1101 "no packages exist with
-this id"` listing only nuget.org, with the real feeds under *"were not considered"* — which reads
-like a missing package rather than a mapping gap. ⚠ The broad `Bennewitz.Ninja.*` pattern that
-would make this automatic is unavailable: it would also capture the public
-`Bennewitz.Ninja.AutoVersioning`, and every credential-free clone would then get a 401 from the
-private feed on a package every project references. **Prefer a family prefix for anything new.**
+⛔ **A package from ANOTHER repository is routed to nuget.org only, never also to the GitHub
+feed.** It is referenced in every mode, so a GitHub route makes a credential-free restore fail
+with a 401 rather than skip the feed. Measured for JsonC in plans/00007.
 
 **The rule that matters: the two products never reference each other, and nothing
 product-specific is referenced by `AgentForge.*`.** `AssemblyLayeringTests` enforces it over
@@ -94,8 +97,7 @@ or a raw `<AssemblyAttribute>`, both of which were in use before the consolidati
 
 ## The package layer
 
-The six shared projects — the `AgentForge.*` family plus `JsonC` —
-are also published as NuGet packages, ids prefixed `Bennewitz.Ninja.`, to this repository's
+The five shared projects — the `AgentForge.*` family — are also published as NuGet packages, ids prefixed `Bennewitz.Ninja.`, to this repository's
 GitHub Packages feed. See [`plans/00001`](plans/00001-shared-libraries-as-private-nuget-packages.md)
 for the reasoning and the measurements.
 
