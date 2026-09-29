@@ -35,8 +35,10 @@ public sealed class ProductVersionProbeTests
     public async Task TryGetClaudeCodeVersionAsync_NonExistentBinary_ReturnsNullWithoutException()
     {
         Stopwatch sw = Stopwatch.StartNew();
+        // WaitAsync: the probe takes no token, so the test observes its own, and a hang ends at the
+        // [Timeout] rather than holding the run (xUnit1069).
         string? result = await ProductVersionProbe.TryGetClaudeCodeVersionAsync(
-            "/this/path/does/not/exist/claude.exe");
+            "/this/path/does/not/exist/claude.exe").WaitAsync(TestContext.Current.CancellationToken);
         sw.Stop();
 
         MessageAssert.Null(result,
@@ -85,7 +87,7 @@ public sealed class ProductVersionProbeTests
         int startedPid = 0;
         Stopwatch sw = Stopwatch.StartNew();
         string? result = await ProductVersionProbe.TryGetVersionAsync(
-            slow, TestProbeTimeoutMs, pid => startedPid = pid);
+            slow, TestProbeTimeoutMs, pid => startedPid = pid).WaitAsync(TestContext.Current.CancellationToken);
         sw.Stop();
 
         MessageAssert.Null(result,
