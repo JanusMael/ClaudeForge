@@ -30,7 +30,7 @@
         <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
         <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
              file discovery errors).  No Avalonia dependency — safe to reference from Core. -->
-        <PackageReference Include="Serilog" Version="4.3.1" />
+        <PackageReference Include="Serilog" Version="4.4.0" />
         <!-- The comment-preserving JSONC reader and writer, from its own repository
              (JanusMael/Bennewitz.Ninja.JsonC) on nuget.org since plans/00007. A package in
              every mode: it is not one of this repository's shared projects, so the
