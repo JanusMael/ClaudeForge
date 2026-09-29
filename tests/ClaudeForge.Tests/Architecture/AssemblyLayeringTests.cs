@@ -60,24 +60,21 @@ public sealed class AssemblyLayeringTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// ⚠ This was a single <c>AgentForge</c> prefix until <c>JsonC</c> left that family — it is a
-    /// general-purpose JSONC reader with no agent knowledge, so it was renamed out of the
-    /// namespace before the packages were first published. Under the old single prefix it would
-    /// have dropped out of this scan entirely, and the vacuity guard below would NOT have caught
-    /// it, because the other <c>AgentForge.*</c> projects still satisfy "at least one".
+    /// ⚠ A shared project OUTSIDE the <c>AgentForge.*</c> prefix needs its own glob here, or it drops
+    /// out of this scan entirely — and the vacuity guard below does NOT catch that, because the
+    /// other <c>AgentForge.*</c> projects still satisfy "at least one". <c>JsonC</c> was that case
+    /// until plans/00007 moved it to its own repository.
     /// </para>
     /// <para>
-    /// ⓘ <c>LayeredEditors.*</c> was listed here too until plans/00005 moved that family into the
-    /// <c>Bennewitz.Ninja.ScopedEditors</c> packages. Its glob went with it: a stale
-    /// <c>LayeredEditors.*.dll</c> left in a test output folder would otherwise be loaded and
-    /// scanned as if it were still shared code built here.
+    /// ⓘ A family that leaves this tree takes its glob with it: <c>LayeredEditors.*</c>
+    /// (plans/00005) and <c>JsonC</c> (plans/00007). A stale DLL left in a test output folder would
+    /// otherwise be loaded and scanned as if it were still shared code built here, and JsonC now
+    /// arrives in the output as a package, which this repository does not build.
     /// </para>
     /// </remarks>
     private static readonly string[] SharedProjectGlobs =
     [
         "AgentForge.*.csproj",
-        "JsonC.csproj",
-        "JsonC.*.csproj",
     ];
 
     // ── csproj-level check (the leading indicator) ───────────────────────────
@@ -196,9 +193,8 @@ public sealed class AssemblyLayeringTests
     [Fact]
     public void SharedAssembliesNeverReferenceAProduct()
     {
-        // Mirrors SharedProjectGlobs. JsonC is matched exactly rather than as JsonC.*.dll, so
-        // that its TEST assembly is not loaded and inspected as if it were a shared library.
-        string[] assemblyGlobs = ["AgentForge.*.dll", "JsonC.dll"];
+        // Mirrors SharedProjectGlobs.
+        string[] assemblyGlobs = ["AgentForge.*.dll"];
 
         string[] sharedAssemblies =
         [

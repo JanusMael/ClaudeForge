@@ -199,7 +199,7 @@ public sealed class PackageMetadataTests
     /// <para>
     /// ⭐ <b>This is the premise of the whole switch.</b> The root <c>Directory.Build.targets</c>
     /// rewrites a <c>ProjectReference</c> into a <c>PackageReference</c> when the referenced
-    /// project's file name begins <c>AgentForge.</c>, or is <c>JsonC</c>. It matches on a
+    /// project's file name begins <c>AgentForge.</c>. It matches on a
     /// name because MSBuild cannot read the referenced project's <c>IsPackable</c> from there —
     /// so the name and the packability have to agree, and this is what makes them.
     /// </para>
@@ -218,17 +218,14 @@ public sealed class PackageMetadataTests
         string repoRoot = FindRepoRoot();
 
         // The same selectors the switch in Directory.Build.targets uses. Kept in sync by this
-        // test failing, which is the point: there is no third place that lists the six.
+        // test failing, which is the point: there is no third place that lists the five.
         //
-        // ⚠ JsonC is named outright rather than matched by a family prefix, because it IS a
-        // family of one — a general-purpose JSONC reader, renamed out of AgentForge before
-        // first publish so the id would not claim agent knowledge it does not have. An
-        // exception in a rule-based selector is a smell; it earns its place only because the
-        // assertion below is two-directional, so the exception cannot rot unnoticed.
         // LIBRARY GUARD NARROWED -- plans/00005. "LayeredEditors." was a second prefix; that family
         // left this tree, and the switch in Directory.Build.targets no longer selects it.
+        // LIBRARY GUARD NARROWED -- plans/00007. "JsonC" was an exact-name exception, the one
+        // project outside a family prefix; it moved to its own repository, and the switch no
+        // longer names it. A new exception would have to be added in both places again.
         string[] prefixes = ["AgentForge."];
-        string[] exactNames = ["JsonC"];
 
         List<string> byName = [];
         List<string> byPackability = [];
@@ -237,8 +234,7 @@ public sealed class PackageMetadataTests
         {
             string name = Path.GetFileNameWithoutExtension(csproj);
 
-            if (prefixes.Any(p => name.StartsWith(p, StringComparison.Ordinal))
-                || exactNames.Contains(name, StringComparer.Ordinal))
+            if (prefixes.Any(p => name.StartsWith(p, StringComparison.Ordinal)))
             {
                 byName.Add(name);
             }
@@ -265,7 +261,7 @@ public sealed class PackageMetadataTests
 
         MessageAssert.Equal(0, packableButNotPrefixed.Length,
             "These projects are packaged but the reference switch's selector does not match them "
-            + "(prefixes: " + string.Join(", ", prefixes) + "; exact: " + string.Join(", ", exactNames)
+            + "(prefixes: " + string.Join(", ", prefixes)
             + "), so it will NOT rewrite references to them. In package mode they stay "
             + "ProjectReferences and the canary silently validates project output instead of the "
             + "package. Rename the project, or teach the switch another selector — and this test "

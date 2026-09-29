@@ -100,7 +100,7 @@
 
           ⚠ $(AssemblyName) is NOT usable here, and using it would fail silently.
           Directory.Build.props is imported at the TOP of every csproj, before that file's
-          own <AssemblyName> is assigned, so it evaluates EMPTY and all six packages
+          own <AssemblyName> is assigned, so it evaluates EMPTY and all five packages
           would be called "Bennewitz.Ninja." — an id collision rather than an error.
           $(MSBuildProjectName) is the csproj file name; it is defined before any import,
           and it is what the SDK defaults AssemblyName to anyway.
