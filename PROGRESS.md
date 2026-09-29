@@ -244,8 +244,20 @@ the defect.
    test with the same short class name and method as one `MOVED` line, not a difference when rows
    and outcomes match. Canaried with a real class moved between two test projects (3 `REMOVED` + 3
    `ADDED` without it; 3 clean `MOVED`, exit 0, with it; a method deleted during the move still
-   shows `REMOVED`, exit 1) and with an ambiguous short key, which it refuses to pair. ▶ **Next:
-   step 3** (the golden fixtures from `main`).
+   shows `REMOVED`, exit 1) and with an ambiguous short key, which it refuses to pair.
+   ✅ **Step 3, golden fixtures from `main`:** `Golden/GoldenFixtureTests` with `Golden/Fixtures/`
+   (`backup.json`, `profile.json`, `scopes.json`), minted by the explicit `WriteGoldens` before any
+   code moved. Backup: a settings-only archive of a fixture home, entries by name and SHA-256
+   (10, three of them the bundled schemas), manifest minus `createdUtc`/`appVersion`/`platform`/
+   `sizeBytes`. Profile: the export minus `exported_at`. Scopes: every settings page's available
+   scopes (11 Claude Code pages, 2 Desktop, each `User` with no project) plus the SDK's editable
+   scopes with a project open (`Local`, `Project`, `User`). Stable across runs; each comparison
+   canaried red on one changed field and green again restored. ⚠ Hashes are taken on LF-normalized
+   text: with `text=auto`, a bundled schema is CRLF in a Windows checkout and LF elsewhere. ⚠ A
+   schema refresh that changes a bundled file re-mints `backup.json` on purpose. ▶ **Next: step 4**
+   (`AgentForge.Avalonia.Shell.Tests`).
+   - **Drift: the neutral test product's frozen archive moves from step 3 to step 5.** Step 3 was
+     to mint it, but the neutral test product is only created in step 5.
    Drift from the plan, recorded here and never in it:
    - **Decision 1(c) reads compiled IL, not source.** The plan says "a source scan" for
      `new ScopeLadder(` / `new FootprintCatalog(`; both defaults are built as `{ get; } = new(`, a

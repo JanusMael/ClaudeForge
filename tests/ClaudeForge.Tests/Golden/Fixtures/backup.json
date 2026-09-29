@@ -1,0 +1,64 @@
+{
+  "ignored": [
+    "createdUtc",
+    "appVersion",
+    "platform",
+    "sizeBytes"
+  ],
+  "manifest": {
+    "kind": "backup",
+    "schemaVersion": 2,
+    "mode": "SettingsOnly",
+    "clients": [
+      "ClaudeCode",
+      "ClaudeDesktop"
+    ],
+    "projects": [],
+    "worktrees": [],
+    "includedCredentials": false,
+    "itemCount": 8,
+    "warnings": []
+  },
+  "entries": [
+    {
+      "name": "ClaudeCode/claude-dir/CLAUDE.md",
+      "sha256": "5035D6E6EEDDC14A4E265C78D9B16815EE5467F6BE060903C15A23B1F4E98A38"
+    },
+    {
+      "name": "ClaudeCode/claude-dir/profiles/golden/CLAUDE.md",
+      "sha256": "638A0F290E6E8E1B96F93A6DEF678A9DB6960841A1C52EE648847204A35C6B4E"
+    },
+    {
+      "name": "ClaudeCode/claude-dir/profiles/golden/mcp.json",
+      "sha256": "5F18B7B66C56236562F8C8CE8CF508995056092A03D35941F65949B3CCD37592"
+    },
+    {
+      "name": "ClaudeCode/claude-dir/profiles/golden/settings.json",
+      "sha256": "9310797BB7592A1DF513420A3707DCB1C4ABF31F6FDFB8098B97C81EEC8DA2B0"
+    },
+    {
+      "name": "ClaudeCode/claude-dir/settings.json",
+      "sha256": "243777F077BC38BFE81AABE19A54BC21AE6192343793E122B953A6F6189E4737"
+    },
+    {
+      "name": "ClaudeCode/claude.json",
+      "sha256": "88D2CA242DEDED6ED5B3E029B88C390581858E4EFC779FDBA5F04C74F0EFF51D"
+    },
+    {
+      "name": "ClaudeDesktop/claude_desktop_config.json",
+      "sha256": "D35E84386AE0BCF98C435AEED12B0839C82B58AD9DE8C47503A139CDD5AF257D"
+    },
+    {
+      "name": "Schemas/claude-code-settings.json",
+      "sha256": "6D4A6E3C7ADEDFFCE8079CCAEF0A4BAB5F5718B054421B4475C788A0AE4BEDFE"
+    },
+    {
+      "name": "Schemas/claude-code-settings.overlay.json",
+      "sha256": "7A50BA94478D499ACE5046E092DA3C6C1C328200B544EDA597D9C29CDBA7A8DD"
+    },
+    {
+      "name": "Schemas/claude-desktop-config.json",
+      "sha256": "D91F92A770871ADD35F7187C2A038A3F70914E5453A83E8DDC5137E20963F9AA"
+    }
+  ]
+}

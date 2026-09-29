@@ -1,0 +1,20 @@
+{
+  "ignored": [
+    "exported_at"
+  ],
+  "profile": {
+    "version": "1.0.0",
+    "name": "golden",
+    "settings": {
+      "model": "opus"
+    },
+    "claude_md": "# Golden profile\n",
+    "mcp_servers": {
+      "mcpServers": {
+        "golden": {
+          "command": "echo"
+        }
+      }
+    }
+  }
+}
