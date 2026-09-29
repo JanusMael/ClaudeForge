@@ -31,16 +31,17 @@
         <!-- Serilog: structured logging for fallback/degraded-mode paths (cache misses,
              file discovery errors).  No Avalonia dependency — safe to reference from Core. -->
         <PackageReference Include="Serilog" Version="4.3.1" />
+        <!-- The comment-preserving JSONC reader and writer, from its own repository
+             (JanusMael/Bennewitz.Ninja.JsonC) on nuget.org since plans/00007. A package in
+             every mode: it is not one of this repository's shared projects, so the
+             UseSharedPackages switch never sees it. The version is the root props' pin. -->
+        <PackageReference Include="Bennewitz.Ninja.JsonC" Version="$(JsonCVersion)" />
     </ItemGroup>
 
     <ItemGroup>
-        <!-- The comment-preserving writer, and the neutral IConfigWriter contract it and
-             the legacy writer both implement. Neither is product-specific, so the layering
-             rule is unaffected. ⚠ This used to read "both are AgentForge.*" — JsonC left that
-             family when it was renamed, because nothing in it knows what an agent is. The
-             layering guard was widened to keep scanning it rather than losing it silently. -->
+        <!-- The neutral IConfigWriter contract the JSONC writer and the legacy writer both
+             implement. -->
         <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
-        <ProjectReference Include="..\JsonC\JsonC.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

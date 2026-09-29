@@ -307,8 +307,8 @@
              net10.0 and supplies the <svg:Svg> control + {SvgImage} markup extension that
              scale-to-fit natively (used by the Hooks "Flow" tab). It requires Svg.Skia
              >= 5.1.1, so Svg.Skia is pinned to match. -->
-        <PackageReference Include="Svg.Skia" Version="5.1.1" />
-        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
+        <PackageReference Include="Svg.Skia" Version="5.2.3" />
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.17" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.3" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -318,7 +318,7 @@
              package references are required here. -->
         <!-- Avalonia 12 ships with Tmds.DBus.Protocol >= 0.92.0 which includes the fix for
              GHSA-xrw6-gwf8-vvr9. Pin explicitly so NU1605 (downgrade-as-error) is satisfied. -->
-        <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
     </ItemGroup>
 
     <!-- plans/00005: the nuget.org packages that replaced the LayeredEditors projects. -->
