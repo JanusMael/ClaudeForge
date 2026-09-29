@@ -39,7 +39,7 @@
           authenticated feed, so this id falls to nuget.org's `*`. That is the payoff for naming
           the family there instead of a broad prefix.
         -->
-        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.925" />
+        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.928" />
     </ItemGroup>
 
     <ItemGroup>
