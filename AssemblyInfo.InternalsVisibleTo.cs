@@ -24,7 +24,7 @@
 // namespace form compiles, ships, and silently grants NOTHING, because no such assembly exists.
 // Some prose in this repo still spells one that way; the names below are the assembly names.
 //
-// ⚠ NOT STRONG-NAMED, and eleven of these assemblies ship as NuGet packages. An unsigned
+// ⚠ NOT STRONG-NAMED, and five of these assemblies ship as NuGet packages. An unsigned
 // InternalsVisibleTo is satisfied by any assembly that simply calls itself by the right name, so
 // these grants travel with the packages. That was already true of the per-project grants this
 // replaces — `AgentForge.Sdk` alone named eight — so it is not a new exposure, but it is worth
@@ -43,9 +43,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("AgentForge.Core")]
 [assembly: InternalsVisibleTo("AgentForge.Sdk")]
 
-// ── Shipping library: a family of one, deliberately outside the AgentForge.* prefix ──────────
-[assembly: InternalsVisibleTo("JsonC")]
-
 // ── Product-specific halves and the two app assemblies ───────────────────────────────────────
 [assembly: InternalsVisibleTo("ClaudeForge")]
 [assembly: InternalsVisibleTo("ClaudeForge.Avalonia")]
@@ -62,7 +59,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("ClaudeForge.Avalonia.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Sdk.Claude.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Tests")]
-[assembly: InternalsVisibleTo("JsonC.Tests")]
 
 // ══ WHAT THE GRANTS ARE ACTUALLY FOR ═════════════════════════════════════════════════════════
 //
