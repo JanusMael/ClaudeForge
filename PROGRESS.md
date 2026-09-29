@@ -142,9 +142,9 @@ the defect.
 | | |
 |---|---|
 | `main` | #77–#85 merged by 2026-09-25 (admin, merge commits, over the two red-by-construction jobs only); the xUnit move and all its follow-ups are in. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,229 · 0 failed · 10–11 skipped**, xUnit v3 on MTP, across **six** test assemblies (= six test csproj; JsonC.Tests' 73 left with plans/00007; +4 permission-regex guards, item 7), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
+| Suite | **3,231 · 0 failed · 10–11 skipped**, xUnit v4 on MTP v2 (item 7), across **six** test assemblies (= six test csproj; JsonC.Tests' 73 left with plans/00007; +2 XamlQuality rule guards, +4 permission-regex guards, item 8), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
 | CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion`. They were RED by construction at `2026.3.922` (NU1101: its `LayeredEditors.*` dependencies no longer exist); the pin to `2026.3.925` is what clears them |
-| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.925`** (test-only; rule ids now `BNXQ`, and this repo adopts only `BNXQ1001`) |
+| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.928`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted) |
 
 **Next, in order:**
 
@@ -217,9 +217,23 @@ the defect.
      decision: the five `AgentForge.*` move to their own repository too, since the other libraries are
      public now. That is a new plan, `plans/00008`, which will say whether a `packages-v…` release from
      here still happens first.
-7. ✅ **Permission-rule validation flaked under CPU load: FIXED (2026-09-28).** Symptoms:
+7. ✅ **xUnit v4 and Microsoft.Testing.Platform v2** (replaces Dependabot #94 and #99, which could only
+   move together: TRX report 2.x needs platform v2, and xUnit 4 drops platform v1). Two source
+   changes: `CollectionBehavior(DisableTestParallelization = true)` is obsolete-as-error, so the two
+   serial assemblies use `[assembly: Xunit.v3.Parallelization(Mode = ParallelMode.None)]`; and
+   xUnit1069 requires a `[Timeout]` test to observe `TestContext.Current.CancellationToken`, which
+   the two probe tests now do through `WaitAsync` (the probe takes no token). **Measured, not
+   assumed:** test identity unchanged (6 assemblies, 3,015 methods, 3,225 results); peak concurrency
+   from TRX start/end times unchanged, **1** for `ClaudeForge.Tests` and `ClaudeForge.Avalonia.Tests`;
+   xUnit 4's release notes list no weakening of assertion semantics. ⚠ Under platform v2,
+   `dotnet test <sln> -- --report-trx` writes nothing; CI's form, `dotnet test --solution … --report-trx`,
+   does. ⚠ **A pre-existing, load-dependent failure surfaced while measuring**, on `main` as much as
+   here: permission-rule validation has a wall-clock regex timeout, and on a busy machine
+   `Diagnose_WildcardOnlyParens_ExplainsAndSuggests("Bash(***)")` gets "Rule validation timed out"
+   (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Fixed by item 8.
+8. ✅ **Permission-rule validation flaked under CPU load: FIXED (2026-09-28).** Symptoms:
    `PermissionRuleViewModelTests.Diagnose_WildcardOnlyParens_ExplainsAndSuggests`,
-   `PermissionsFullRoundTripTests.DenyList_AddRule_RoundTrips`, and on the xunit 4 branch
+   `PermissionsFullRoundTripTests.DenyList_AddRule_RoundTrips`, and during the xUnit v4 move (item 7)
    `OnResetToInherited_AfterLoad_ClearsAskListUnsavedAdditions`. All three had one cause.
    `PermissionRuleViewModel` kept a private copy of the rule regex with a **100 ms wall-clock
    `matchTimeout`**. A timeout became *"Rule validation timed out"* in `Diagnose`, which the add path
@@ -237,8 +251,8 @@ the defect.
      accepted all-wildcard content it documents as rejected. The new pattern rejects them.
      `PermissionToolsTests` guards both the engine and this shape. The canary against the old
      pattern reddened exactly the 4 predicted tests.
-   - **Measured under 16 CPU burners, full `ClaudeForge.Tests` runs:** before, **2 of 6** runs failed;
-     after, **0 of 12**.
+   - **Measured under 16 CPU burners, full `ClaudeForge.Tests` runs on xUnit v3 (before item 7
+     merged):** before, **2 of 6** runs failed; after, **0 of 12**.
    - ⛔ **A second load flake, NOT this one and NOT fixed:** `SavePreservationTests` sometimes finds
      that a GUI save **never reached disk**. After-run 1 failed on
      `GuiSave_WithWriterLegacy_IsLossy_SoTheHatchesCostIsMeasured` (`cleanupPeriodDays` still 90,
