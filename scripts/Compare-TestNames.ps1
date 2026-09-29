@@ -25,6 +25,15 @@
 .PARAMETER Out
     Optional path for the report. It is always written to the output stream as well.
 
+.PARAMETER Pairing
+    plans/00008 step 2. Pairs a REMOVED test with an ADDED one when both have the same SHORT class
+    name and method, and reports the pair as one MOVED line, since a test that moved to another
+    project (or namespace) keeps its short class name and method. A clean move, with the same row
+    count and outcomes, is not counted as a difference; a move that changed either still is.
+    ⛔ Pairing is UNAMBIGUOUS only: when more than one removed or added test shares the short key,
+    none of them is paired and every one stays REMOVED or ADDED, so the mode cannot pair a lost test
+    with an unrelated new one and hide the loss.
+
 .EXAMPLE
     pwsh -NoProfile -File scripts/Compare-TestNames.ps1 -Baseline artifacts/xunit-move/baseline -Candidate artifacts/xunit-move/step1
 #>
@@ -32,7 +41,8 @@
 param(
     [Parameter(Mandatory)] [string] $Baseline,
     [Parameter(Mandatory)] [string] $Candidate,
-    [string] $Out
+    [string] $Out,
+    [switch] $Pairing
 )
 
 $ErrorActionPreference = 'Stop'
@@ -98,8 +108,49 @@ try {
 
 $lines = [System.Collections.Generic.List[string]]::new()
 $differences = 0
+$moved = 0
+$movedClean = 0
+
+# 'ShortClass|Method' from 'Assembly|Namespace.Class|Method'.
+function Get-ShortKey([string] $key) {
+    $parts = $key.Split('|')
+    $class = $parts[1]
+    $dot = $class.LastIndexOf('.')
+    if ($dot -ge 0) { $class = $class.Substring($dot + 1) }
+    return $class + '|' + $parts[2]
+}
+
+# Removed key -> added key, for every short key held by exactly one removed and one added test.
+$pairs = @{}
+if ($Pairing) {
+    $removed = @($before.Keys | Where-Object { -not $after.ContainsKey($_) })
+    $added = @($after.Keys | Where-Object { -not $before.ContainsKey($_) })
+    $removedByShort = $removed | Group-Object { Get-ShortKey $_ } -AsHashTable -AsString
+    $addedByShort = $added | Group-Object { Get-ShortKey $_ } -AsHashTable -AsString
+    if ($removedByShort -and $addedByShort) {
+        foreach ($short in @($removedByShort.Keys)) {
+            if ($addedByShort.ContainsKey($short) -and @($removedByShort[$short]).Count -eq 1 -and @($addedByShort[$short]).Count -eq 1) {
+                $pairs[@($removedByShort[$short])[0]] = @($addedByShort[$short])[0]
+            }
+        }
+    }
+}
+$pairedTargets = @{}
+foreach ($target in $pairs.Values) { $pairedTargets[$target] = $true }
 
 foreach ($key in @($before.Keys + $after.Keys | Sort-Object -Unique)) {
+    if ($pairedTargets.ContainsKey($key)) { continue }
+    if ($pairs.ContainsKey($key)) {
+        $target = $pairs[$key]
+        $a = $before[$key]
+        $b = $after[$target]
+        $same = $a.Count -eq $b.Count -and (Format-Outcomes $a) -eq (Format-Outcomes $b)
+        $lines.Add('MOVED    ' + $key + '  ->  ' + $target + $(if ($same) { '' } else { '  (' + (Format-Outcomes $a) + ' -> ' + (Format-Outcomes $b) + ')' }))
+        $moved++
+        if ($same) { $movedClean++ } else { $differences++ }
+        continue
+    }
+
     $a = $before[$key]
     $b = $after[$key]
     if ($null -eq $b) {
@@ -126,7 +177,7 @@ function Get-Totals([hashtable] $set) {
 
 $lines.Insert(0, 'baseline:  ' + (Get-Totals $before))
 $lines.Insert(1, 'candidate: ' + (Get-Totals $after))
-$lines.Insert(2, 'differences: ' + $differences)
+$lines.Insert(2, 'differences: ' + $differences + $(if ($Pairing) { ' (paired as moved: ' + $moved + ', of which clean: ' + $movedClean + ')' } else { '' }))
 
 $lines | Write-Output
 if ($Out) { Set-Content -LiteralPath $Out -Value $lines -Encoding utf8 }

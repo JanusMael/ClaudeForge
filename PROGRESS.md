@@ -240,7 +240,12 @@ the defect.
    layout literal in a clean library, a duplicated allowed line, a deleted one, a `//` inside a
    string, a target-typed `new(…)` inside a lambda and an embedded JSON all turn it red, naming the
    site; a comment and a `.resx` leave it green (the `.resx` was confirmed embedded, so that green
-   is not vacuous). ▶ **Next: step 2** (`Compare-TestNames.ps1` pairing mode), then step 3 (fixtures).
+   is not vacuous). ✅ **Step 2:** `Compare-TestNames.ps1 -Pairing` reports a removed and an added
+   test with the same short class name and method as one `MOVED` line, not a difference when rows
+   and outcomes match. Canaried with a real class moved between two test projects (3 `REMOVED` + 3
+   `ADDED` without it; 3 clean `MOVED`, exit 0, with it; a method deleted during the move still
+   shows `REMOVED`, exit 1) and with an ambiguous short key, which it refuses to pair. ▶ **Next:
+   step 3** (the golden fixtures from `main`).
    Drift from the plan, recorded here and never in it:
    - **Decision 1(c) reads compiled IL, not source.** The plan says "a source scan" for
      `new ScopeLadder(` / `new FootprintCatalog(`; both defaults are built as `{ get; } = new(`, a
