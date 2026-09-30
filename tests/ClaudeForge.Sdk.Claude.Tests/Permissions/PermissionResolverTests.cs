@@ -285,4 +285,22 @@ public sealed class PermissionResolverTests
         Assert.Equal(PermissionOutcome.Ask, d.Outcome);
         OrdinalAssert.Contains("rm", d.DecidingSubcommand!);
     }
+
+    [Fact(Timeout = 30000)]
+    // ⓘ The 30 s budget only separates "finished" from "hung". The assertion is the OUTCOME.
+    public async Task Deny_PathologicalGlob_LongCommand_IsStillDenied()
+    {
+        // The fail-open this guards: BashRuleMatcher had a 100 ms regex timeout and read a
+        // timeout as "no match". This deny rule takes far longer than that to backtrack on
+        // this command, so it was skipped and the allow rule decided. That happened on an
+        // idle machine; load only made a smaller input enough.
+        string command = "aaaaaZ" + new string('a', 2000) + "Q";
+
+        PermissionDecision d = await Task.Run(
+            () => Resolve(PermissionCandidate.Bash(command), allow: ["Bash"], deny: ["Bash(*a*a*a*a*a*Z*Q)"]),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(PermissionOutcome.Deny, d.Outcome);
+        Assert.Equal("Bash(*a*a*a*a*a*Z*Q)", d.MatchedRule!.Value);
+    }
 }

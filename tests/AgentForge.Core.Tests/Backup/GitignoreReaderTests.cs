@@ -330,12 +330,15 @@ public sealed class GitignoreReaderTests : IDisposable
     // -----------------------------------------------------------------------
 
     [Fact(Timeout = 15000)]
-    // 15s wall-clock. The behaviour under test is the 200ms regex match timeout,
-    // which makes this finish in ~40ms on any unloaded machine — the budget only
-    // needs to be large enough to distinguish "bailed out" from "hung forever"
-    // (without the guard this backtracks effectively indefinitely). The previous
-    // 2s was tight enough that a CPU-starved CI Windows runner tripped it,
-    // failing the build on a machine hiccup rather than a real regression.
+    // 15s wall-clock. The budget only needs to distinguish "finished" from "hung
+    // forever": on the backtracking engine this pattern runs effectively
+    // indefinitely. The engine is now linear, so it finishes in well under a
+    // millisecond. A 2s budget was once tight enough that a CPU-starved CI
+    // Windows runner tripped it on a machine hiccup rather than a real regression.
+    //
+    // ⚠ This test cannot tell the engine from the old 200ms timeout: both answer
+    // false, which is correct here. IsIgnored_NegatedPathologicalPattern_StillReincludes
+    // is the one whose correct answer the timeout got wrong.
     //
     // ⓘ Made async by hand in the xUnit move (plans/00006): xUnit v3 enforces Timeout only on an
     // async test, and only while it is awaiting — so the match runs on the pool and is awaited,
@@ -343,23 +346,58 @@ public sealed class GitignoreReaderTests : IDisposable
     public async Task IsIgnored_PathologicalPattern_ReturnsFalseWithinTimeout()
     {
         // Patterns like "a*a*a*a*a*z" end with a literal that is absent from the input,
-        // forcing catastrophic backtracking as the NFA tries every way to split the 'a'
-        // repetitions before concluding 'z' can never match.
-        // The C1 fix adds matchTimeout: TimeSpan.FromMilliseconds(200) so the
-        // regex bails out and IsIgnored returns false (safe no-match default).
+        // which makes a backtracking engine try every way to split the 'a' repetitions
+        // before concluding 'z' can never match. The linear engine does not search splits.
         string path = WriteGitignore("a*a*a*a*a*z");
         IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
-        // All 'a's — the required terminal 'z' is absent, guaranteeing no match
-        // and maximum backtracking before the timeout fires.
+        // All 'a's: the required terminal 'z' is absent, so there is no match.
         string longInput = new('a', 25);
 
-        // Must complete within the test timeout (2s). The match timeout (200ms) causes
-        // RegexMatchTimeoutException which the reader swallows as a no-match.
         bool result = await Task.Run(
             () => GitignoreReader.IsIgnored(longInput, longInput, isDirectory: false, patterns),
             TestContext.Current.CancellationToken);
-        Assert.False(result,
-            "Pathological pattern should time out and return false (safe no-match default).");
+        Assert.False(result, "A pathological pattern with no match must answer false, and promptly.");
+    }
+
+    [Fact]
+    public void Read_PatternRegex_IsLinear_WithNoTimeout()
+    {
+        // The pattern regex had a 200 ms match timeout, and IsIgnored read a timeout as
+        // "no match". The timeout measured elapsed time, not work.
+        string path = WriteGitignore("*.log\n!keep.log\nbuild/\n/dist\n**/cache/**");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+
+        Assert.Equal(5, patterns.Count);
+        Assert.All(patterns, p =>
+        {
+            Assert.True(
+                p.Regex.Options.HasFlag(System.Text.RegularExpressions.RegexOptions.NonBacktracking),
+                $"Pattern {p.RawPattern} must run on NonBacktracking, which is linear in the input length.");
+            Assert.Equal(System.Text.RegularExpressions.Regex.InfiniteMatchTimeout, p.Regex.MatchTimeout);
+        });
+    }
+
+    [Fact(Timeout = 30000)]
+    // ⓘ The 30 s budget only separates "finished" from "hung". The assertion is the RESULT.
+    public async Task IsIgnored_NegatedPathologicalPattern_StillReincludes()
+    {
+        // The timeout's failure direction: IsIgnored `continue`d past a pattern whose match
+        // timed out. On a NEGATED line that drops the re-include, so a file the user kept
+        // explicitly was left out of the backup. `**` not beside a slash is "any characters",
+        // so the negation compiles to ^a.*a.*a.*a.*a.*Z.*Q$, which backtracks for seconds
+        // on a name a hundred characters long.
+        string path = WriteGitignore("*\n!a**a**a**a**a**Z**Q");
+        IReadOnlyList<GitignorePattern> patterns = GitignoreReader.Read(path);
+        string name = "aaaaaZ" + new string('a', 2000) + "Q";
+
+        bool ignored = await Task.Run(
+            () => GitignoreReader.IsIgnored(name, "sub/" + name, isDirectory: false, patterns),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(ignored, "The negated line matches, so the file must be re-included.");
+        Assert.True(
+            GitignoreReader.IsIgnored(name + "x", "sub/" + name + "x", isDirectory: false, patterns),
+            "A name the negation does not match must stay ignored by '*'.");
     }
 
     // -----------------------------------------------------------------------

@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Bennewitz.Ninja.ClaudeForge.Converters;
 using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
+using Bennewitz.Ninja.AgentForge.Core.Text;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AppServices.Abstractions;
@@ -62,10 +63,13 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable,
 
     // POSIX env var name constraint: [A-Za-z_][A-Za-z0-9_]*
     // Prevents saving a key with spaces or '=' which creates a broken/unreadable variable.
-    private static readonly Regex EnvKeyRegex = new(
+    //
+    // ⛔ No match timeout. This had 50 ms and returned "invalid" when it fired, so on a
+    // loaded machine a valid name typed into the Add row was refused, depending on how busy
+    // the machine was. The engine is linear in the input length, so there is nothing to bound.
+    internal static readonly Regex EnvKeyRegex = LinearRegex.Create(
         @"^[A-Za-z_][A-Za-z0-9_]*$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant,
-        TimeSpan.FromMilliseconds(50));
+        RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Returns <see langword="true"/> when <paramref name="key"/> is a valid POSIX
@@ -78,14 +82,7 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable,
             return false;
         }
 
-        try
-        {
-            return EnvKeyRegex.IsMatch(key);
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            return false;
-        }
+        return EnvKeyRegex.IsMatch(key);
     }
 
     private static Regex BuildAllowlistPattern()
