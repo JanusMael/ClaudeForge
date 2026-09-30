@@ -1,0 +1,385 @@
+# plans/00008 decision 1: every Claude-specific site AgentForge still holds. It may only shrink.
+# Written by ProductNeutralityTests.WriteAllowList; columns are kind, key, count.
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Descriptions.claude-code-settings.enumdescriptions.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.ModelCatalog.model-catalog.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.ModelCatalog.model-catalog.overlay.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.ModelCatalog.model-catalog.schema.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.claude-code-settings.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.claude-code-settings.overlay.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.claude-desktop-config.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-config.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.json	1
+resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.overlay.json	1
+shape	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Settings.ScopeLadder::.cctor new ScopeLadder	1
+shape	AgentForge.Sdk	Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog::.cctor new FootprintCatalog	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	"Create MSIX junction?", msixMsg,	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	"merged into the MSIX path (MSIX wins on conflict) and then removed. ")	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	.Path(_options.CredentialsPathDisplay)	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	.Text(" to ").Path(MsixStatus.VirtualisedPath).Text("?\n\n")	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	.Text("Create an NTFS junction from ").Path(MsixStatus.StandardPath)	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	2 => TabMsixFixId,	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	CheckForRunningClaudeProcesses();	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	DialogMessage msixMsg = DialogMessage.Builder()	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync();	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = MsixPathProbe.Instance.Probe();	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = OperatingSystem.IsWindows() ? MsixPathProbe.Instance.Probe() : null;	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	OnPropertyChanged(nameof(ShowMsixTab));	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	TabMsixFixId => 2,	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	[ObservableProperty] private MsixStatus? _msixStatus;	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	if (MsixStatus?.NeedsFix != true)	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	if (index == 2 && !ShowMsixTab)	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	partial void OnMsixStatusChanged(MsixStatus? value)	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	private async Task FixMsixAsync()	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	private void CheckForRunningClaudeProcesses()	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	public bool ShowMsixTab => OperatingSystem.IsWindows() && MsixStatus?.NeedsFix == true;	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	public const string TabMsixFixId = "msix-fix";	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	return Path.GetFileName(item).Equals(".credentials.json", StringComparison.OrdinalIgnoreCase)	1
+words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	string tab = value switch { 0 => "Backup", 1 => "Restore", 2 => "MsixFix", _ => "?" };	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/projects/{name}");	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}");	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment env,	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment environment,	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeForgeSanitizationError: reason,	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath);	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	Path.Combine(PlatformPaths.ClaudeHome(env), "settings.local.json"),	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	foreach (string item in new[] { ".claude", ".mcp.json", "CLAUDE.md", "CLAUDE.local.md" })	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	if (request.Includes(SchemaRegistry.ClaudeCodeProductFor(_env)))	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	private readonly ClaudeEnvironment _env;	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	private static void AddProjectClaudeData(ZipArchiveWriter writer, string projectRoot, string entryPrefix)	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);	1
+words	src/AgentForge.Core/Backup/BackupJsonContext.cs	string ClaudeForgeSanitizationError,	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	LegacyIncludesClaudeCode.HasValue || LegacyIncludesClaudeDesktop.HasValue;	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(SchemaRegistry.ClaudeCodeArchiveFolder);	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	if (manifest.LegacyIncludesClaudeCode == true)	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	if (manifest.LegacyIncludesClaudeDesktop == true)	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	public bool? LegacyIncludesClaudeCode { get; set; }	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	public bool? LegacyIncludesClaudeDesktop { get; set; }	1
+words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	if (string.IsNullOrWhiteSpace(claudeJsonPath) || !File.Exists(claudeJsonPath))	1
+words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	public static DiscoveryResult ResolveExisting(string claudeJsonPath)	1
+words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	string raw = File.ReadAllText(claudeJsonPath);	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	"Claude");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	$"Could not merge contents from {std} into {msix}: {ex.Message}");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	$"Junction created: {std} → {msix}. Restart Claude Desktop for the change to take effect.");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	Arguments = $"/c mklink /J \"{std}\" \"{msix}\"",	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	HasMsixInstall: virtualised != null,	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	MergeContents(std, msix);	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	MsixStatus status = Probe();	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	bool HasMsixInstall,	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	if (!status.HasMsixInstall)	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	if (HasCmdMetachars(std) || HasCmdMetachars(msix))	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public MsixStatus Probe()	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public async Task<MsixFixResult> CreateJunctionAsync(CancellationToken ct = default)	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public sealed class MsixPathProbe	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public sealed record MsixFixResult(bool Succeeded, string Message);	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public sealed record MsixStatus(	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public static readonly MsixPathProbe Instance = new();	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(false,	4
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(false, "Could not launch cmd.exe to create the junction.");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(false, "MSIX fix is only applicable on Windows.");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(false, "No MSIX Claude Desktop install detected.");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(false, $"Failed to invoke mklink: {ex.Message}");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(true,	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixFixResult(true, "A junction is already in place — nothing to do.");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixStatus(	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	return new MsixStatus(false, null, StandardAppDataPath, false, false);	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string candidate = Path.Combine(match, "LocalCache", "Roaming", "Claude");	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string msix = status.VirtualisedPath!;	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string? match = Directory.EnumerateDirectories(packages, "Claude_*", SearchOption.TopDirectoryOnly)	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	$"ClaudeRestore-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Path.GetRandomFileName()[..4]}");	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	(ArchiveOnlyClaudeCode, ["claude-dir"],	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	(ArchiveOnlyClaudeCode, [], ["claude.json"],	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	(SchemaRegistry.ClaudeDesktopProduct, ["profiles"], ["*.json"],	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	(SchemaRegistry.ClaudeDesktopProduct, [], ["claude_desktop_config.json"],	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	.ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots)	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	ClaudeEnvironment env,	2
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	SchemaRegistry.ClaudeCodeProductFor(env),	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	SchemaRegistry.ClaudeDesktopProduct,	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	["settings.json", "settings.local.json"], SearchOption.AllDirectories),	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	internal static IReadOnlyList<ProductDescriptor> DefaultRestorableProductsFor(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	private static readonly ProductDescriptor ArchiveOnlyClaudeCode =	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "projects");	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "worktrees");	1
+words	src/AgentForge.Core/Backup/RestoreSidecarCleanup.cs	public static Result Run(string claudeHome, Action<int>? onProgress = null)	1
+words	src/AgentForge.Core/Backup/RestoreSidecarCleanup.cs	string home = claudeHome;	1
+words	src/AgentForge.Core/Backup/TextRedactor.cs	[GeneratedRegex(@"sk-ant-[A-Za-z0-9_\-]{40,}")]	1
+words	src/AgentForge.Core/Backup/TextRedactor.cs	private static partial Regex AnthropicKeyRegex();	1
+words	src/AgentForge.Core/Backup/TextRedactor.cs	s = AnthropicKeyRegex().Replace(s, JsonRedactor.RedactedMarker);	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	ClaudeEnvironment env,	2
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	files.Add(Describe(ConfigScope.Local, ConfigFileType.ClaudeCodeSettings,	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	files.Add(Describe(ConfigScope.Managed, ConfigFileType.ClaudeCodeSettings,	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	files.Add(Describe(ConfigScope.Managed, ConfigFileType.ClaudeCodeSettings, f, readOnly: true));	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	files.Add(Describe(ConfigScope.Project, ConfigFileType.ClaudeCodeSettings,	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	files.Add(Describe(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, userPath, readOnly: false));	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	public static IReadOnlyList<DiscoveredFile> DiscoverClaudeCodeSettings(	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	public static IReadOnlyList<DiscoveredFile> DiscoverProfiles(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	return Describe(ConfigScope.User, ConfigFileType.ClaudeDesktopConfig, path, readOnly: false);	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	string managedDropIn = Path.Combine(policyRoot, "managed-settings.d");	1
+words	src/AgentForge.Core/FileIO/ConfigFileDiscoverer.cs	string managedSettings = Path.Combine(policyRoot, "managed-settings.json");	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	.Where(n => n.StartsWith("Claude_", StringComparison.OrdinalIgnoreCase));	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	List<string> appDirs = Directory.GetDirectories(claudeDir, "app-*")	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	Path.Combine(localAppData, "AnthropicClaude"),	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	Path.Combine(localAppData, "Programs", "claude-desktop"),	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	Path.Combine(programFiles, "Claude"),	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	[GeneratedRegex(@"^Claude_(\d+\.\d+\.\d+\.\d+)_", RegexOptions.CultureInvariant)]	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	entries = Directory.EnumerateDirectories(windowsApps, "Claude_*")	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	if (!Directory.Exists(claudeDir))	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	if (!display.Contains("Claude", StringComparison.OrdinalIgnoreCase))	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	if (TryGetVersionFromWindowsApps() is { } fromMsix)	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	public static partial class ClaudeDesktopVersionProbe	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	return fromMsix;	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	string claudeDir = Path.Combine(localAppData, "AnthropicClaude");	1
+words	src/AgentForge.Core/Platform/ClaudeDesktopVersionProbe.cs	string? exe = FindFileShallow(root, "Claude.exe", maxDepth: 3);	1
+words	src/AgentForge.Core/Platform/ClaudeEnvironment.cs	new(NullIfBlank(Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR")));	1
+words	src/AgentForge.Core/Platform/ClaudeEnvironment.cs	public sealed record ClaudeEnvironment(string? ConfigDir = null)	1
+words	src/AgentForge.Core/Platform/ClaudeEnvironment.cs	public static ClaudeEnvironment Empty { get; } = new();	1
+words	src/AgentForge.Core/Platform/ClaudeEnvironment.cs	public static ClaudeEnvironment FromProcess() =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	!TestSuppressClaudeCodeBinaryProbe && FindFirstOnPath("claude") != null;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	"claude_desktop_config.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	: Path.Combine(programFiles, "ClaudeCode");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	: env.ResolvedConfigDir ?? Path.Combine(UserProfile, ".claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	? Path.Combine("C:", "Program Files", "ClaudeCode")	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	? Path.Combine(sandbox, ".claude")	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	ClaudeCodeLocation? result = TryFindClaudeCodeBinaryUncached(env);	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Directory.EnumerateDirectories(packages, "Claude_*", SearchOption.TopDirectoryOnly).Any())	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ClaudeHome(env), ".claudectx-current");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ClaudeHome(env), ".credentials.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ClaudeHome(env), "CLAUDE.md");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ClaudeHome(env), "mcp.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ClaudeHome(env), "profiles");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ClaudeHome(env), "settings.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ManagedSettingsRoot, "managed-mcp.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ManagedSettingsRoot, "managed-settings.d");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	Path.Combine(ManagedSettingsRoot, "managed-settings.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	TryFindClaudeCodeBinary(env) is not null ||	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	_claudeCodeLocationCache = null;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	_claudeCodeLocationCache = result;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	_claudeCodeLocationCacheValid = false;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	_claudeCodeLocationCacheValid = true;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	foreach (string candidate in CanonicalClaudeCodeCandidates(env))	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	get => s_testSuppressClaudeCodeBinaryProbe.Value;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	if (Directory.Exists("/Applications/Claude.app"))	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	if (Directory.Exists(Path.Combine(local, "AnthropicClaude")))	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	if (Directory.Exists(Path.Combine(local, "Programs", "claude-desktop")))	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	if (TestSuppressClaudeCodeBinaryProbe)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	if (_claudeCodeLocationCacheValid)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	internal static bool TestSuppressClaudeCodeBinaryProbe	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	private static ClaudeCodeLocation? TryFindClaudeCodeBinaryUncached(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	private static ClaudeCodeLocation? _claudeCodeLocationCache;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	private static IEnumerable<string> CanonicalClaudeCodeCandidates(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	private static readonly AsyncLocal<bool> s_testSuppressClaudeCodeBinaryProbe = new();	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	private static volatile bool _claudeCodeLocationCacheValid;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public sealed record ClaudeCodeLocation(string BinaryPath, bool IsOnPath);	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static ClaudeCodeLocation? TryFindClaudeCodeBinary(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static IReadOnlyList<string> DiscoverProfiles(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static bool IsClaudeCodeInstalled(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static bool IsClaudeCodeOnPath =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ClaudeHome(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ClaudeJsonPath => Path.Combine(UserProfile, ".claude.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ClaudeMdPath(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string CredentialsPath(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string CurrentProfileFilePath(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string DefaultBackupDirectory(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ProfileClaudeMdPath(ClaudeEnvironment env, string profileName)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ProfileMcpPath(ClaudeEnvironment env, string profileName)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ProfileSettingsPath(ClaudeEnvironment env, string profileName)	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string ProfilesDirectory(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string UserMcpPath(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	public static string UserSettingsPath(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine("/", "Library", "Application Support", "ClaudeCode");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine("/", "etc", "claude-code");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(DesktopProfilesDirectory, profileName, "claude_desktop_config.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(ProfilesDirectory(env), profileName, "CLAUDE.md");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(ProfilesDirectory(env), profileName, "mcp.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(UserProfile, "Library", "Application Support", "Claude",	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(UserProfile, "Library", "Logs", "Claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(appData, "Claude", "claude_desktop_config.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(local, "Claude", "logs");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(parent ?? UserProfile, "claude-backups");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(projectRoot, ".claude", "settings.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(projectRoot, ".claude", "settings.local.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(projectRoot, ".mcp.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return Path.Combine(xdgConfig, "Claude", "claude_desktop_config.json");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return _claudeCodeLocationCache;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return new ClaudeCodeLocation(candidate, IsOnPath: false);	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	return new ClaudeCodeLocation(pathHit, IsOnPath: true);	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	set => s_testSuppressClaudeCodeBinaryProbe.Value = value;	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	string home = ClaudeHome(env);	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	string localDir = Path.Combine(ClaudeHome(env), "local");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	string? pathHit = FindFirstOnPath("claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return "/opt/homebrew/bin/claude";	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return "/snap/bin/claude";	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return "/usr/bin/claude";	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return "/usr/local/bin/claude";	2
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(UserProfile, ".local", "bin", "claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(UserProfile, ".npm-global", "bin", "claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(UserProfile, ".volta", "bin", "claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(appData, "npm", "claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(appData, "npm", "claude.cmd");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(appData, "npm", "claude.ps1");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(localAppData, "Programs", "claude", "claude.exe");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(localDir, "claude");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(localDir, "claude.cmd");	1
+words	src/AgentForge.Core/Platform/PlatformPaths.cs	yield return Path.Combine(localDir, "claude.exe");	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	Debug.WriteLine($"[VersionProbe] claude --version: {ex.Message}");	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	List<string> appDirs = Directory.GetDirectories(claudeDir, "app-*")	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	const string plistPath = "/Applications/Claude.app/Contents/Info.plist";	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	if (!Directory.Exists(claudeDir))	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	public static Task<string?> TryGetClaudeCodeVersionAsync(string? explicitBinaryPath = null)	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	public static string? TryGetClaudeDesktopVersion()	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	return new ResolvedCommand("claude", versionFlag);	1
+words	src/AgentForge.Core/Platform/ProductVersionProbe.cs	string claudeDir = Path.Combine(localAppData, "AnthropicClaude");	1
+words	src/AgentForge.Core/Profile/ExportedProfile.cs	[JsonPropertyName("claude_md")]	1
+words	src/AgentForge.Core/Profile/ExportedProfile.cs	public string? ClaudeMD { get; init; }	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	$"Desktop profile '{name}' is not valid — claude_desktop_config.json not found.", profileConfig);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	$"Failed to merge MCP servers into ~/.claude.json: {ex.Message}", ex);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	ClaudeEnvironment env,	3
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	ClaudeMD = claudeMd,	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	Directory.CreateDirectory(Path.GetDirectoryName(claudeJson)!);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	Directory.CreateDirectory(PlatformPaths.ClaudeHome(env));	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	File.Delete(PlatformPaths.ClaudeMdPath(env));	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	HasClaudeMd: File.Exists(Path.Combine(profileDir, "CLAUDE.md")),	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	HasConfig: File.Exists(Path.Combine(profileDir, "claude_desktop_config.json")),	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	HasMcp: File.Exists(Path.Combine(profileDir, "mcp.json")),	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await CopyFileAsync(PlatformPaths.ClaudeMdPath(env), Path.Combine(profileDir, "CLAUDE.md"), ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await CopyFileAsync(PlatformPaths.ClaudeMdPath(env), profileMd, ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await CopyFileAsync(profileMd, PlatformPaths.ClaudeMdPath(env), ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await MergeMcpIntoClaudeJsonAsync(profileMcp, ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await RemoveMcpFromClaudeJsonAsync(ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await WriteAtomicAsync(Path.Combine(profileDir, "CLAUDE.md"), exported.ClaudeMD, ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await WriteAtomicAsync(Path.Combine(profileDir, "mcp.json"), mcpJson, ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	await WriteAtomicAsync(claudeJson, output, ct);	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	claudeMd = raw;	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	else if (File.Exists(PlatformPaths.ClaudeMdPath(env)))	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	if (!File.Exists(claudeJson))	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	if (!string.IsNullOrEmpty(exported.ClaudeMD))	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	if (File.Exists(PlatformPaths.ClaudeMdPath(env)))	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	if (File.Exists(claudeJson))	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	if (File.Exists(claudeMdPath))	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	private static async Task MergeMcpIntoClaudeJsonAsync(	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	private static async Task RemoveMcpFromClaudeJsonAsync(CancellationToken ct)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	private static string ResolveProfileDirSecurely(ClaudeEnvironment env, string profileName)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static IReadOnlyList<ProfileInfo> DiscoverProfiles(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static async Task SyncFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static async Task<bool> CreateFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static string? ReadCurrentProfileName(ClaudeEnvironment env)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static void WriteCurrentProfileName(ClaudeEnvironment env, string? name)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string claudeJson = PlatformPaths.ClaudeJsonPath;	3
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string claudeMdPath = Path.Combine(profileDir, "CLAUDE.md");	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string mcpPath = Path.Combine(profileDir, "mcp.json");	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string profileConfig = Path.Combine(PlatformPaths.DesktopProfilesDirectory, name, "claude_desktop_config.json");	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string profileConfig = Path.Combine(profileDir, "claude_desktop_config.json");	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string profileMcp = Path.Combine(profileDir, "mcp.json");	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string profileMd = Path.Combine(profileDir, "CLAUDE.md");	2
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string raw = await File.ReadAllTextAsync(claudeJson, ct);	3
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string raw = await File.ReadAllTextAsync(claudeMdPath, ct);	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	string? claudeMd = null;	1
+words	src/AgentForge.Core/Profile/ProfileInfo.cs	bool HasClaudeMd,	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"Restoring claude.json…"),	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"Restoring the Claude home directory…"),	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ArchiveFolder: "ClaudeDesktop",	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ArchiveFolder: ClaudeCodeArchiveFolder,	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	CredentialFileName: ".credentials.json"));	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.File("claude.json", () => PlatformPaths.ClaudeJsonPath,	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.File("claude_desktop_config.json", () => PlatformPaths.DesktopConfigPath,	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.Home("claude-dir", () => PlatformPaths.ClaudeHome(env),	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	bool isClaudeCode,	2
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,	2
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new(ClaudeCodeProductId, "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct = default)	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public const string ClaudeCodeSettingsSchemaUrl = "https://json.schemastore.org/claude-code-settings.json";	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static ProductDescriptor ClaudeCodeProductFor(ClaudeEnvironment env) =>	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly ProductDescriptor ClaudeDesktopProduct =	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly string ClaudeCodeArchiveFolder = "ClaudeCode";	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly string ClaudeCodeProductId = "claude-code";	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	return GetSettingsNodeAsync(ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct);	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	return GetSettingsNodeAsync(ClaudeDesktopProduct, ct);	1
+words	src/AgentForge.Core/Schema/SchemaTreeBuilder.cs	if ((token.Contains("ANTHROPIC_") || token.Contains("CLAUDE")) && seen.Add(token))	1
+words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeCodeSettings,	1
+words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeDesktopConfig,	1
+words	src/AgentForge.Core/Settings/ScopeLadder.cs	"claude",	1
+words	src/AgentForge.Core/Updates/GithubReleaseChecker.cs	public const string DefaultRepository = "JanusMael/ClaudeForge";	1
+words	src/AgentForge.Sdk/AgentConfigClientCore.cs	protected virtual ClaudeArtifactPaths? ArtifactPaths => null;	1
+words	src/AgentForge.Sdk/Env/EnvAccessor.cs	get => Get(EnvVarKey.AnthropicModel);	1
+words	src/AgentForge.Sdk/Env/EnvAccessor.cs	public string? AnthropicModel	1
+words	src/AgentForge.Sdk/Env/EnvAccessor.cs	set => Set(EnvVarKey.AnthropicModel, value);	1
+words	src/AgentForge.Sdk/Env/EnvVarKey.cs	AnthropicModel,	1
+words	src/AgentForge.Sdk/Env/EnvVarKey.cs	public const string AnthropicModel = "ANTHROPIC_MODEL";	1
+words	src/AgentForge.Sdk/Env/EnvVarKey.cs	public const string DisableAutoMemory = "CLAUDE_CODE_DISABLE_AUTO_MEMORY";	1
+words	src/AgentForge.Sdk/Env/EnvVarKey.cs	public const string MaxOutputTokens = "CLAUDE_CODE_MAX_OUTPUT_TOKENS";	1
+words	src/AgentForge.Sdk/Env/IEnvAccessor.cs	string? AnthropicModel { get; set; }	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public ClaudeEnvironment Env { get; } = env ?? throw new ArgumentNullException(nameof(env));	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public sealed class ClaudeArtifactPaths(string userProfile, ClaudeEnvironment env)	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public static ClaudeArtifactPaths DefaultFor(ClaudeEnvironment env)	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string ClaudeHome => Env.ResolvedConfigDir ?? Path.Combine(UserProfile, ".claude");	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string ClaudeJsonPath => Path.Combine(UserProfile, ".claude.json");	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string CredentialsPath => Path.Combine(ClaudeHome, ".credentials.json");	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string UserMcpPath => Path.Combine(ClaudeHome, "mcp.json");	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string UserSettingsPath => Path.Combine(ClaudeHome, "settings.json");	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	AddArtifactWalks(sources, paths.ClaudeHome);	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	AddMemory(sources, paths.ClaudeHome, projectRoot);	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	List<CategorisedArtifactSource> sources, ClaudeArtifactPaths paths, string? projectRoot)	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-managed-dropins", ArtifactKind.Configuration, ClaudeScopes.Managed),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-agents", ArtifactKind.Agent, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-commands", ArtifactKind.Command, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-hooks", ArtifactKind.Hook, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-plans", ArtifactKind.Plan, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-rules", ArtifactKind.Rule, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("cross-tool-opencode", ArtifactKind.Memory, ClaudeScopes.CrossTool),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	[new ArtifactProbe("managed-settings.json", paths.ManagedSettingsPath)]),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	internal static class ClaudeArtifactSources	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe(".claude.json", paths.ClaudeJsonPath),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("CLAUDE", Path.Combine(home, "CLAUDE.md")),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("CLAUDE", Path.Combine(projectRoot, "CLAUDE.md")),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("mcp.json", PlatformPaths.ProjectMcpPath(projectRoot)),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("mcp.json", paths.UserMcpPath),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("settings.local.json", PlatformPaths.LocalSettingsPath(projectRoot)),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-managed-config", ArtifactKind.Configuration, ClaudeScopes.Managed),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-project-config", ArtifactKind.Configuration, ClaudeScopes.Project),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-project-memory", ArtifactKind.Memory, ClaudeScopes.Project),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-user-config", ArtifactKind.Configuration, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-user-memory", ArtifactKind.Memory, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-user-skills", ArtifactKind.Skill, ClaudeScopes.User),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("cross-tool-probes", ArtifactKind.Memory, ClaudeScopes.CrossTool),	1
+words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	stripExtension: false, namePrefix: "managed-settings.d/"),	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	AddClaudeDirectory(	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	AddClaudeDirectory(sources, paths.ClaudeHome, ClaudeScopes.User, EditableMemoryScope.User);	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	ClaudeArtifactSources.Walk(	2
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	Path.Combine(claudeDirectory, "agents"), "*.md"),	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	Path.Combine(claudeDirectory, "commands"), "*.md"),	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	Path.Combine(claudeDirectory, "skills"),	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	internal static class ClaudeEditableArtifactSources	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	new ClaudePluginArtifactSource(Path.Combine(paths.ClaudeHome, "plugins")),	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	private static void AddClaudeDirectory(	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	sources, Path.Combine(projectRoot, ".claude"), ClaudeScopes.Project, EditableMemoryScope.Project);	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	string claudeDirectory,	1
+words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	string prefix = $"claude-{scope.Id}";	1
+words	src/AgentForge.Sdk/Memory/ClaudePluginArtifactSource.cs	internal sealed class ClaudePluginArtifactSource(string root) : IArtifactSource	1
+words	src/AgentForge.Sdk/Memory/ClaudePluginArtifactSource.cs	public string Id => "claude-plugins";	1
+words	src/AgentForge.Sdk/Memory/ClaudePluginArtifactSource.cs	return new ArtifactRef(name, kind, ClaudeScopes.ForPlugin(PluginLabel(location)),	1
+words	src/AgentForge.Sdk/Memory/ClaudeScopes.cs	internal static class ClaudeScopes	1
+words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
+words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	ClaudeEditableArtifactSources.ForEditor(paths, projectRoot);	1
+words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	ClaudeEnvironment env, string? projectRoot = null)	1
+words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	return Snapshot(ClaudeArtifactPaths.DefaultFor(env), projectRoot);	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	: FootprintRoots.Single(FootprintRoots.Home, Paths.ClaudeHome);	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	Func<ClaudeArtifactPaths> paths,	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	private ClaudeArtifactPaths Paths => _paths();	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	private readonly Func<ClaudeArtifactPaths> _paths;	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	public static string ResolveCategoryPath(ClaudeArtifactPaths paths, FootprintCategory category)	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	public static string ResolveCategoryPath(ClaudeEnvironment env, FootprintCategory category)	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	return ResolveCategoryPath(ClaudeArtifactPaths.DefaultFor(env), category);	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	return ResolveCategoryPath(FootprintRoots.Single(FootprintRoots.Home, paths.ClaudeHome), category);	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	string dir = Path.Combine(Paths.ClaudeHome, "projects");	1
+words	src/AgentForge.Sdk/Memory/FootprintService.cs	string projectDir = Path.Combine(Paths.ClaudeHome, "projects", mangledName);	1
+words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
+words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	ClaudeArtifactSources.ForInventory(paths, projectRoot);	1
+words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	ClaudeEnvironment env, string? projectRoot = null)	1
+words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	return SnapshotFiles(ClaudeArtifactPaths.DefaultFor(env), projectRoot);	1
+words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	return entry.Scope == ClaudeScopes.Project ? $"{entry.Name} (project)" : entry.Name;	1

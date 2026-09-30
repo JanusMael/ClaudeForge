@@ -142,7 +142,7 @@ the defect.
 | | |
 |---|---|
 | `main` | #77–#85 merged by 2026-09-25 (admin, merge commits, over the two red-by-construction jobs only); the xUnit move and all its follow-ups are in. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,231 · 0 failed · 10–11 skipped**, xUnit v4 on MTP v2 (item 7), across **six** test assemblies (= six test csproj; JsonC.Tests' 73 left with plans/00007; +2 XamlQuality rule guards, +4 permission-regex guards, item 8), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
+| Suite | **3,237 · 0 failed · 12–13 skipped**, xUnit v4 on MTP v2 (item 7), across **six** test assemblies (= six test csproj; JsonC.Tests' 73 left with plans/00007; +2 XamlQuality rule guards, +6 plans/00008 guards and golden fixtures (item 8), +4 permission-regex guards (item 9)), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
 | CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion`. They were RED by construction at `2026.3.922` (NU1101: its `LayeredEditors.*` dependencies no longer exist); the pin to `2026.3.925` is what clears them |
 | Packages consumed | ScopedEditors / AppServices **`2026.3.924`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.928`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted) |
 
@@ -230,8 +230,45 @@ the defect.
    does. ⚠ **A pre-existing, load-dependent failure surfaced while measuring**, on `main` as much as
    here: permission-rule validation has a wall-clock regex timeout, and on a busy machine
    `Diagnose_WildcardOnlyParens_ExplainsAndSuggests("Bash(***)")` gets "Rule validation timed out"
-   (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Fixed by item 8.
-8. ✅ **Permission-rule validation flaked under CPU load: FIXED (2026-09-28).** Symptoms:
+   (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Fixed by item 9.
+8. ⏳ **[`plans/00008`](plans/00008-agentforge-becomes-product-neutral.md) — AgentForge becomes
+   product-neutral** (approved 2026-09-29, #104; the move itself is `00009`, drafted after).
+   ✅ **Step 1, the guards:** `ProductNeutralityTests` with `Architecture/ProductNeutrality/allow-list.tsv`
+   — 371 word keys (393 sites in the same 34 files the plan measured), 10 Core resources, 2 shape
+   constructions. The list must match exactly: a site can be removed with the list lowered, never
+   added. Canaried nine ways, each outcome written down first: a new literal in an allowed file, a
+   layout literal in a clean library, a duplicated allowed line, a deleted one, a `//` inside a
+   string, a target-typed `new(…)` inside a lambda and an embedded JSON all turn it red, naming the
+   site; a comment and a `.resx` leave it green (the `.resx` was confirmed embedded, so that green
+   is not vacuous). ✅ **Step 2:** `Compare-TestNames.ps1 -Pairing` reports a removed and an added
+   test with the same short class name and method as one `MOVED` line, not a difference when rows
+   and outcomes match. Canaried with a real class moved between two test projects (3 `REMOVED` + 3
+   `ADDED` without it; 3 clean `MOVED`, exit 0, with it; a method deleted during the move still
+   shows `REMOVED`, exit 1) and with an ambiguous short key, which it refuses to pair.
+   ✅ **Step 3, golden fixtures from `main`:** `Golden/GoldenFixtureTests` with `Golden/Fixtures/`
+   (`backup.json`, `profile.json`, `scopes.json`), minted by the explicit `WriteGoldens` before any
+   code moved. Backup: a settings-only archive of a fixture home, entries by name and SHA-256
+   (10, three of them the bundled schemas), manifest minus `createdUtc`/`appVersion`/`platform`/
+   `sizeBytes`. Profile: the export minus `exported_at`. Scopes: every settings page's available
+   scopes (11 Claude Code pages, 2 Desktop, each `User` with no project) plus the SDK's editable
+   scopes with a project open (`Local`, `Project`, `User`). Stable across runs; each comparison
+   canaried red on one changed field and green again restored. ⚠ Hashes are taken on LF-normalized
+   text: with `text=auto`, a bundled schema is CRLF in a Windows checkout and LF elsewhere. ⚠ A
+   schema refresh that changes a bundled file re-mints `backup.json` on purpose. ▶ **Next: step 4**
+   (`AgentForge.Avalonia.Shell.Tests`).
+   - **Drift: the neutral test product's frozen archive moves from step 3 to step 5.** Step 3 was
+     to mint it, but the neutral test product is only created in step 5.
+   Drift from the plan, recorded here and never in it:
+   - **Decision 1(c) reads compiled IL, not source.** The plan says "a source scan" for
+     `new ScopeLadder(` / `new FootprintCatalog(`; both defaults are built as `{ get; } = new(`, a
+     target-typed property initializer that such a scan never matches (measured: zero hits under
+     `src/`). The guard finds every `newobj` of the two constructors instead, in every spelling.
+   - **The permanent wire-string list holds three, not five, today.** `"ClaudeCode"` and
+     `"ClaudeDesktop"` live in `SchemaRegistry` (`ClaudeCodeArchiveFolder`, the Desktop descriptor),
+     not in `ExportManifest`; they join the permanent list in step 6, when they come to rest there
+     for reading old archives. An entry for a literal the named file does not hold would exempt
+     nothing.
+9. ✅ **Permission-rule validation flaked under CPU load: FIXED (2026-09-28).** Symptoms:
    `PermissionRuleViewModelTests.Diagnose_WildcardOnlyParens_ExplainsAndSuggests`,
    `PermissionsFullRoundTripTests.DenyList_AddRule_RoundTrips`, and during the xUnit v4 move (item 7)
    `OnResetToInherited_AfterLoad_ClearsAskListUnsavedAdditions`. All three had one cause.

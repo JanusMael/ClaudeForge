@@ -1,0 +1,52 @@
+{
+  "appPages": {
+    "Claude Code": {
+      "General": [
+        "User"
+      ],
+      "Model \u0026 Effort": [
+        "User"
+      ],
+      "Permissions": [
+        "User"
+      ],
+      "Environment": [
+        "User"
+      ],
+      "MCP Servers": [
+        "User"
+      ],
+      "Hooks": [
+        "User"
+      ],
+      "Plugins": [
+        "User"
+      ],
+      "Sandbox": [
+        "User"
+      ],
+      "UI \u0026 Display": [
+        "User"
+      ],
+      "Git \u0026 Attribution": [
+        "User"
+      ],
+      "Advanced": [
+        "User"
+      ]
+    },
+    "Claude Desktop": {
+      "MCP Servers": [
+        "User"
+      ],
+      "Advanced": [
+        "User"
+      ]
+    }
+  },
+  "claudeCodeEditableScopesWithAProject": [
+    "Local",
+    "Project",
+    "User"
+  ]
+}
