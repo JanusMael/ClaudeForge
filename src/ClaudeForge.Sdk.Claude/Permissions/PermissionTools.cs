@@ -38,21 +38,35 @@ public static class PermissionTools
     /// A valid rule is a known tool name optionally followed by a parenthesised
     /// pattern, OR any <c>mcp__</c>-prefixed identifier.
     /// <para>
-    /// The strict lookahead <c>(?=.*[^)*?])</c> rejects all-wildcard parens content
-    /// (e.g. <c>Bash(*)</c>) — an INTENTIONAL divergence from the schema's looser
-    /// <c>permissionRule</c> pattern, which accepts any non-empty parens content.
-    /// The SDK and GUI regexes are both built from this one string, so they cannot
-    /// diverge from each other.
+    /// The parens content <c>[*?]*[^)*?][^)]*</c> must contain at least one
+    /// character other than <c>*</c> and <c>?</c>, which rejects all-wildcard
+    /// content (e.g. <c>Bash(*)</c>) — an INTENTIONAL divergence from the schema's
+    /// looser <c>permissionRule</c> pattern, which accepts any non-empty parens
+    /// content. The SDK and GUI both validate with <see cref="RuleRegex"/>, so they
+    /// cannot diverge from each other.
+    /// </para>
+    /// <para>
+    /// ⚠ The pattern must stay lookaround-free: <see cref="RuleRegex"/> runs on the
+    /// <see cref="RegexOptions.NonBacktracking"/> engine, which rejects lookarounds.
+    /// It replaced the lookahead <c>(?=.*[^)*?])[^)]+</c>, which accepted the same
+    /// strings with one exception. That lookahead scanned past the closing paren, so a
+    /// trailing newline let all-wildcard content such as <c>"Bash(*)\n"</c> through.
     /// </para>
     /// </summary>
     public static string RulePattern { get; } =
-        "^((" + string.Join("|", Names) + @")(\((?=.*[^)*?])[^)]+\))?|mcp__.*)$";
+        "^((" + string.Join("|", Names) + @")(\([*?]*[^)*?][^)]*\))?|mcp__.*)$";
 
     /// <summary>
-    /// A compiled <see cref="Regex"/> for <see cref="RulePattern"/>, shared so
-    /// callers don't each recompile the same pattern. Culture-invariant.
+    /// The <see cref="Regex"/> for <see cref="RulePattern"/>, shared so callers
+    /// don't each build the same pattern. Culture-invariant.
+    /// <para>
+    /// <see cref="RegexOptions.NonBacktracking"/> makes a match linear in the input
+    /// length by construction, so it has no match timeout. The GUI validates on every
+    /// keystroke, and a wall-clock timeout fires on a busy machine for a 9-character
+    /// rule, then reports a valid rule as invalid.
+    /// </para>
     /// </summary>
     public static readonly Regex RuleRegex = new(
         RulePattern,
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 }

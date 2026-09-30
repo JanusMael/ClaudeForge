@@ -53,7 +53,7 @@ public sealed class PermissionRuleViewModelTests
     public void IsValid_ToolWithRealPattern_True(string rule)
     {
         // Note: pure-wildcard patterns like "Read(*)" are REJECTED by the
-        // schema regex's lookahead — see IsValid_KnownInvalidShapes_False
+        // rule regex (PermissionTools.RulePattern) — see IsValid_KnownInvalidShapes_False
         // for that branch.
         Assert.True(PermissionRuleViewModel.IsValid(rule));
     }
@@ -211,7 +211,7 @@ public sealed class PermissionRuleViewModelTests
         // and isn't pure wildcards — but still fails the regex.  Hard to
         // construct because the regex is permissive on the inner content; the
         // backslash-only inner doesn't trip the noise filters but the regex
-        // still rejects the overall shape via the closing-paren lookahead.
+        // still rejects the overall shape via the closing-paren requirement.
         // Use something unambiguous: nested parens without closing.
         string msg = PermissionRuleViewModel.Diagnose("Bash((nested");
         // Balanced + paren accounting falls into one of the structural
