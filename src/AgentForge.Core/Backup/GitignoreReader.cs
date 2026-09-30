@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Serilog;
+using Bennewitz.Ninja.AgentForge.Core.Text;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 
@@ -40,7 +40,7 @@ internal sealed class GitignorePattern
     /// </remarks>
     public bool Anchored { get; }
 
-    /// <summary>Pre-compiled regex for fast matching.</summary>
+    /// <summary>The shared linear-time regex for the pattern (see <see cref="LinearRegex"/>).</summary>
     public Regex Regex { get; }
 }
 
@@ -176,19 +176,8 @@ internal static class GitignoreReader
             // depth-independent, so an anchored pattern must skip it and be judged on the
             // path alone — otherwise `/node_modules` would match a nested one via its name
             // and the leading slash would mean nothing.
-            bool nameMatch, pathMatch;
-            try
-            {
-                nameMatch = !p.Anchored && p.Regex.IsMatch(name);
-                pathMatch = !nameMatch && p.Regex.IsMatch(relPath);
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                Log.Warning(
-                    "[GitignoreReader] Regex match timed out for pattern {Pattern} on input {Input} — treating as no-match",
-                    p.RawPattern, name);
-                continue;
-            }
+            bool nameMatch = !p.Anchored && p.Regex.IsMatch(name);
+            bool pathMatch = !nameMatch && p.Regex.IsMatch(relPath);
 
             if (nameMatch || pathMatch)
             {
@@ -260,12 +249,18 @@ internal static class GitignoreReader
         // effectively case-insensitive; on Unix it is case-sensitive.
         // Using IgnoreCase keeps things consistent and avoids false-negatives on
         // case-mismatched Windows repos.
-        // matchTimeout: guard against pathological patterns (e.g. "a*a*a*a*") that
-        // can cause catastrophic backtracking — IsIgnored catches the timeout and
-        // treats the pattern as a non-match (safe default).
-        return new Regex(sb.ToString(),
-            RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant,
-            matchTimeout: TimeSpan.FromMilliseconds(200));
+        //
+        // ⛔ A pathological pattern (e.g. "a*a*a*a*") is bounded by the ENGINE, not a
+        // timeout. This used to carry a 200 ms match timeout, and IsIgnored treated a
+        // timeout as "no match". That was not a safe default: on a NEGATED line it dropped
+        // the re-include, so a file the user explicitly kept was left out of the backup.
+        // LinearRegex is linear in the input length and has no timeout. The instance is
+        // shared, because ZipArchiveWriter reads a .gitignore in every directory that has
+        // one and the same lines recur.
+        //
+        // ⚠ So this output must stay lookaround- and backreference-free, which
+        // NonBacktracking rejects. PathRuleMatcher.GlobBody carries the same constraint.
+        return LinearRegex.Get(sb.ToString(), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
     /// <summary>

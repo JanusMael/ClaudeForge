@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Core.Text;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
@@ -52,11 +53,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 /// </remarks>
 public static class BashRuleMatcher
 {
-    // Defensive cap against a pathological user pattern; a timeout is treated as
-    // "no match" rather than throwing into the UI. Mirrors GitignoreReader's
-    // stance (src/AgentForge.Core/Backup/GitignoreReader.cs).
-    private static readonly TimeSpan s_timeout = TimeSpan.FromMilliseconds(100);
-
     /// <summary>
     /// Returns <see langword="true"/> when <paramref name="command"/> matches the
     /// Bash-family <paramref name="rule"/>. A bare-tool or <c>Tool(*)</c> rule
@@ -82,21 +78,27 @@ public static class BashRuleMatcher
             return false;
         }
 
-        string regex = GlobToRegex(specifier);
+        return ToRegex(specifier, caseInsensitive).IsMatch(command.Trim());
+    }
+
+    /// <summary>
+    /// The regex <see cref="Match"/> uses for <paramref name="specifier"/>: linear in the
+    /// input length, with no match timeout (see <see cref="LinearRegex"/>).
+    /// </summary>
+    /// <remarks>
+    /// ⛔ This used to carry a 100 ms timeout and return "no match" when it fired. For a
+    /// DENY rule that is fail-open, and it fired without load: <c>Bash(*a*a*a*a*a*Z*Q)</c>
+    /// against a 51-character command that matches took 429 ms to backtrack.
+    /// </remarks>
+    internal static Regex ToRegex(string specifier, bool caseInsensitive)
+    {
         RegexOptions options = RegexOptions.CultureInvariant | RegexOptions.Singleline;
         if (caseInsensitive)
         {
             options |= RegexOptions.IgnoreCase;
         }
 
-        try
-        {
-            return Regex.IsMatch(command.Trim(), regex, options, s_timeout);
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            return false;
-        }
+        return LinearRegex.Get(GlobToRegex(specifier), options);
     }
 
     /// <summary>
@@ -116,6 +118,11 @@ public static class BashRuleMatcher
     /// So <c>:*</c> is a strict superset of <c> *</c> (it additionally allows a
     /// colon suffix). A non-trailing <c>*</c>, or a trailing <c>*</c> not preceded
     /// by <c>:</c> or a space (e.g. <c>ls*</c>), stays an ordinary glob.
+    /// <para>
+    /// ⚠ The output must stay lookaround- and backreference-free: it runs on the
+    /// NonBacktracking engine, which rejects both. It is escaped literals, <c>.*</c> and
+    /// an optional trailing group, nothing else.
+    /// </para>
     /// </summary>
     internal static string GlobToRegex(string glob)
     {
