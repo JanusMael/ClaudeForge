@@ -305,6 +305,91 @@ public sealed class SavePreservationTests : IDisposable
             + "the dirty check stops at the first section and the user cannot save the change.");
     }
 
+    /// <summary>
+    /// The sequence behind this class's load-dependent failure, seen 2026-09-28: 1 run in ~40
+    /// under full-core CPU load found the file on disk still the unmodified fixture after a save.
+    /// <para>
+    /// A watcher hit for content the load had already read — most likely Windows delivering the
+    /// last-write notification for the fixture <see cref="Setup"/> writes only after the watcher
+    /// was armed — started a reload just after the load. The reload set <c>IsLoading</c>, the
+    /// edit went to the client it was about to replace, and <c>SaveCoreAsync</c> returned early
+    /// on <c>IsLoading</c> without writing. Before the fix this test fails with exactly that
+    /// signature: <c>cleanupPeriodDays</c> is still 90. A user whose editor or sync tool rewrites
+    /// a file without changing it loses edits the same way.
+    /// </para>
+    /// <para>
+    /// The hit is driven through <c>HandleExternalChangeAsync</c> rather than a real
+    /// notification, so the ordering that load produced by chance happens here every time.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task WatcherHit_ForContentAlreadyLoaded_DoesNotReload_SoTheSaveReachesDisk()
+    {
+        (bool Reloaded, string After) result = await Session.Dispatch(
+            async () =>
+            {
+                using MainWindowViewModel vm = BuildViewModel();
+                await vm.LoadAllWorkspacesAsync();
+                Assert.NotNull(vm.ClaudeCodeSdk);
+                MessageAssert.Equal(CommentedSettings, await File.ReadAllTextAsync(CcSettingsPath),
+                    "Precondition: the file must still be exactly what was loaded, or this hit is a "
+                    + "genuine external edit and reloading on it would be correct.");
+
+                await vm.HandleExternalChangeAsync(CcSettingsPath);
+                bool reloaded = vm.LastAutomaticReload is not null;
+
+                vm.ClaudeCodeSdk.SetValue("cleanupPeriodDays", 45, ConfigScope.User);
+                await vm.SaveForBackupOrRestoreAsync(isRestoreContext: false);
+
+                if (vm.LastAutomaticReload is { } reload)
+                {
+                    await reload;
+                }
+
+                return (reloaded, await File.ReadAllTextAsync(CcSettingsPath));
+            },
+            CancellationToken.None);
+
+        Assert.False(result.Reloaded,
+            "A watcher hit for content the workspace already holds must not reload: nothing on "
+            + "disk is newer than what is in memory, and the reload discards in-memory edits.");
+        MessageAssert.Equal(45, TopLevelInt(result.After, "cleanupPeriodDays"),
+            "The edit made after the hit must reach disk.");
+    }
+
+    /// <summary>
+    /// The other direction, so the fix above cannot pass by making the watcher inert: a hit for
+    /// content that really did change must still reload and pick the change up.
+    /// </summary>
+    [Fact]
+    public async Task WatcherHit_ForAGenuineExternalEdit_StillReloads()
+    {
+        (bool Reloaded, int Value) result = await Session.Dispatch(
+            async () =>
+            {
+                using MainWindowViewModel vm = BuildViewModel();
+                await vm.LoadAllWorkspacesAsync();
+                Assert.NotNull(vm.ClaudeCodeSdk);
+
+                await File.WriteAllTextAsync(CcSettingsPath,
+                    CommentedSettings.Replace("\"cleanupPeriodDays\": 90", "\"cleanupPeriodDays\": 77",
+                        StringComparison.Ordinal));
+
+                await vm.HandleExternalChangeAsync(CcSettingsPath);
+                if (vm.LastAutomaticReload is not { } reload)
+                {
+                    return (false, -1);
+                }
+
+                await reload;
+                return (true, vm.ClaudeCodeSdk!.GetEffective<int>("cleanupPeriodDays"));
+            },
+            CancellationToken.None);
+
+        Assert.True(result.Reloaded, "An external edit that changed the file must reload.");
+        MessageAssert.Equal(77, result.Value, "The reload must pick up the external edit.");
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────
 
     private static MainWindowViewModel BuildViewModel()

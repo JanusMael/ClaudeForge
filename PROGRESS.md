@@ -269,6 +269,33 @@ the defect.
      for reading old archives. An entry for a literal the named file does not hold would exempt
      nothing.
 
+9. ⏳ **`SavePreservationTests` lost a save under CPU load — cause found and fixed, the under-load rate
+   still to measure.** Seen 2026-09-28 with one busy `pwsh` per logical core: 1 of 40 class runs on
+   `main` (`GuiSave_RewritingAWholeObject_…`: `"changed"` not on disk), 1 of 12 full-suite runs on
+   another branch (`GuiSave_WithWriterLegacy_…`: `cleanupPeriodDays` still the fixture's 90). Every
+   time, the file on disk was the unmodified fixture. **The sequence:** a watcher hit arrived for
+   content the load had already read and started a reload just after the load. The reload set
+   `IsLoading`, the test's edit went to the client it was about to replace, and `SaveCoreAsync`
+   returned early on `IsLoading`, logged at Debug only and shown to nobody. The likely source of the
+   hit is Windows delivering the last-write notification for the fixture write late, after the
+   watcher was armed, and later the busier the machine. That source was not captured: the diagnostic
+   stress run was stopped at 20 of 80 runs, all green, because 16 normal-priority burners made the
+   machine unusable. **The fix:** `MainWindowViewModel.HandleExternalChangeAsync` (the UI-thread half
+   of the watcher callback, now internal) first compares the file on disk with the text the open
+   client last read or wrote (`AgentConfigClientCore.TryGetLoadedText`, i.e.
+   `SettingsDocument.OriginalText`, which a save updates) and skips the reload when they match. It
+   reloads as before when it cannot be sure: the file cannot be read, or no loaded document has the
+   path. No sleep, retry or timeout was added or changed. **The evidence:**
+   `WatcherHit_ForContentAlreadyLoaded_DoesNotReload_SoTheSaveReachesDisk` drives the sequence
+   deterministically and, before the fix, fails with the flake's own signature (expected 45, actual
+   90); `WatcherHit_ForAGenuineExternalEdit_StillReloads` is its control, canaried red by making the
+   check always skip. Suite 3,235 · 0 failed · 13 skipped. ▶ **Next: the before/after rate under full
+   load (16 burners, normal priority), run ONLY while the maintainer is away**, then the PR. Run the
+   original five tests in both binaries (`--filter-method '*GuiSave_*' --filter-method
+   '*HasUnsavedChanges_*'`): the new test is red by design in the "before" binary. ⚠ Out of scope and
+   still open: a GENUINE external edit that lands while the user has unsaved edits still reloads and
+   discards them, and a save that meets `IsLoading` still returns without telling the user.
+
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 
 | Step | State |

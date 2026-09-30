@@ -1268,6 +1268,41 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
         }
     }
 
+    /// <summary>
+    /// The text this client last read from, or wrote to, <paramref name="filePath"/> —
+    /// <see cref="SettingsDocument.OriginalText"/>, which a save updates to what it wrote.
+    /// </summary>
+    /// <returns>
+    /// <see langword="false"/> when no loaded document has that path. <paramref name="text"/>
+    /// is <see langword="null"/> for a document whose file did not exist, or could not be read,
+    /// when it was loaded.
+    /// </returns>
+    /// <remarks>
+    /// Lets a file-watcher subscriber tell a notification about content the workspace already
+    /// holds from a genuine external edit. Windows can deliver a last-write notification for a
+    /// write that completed BEFORE the watcher was armed, and reloading on it discards the
+    /// in-memory edits of a workspace that was never out of date.
+    /// </remarks>
+    internal bool TryGetLoadedText(string filePath, out string? text)
+    {
+        ThrowIfDisposed();
+        EnterStateLock();
+        try
+        {
+            StringComparison comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            SettingsDocument? doc = _workspace?.Documents
+                                              .FirstOrDefault(d => string.Equals(d.FilePath, filePath, comparison));
+            text = doc?.OriginalText;
+            return doc is not null;
+        }
+        finally
+        {
+            ExitStateLock();
+        }
+    }
+
     // ── Internal helpers for typed accessors (4.3.4) ──────────────────────
 
     /// <summary>

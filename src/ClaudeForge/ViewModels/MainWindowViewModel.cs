@@ -5061,45 +5061,113 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // the reload signal when multiple watcher events are queued while a reload is
         // already in flight.  Instead let ReloadAsync's _reloadPending guard handle it —
         // it correctly restarts one additional reload after the current one finishes.
-        Dispatcher.UIThread.Post(() =>
+        // Nothing awaits the handler, so log a fault rather than leave it unobserved.
+        Dispatcher.UIThread.Post(() => _ = HandleExternalChangeAsync(filePath).ContinueWith(
+            t => Log.Error(t.Exception, "[FileWatcher] Handling a change to {File} failed",
+                Path.GetFileName(filePath)),
+            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default));
+    }
+
+    /// <summary>
+    /// The UI-thread half of <see cref="OnFileChangedExternally"/>: decides whether a debounced
+    /// watcher hit is our own write, or content already loaded, and otherwise reloads.
+    /// Internal so a test can drive one hit without a real file-system notification.
+    /// </summary>
+    internal async Task HandleExternalChangeAsync(string filePath)
+    {
+        // Content already loaded: nothing on disk is newer than memory, so reloading would only
+        // discard in-memory edits. Checked FIRST because it is the only await here — the save
+        // guards below must see the state after it, not before.
+        //
+        // ⛔ This is not the self-write case in disguise. A hit can arrive for content that never
+        // changed after the load read it — a notification Windows delivered late for a write
+        // made BEFORE the watcher was armed, or a tool that rewrites a file byte for byte. When
+        // one lands just after a load, the reload it starts sets IsLoading, SaveCoreAsync
+        // returns early on that, and the user's next edit never reaches disk. That is the
+        // SavePreservationTests failure seen 1 run in ~40 under CPU load (2026-09-28); its test
+        // WatcherHit_ForContentAlreadyLoaded_… reproduces the sequence deterministically.
+        if (await IsAlreadyLoadedAsync(filePath))
         {
-            // in-progress-save suppression. Covers the dialog
-            // window of SaveCoreAsync (between editor flush and disk
-            // write). Without this, an external mod during the dialog
-            // would trigger a reload that disposes the SDK clients and
-            // discards the in-memory user edits, causing the subsequent
-            // SaveAsync to write a no-op or stale state. See
-            // _saveInProgressCount field comment.
-            if (Volatile.Read(ref _saveInProgressCount) > 0)
-            {
-                EnqueueWatcherEvent(filePath, "self-write, reload suppressed (save in progress)");
-                Log.Debug("[FileWatcher] Suppressed reload for {File} (save in progress)",
-                    Path.GetFileName(filePath));
-                return;
-            }
+            EnqueueWatcherEvent(filePath, "content unchanged since load, reload skipped");
+            Log.Debug("[FileWatcher] Skipped reload for {File} (content matches what is loaded)",
+                Path.GetFileName(filePath));
+            return;
+        }
 
-            //  self-write suppression. SaveCoreAsync stamps a
-            // ~2 s deadline on _suppressWatcherUntilUtc; the watcher
-            // re-firing on our own write within that window must NOT
-            // trigger a reload, because the reload rebuilds the navigation
-            // tree and disposes long-running tool VMs (Backup, Profiles)
-            // mid-operation. See _suppressWatcherUntilUtc field comment.
-            if (IsWithinSelfWriteSuppressionWindow())
-            {
-                EnqueueWatcherEvent(filePath, "self-write, reload suppressed (post-save window)");
-                Log.Debug("[FileWatcher] Suppressed reload for {File} (within post-save window)",
-                    Path.GetFileName(filePath));
-                return;
-            }
+        // in-progress-save suppression. Covers the dialog
+        // window of SaveCoreAsync (between editor flush and disk
+        // write). Without this, an external mod during the dialog
+        // would trigger a reload that disposes the SDK clients and
+        // discards the in-memory user edits, causing the subsequent
+        // SaveAsync to write a no-op or stale state. See
+        // _saveInProgressCount field comment.
+        if (Volatile.Read(ref _saveInProgressCount) > 0)
+        {
+            EnqueueWatcherEvent(filePath, "self-write, reload suppressed (save in progress)");
+            Log.Debug("[FileWatcher] Suppressed reload for {File} (save in progress)",
+                Path.GetFileName(filePath));
+            return;
+        }
 
-            EnqueueWatcherEvent(filePath, "external change → reloading");
-            SetStatusActive(string.Format(Strings.StatusReloadingFileFmt, Path.GetFileName(filePath)));
-            // FileSystemWatcher fire — automatic trigger, NOT user-initiated.
-            // Use ReloadCoreAsync so dismissed banners stay dismissed (a file
-            // watcher can fire many times per minute on a busy edit session;
-            // resetting banners on each fire would nag the user constantly).
-            LastAutomaticReload = ReloadCoreAsync();
-        });
+        //  self-write suppression. SaveCoreAsync stamps a
+        // ~2 s deadline on _suppressWatcherUntilUtc; the watcher
+        // re-firing on our own write within that window must NOT
+        // trigger a reload, because the reload rebuilds the navigation
+        // tree and disposes long-running tool VMs (Backup, Profiles)
+        // mid-operation. See _suppressWatcherUntilUtc field comment.
+        if (IsWithinSelfWriteSuppressionWindow())
+        {
+            EnqueueWatcherEvent(filePath, "self-write, reload suppressed (post-save window)");
+            Log.Debug("[FileWatcher] Suppressed reload for {File} (within post-save window)",
+                Path.GetFileName(filePath));
+            return;
+        }
+
+        EnqueueWatcherEvent(filePath, "external change → reloading");
+        SetStatusActive(string.Format(Strings.StatusReloadingFileFmt, Path.GetFileName(filePath)));
+        // FileSystemWatcher fire — automatic trigger, NOT user-initiated.
+        // Use ReloadCoreAsync so dismissed banners stay dismissed (a file
+        // watcher can fire many times per minute on a busy edit session;
+        // resetting banners on each fire would nag the user constantly).
+        LastAutomaticReload = ReloadCoreAsync();
+    }
+
+    /// <summary>
+    /// Whether <paramref name="filePath"/> on disk holds exactly the text an open client last
+    /// read from or wrote to it. A missing file matches a document loaded for a missing file.
+    /// </summary>
+    /// <remarks>
+    /// Answers <see langword="false"/> — reload, as before this check existed — whenever it
+    /// cannot be sure: the file cannot be read, or no loaded document has the path. The loaded
+    /// text is looked up AFTER the read, so a save that lands during it is compared as it now is.
+    /// </remarks>
+    private async Task<bool> IsAlreadyLoadedAsync(string filePath)
+    {
+        string? onDisk;
+        try
+        {
+            // The loader's own read, so the two texts are decoded identically.
+            onDisk = await ConfigFileLoader.ReadSharedAsync(filePath, CancellationToken.None);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            onDisk = null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Debug(ex, "[FileWatcher] Could not read {File} to compare; reloading", Path.GetFileName(filePath));
+            return false;
+        }
+
+        foreach (ProductSection section in OpenSections)
+        {
+            if (section.Client!.TryGetLoadedText(filePath, out string? loaded))
+            {
+                return string.Equals(onDisk, loaded, StringComparison.Ordinal);
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
