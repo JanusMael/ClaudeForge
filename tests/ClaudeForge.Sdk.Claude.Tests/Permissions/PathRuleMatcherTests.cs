@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
+using System.Text.RegularExpressions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
@@ -226,4 +227,95 @@ public sealed class PathRuleMatcherTests
         Assert.True(Match("Read(secrets/**)", "/proj/secrets/x.txt"));
         Assert.True(Match("Read(secrets/**)", "/proj/secrets/a/b.txt"));
     }
+
+    // -----------------------------------------------------------------------
+    // Linear-time matching, no wall-clock timeout
+    // -----------------------------------------------------------------------
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public void ToRegex_IsLinear_WithNoTimeout(bool anchored, bool caseInsensitive)
+    {
+        // Match used a 200 ms timeout and returned "no match" when it fired. For a DENY
+        // rule that is fail-open, and the timeout measured elapsed time, not work.
+        Regex regex = PathRuleMatcher.ToRegex("**/secrets/*.env", anchored, caseInsensitive);
+
+        Assert.True(
+            regex.Options.HasFlag(RegexOptions.NonBacktracking),
+            "The path rule regex must run on NonBacktracking, which is linear in the input length.");
+        Assert.Equal(Regex.InfiniteMatchTimeout, regex.MatchTimeout);
+    }
+
+    [Fact(Timeout = 30000)]
+    // ⓘ The 30 s budget only separates "finished" from "hung". The assertion is the
+    // RESULT: the old 200 ms timeout returned false for this matching path, idle or not.
+    public async Task Match_PathologicalGlob_LongMatchingPath_IsTrue()
+    {
+        // `**` not beside a slash is "any characters", so this compiles to
+        // ^(.*/)?a.*a.*a.*a.*a.*Z.*Q$. Backtracking took 2.3 s on an 86-character name.
+        string name = "aaaaaZ" + new string('a', 2000) + "Q";
+
+        bool matched = await Task.Run(
+            () => Match("Read(a**a**a**a**a**Z**Q)", "/proj/deep/" + name),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(matched, "A path that matches the glob must match, however long the search.");
+        Assert.False(Match("Read(a**a**a**a**a**Z**Q)", "/proj/deep/" + name + "x"), "The same glob must still reject a non-match.");
+    }
+
+    [Fact]
+    public void BuildRegex_BuildsOnNonBacktracking_AndAgreesWithBacktracking()
+    {
+        // NonBacktracking throws at construction on a lookaround or backreference, so
+        // building every generated pattern proves GlobBody emits neither. Comparing
+        // against the backtracking engine proves the engine switch changed no answer.
+        Random rng = new(20260930);
+        const string globAlphabet = "aB*?/.()[]$+";
+        const string fill = "aBb/.()[]$+";
+        int matches = 0, nonMatches = 0;
+
+        for (int g = 0; g < 300; g++)
+        {
+            string glob = RandomString(rng, globAlphabet, rng.Next(1, 9));
+            bool anchored = g % 3 == 0;
+            RegexOptions options = RegexOptions.CultureInvariant
+                                   | (g % 2 == 1 ? RegexOptions.IgnoreCase : RegexOptions.None);
+            string pattern = PathRuleMatcher.BuildRegex(glob, anchored);
+
+            Regex linear = new(pattern, options | RegexOptions.NonBacktracking);
+            Regex backtracking = new(pattern, options);
+
+            for (int i = 0; i < 20; i++)
+            {
+                // Half the inputs are the glob with each * and ? filled in, so matches occur.
+                string input = i % 2 == 0
+                    ? string.Concat(glob.Select(c => c switch
+                    {
+                        '*' => RandomString(rng, fill, rng.Next(0, 4)),
+                        '?' => RandomString(rng, fill, 1),
+                        _ => c.ToString(),
+                    }))
+                    : RandomString(rng, fill, rng.Next(0, 9));
+                bool expected = backtracking.IsMatch(input);
+                Assert.True(
+                    expected == linear.IsMatch(input),
+                    $"Engines disagree on glob \"{glob}\" (pattern {pattern}) for input \"{input}\".");
+                if (expected)
+                {
+                    matches++;
+                }
+                else
+                {
+                    nonMatches++;
+                }
+            }
+        }
+
+        // The premise: the corpus exercised both answers, not only one.
+        Assert.True(matches > 100 && nonMatches > 100, $"Corpus too one-sided: {matches} matches, {nonMatches} non-matches.");
+    }
+
+    private static string RandomString(Random rng, string alphabet, int length) =>
+        new(Enumerable.Range(0, length).Select(_ => alphabet[rng.Next(alphabet.Length)]).ToArray());
 }

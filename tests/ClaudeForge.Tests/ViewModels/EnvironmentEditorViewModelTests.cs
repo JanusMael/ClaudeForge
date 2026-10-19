@@ -4,6 +4,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
+using System.Text.RegularExpressions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -480,5 +481,16 @@ public class EnvironmentEditorViewModelTests
 
         Assert.True(vm.NewVarNameIsValid,
             "An empty name (not yet typed) should be treated as valid/unset.");
+    }
+
+    [Fact]
+    public void EnvKeyRegex_IsLinear_WithNoTimeout()
+    {
+        // IsValidEnvKey used a 50 ms timeout and returned "invalid" when it fired, so on a
+        // loaded machine a valid name was refused, depending on how busy the machine was.
+        Assert.True(
+            EnvironmentEditorViewModel.EnvKeyRegex.Options.HasFlag(RegexOptions.NonBacktracking),
+            "The env-key regex must run on NonBacktracking, which is linear in the input length.");
+        Assert.Equal(Regex.InfiniteMatchTimeout, EnvironmentEditorViewModel.EnvKeyRegex.MatchTimeout);
     }
 }

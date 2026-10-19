@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
+using System.Text.RegularExpressions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Permissions;
 
@@ -129,4 +130,92 @@ public sealed class BashRuleMatcherTests
         // documents that boundary (see PermissionResolverTests for the guard).
         Assert.True(Match("Bash(npm test *)", "npm test && rm -rf /"));
     }
+
+    // -----------------------------------------------------------------------
+    // Linear-time matching, no wall-clock timeout
+    // -----------------------------------------------------------------------
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ToRegex_IsLinear_WithNoTimeout(bool caseInsensitive)
+    {
+        // Match used a 100 ms timeout and returned "no match" when it fired. For a DENY
+        // rule that is fail-open, and the timeout measured elapsed time, not work.
+        Regex regex = BashRuleMatcher.ToRegex("npm run test:*", caseInsensitive);
+
+        Assert.True(
+            regex.Options.HasFlag(RegexOptions.NonBacktracking),
+            "The Bash rule regex must run on NonBacktracking, which is linear in the input length.");
+        Assert.Equal(Regex.InfiniteMatchTimeout, regex.MatchTimeout);
+    }
+
+    [Fact(Timeout = 30000)]
+    // ⓘ The 30 s budget only separates "finished" from "hung". The assertion is the
+    // RESULT: the old 100 ms timeout returned false for this matching command, idle or not.
+    public async Task Match_PathologicalGlob_LongMatchingCommand_IsTrue()
+    {
+        // ^.*a.*a.*a.*a.*a.*Z.*Q$ — the greedy stars first try every split among the
+        // trailing a's, which never contain the Z, before reaching the early one that does.
+        // Backtracking took 429 ms at 51 characters and over 20 s at 86. This is 2,007.
+        string command = "aaaaaZ" + new string('a', 2000) + "Q";
+
+        bool matched = await Task.Run(
+            () => Match("Bash(*a*a*a*a*a*Z*Q)", command),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(matched, "A command that matches the glob must match, however long the search.");
+        Assert.False(Match("Bash(*a*a*a*a*a*Z*Q)", command + "x"), "The same glob must still reject a non-match.");
+    }
+
+    [Fact]
+    public void GlobToRegex_BuildsOnNonBacktracking_AndAgreesWithBacktracking()
+    {
+        // NonBacktracking throws at construction on a lookaround or backreference, so
+        // building every generated pattern proves GlobToRegex emits neither. Comparing
+        // against the backtracking engine proves the engine switch changed no answer.
+        // Regex metacharacters are in the alphabet because GlobToRegex escapes them.
+        Random rng = new(20260930);
+        const string globAlphabet = "aB*: ?.\\()[]$^+|{}";
+        const string fill = "aBb: .\\()[]$^+|{}\n";
+        int matches = 0, nonMatches = 0;
+
+        for (int g = 0; g < 300; g++)
+        {
+            string glob = RandomString(rng, globAlphabet, rng.Next(1, 9));
+            bool caseInsensitive = g % 2 == 1;
+            RegexOptions options = RegexOptions.CultureInvariant | RegexOptions.Singleline
+                                   | (caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None);
+            string pattern = BashRuleMatcher.GlobToRegex(glob);
+
+            Regex linear = new(pattern, options | RegexOptions.NonBacktracking);
+            Regex backtracking = new(pattern, options);
+
+            for (int i = 0; i < 20; i++)
+            {
+                // Half the inputs are the glob with each * filled in, so matches occur.
+                string input = i % 2 == 0
+                    ? string.Concat(glob.Select(c => c == '*' ? RandomString(rng, fill, rng.Next(0, 4)) : c.ToString()))
+                    : RandomString(rng, fill, rng.Next(0, 9));
+                bool expected = backtracking.IsMatch(input);
+                Assert.True(
+                    expected == linear.IsMatch(input),
+                    $"Engines disagree on glob \"{glob}\" (pattern {pattern}) for input \"{input}\".");
+                if (expected)
+                {
+                    matches++;
+                }
+                else
+                {
+                    nonMatches++;
+                }
+            }
+        }
+
+        // The premise: the corpus exercised both answers, not only one.
+        Assert.True(matches > 100 && nonMatches > 100, $"Corpus too one-sided: {matches} matches, {nonMatches} non-matches.");
+    }
+
+    private static string RandomString(Random rng, string alphabet, int length) =>
+        new(Enumerable.Range(0, length).Select(_ => alphabet[rng.Next(alphabet.Length)]).ToArray());
 }
