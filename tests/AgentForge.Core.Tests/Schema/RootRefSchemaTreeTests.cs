@@ -16,9 +16,18 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// loaded declared <c>properties</c> at its root.
 /// </para>
 /// <para>
-/// Both real schemas are asserted, not just the interesting one. <c>tui.json</c> is the
-/// control: it is an ordinary object schema, so it must produce the same tree with or
-/// without the fallback, which is what shows the fallback did not change the normal path.
+/// ⛔ <b>Since 2026-10-19 no bundled schema uses a root <c>$ref</c>, so the fallback is
+/// guarded by a SYNTHETIC schema, not a real one.</b> <c>opencode-config.json</c> was the
+/// only real instance; upstream then inlined its root (48 <c>properties</c>, and
+/// <c>$defs/Config</c> removed). Updating that test's count alone would have left it green
+/// while it exercised nothing of the fallback — a name promising coverage it no longer had.
+/// <see cref="ARootRefWithoutProperties_IsFollowed"/> is now the fallback's only positive
+/// guard, and it was canaried: disabling the fallback reddens it.
+/// </para>
+/// <para>
+/// Both real schemas are still asserted, now as ordinary object schemas: <c>tui.json</c>
+/// remains the control, and the config schema is a regression count of what the user must
+/// be able to edit.
 /// </para>
 /// </remarks>
 public class RootRefSchemaTreeTests
@@ -42,28 +51,73 @@ public class RootRefSchemaTreeTests
     }
 
     /// <summary>
-    /// The measurement spike S4 recorded, now a regression test. 36 is not a magic number:
-    /// it is every property of <c>$defs/Config</c>, which is what the user must be able to
-    /// edit. A drop to 0 means the fallback stopped firing; any other change means upstream
-    /// altered the schema and the count should be updated deliberately.
+    /// The fallback's positive case, on a schema written to need it: the whole object hangs off
+    /// a root <c>$ref</c> and the root declares no <c>properties</c>. The tree must be the
+    /// target's properties — exactly those, so a fallback that resolved some other subschema
+    /// cannot pass on arity alone.
     /// </summary>
     [Fact]
-    public void OpenCodeConfig_RootRefIsFollowed_SoTheTreeIsNotEmpty()
+    public void ARootRefWithoutProperties_IsFollowed()
+    {
+        JsonSchemaNode root = ParseNode(
+            """
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$ref": "#/$defs/Config",
+              "$defs": {
+                "Config": {
+                  "type": "object",
+                  "properties": {
+                    "model": { "type": "string" },
+                    "permission": { "type": "object" },
+                    "provider": { "type": "object" }
+                  }
+                },
+                "Decoy": {
+                  "type": "object",
+                  "properties": { "notTheTarget": { "type": "string" } }
+                }
+              }
+            }
+            """);
+
+        List<SchemaNode> nodes = SchemaTreeBuilder.BuildTopLevel(root).ToList();
+
+        MessageAssert.NotEqual(0, nodes.Count,
+            "A root $ref with no `properties` produced an empty tree — the exact silent failure "
+            + "the fallback exists to prevent: the editor renders a page with nothing on it.");
+
+        MessageAssert.SameElements(
+            new[] { "model", "permission", "provider" },
+            nodes.Select(n => n.Name).Order(StringComparer.Ordinal).ToArray(),
+            "The fallback must surface the $ref TARGET's properties, and only those.");
+    }
+
+    /// <summary>
+    /// The real config schema, as a regression count. 48 is not a magic number: it is every
+    /// root property of <c>opencode-config.json</c>, which is what the user must be able to
+    /// edit. Any change means upstream altered the schema and the count should be updated
+    /// deliberately.
+    /// </summary>
+    /// <remarks>
+    /// ⓘ <b>Corrected 2026-10-19.</b> This was <c>OpenCodeConfig_RootRefIsFollowed_SoTheTreeIsNotEmpty</c>,
+    /// asserting 36 properties reached through the root-<c>$ref</c> fallback (spike S4). Upstream
+    /// inlined the root, so the real schema no longer reaches the fallback at all; the name is
+    /// changed because keeping it would claim coverage this test no longer gives. The
+    /// fallback's guard is <see cref="ARootRefWithoutProperties_IsFollowed"/>.
+    /// </remarks>
+    [Fact]
+    public void OpenCodeConfig_EveryRootPropertyIsInTheTree()
     {
         List<SchemaNode> nodes = TopLevel("opencode-config.json");
 
-        MessageAssert.NotEqual(0, nodes.Count,
-            "opencode-config.json has no root `properties` — everything hangs off "
-            + "\"$ref\": \"#/$defs/Config\". An empty tree here is the exact silent failure "
-            + "the fallback exists to prevent: the editor renders a page with nothing on it.");
+        MessageAssert.Equal(48, nodes.Count,
+            "Expected the 48 root properties of opencode-config.json (measured 2026-10-19, when "
+            + "upstream inlined its root). A different count means upstream changed the schema; "
+            + "confirm the new shape and update this number deliberately.");
 
-        MessageAssert.Equal(36, nodes.Count,
-            "Expected the 36 top-level properties of $defs/Config (spike S4). A different "
-            + "count means upstream changed the schema; confirm the new shape and update "
-            + "this number deliberately.");
-
-        // Spot-check identity, not just arity: a fallback that resolved the wrong subschema
-        // could still yield 36 of something else.
+        // Spot-check identity, not just arity: a builder that read the wrong subschema could
+        // still yield 48 of something else.
         foreach (string expected in new[] { "model", "permission", "provider", "agent" })
         {
             Assert.True(
