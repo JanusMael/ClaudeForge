@@ -17,6 +17,19 @@
     </ItemGroup>
 
     <!--
+        ConfigFileWatcherFailureTests drives ConfigFileWatcher's poll through internals that the
+        published packages at SharedPackageVersion 2026.3.925 do not contain, so in package mode
+        (the published-version job) it cannot compile against that pin, and a test project that
+        does not compile runs no test at all. KEYED ON THE PIN ITSELF: once the pin moves to a
+        release that carries the poll, the file compiles in package mode again with no edit here,
+        and a pin that moved without the poll fails the build on this file. The package canary
+        packs this commit, so it compiles and runs the test throughout.
+    -->
+    <ItemGroup Condition="'$(UseSharedPackages)' == 'true' And '$(SharedPackageVersion)' == '2026.3.925'">
+        <Compile Remove="FileIO/ConfigFileWatcherFailureTests.cs"/>
+    </ItemGroup>
+
+    <!--
         Frozen backup archives, restored by BackupArchiveCompatibilityTests.
 
         ⛔ These are BINARY FIXTURES and must never be regenerated to make a test pass. Each one

@@ -137,16 +137,18 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — `plans/00005` and `plans/00006` are MERGED (#77, #79); next: the AgentForge package release
+## ▶ RESUME HERE — `plans/00008` Phase A is MERGED (#105–#107); next: Phase B step 4, `AgentForge.Avalonia.Shell.Tests`
 
 | | |
 |---|---|
-| `main` | #77–#85 merged by 2026-09-25 (admin, merge commits, over the two red-by-construction jobs only); the xUnit move and all its follow-ups are in. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,237 · 0 failed · 12–13 skipped**, xUnit v4 on MTP v2 (item 7), across **six** test assemblies (= six test csproj; JsonC.Tests' 73 left with plans/00007; +2 XamlQuality rule guards, +6 plans/00008 guards and golden fixtures (item 8), +4 permission-regex guards (item 9)), Debug; one skip flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total |
-| CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion`. They were RED by construction at `2026.3.922` (NU1101: its `LayeredEditors.*` dependencies no longer exist); the pin to `2026.3.925` is what clears them |
-| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.928`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted) |
+| `main` | 2026-10-19: ten PRs merged one at a time, each green on its own head — #119 and #122 from sessions, and Dependabot's #109, #112, #115–#118, #120 and #121 (#121 after a requested rebase). The combined head `abc2bd8e` then ran all 7 CI jobs green plus CodeQL. #110 and #111 were closed as superseded: all three AppServices PRs edited the one `AppServicesVersion` line, and #109 had landed it. #103 merged on top. ⓘ `git log -1` is the answer for HEAD |
+| Suite | **3,238 · 0 failed · 12–13 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies (= six test csproj), Debug — measured 2026-10-19 on #103 merged with that day's `main`, so it includes #103's permission-regex guards. Two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present (13 with it, 12 without). ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
+| CI on `main` | 17 checks, all green. `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion` `2026.3.925`. ⚠ The permission-rule regex timeout can fail a permissions test under load, and did once in CI on #105. **#103 (rule VALIDATION) merged 2026-10-19**; #108 (rule MATCHING) lands next, with the package release its new `AgentForge.Core.Text.LinearRegex` needs — until that release, `Published Version` cannot compile it (`CS0234`) |
+| Packages consumed | ScopedEditors **`2026.3.924`**, AppServices **`2026.4.1001`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.4**, DataGrid **12.1.2** (it ships on its own cadence and has no 12.1.4), AutoVersioning **`2026.3.928`**, XamlQuality **`2026.4.1014`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted). All read from `main` on 2026-10-19 |
 
-**Next, in order:**
+**Next:** `plans/00008` step 4 (item 8 below has the state, the drift and what each finished step
+measured), then step 5, whose neutral test product also gets the frozen archive moved there from
+step 3. The items below are kept in order; those marked ✅ are done.
 
 1. ✅ **`packages-v2026.3.925` — the BREAKING release of the six — is PUBLISHED** (2026-09-25, run
    `36137772405`, tagged by the agent on the maintainer's explicit instruction for this one release;
