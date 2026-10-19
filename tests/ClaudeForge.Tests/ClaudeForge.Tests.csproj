@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia.Headless" Version="12.1.3" />
+        <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
         <!--
           BNXQ1001 replaces this repo's hand-rolled Expander automation-name scan. It was XQ1001
           through 2026.3.924; the family prefix is permanent from 2026.3.925.
@@ -39,7 +39,7 @@
           authenticated feed, so this id falls to nuget.org's `*`. That is the payoff for naming
           the family there instead of a broad prefix.
         -->
-        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.3.928" />
+        <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1014" />
     </ItemGroup>
 
     <ItemGroup>

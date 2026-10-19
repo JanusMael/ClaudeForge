@@ -21,17 +21,14 @@
                 IsVisible="{Binding ShowFilterBar}">
             <StackPanel Orientation="Horizontal" Spacing="6">
                 <!-- BOTH states are styled, and the Border sets NO BorderBrush attribute of its
-                     own. Two Avalonia rules bite here, and the frame stays invisible unless both
-                     are respected:
-                       1. A control's Styles apply to its DESCENDANTS, not to itself — so this
-                          selector must live on the PARENT, not inside the Border's own .Styles.
-                       2. A local value (BorderBrush="Transparent" written as an attribute)
-                          OUTRANKS every Style setter, whatever the selector. So the previous
-                          "transparent by default + orange via style" shape could never light up:
-                          the local Transparent always won. Both values therefore come from
-                          styles, and the more specific .filter-frame.nav-filter wins when the
-                          class is applied. (Same LocalValue-beats-Style hazard documented in
-                          MarkdownBodyView.) -->
+                     own. A local value (BorderBrush="Transparent" written as an attribute)
+                     OUTRANKS every Style setter, whatever the selector. So the previous
+                     "transparent by default + orange via style" shape could never light up: the
+                     local Transparent always won. Both values therefore come from styles, and
+                     the more specific .filter-frame.nav-filter wins when the class is applied.
+                     (Same LocalValue-beats-Style hazard documented in MarkdownBodyView.) The
+                     styles sit on this parent StackPanel by choice: a control's own Styles
+                     would reach the Border too. -->
                 <StackPanel.Styles>
                     <Style Selector="Border.filter-frame">
                         <Setter Property="BorderBrush" Value="Transparent" />

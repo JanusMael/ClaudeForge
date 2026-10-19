@@ -179,13 +179,9 @@
             <Border DockPanel.Dock="Top" Margin="16,0,16,0" Padding="0,0,0,6">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <!-- BOTH border states come from styles and the Border below sets
-                         NO BorderBrush attribute, because two Avalonia rules bite here
-                         and the frame stays invisible unless both are respected:
-                           1. A control's Styles apply to its DESCENDANTS, not itself —
-                              so these selectors must live on the PARENT.
-                           2. A local value (an attribute) OUTRANKS every Style setter,
-                              whatever the selector — so a default written inline could
-                              never be overridden by the .nav-filter class.
+                         NO BorderBrush attribute: a local value (an attribute) OUTRANKS
+                         every Style setter, whatever the selector, so a default written
+                         inline could never be overridden by the .nav-filter class.
                          Same shape as GroupPropertiesView's filter frame. -->
                     <StackPanel.Styles>
                         <Style Selector="Border.filter-frame">
