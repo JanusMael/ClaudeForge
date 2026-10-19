@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Core.Text;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 
@@ -42,8 +43,6 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
 /// </remarks>
 public static class PathRuleMatcher
 {
-    private static readonly TimeSpan s_timeout = TimeSpan.FromMilliseconds(200);
-
     /// <summary>
     /// Returns <see langword="true"/> when <paramref name="candidatePath"/>
     /// matches the path <paramref name="rule"/> resolved against
@@ -82,17 +81,23 @@ public static class PathRuleMatcher
             return false;
         }
 
-        string regex = BuildRegex(sub, anchored);
+        return ToRegex(sub, anchored, caseInsensitive).IsMatch(rel);
+    }
+
+    /// <summary>
+    /// The regex <see cref="Match"/> uses for a sub-pattern: linear in the input length,
+    /// with no match timeout (see <see cref="LinearRegex"/>).
+    /// </summary>
+    /// <remarks>
+    /// ⛔ This used to carry a 200 ms timeout and return "no match" when it fired. For a
+    /// DENY rule that is fail-open, and it fired without load: <c>a**a**a**a**a**Z**Q</c>
+    /// against an 86-character matching path took 2.3 s to backtrack.
+    /// </remarks>
+    internal static Regex ToRegex(string sub, bool anchored, bool caseInsensitive)
+    {
         RegexOptions options = RegexOptions.CultureInvariant
                                | (caseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None);
-        try
-        {
-            return Regex.IsMatch(rel, regex, options, s_timeout);
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            return false;
-        }
+        return LinearRegex.Get(BuildRegex(sub, anchored), options);
     }
 
     /// <summary>
@@ -174,6 +179,10 @@ public static class PathRuleMatcher
     // granted more than written, and the correction makes matching STRICTER — so a path a
     // `deny` rule used to catch is no longer caught by that rule. That direction is fail-open
     // and was accepted deliberately rather than discovered.
+    //
+    // ⚠ The output must stay lookaround- and backreference-free: ToRegex runs it on the
+    // NonBacktracking engine, which rejects both. GitignoreReader.PatternToRegex carries the
+    // same constraint.
     private static string GlobBody(string pattern)
     {
         StringBuilder sb = new();

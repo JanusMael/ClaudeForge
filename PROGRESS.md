@@ -141,10 +141,10 @@ the defect.
 
 | | |
 |---|---|
-| `main` | #104 (`plans/00008` approved) through #107 merged by 2026-09-29, each on a fresh CI run against the `main` it landed on. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,233 · 0 failed · 12 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies, Debug; two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present. ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
-| CI on `main` | 17 checks, all green. `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion` `2026.3.925`. ⚠ The permission-rule regex timeout can fail a permissions test under load, and did once in CI on #105 (fixes in flight: #103, #108) |
-| Packages consumed | ScopedEditors / AppServices **`2026.3.924`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.3**, DataGrid **12.1.2**, XamlQuality **`2026.3.928`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted). ⏳ Dependabot #109–#111 bump AppServices to `2026.4.1001` in three PRs, but it is pinned through ONE `AppServicesVersion`, so they land as one change; #112 bumps AutoVersioning to `2026.3.928` |
+| `main` | 2026-10-19: ten PRs merged one at a time, each green on its own head — #119 and #122 from sessions, and Dependabot's #109, #112, #115–#118, #120 and #121 (#121 after a requested rebase). The combined head `abc2bd8e` then ran all 7 CI jobs green plus CodeQL. #110 and #111 were closed as superseded: all three AppServices PRs edited the one `AppServicesVersion` line, and #109 had landed it. #103 then #108 merged on top. ⓘ `git log -1` is the answer for HEAD |
+| Suite | **3,255 · 0 failed · 12–13 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies (= six test csproj), Debug — measured 2026-10-19 on #108 merged with that day's `main`: exactly **+17** over the 3,238 measured on #103's merge an hour earlier, with nothing else landing between, so those are #108's guards. Two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present (13 with it, 12 without). ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
+| CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion` **`2026.4.1019`**. ⓘ `Published Version` was RED BY CONSTRUCTION between #108's merge and this pin: #108 added `AgentForge.Core.Text.LinearRegex`, and the packages at `2026.3.925` did not contain it (`CS0234`). Cured as one release, in order — `packages-v2026.4.1019` preflighted (5 packages, one version, assemblies `2026.4.1019.1548`, none already on the feed), tagged on #108's merge, published, then verified **5 of 5 on the feed id by id** with the downloaded `AgentForge.Core` carrying `LinearRegex` — and only then this pin. #103 (rule VALIDATION) and #108 (rule MATCHING) both merged 2026-10-19, which ends the permission-rule regex timeout that once failed a permissions test under load in CI on #105 |
+| Packages consumed | ScopedEditors **`2026.3.924`**, AppServices **`2026.4.1001`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.4**, DataGrid **12.1.2** (it ships on its own cadence and has no 12.1.4), AutoVersioning **`2026.3.928`**, XamlQuality **`2026.4.1014`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted). All read from `main` on 2026-10-19 |
 
 **Next:** `plans/00008` step 4 (item 8 below has the state, the drift and what each finished step
 measured), then step 5, whose neutral test product also gets the frozen archive moved there from
@@ -232,7 +232,7 @@ step 3. The items below are kept in order; those marked ✅ are done.
    does. ⚠ **A pre-existing, load-dependent failure surfaced while measuring**, on `main` as much as
    here: permission-rule validation has a wall-clock regex timeout, and on a busy machine
    `Diagnose_WildcardOnlyParens_ExplainsAndSuggests("Bash(***)")` gets "Rule validation timed out"
-   (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Filed as its own task.
+   (5 of 6 local runs on xUnit 3; CI's idle runners stay green). Fixed by item 9.
 8. ⏳ **[`plans/00008`](plans/00008-agentforge-becomes-product-neutral.md) — AgentForge becomes
    product-neutral** (approved 2026-09-29, #104; the move itself is `00009`, drafted after).
    ✅ **Step 1, the guards:** `ProductNeutralityTests` with `Architecture/ProductNeutrality/allow-list.tsv`
@@ -270,6 +270,76 @@ step 3. The items below are kept in order; those marked ✅ are done.
      not in `ExportManifest`; they join the permanent list in step 6, when they come to rest there
      for reading old archives. An entry for a literal the named file does not hold would exempt
      nothing.
+9. ✅ **Permission-rule validation flaked under CPU load: FIXED (2026-09-28).** Symptoms:
+   `PermissionRuleViewModelTests.Diagnose_WildcardOnlyParens_ExplainsAndSuggests`,
+   `PermissionsFullRoundTripTests.DenyList_AddRule_RoundTrips`, and during the xUnit v4 move (item 7)
+   `OnResetToInherited_AfterLoad_ClearsAskListUnsavedAdditions`. All three had one cause.
+   `PermissionRuleViewModel` kept a private copy of the rule regex with a **100 ms wall-clock
+   `matchTimeout`**. A timeout became *"Rule validation timed out"* in `Diagnose`, which the add path
+   treats as invalid, so the rule was never added; `IsValid` returned `false` without comment.
+   - **The pattern was never slow.** A match costs ~1 µs. The first call on a fresh `Compiled`
+     instance costs ~15 ms on an idle machine, because it JITs inside the deadline. On a loaded
+     machine, JIT, GC and descheduling spend the budget; the failures took 152 ms and 363 ms on
+     `Bash(*)`.
+   - **Fix:** the pattern no longer needs a lookahead. `\((?=.*[^)*?])[^)]+\)` became
+     `\([*?]*[^)*?][^)]*\)`, so `PermissionTools.RuleRegex` can run on
+     `RegexOptions.NonBacktracking`, which is linear by construction and has no timeout. The view
+     model uses that shared instance; the copy, both `catch` blocks and the timeout message are gone.
+   - **The two patterns agree on 53.8M enumerated inputs except 250, all shaped `Tool(<only *?>)\n`.**
+     The old lookahead scanned past the `)` and matched the trailing newline that `$` tolerates, so it
+     accepted all-wildcard content it documents as rejected. The new pattern rejects them.
+     `PermissionToolsTests` guards both the engine and this shape. The canary against the old
+     pattern reddened exactly the 4 predicted tests.
+   - **Measured under 16 CPU burners, full `ClaudeForge.Tests` runs on xUnit v3 (before item 7
+     merged):** before, **2 of 6** runs failed; after, **0 of 12**.
+   - ⛔ **A second load flake, NOT this one and NOT fixed:** `SavePreservationTests` sometimes finds
+     that a GUI save **never reached disk**. After-run 1 failed on
+     `GuiSave_WithWriterLegacy_IsLossy_SoTheHatchesCostIsMeasured` (`cleanupPeriodDays` still 90,
+     expected 45). The **untouched base commit `50488e8`** reproduces it: 1 of 40 loaded class runs
+     failed on `GuiSave_RewritingAWholeObject_TouchesOnlyTheKeyThatChanged` (`"changed"` not on disk).
+     Permission-rule validity only drives `HasValidationError` visibility in the view and cannot gate a save.
+   - ~~⚠ **Not fixed here:** `BashRuleMatcher` (100 ms) and `PathRuleMatcher` (200 ms) have the same
+     shape on user globs: a timeout silently becomes "no match". On a loaded machine that shows a
+     **deny** rule as not matching. They are glob-derived, so a rewrite needs its own analysis.~~
+     ✅ **Fixed by #108, item 10** — and it was worse than written here: fail-open without load.
+     #103, this item, merged 2026-10-19.
+10. ✅ **Rule and `.gitignore` matching no longer has a wall-clock regex timeout (2026-09-30; #108,
+   merged 2026-10-19).** `BashRuleMatcher` (100 ms), `PathRuleMatcher` (200 ms), `GitignoreReader`
+   (200 ms) and `EnvironmentEditorViewModel.IsValidEnvKey` (50 ms) each read a match timeout as "no
+   match". The sibling of #103 (item 9), which fixes the same shape in `PermissionRuleViewModel`.
+   - ⛔ **It was fail-open WITHOUT load.** The deny rule `Bash(*a*a*a*a*a*Z*Q)` against a 51-character
+     command that matches took 429 ms to backtrack (86 characters: over 20 s), so the resolver answered
+     **Allow**. The path rule `a**a**a**a**a**Z**Q` took 2.3 s at 86 characters. In `GitignoreReader`
+     the timeout `continue`d past the pattern, so a negated `!keep` line lost its re-include and the
+     file was left out of the backup. `IsValidEnvKey` failed closed: a valid name refused on a busy
+     machine.
+   - **Fix:** one internal `AgentForge.Core.Text.LinearRegex`, which builds every such regex on
+     `RegexOptions.NonBacktracking` with `Regex.InfiniteMatchTimeout` passed explicitly, so a
+     process-wide default cannot put a timeout back. All four `catch` blocks are removed, not widened.
+     ⚠ The engine costs ~2 ms to construct (the backtracking one ~20 µs), and the collision detector
+     matches pairwise, so instances are cached per pattern and options, cleared at 512.
+   - ⛔ **It needs a package release.** `LinearRegex` is new in `AgentForge.Core`, a published package,
+     and `ClaudeForge.Sdk.Claude` calls it, so `Published Version` — which builds against the feed at
+     `SharedPackageVersion` — cannot compile it (`CS0234: 'Text' does not exist in the namespace
+     'Bennewitz.Ninja.AgentForge.Core'`) until a release ships it and the pin moves. A publish and the
+     pin that consumes it are one release.
+   - **The generators emit no lookarounds or backreferences** — proven, not read: 300 random globs per
+     generator, regex metacharacters included, are built on NonBacktracking (which throws on either)
+     and agree with the backtracking engine on 6,000 inputs each.
+   - **Guards:** each site's regex asserts the engine and `InfiniteMatchTimeout`; pathological globs on
+     2,007-character inputs through `Match`, the resolver's deny path and a negated `.gitignore` line.
+     **Canaried** by putting the old engine and timeout back behind the new seams: exactly the 10
+     predicted results went red (resolver: *Expected Deny, Actual Allow*), nothing else.
+     ⓘ The old `IsIgnored_PathologicalPattern_ReturnsFalseWithinTimeout` could never tell the two
+     apart: its correct answer is `false`, which the timeout also gave.
+   - **Under load** (16 busy pwsh loops, `ClaudeForge.Tests` + `ClaudeForge.Sdk.Claude.Tests` +
+     `AgentForge.Core.Tests`, 4 rounds each side): the unfixed `e5b785a` failed 1 of 12 suite runs, the
+     fix 2 of 12, and **every failure was #103's site**: `PermissionRuleViewModel.Diagnose` timing out,
+     so `TryAddRule` dropped a valid rule (`IsValid_ToolWithRealPattern_True("Write(./**/*.json)")`;
+     `EditingRuleInline_MarksModifiedAndRoundTripsThroughJson` ×2). None at these four sites on either
+     side: ⚠ the existing suite never loaded them hard enough to time out, so the load runs show only
+     that the fix adds no load sensitivity (the 17 new tests passed all 4 loaded rounds). The fail-open
+     proof is the canary, not the load. Those failures were #103's, which merged 2026-10-19.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 

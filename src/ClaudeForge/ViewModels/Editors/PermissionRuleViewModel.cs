@@ -17,17 +17,19 @@ public partial class PermissionRuleViewModel : ObservableObject
     // ---------------------------------------------------------------------------
 
     /// <summary>
-    /// The compiled permissionRule regex. The pattern comes from
-    /// <see cref="PermissionTools.RulePattern"/> — the single source of truth shared
-    /// with the SDK validator, so the two cannot drift. This GUI copy keeps a short
-    /// match timeout because it runs on every keystroke against user-typed input.
-    /// A valid rule is a known tool name (optionally followed by a parenthesised,
-    /// not-purely-wildcard pattern) or any string starting with <c>mcp__</c>.
+    /// The permissionRule regex — the SDK validator's own instance, so the two cannot
+    /// drift. A valid rule is a known tool name (optionally followed by a
+    /// parenthesised, not-purely-wildcard pattern) or any string starting with
+    /// <c>mcp__</c>.
+    /// <para>
+    /// It runs on every keystroke against user-typed input, and needs no match
+    /// timeout because the regex is <see cref="RegexOptions.NonBacktracking"/>, which is
+    /// linear in the input length. This used to be a private copy with a 100 ms timeout.
+    /// Under CPU load that timeout fired on 9-character input and reported valid rules
+    /// as invalid.
+    /// </para>
     /// </summary>
-    private static readonly Regex RuleRegex = new(
-        PermissionTools.RulePattern,
-        RegexOptions.Compiled | RegexOptions.CultureInvariant,
-        matchTimeout: TimeSpan.FromMilliseconds(100));
+    private static Regex RuleRegex => PermissionTools.RuleRegex;
 
     /// <summary>
     /// Tool names accepted by the schema regex. The single source of truth lives in
@@ -84,14 +86,7 @@ public partial class PermissionRuleViewModel : ObservableObject
             return false;
         }
 
-        try
-        {
-            return RuleRegex.IsMatch(rule);
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            return false;
-        }
+        return RuleRegex.IsMatch(rule);
     }
 
     /// <summary>
@@ -111,16 +106,9 @@ public partial class PermissionRuleViewModel : ObservableObject
             return string.Empty;
         }
 
-        try
+        if (RuleRegex.IsMatch(rule))
         {
-            if (RuleRegex.IsMatch(rule))
-            {
-                return string.Empty;
-            }
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            return "Rule validation timed out — try a shorter rule.";
+            return string.Empty;
         }
 
         // --- diagnose the specific problem ---
@@ -158,7 +146,8 @@ public partial class PermissionRuleViewModel : ObservableObject
                    + $"Or add a specific pattern: \"{toolName}(git *)\".";
         }
 
-        // The lookahead (?=.*[^)*?]) rejects content that is only *, ), or ? characters.
+        // The pattern requires one parens character other than * and ?, which
+        // rejects content that is only wildcards.
         if (inner.All(c => c is '*' or ')' or '?'))
         {
             return $"\"{inner}\" alone in parentheses is not valid. "
