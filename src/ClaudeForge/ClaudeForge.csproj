@@ -299,7 +299,7 @@
         <PackageReference Include="Avalonia" Version="12.1.4" />
         <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
         <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
-        <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.0-a3"/>
+        <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.2"/>
         <!-- SVG support. Svg.Skia provides the standalone SKSvg API (used by AppIcon
              to render the app icon SVGs to bitmaps). Svg.Controls.Skia.Avalonia is the
              Avalonia-integrated control layer (the successor to the now-deprecated,
