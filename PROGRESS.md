@@ -142,7 +142,7 @@ the defect.
 | | |
 |---|---|
 | `main` | 2026-10-19: ten PRs merged one at a time, each green on its own head — #119 and #122 from sessions, and Dependabot's #109, #112, #115–#118, #120 and #121 (#121 after a requested rebase). The combined head `abc2bd8e` then ran all 7 CI jobs green plus CodeQL. #110 and #111 were closed as superseded: all three AppServices PRs edited the one `AppServicesVersion` line, and #109 had landed it. #103 then #108 merged on top. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,255 · 0 failed · 12–13 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies (= six test csproj), Debug — measured 2026-10-19 on #108 merged with that day's `main`: exactly **+17** over the 3,238 measured on #103's merge an hour earlier, with nothing else landing between, so those are #108's guards. Two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present (13 with it, 12 without). ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
+| Suite | **3,256 · 0 failed · 12–13 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies (= six test csproj), Debug — measured 2026-10-19 on #114's branch: **+1** over the 3,255 measured on #108's merge, which was exactly **+17** over the 3,238 on #103's — #108's guards, then #114's synthetic root-`$ref` test, with nothing else landing between. Two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present (13 with it, 12 without). ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
 | CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion` **`2026.4.1019`**. ⓘ `Published Version` was RED BY CONSTRUCTION between #108's merge and this pin: #108 added `AgentForge.Core.Text.LinearRegex`, and the packages at `2026.3.925` did not contain it (`CS0234`). Cured as one release, in order — `packages-v2026.4.1019` preflighted (5 packages, one version, assemblies `2026.4.1019.1548`, none already on the feed), tagged on #108's merge, published, then verified **5 of 5 on the feed id by id** with the downloaded `AgentForge.Core` carrying `LinearRegex` — and only then this pin. #103 (rule VALIDATION) and #108 (rule MATCHING) both merged 2026-10-19, which ends the permission-rule regex timeout that once failed a permissions test under load in CI on #105 |
 | Packages consumed | ScopedEditors **`2026.3.924`**, AppServices **`2026.4.1001`** and JsonC **`2026.3.926`** (nuget.org), Avalonia **12.1.4**, DataGrid **12.1.2** (it ships on its own cadence and has no 12.1.4), AutoVersioning **`2026.3.928`**, XamlQuality **`2026.4.1014`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted). All read from `main` on 2026-10-19 |
 
@@ -340,6 +340,25 @@ step 3. The items below are kept in order; those marked ✅ are done.
      side: ⚠ the existing suite never loaded them hard enough to time out, so the load runs show only
      that the fix adds no load sensitivity (the 17 new tests passed all 4 loaded rounds). The fail-open
      proof is the canary, not the load. Those failures were #103's, which merged 2026-10-19.
+
+### ⚠ When OpenCodeForge rejoins — `feat/agentforge-opencodeforge`
+
+Claims about the parked shell that nothing on this branch can check. Each carries the date it was
+written, so the merge can re-check it rather than trust it (AGENTS.md §6, rule 3).
+
+- **2026-10-19 — the OpenCode `model` property changed TYPE.** Upstream's config schema now types
+  the top-level `model` as `anyOf` a `provider/model[#variant]` string **or** a
+  `{providerID, model, variant}` object (#114). Online, OpenCodeForge already loads this shape,
+  because schema loading is network-first; the bundled offline copy matches it from #114 on.
+  Whatever editor the parked shell gives `model` was written for a plain string and has to handle
+  the object branch — re-find it, test both branches, and check what an `anyOf` renders as before
+  assuming. The same refresh inlined the schema root, removed `$defs/Config` and grew the config
+  from 36 to 48 root properties; `BundledOpenCodeSchemaTests` and `RootRefSchemaTreeTests` pin the
+  new shape on this branch.
+- **2026-09-25 — `ConfigScopeAdapter.ToConfigScope` lost its id fallback.** The parked branch's
+  `ConfigScopeAdapterTests.cs:99` (`ToConfigScope_ResolvesRealWrappersAndForeignScopesAlike`)
+  asserts the removed fallback and must take the new contract. Detail under the `plans/00006`
+  drift, item 10.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 
