@@ -121,7 +121,7 @@ The Release build is trimmed for size. Every PR that adds code MUST publish clea
 dotnet publish src/ClaudeForge -c Release -r win-x64
 ```
 
-Common foot-guns documented in [TRIMMING.md](./TRIMMING.md) and [XamlQuality's avalonia-gotchas.md](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md). Highlights:
+Common foot-guns documented in [TRIMMING.md](./TRIMMING.md) and [XamlQuality's avalonia-gotchas.md](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/blob/main/docs/avalonia-gotchas.md). Highlights:
 
 - New `JsonSerializer.Serialize/Deserialize` calls must use a source-generated context (`AppJsonContext` / `CoreJsonContext`).
 - `JsonArray.Add(...)` calls cast to `(JsonNode?)` to force the safe overload.

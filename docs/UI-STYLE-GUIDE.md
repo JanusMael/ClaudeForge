@@ -643,7 +643,7 @@ Text="{x:Static loc:Strings.Xxx}"/>` as nested button content.
 ## 14. Avalonia 12 gotchas
 
 ⭐ **General Avalonia behaviour lives in XamlQuality's
-[`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.XamlQuality/blob/main/docs/avalonia-gotchas.md)**,
+[`docs/avalonia-gotchas.md`](https://github.com/JanusMael/Bennewitz.Ninja.Inspections/blob/main/docs/avalonia-gotchas.md)**,
 the one living copy, where each claim is checked against the Avalonia source before it lands. This
 section's former entries went there on 2026-09-25 (XamlQuality#25), several of them corrected:
 
