@@ -107,7 +107,7 @@
     -->
     <PropertyGroup>
         <AppServicesVersion>2026.4.1001</AppServicesVersion>
-        <ScopedEditorsVersion>2026.3.924</ScopedEditorsVersion>
+        <ScopedEditorsVersion>2026.4.1031</ScopedEditorsVersion>
     </PropertyGroup>
 
     <!--
