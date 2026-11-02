@@ -126,7 +126,7 @@
       IsTrimmable mark, which TrimMode=partial needs for the trim result to cover it.
     -->
     <PropertyGroup>
-        <JsonCVersion>2026.3.926</JsonCVersion>
+        <JsonCVersion>2026.4.1031</JsonCVersion>
     </PropertyGroup>
 
     <!--
