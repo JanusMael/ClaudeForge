@@ -50,10 +50,13 @@ $ErrorActionPreference = 'Stop'
 # which this feed does not serve.
 # LIBRARY GUARD NARROWED -- plans/00007. bennewitz.ninja.jsonc was the sixth; it now comes from
 # nuget.org, published from its own repository, so this feed is not where it should resolve.
+# RENAMED -- plans/00010 step R: agentforge.avalonia.shell became agentforge.avaloniaui.shell at
+# 2026.4.1110. Ids here are the lowercase NuGet cache folder names, which a case-sensitive rename
+# misses: this line is the one the rename did miss.
 $expectedIds = @(
     'bennewitz.ninja.agentforge.abstractions'
     'bennewitz.ninja.agentforge.artifacts'
-    'bennewitz.ninja.agentforge.avalonia.shell'
+    'bennewitz.ninja.agentforge.avaloniaui.shell'
     'bennewitz.ninja.agentforge.core'
     'bennewitz.ninja.agentforge.sdk'
 )
