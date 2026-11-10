@@ -2882,6 +2882,24 @@ Some paths inside config files may need manual edits afterward. Continue?</value
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
     <value>Skips some optional reasoning passes for snappier responses. Trade-off: slightly lower quality on complex tasks in exchange for lower latency and cost.</value>
   </data>
+  <data name="EssentialsCardWorkflowKeywordTitle" xml:space="preserve">
+    <value>Ultracode keyword</value>
+  </data>
+  <data name="EssentialsCardWorkflowKeywordBody" xml:space="preserve">
+    <value>Typing "ultracode" in a prompt starts a dynamic workflow, which runs many agents. Ignored while workflows are disabled. Requires Claude Code v2.1.157 or later.</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsTitle" xml:space="preserve">
+    <value>Disable workflows</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsBody" xml:space="preserve">
+    <value>Turns off dynamic workflows and the bundled workflow commands, including the "ultracode" keyword. The CLAUDE_CODE_DISABLE_WORKFLOWS environment variable does the same.</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeTitle" xml:space="preserve">
+    <value>Workflow size</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeBody" xml:space="preserve">
+    <value>How many agents Claude aims for when it writes a dynamic workflow: unrestricted, small, medium or large. Sent to Claude as advice, not enforced as a cap. Requires Claude Code v2.1.202 or later.</value>
+  </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">

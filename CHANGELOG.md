@@ -44,6 +44,11 @@ reconcile them against and renumbering them would be guesswork.
   in the default suggestions. All three default to **medium** effort, as Claude Code documents.
   Haiku 5.5 is a step change from Haiku 4.5: it supports every effort level from low to max, and
   auto permission mode, and runs with the 1M-token context window natively.
+- **Ultracode's settings on the Essentials page.** Three cards beside Model and Effort level:
+  **Disable workflows**, **Ultracode keyword** (whether typing "ultracode" in a prompt starts a
+  dynamic workflow) and **Workflow size** (how many agents Claude aims for: unrestricted, small,
+  medium or large). Until now they were reachable only on the Advanced page. Searching for
+  "ultracode" finds them.
 
 ### Fixed
 

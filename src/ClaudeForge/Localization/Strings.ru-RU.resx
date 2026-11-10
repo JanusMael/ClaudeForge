@@ -2731,6 +2731,24 @@
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
     <value>Пропускает некоторые необязательные проходы рассуждений ради более быстрых ответов. Компромисс: немного более низкое качество на сложных задачах в обмен на меньшую задержку и стоимость.</value>
   </data>
+  <data name="EssentialsCardWorkflowKeywordTitle" xml:space="preserve">
+    <value>Ключевое слово ultracode</value>
+  </data>
+  <data name="EssentialsCardWorkflowKeywordBody" xml:space="preserve">
+    <value>Слово «ultracode» в запросе запускает динамический рабочий процесс, в котором работает много агентов. Игнорируется, пока рабочие процессы отключены. Требуется Claude Code v2.1.157 или новее.</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsTitle" xml:space="preserve">
+    <value>Отключить рабочие процессы</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsBody" xml:space="preserve">
+    <value>Отключает динамические рабочие процессы и встроенные команды рабочих процессов, включая ключевое слово «ultracode». Переменная окружения CLAUDE_CODE_DISABLE_WORKFLOWS делает то же самое.</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeTitle" xml:space="preserve">
+    <value>Размер рабочего процесса</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeBody" xml:space="preserve">
+    <value>Сколько агентов Claude старается задействовать, когда пишет динамический рабочий процесс: unrestricted, small, medium или large. Передаётся Claude как рекомендация, а не как жёсткий предел. Требуется Claude Code v2.1.202 или новее.</value>
+  </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">

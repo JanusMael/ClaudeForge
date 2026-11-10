@@ -2731,6 +2731,24 @@
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
     <value>더 빠른 응답을 위해 일부 선택적 추론 단계를 건너뜁니다. 트레이드오프: 더 낮은 지연 시간과 비용을 위해 복잡한 작업에서 품질이 약간 낮아집니다.</value>
   </data>
+  <data name="EssentialsCardWorkflowKeywordTitle" xml:space="preserve">
+    <value>ultracode 키워드</value>
+  </data>
+  <data name="EssentialsCardWorkflowKeywordBody" xml:space="preserve">
+    <value>프롬프트에 "ultracode"를 입력하면 여러 에이전트를 실행하는 동적 워크플로가 시작됩니다. 워크플로가 비활성화되어 있으면 무시됩니다. Claude Code v2.1.157 이상이 필요합니다.</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsTitle" xml:space="preserve">
+    <value>워크플로 비활성화</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsBody" xml:space="preserve">
+    <value>동적 워크플로와 기본 제공 워크플로 명령을 끕니다. "ultracode" 키워드도 포함됩니다. CLAUDE_CODE_DISABLE_WORKFLOWS 환경 변수로도 같은 설정을 할 수 있습니다.</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeTitle" xml:space="preserve">
+    <value>워크플로 규모</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeBody" xml:space="preserve">
+    <value>Claude가 동적 워크플로를 작성할 때 목표로 하는 에이전트 수입니다(unrestricted, small, medium, large). 강제되는 상한이 아니라 Claude에게 권고로 전달됩니다. Claude Code v2.1.202 이상이 필요합니다.</value>
+  </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">

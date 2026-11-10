@@ -62,6 +62,12 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
     /// <summary>Group title used for the "View in <c>Environment</c>" deep-link.</summary>
     internal const string GroupTitleEnvironment = "Environment";
 
+    /// <summary>
+    /// Group title used for the "View in <c>Advanced</c>" deep-link: the page every key the nav
+    /// tree does not place lands on, which is where the three workflow settings live.
+    /// </summary>
+    internal const string GroupTitleAdvanced = "Advanced";
+
     /// <summary>Card identifier used by synthetic search hits to deep-link to a specific card.</summary>
     public const string CardIdMaxThinkingTokens = "MAX_THINKING_TOKENS";
 
@@ -75,6 +81,22 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
     public const string CardIdAutoUpdatesChannel = "autoUpdatesChannel";
     public const string CardIdAutoMemoryEnabled = "autoMemoryEnabled";
     public const string CardIdDisableBypass = "permissions.disableBypassPermissionsMode";
+
+    // The three persisted settings tied to Ultracode (plans/00010 decision 4). Ultracode is not an
+    // effort level: it is the prompt keyword that starts a dynamic workflow, so the only things a
+    // settings file can say about it are whether workflows run, whether the keyword starts one,
+    // and how large Claude should aim to make them.
+    public const string CardIdDisableWorkflows = "disableWorkflows";
+    public const string CardIdWorkflowKeywordTrigger = "workflowKeywordTriggerEnabled";
+    public const string CardIdWorkflowSizeGuideline = "workflowSizeGuideline";
+
+    /// <summary>
+    /// The values <c>workflowSizeGuideline</c> accepts, in the schema's own order. A test reads the
+    /// bundled schema's enum and requires exactly these, so a new upstream value fails it rather
+    /// than going unoffered.
+    /// </summary>
+    internal static readonly IReadOnlyList<string> WorkflowSizeGuidelineValues =
+        ["unrestricted", "small", "medium", "large"];
 
     /// <summary>
     /// ID for the auto-update-check toggle card.  NOT a JSON path (the
@@ -514,7 +536,58 @@ public class EssentialsViewModel : ObservableObject, IDisposable, INavigablePage
                 JsonPathFilter = "model",
                 ModelSuggestions = modelSuggestions,
             }),
-            // 7 — Disable bypass-permissions mode
+            // 7-9 — Workflows: the settings tied to Ultracode, beside effort and model because
+            // that is where a user looks for it (Claude Desktop shows Ultracode as a toggle there).
+
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdDisableWorkflows,
+                Title = Strings.EssentialsCardDisableWorkflowsTitle,
+                Body = Strings.EssentialsCardDisableWorkflowsBody,
+                // amber, as ClaudeDangerTable rates it: removes workflows a user may rely on
+                Severity = AppSeverity.Caution,
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleAdvanced,
+                IsEnvVarCard = false,
+                ReadAsync = ReadBoolAsync("disableWorkflows"),
+                WriteAsync = WriteBoolAsync("disableWorkflows"),
+                AmberCalloutText = amberText,
+                JsonPathFilter = "disableWorkflows",
+            }),
+
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdWorkflowKeywordTrigger,
+                Title = Strings.EssentialsCardWorkflowKeywordTitle,
+                Body = Strings.EssentialsCardWorkflowKeywordBody,
+                // blue, as ClaudeDangerTable rates it: how a workflow is triggered
+                Severity = AppSeverity.Info,
+                Kind = EssentialsCardKind.Bool,
+                ViewInGroupTitle = GroupTitleAdvanced,
+                IsEnvVarCard = false,
+                ReadAsync = ReadBoolAsync("workflowKeywordTriggerEnabled"),
+                WriteAsync = WriteBoolAsync("workflowKeywordTriggerEnabled"),
+                AmberCalloutText = amberText,
+                JsonPathFilter = "workflowKeywordTriggerEnabled",
+            }),
+
+            Card(new EssentialsCardOptions
+            {
+                Id = CardIdWorkflowSizeGuideline,
+                Title = Strings.EssentialsCardWorkflowSizeTitle,
+                Body = Strings.EssentialsCardWorkflowSizeBody,
+                // amber, as ClaudeDangerTable rates it: agent count drives what a workflow costs
+                Severity = AppSeverity.Caution,
+                Kind = EssentialsCardKind.EnumString,
+                ViewInGroupTitle = GroupTitleAdvanced,
+                IsEnvVarCard = false,
+                ReadAsync = ReadStringAsync("workflowSizeGuideline"),
+                WriteAsync = WriteStringAsync("workflowSizeGuideline"),
+                EnumOptions = WorkflowSizeGuidelineValues,
+                AmberCalloutText = amberText,
+                JsonPathFilter = "workflowSizeGuideline",
+            }),
+            // 10 — Disable bypass-permissions mode
 
             Card(new EssentialsCardOptions
             {

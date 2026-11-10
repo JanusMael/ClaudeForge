@@ -1883,6 +1883,60 @@ namespace Bennewitz.Ninja.ClaudeForge.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Ultracode keyword.
+        /// </summary>
+        public static string EssentialsCardWorkflowKeywordTitle {
+            get {
+                return ResourceManager.GetString("EssentialsCardWorkflowKeywordTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Typing "ultracode" in a prompt starts a dynamic workflow, which runs many agents. Ignored while workflows are disabled. Requires Claude Code v2.1.157 or later..
+        /// </summary>
+        public static string EssentialsCardWorkflowKeywordBody {
+            get {
+                return ResourceManager.GetString("EssentialsCardWorkflowKeywordBody", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disable workflows.
+        /// </summary>
+        public static string EssentialsCardDisableWorkflowsTitle {
+            get {
+                return ResourceManager.GetString("EssentialsCardDisableWorkflowsTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Turns off dynamic workflows and the bundled workflow commands, including the "ultracode" keyword. The CLAUDE_CODE_DISABLE_WORKFLOWS environment variable does the same..
+        /// </summary>
+        public static string EssentialsCardDisableWorkflowsBody {
+            get {
+                return ResourceManager.GetString("EssentialsCardDisableWorkflowsBody", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workflow size.
+        /// </summary>
+        public static string EssentialsCardWorkflowSizeTitle {
+            get {
+                return ResourceManager.GetString("EssentialsCardWorkflowSizeTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How many agents Claude aims for when it writes a dynamic workflow: unrestricted, small, medium or large. Sent to Claude as advice, not enforced as a cap. Requires Claude Code v2.1.202 or later..
+        /// </summary>
+        public static string EssentialsCardWorkflowSizeBody {
+            get {
+                return ResourceManager.GetString("EssentialsCardWorkflowSizeBody", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Fast mode.
         /// </summary>
         public static string EssentialsCardFastModeTitle {

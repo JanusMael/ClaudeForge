@@ -2776,6 +2776,24 @@
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
     <value>跳过一些可选的推理环节以获得更敏捷的响应。权衡：在复杂任务上质量略有降低，以换取更低的延迟和成本。</value>
   </data>
+  <data name="EssentialsCardWorkflowKeywordTitle" xml:space="preserve">
+    <value>ultracode 关键字</value>
+  </data>
+  <data name="EssentialsCardWorkflowKeywordBody" xml:space="preserve">
+    <value>在提示中输入“ultracode”会启动一个动态工作流，运行多个代理。禁用工作流时将忽略此项。需要 Claude Code v2.1.157 或更高版本。</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsTitle" xml:space="preserve">
+    <value>禁用工作流</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsBody" xml:space="preserve">
+    <value>关闭动态工作流和内置的工作流命令，包括“ultracode”关键字。环境变量 CLAUDE_CODE_DISABLE_WORKFLOWS 的作用相同。</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeTitle" xml:space="preserve">
+    <value>工作流规模</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeBody" xml:space="preserve">
+    <value>Claude 编写动态工作流时目标使用的代理数量：unrestricted、small、medium 或 large。作为建议发送给 Claude，而非强制上限。需要 Claude Code v2.1.202 或更高版本。</value>
+  </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">

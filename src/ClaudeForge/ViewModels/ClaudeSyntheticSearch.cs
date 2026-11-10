@@ -95,6 +95,21 @@ public static class ClaudeSyntheticSearch
             [
                 "fast mode", "fastmode", "speed",
             ],
+            [EssentialsViewModel.CardIdDisableWorkflows] =
+            [
+                "disable workflows", "workflows off", "disableworkflows",
+                "claude_code_disable_workflows",
+            ],
+            [EssentialsViewModel.CardIdWorkflowKeywordTrigger] =
+            [
+                "ultracode", "workflow keyword", "workflow trigger",
+                "workflowkeywordtriggerenabled",
+            ],
+            [EssentialsViewModel.CardIdWorkflowSizeGuideline] =
+            [
+                "workflow size", "dynamic workflow", "agent count",
+                "workflowsizeguideline",
+            ],
             [EssentialsViewModel.CardIdAutoUpdatesChannel] =
             [
                 "auto update", "auto-update", "update channel", "stable",

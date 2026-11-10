@@ -8,7 +8,7 @@ A handful of Claude Code settings have outsized impact on cost, quality, securit
 
 The **Essentials** nav node — synthetic, pinned to the top of the navigation tree, sibling pattern to Memory / Effective Settings / About — gathers these settings as one-glance editable cards.
 
-## What's pinned (11 cards, four severity tiers)
+## What's pinned (14 cards, four severity tiers)
 
 | # | Card | Surface | Severity | Why it matters |
 |---|---|---|---|---|
@@ -23,6 +23,11 @@ The **Essentials** nav node — synthetic, pinned to the top of the navigation t
 | 9 | **Auto-updates channel** (`autoUpdatesChannel`) | settings.json | blue (behaviour) | "latest" gets new features sooner but ships occasional regressions. |
 | 10 | **Auto-memory enabled** (`autoMemoryEnabled`) | settings.json | blue (behaviour) | Captures session-level "memory" facts that may not be desired in shared environments. |
 | 11 | **Disable bypass-permissions mode** (`permissions.disableBypassPermissionsMode`) | settings.json | red (security) | Locks out the "skip every prompt" mode; recommended for shared / managed environments. |
+| 12 | **Disable workflows** (`disableWorkflows`) | settings.json | amber (behaviour) | Turns off dynamic workflows, the bundled workflow commands and the "ultracode" keyword. The schema names no version for it. |
+| 13 | **Ultracode keyword** (`workflowKeywordTriggerEnabled`) | settings.json | blue (behaviour) | Whether "ultracode" in a prompt starts a dynamic workflow. Ignored while workflows are disabled. Claude Code v2.1.157 or later. |
+| 14 | **Workflow size** (`workflowSizeGuideline`) | settings.json | amber (cost) | The agent count Claude aims for in a workflow — `unrestricted`, `small`, `medium` or `large` — sent as advice, not enforced. Claude Code v2.1.202 or later. |
+
+The numbers above are the order cards were added, not the display order, which `EssentialsViewModelTests.Cards_AreInUserSpecifiedOrder` pins: cards 12–14 sit right after **Model**, beside effort, because Ultracode is where a user looks for it there (Claude Desktop shows it as a toggle beside the effort list). Ultracode is not an effort level, so these three persisted settings are its whole surface; each card's "View in" link goes to **Advanced**, where the navigation tree files keys it does not place. The size card's four values are the schema's, and a test reads the bundled schema to keep them so.
 
 Card #11 mirrors the existing precedent — `disableBypassPermissionsMode` already had its own synthetic search hit and amber callout — so new users see the security knob without having to discover the Permissions page first.
 
@@ -57,7 +62,7 @@ src/AgentForge.AvaloniaUI.Shell/Essentials/        ← product-NEUTRAL, shared b
 └── ModelSuggestionItem.cs           (label + committed value for a free-form picker)
 
 src/ClaudeForge/ViewModels/
-└── EssentialsViewModel.cs           (orchestrator — CURATION, builds 11 cards, read/write)
+└── EssentialsViewModel.cs           (orchestrator — CURATION, builds 14 cards, read/write)
 
 src/ClaudeForge/Views/
 ├── EssentialsView.axaml             (card list + per-Kind editor templates)
@@ -140,4 +145,4 @@ A setting earns Essentials placement when **at least one** of the following appl
 - The setting has both a `settings.json` and OS env-var surface, and the user needs to see both at once to debug "why isn't my override taking effect?".
 - The setting is security-critical (red severity).
 
-Settings that don't meet these bars stay in their schema-driven home group; the Essentials page is deliberately small (11 cards) so the "things to set up first" framing isn't diluted.
+Settings that don't meet these bars stay in their schema-driven home group; the Essentials page is deliberately small (14 cards) so the "things to set up first" framing isn't diluted.
