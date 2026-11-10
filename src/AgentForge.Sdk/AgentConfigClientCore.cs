@@ -78,6 +78,8 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// <see cref="ConfigFileLoader.DefaultWriter"/> — the comment-preserving one — so
     /// callers that do not care get the right behaviour by omission.
     /// </param>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Bennewitz.Ninja.CodeQuality", "BNCQ1002",
+        Justification = "plans/00010 decision 6: a protected seam for the product clients that subclass this base, which already bind to the AgentForge.Core settings model; not part of the consumer-facing Sdk surface.")]
     protected AgentConfigClientCore(
         ConfigScope defaultScope,
         SchemaRegistry? schemaRegistry,
@@ -113,6 +115,8 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// reading a global keeps the layering intact: the flag is parsed in the app, which
     /// Core cannot see, and this is the seam that carries the decision down.
     /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Bennewitz.Ninja.CodeQuality", "BNCQ1002",
+        Justification = "plans/00010 decision 6: a protected seam for the product clients that subclass this base, which already bind to the AgentForge.Core settings model; not part of the consumer-facing Sdk surface.")]
     protected IConfigWriter? ConfigWriter { get; }
 
     /// <summary>
@@ -126,6 +130,8 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// document than the one in use, with nothing failing. See
     /// <c>SchemaRegistry.GetHookEventsFor</c>.
     /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Bennewitz.Ninja.CodeQuality", "BNCQ1002",
+        Justification = "plans/00010 decision 6: a protected seam for the product clients that subclass this base, which already bind to the AgentForge.Core settings model; not part of the consumer-facing Sdk surface.")]
     protected SchemaRegistry SchemaRegistryInstance => _schemaRegistry;
 
     /// <summary>

@@ -41,7 +41,7 @@ public sealed record McpServer(
     /// </summary>
     /// <remarks>
     /// Marked <c>internal</c> to keep <see cref="JsonObject"/> out of the
-    /// public SDK surface (locked by <c>NoPublicApi_LeaksSystemTextJsonNodes</c>).
+    /// public SDK surface (locked by <c>AssemblyQualityTests.BNAQ1002_TheSdkLeaksNoJsonNodeOrNewtonsoftType</c>).
     /// The GUI editor assembly accesses this via <c>InternalsVisibleTo</c>
     /// when constructing an updated server in response to user edits, so the
     /// preserved fields survive an edit-then-Set cycle.

@@ -162,4 +162,27 @@
               Pack="true" PackagePath="README.md" Visible="false" />
     </ItemGroup>
 
+
+    <!--
+      ══ Bennewitz.Ninja.CodeQuality ══  (plans/00010 step Q, decisions 5, 6 and 11)
+
+      The source-side counterparts of the AssemblyQuality rules ClaudeForge.Tests runs over the
+      compiled output, plus the callback and gate rules that have no assembly-side form. Every src
+      project, centrally, so a new project cannot be added without them.
+
+      PrivateAssets="all": an analyser runs inside the compiler and ships nothing, and five of these
+      projects are published packages on an immutable feed. Without it the analyser would become a
+      dependency of every consumer.
+
+      Severities live in src/.editorconfig: BNCQ1001 is off by default in the package and on here.
+      BNCQ1002 is on by default and disabled per project outside AgentForge.Sdk, each csproj saying
+      why (decision 6: JsonNode is the settings model's currency by design).
+
+      ⚠ BNCQ1005-1007 (System.Reactive) are INERT here: no src project references System.Reactive,
+      so they check nothing. A zero from them is not a guard (decision 10).
+    -->
+    <ItemGroup>
+        <PackageReference Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1104" PrivateAssets="all" />
+    </ItemGroup>
+
 </Project>

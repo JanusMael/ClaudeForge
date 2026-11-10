@@ -3,111 +3,18 @@ using System.Reflection;
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
 /// <summary>
-/// Reflection-based contract tests for the public Sdk surface. These tests
-/// fail loudly if a future change accidentally adds a defaulted CancellationToken
-/// parameter, leaks a JsonNode through a public API, or pulls in an Avalonia
-/// reference.
+/// Reflection-based contract tests for the public Sdk surface: no Avalonia reference, and the
+/// threading contract documented on <see cref="IAgentConfigClient"/>.
 /// </summary>
 /// <remarks>
-/// "Every async method on a stub interface takes a non-defaulted CancellationToken.
-///  CI enforces this with a Roslyn analyzer rule (or a unit test that reflects
-///  over the public surface)."  This is the unit-test option.
+/// ⓘ Two tests left this class in plans/00010 step Q, each after a canary reddened it and its
+/// replacement together: the defaulted-token check is BNAQ1001, now over every packable
+/// assembly, and the JsonNode check is BNAQ1002, still Sdk only. Both live in
+/// <c>ClaudeForge.Tests</c>' <c>Architecture/AssemblyQualityTests</c>.
 /// </remarks>
 public class PublicSurfaceContractTests
 {
     private static Assembly SdkAssembly => typeof(IAgentConfigClient).Assembly;
-
-    [Fact]
-    public void EveryAsyncMethod_HasRequiredCancellationToken()
-    {
-        // Walk every public method on every public type in the SDK assembly.
-        // For each parameter typed CancellationToken, assert it has no default
-        // value. The "= default" pattern is the specific shape we're banning;
-        // consumers must pass CancellationToken.None explicitly when they
-        // genuinely cannot be cancelled.
-        List<string> offenders = new();
-
-        foreach (Type type in SdkAssembly.GetExportedTypes())
-        foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
-        {
-            // Compiler-generated members (record equality, etc.) — skip; they
-            // don't have CT parameters anyway, so this is just hygiene.
-            if (method.IsSpecialName)
-            {
-                continue;
-            }
-
-            foreach (ParameterInfo param in method.GetParameters())
-            {
-                if (param.ParameterType != typeof(CancellationToken))
-                {
-                    continue;
-                }
-
-                if (!param.HasDefaultValue)
-                {
-                    continue;
-                }
-
-                offenders.Add($"{type.FullName}.{method.Name}({param.Name})");
-            }
-        }
-
-        MessageAssert.Equal(
-            0, offenders.Count,
-            $"Defaulted CancellationToken parameter(s) found — required CTs only:\n  {string.Join("\n  ", offenders)}");
-    }
-
-    [Fact]
-    public void NoPublicApi_LeaksSystemTextJsonNodes()
-    {
-        // The SDK contract is "no JsonNode in any public API". Walk public
-        // types' members and surface any property / method / event that exposes
-        // a System.Text.Json.Nodes type.
-        List<string> offenders = new();
-
-        foreach (Type type in SdkAssembly.GetExportedTypes())
-        {
-            foreach (PropertyInfo prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
-            {
-                if (IsForbidden(prop.PropertyType))
-                {
-                    offenders.Add($"property {type.FullName}.{prop.Name}");
-                }
-            }
-
-            foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
-            {
-                if (method.IsSpecialName)
-                {
-                    continue;
-                }
-
-                if (IsForbidden(method.ReturnType))
-                {
-                    offenders.Add($"return {type.FullName}.{method.Name}");
-                }
-
-                foreach (ParameterInfo param in method.GetParameters())
-                {
-                    if (IsForbidden(param.ParameterType))
-                    {
-                        offenders.Add($"param {type.FullName}.{method.Name}({param.Name})");
-                    }
-                }
-            }
-        }
-
-        MessageAssert.Equal(
-            0, offenders.Count,
-            $"System.Text.Json.Nodes types leaked into public Sdk API:\n  {string.Join("\n  ", offenders)}");
-        return;
-
-        bool IsForbidden(Type t)
-        {
-            return t.FullName?.StartsWith("System.Text.Json.Nodes.", StringComparison.Ordinal) == true;
-        }
-    }
 
     [Fact]
     public void Sdk_HasNoAvaloniaReference()

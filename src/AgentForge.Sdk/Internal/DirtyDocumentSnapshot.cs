@@ -30,7 +30,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Internal;
 /// <list type="bullet">
 ///   <item>
 ///     <see cref="JsonObject"/> in a public return type would violate the
-///     <c>PublicSurfaceContractTests.NoPublicApi_LeaksSystemTextJsonNodes</c>
+///     <c>AssemblyQualityTests.BNAQ1002_TheSdkLeaksNoJsonNodeOrNewtonsoftType</c>
 ///     contract. Promoting this would require designing a JSON-string-or-typed-diff
 ///     return shape, which is open-ended work that should land when an
 ///     external (MCP / CLI) consumer actually needs a dirty-doc surface.

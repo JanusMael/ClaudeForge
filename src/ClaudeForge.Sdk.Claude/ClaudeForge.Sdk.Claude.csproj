@@ -2,6 +2,10 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>false</IsPackable>  <!-- product-specific: one product's half, no second consumer -->
+        <!-- plans/00010 decision 6: BNCQ1002 is off in this project.
+             Not packed (IsPackable=false), and its two sites reach JsonNode through the AgentForge.Core
+             types it is built on. -->
+        <NoWarn>$(NoWarn);BNCQ1002</NoWarn>
         <RootNamespace>Bennewitz.Ninja.ClaudeForge.Sdk.Claude</RootNamespace>
         <AssemblyName>ClaudeForge.Sdk.Claude</AssemblyName>
         <Description>

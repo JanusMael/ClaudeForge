@@ -1,0 +1,8 @@
+# Analyzer severities for every project under src/. Not root: nothing above sets any today, and a
+# root marker here would silently cut off a repo-level file added later.
+
+[*.cs]
+# Bennewitz.Ninja.CodeQuality -- plans/00010 step Q, decision 5. Off in the package by default:
+# a cancellation token a caller can leave out. Every public token here is required, and the
+# build's TreatWarningsAsErrors makes a new default a build error.
+dotnet_diagnostic.BNCQ1001.severity = warning
