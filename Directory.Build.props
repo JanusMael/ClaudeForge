@@ -83,7 +83,7 @@
       back, which is the intended behaviour.
     -->
     <PropertyGroup>
-        <SharedPackageVersion Condition="'$(SharedPackageVersion)' == ''">2026.4.1019</SharedPackageVersion>
+        <SharedPackageVersion Condition="'$(SharedPackageVersion)' == ''">2026.4.1110</SharedPackageVersion>
     </PropertyGroup>
 
     <!--
