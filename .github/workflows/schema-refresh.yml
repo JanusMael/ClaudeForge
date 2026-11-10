@@ -45,6 +45,44 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # The guard below compares the drift branch with the default branch, which a
+          # shallow clone cannot do.
+          fetch-depth: 0
+
+      # ⛔ Never overwrite a human commit on the drift branch (plans/00010; 00009 decision 13).
+      # create-pull-request with delete-branch recreates the branch from the default branch on
+      # every run, so a commit pushed there by hand is silently deleted the next Monday. That
+      # happened to #114's test commit on 2026-11-09. Runs BEFORE the refresh, so a manual
+      # dispatch exercises it whether or not upstream has drifted.
+      #
+      # ⚠ Keyed on the COMMITTER, not the author: create-pull-request authors its commit as the
+      # triggering actor (the maintainer, on a schedule) and commits it as github-actions[bot].
+      # An author check would call every bot commit human and freeze the branch for good.
+      - name: Guard - keep human commits on the drift branch
+        id: guard
+        shell: bash
+        env:
+          BRANCH: chore/schema-refresh
+          BASE: ${{ github.event.repository.default_branch }}
+          BOT_COMMITTER: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
+            echo "human=false" >> "$GITHUB_OUTPUT"
+            echo "No $BRANCH branch exists; nothing to protect."
+            exit 0
+          fi
+          git fetch --no-tags origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+          humans=$(git log --format='%h %ce %s' "origin/$BASE..origin/$BRANCH" \
+                   | awk -v bot="$BOT_COMMITTER" '$2 != bot')
+          if [ -n "$humans" ]; then
+            echo "human=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::$BRANCH carries commits not made by this workflow; it will NOT be updated:"
+            echo "$humans"
+          else
+            echo "human=false" >> "$GITHUB_OUTPUT"
+            echo "$BRANCH carries only this workflow's commits; it may be updated."
+          fi
 
       # pwsh is preinstalled on the ubuntu-latest runner image; no setup
       # step needed. The script uses only Invoke-WebRequest + Get-Content
@@ -95,8 +133,26 @@ jobs:
       # handles the branch-already-exists case automatically: if a prior run
       # left an open chore/schema-refresh PR, this updates it in place rather
       # than opening a duplicate.
+      # The branch holds human work, so say that upstream moved again instead of overwriting it.
+      - name: Report drift without touching a human-edited branch
+        if: steps.drift.outputs.drift == 'true' && steps.guard.outputs.human == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: chore/schema-refresh
+          FILES: ${{ steps.drift.outputs.files }}
+        run: |
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          body="Upstream has drifted again, but \`$BRANCH\` carries commits this workflow did not make, so it was left alone. Refresh by hand on that branch (\`pwsh scripts/refresh-schema.ps1\`). Changed upstream:
+          $FILES"
+          if [ -n "$pr" ]; then
+            gh pr comment "$pr" --body "$body"
+          else
+            echo "::warning::No open PR for $BRANCH. $body"
+          fi
+
       - name: Open / update drift PR
-        if: steps.drift.outputs.drift == 'true'
+        if: steps.drift.outputs.drift == 'true' && steps.guard.outputs.human != 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: |

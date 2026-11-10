@@ -203,7 +203,15 @@ The schema refresh (`scripts/refresh-schema.{ps1,sh}`) does **NOT** carry model 
 - [ ] `Schemas/claude-code-settings.overlay.json` — swap the family's pinned snapshot id in `model.examples` (+ the `model.description` e.g.). This is the AutoCompleteBox list; the refresh never touches the overlay.
 - [ ] `Descriptions/claude-code-settings.enumdescriptions.json` — mirror that swap and update the alias tooltip ("today Opus N"). **Every `model.examples` value needs a key here** or `ModelPropertyPromotionTests` fails (each picker item needs a tooltip). Replace in place, don't accumulate stale rows.
 - [ ] `tests/AgentForge.Core.Tests/Catalog/ModelCatalogTests.cs` — update the `Resolve("opus")` / `Resolve("opus[1m]")` asserts to the new id (they hardcode the alias target). Tests that use the demoted id as a *concrete* model stay green — its capabilities didn't move.
+- [ ] ⚠ **The catalog describes CLAUDE CODE, not the API, and a generation change breaks the copy rule.** Read effort levels, the default effort and auto mode from Claude Code's `model-config` and `permission-modes` docs. Measured 2026-11-10: the API page gives Sonnet 5.5 and Fable 5.2 `high`, and Claude Code `medium`. Haiku 4.5 → 5.5 gained effort, auto mode and 1M, so nothing could be copied. **`supports1m` means a `[1m]` SUFFIX is valid**, not that the model has a 1M window: Haiku 5.5 runs at 1M natively "with no `[1m]` suffix to select", so it is `false`.
 - [ ] Verify: `pwsh scripts/validate-model-catalog.ps1`, then `dotnet test ClaudeForge.slnx --filter "FullyQualifiedName~ModelCatalog|FullyQualifiedName~ModelPropertyPromotion"`. Full playbook + rationale: [`docs/MODEL-CATALOG.md`](./docs/MODEL-CATALOG.md) § New model launch.
+
+### X = The weekly schema refresh opened a PR, or an upstream schema needs more than a refresh
+
+`.github/workflows/schema-refresh.yml` runs every Monday and opens or updates **one** PR from `chore/schema-refresh`.
+
+- [ ] **A plain refresh** (no test changes needed): review the diff, re-mint `Golden/Fixtures/backup.json` with the explicit `GoldenFixtureTests.WriteGoldens` (it hashes the bundled schemas), and merge.
+- [ ] ⛔ **A refresh that needs code or test changes lands from YOUR OWN branch**, never by pushing to `chore/schema-refresh`. Re-run `pwsh scripts/refresh-schema.ps1` there, and close the bot's PR in its favour. Until 2026-11-10 the workflow recreated that branch from the default branch on every run, and on 2026-11-09 it silently deleted #114's test commit. It now leaves a branch with any commit it did not make alone, and comments on the PR instead. The guard keys on the COMMITTER (`github-actions[bot]`), because the bot's commits are AUTHORED by the triggering actor. Treat the guard as a net, not as permission.
 
 ### X = Adding a new share operation (new `ShareXxxCommand` in a view-model)
 
