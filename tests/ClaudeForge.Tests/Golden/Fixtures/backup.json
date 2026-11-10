@@ -54,7 +54,7 @@
     },
     {
       "name": "Schemas/claude-code-settings.overlay.json",
-      "sha256": "7A50BA94478D499ACE5046E092DA3C6C1C328200B544EDA597D9C29CDBA7A8DD"
+      "sha256": "FB1337910F40852F3086D5EA9F62070E641A41D5FA44F13E4A255A15FF070CF4"
     },
     {
       "name": "Schemas/claude-desktop-config.json",
