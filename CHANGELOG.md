@@ -52,6 +52,11 @@ reconcile them against and renumbering them would be guesswork.
 
 ### Fixed
 
+- **A crash now exits with a non-zero code.** ClaudeForge exited 0 even when it failed to start,
+  so a script or installer could not tell a crash from a quit. A failure that ends the app now
+  exits 1 and is reported on stderr as well as in the log. The log is flushed on every exit,
+  including when the process is told to terminate. `ClaudeForge --version` prints the release
+  version.
 - **Reloading no longer blocks anyone else from saving your settings.** While ClaudeForge read
   a settings file — to reload it, or to show its first line on the Memory page — it held it
   against writers, so Claude Code saving its own `settings.json`, or your editor saving one,

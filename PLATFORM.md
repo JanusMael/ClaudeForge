@@ -160,19 +160,20 @@ underlying check, so the indirection costs nothing measurable.
 
 ## Debug-flag override path
 
-`Program.Main` calls `DebugFlags.Initialize(args)` immediately after
-`ConfigureLogging`:
+`Program.Main` hands the run to `AppMain.RunDesktop` (AppServices.EntryPoint), and `Program.Run`
+calls `DebugFlags.Initialize(args)` first of all, before culture and before logging:
 
 ```csharp
-public static void Main(string[] args)
+public static int Main(string[] args) =>
+    AppMain.RunDesktop(typeof(Program).Assembly, args, Run, options);
+
+private static int Run(string[] args)
 {
-    LocalizationService.ApplyCulture();
-    AppDomain.CurrentDomain.UnhandledException += /* ... */;
+    DebugFlags.Initialize(args);   // ← parses --windows / --macos / --linux
+    LocalizationService.ApplyCulture(DebugFlags.CultureOverride);
     AvaloniaDiagnostics.ConfigureLogging(/* ... */);
 
-    DebugFlags.Initialize(args);   // ← parses --windows / --macos / --linux
-
-    BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 }
 ```
 
