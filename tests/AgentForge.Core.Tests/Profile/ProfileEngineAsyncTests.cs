@@ -115,7 +115,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData(" ")]
     public async Task ApplyProfileToLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, name, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, name, ct: TestContext.Current.CancellationToken, autoSync: true));
     }
 
     [Theory]
@@ -140,7 +140,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
     [InlineData(" ")]
     public async Task ApplyDesktopProfileToLiveAsync_BlankName_ThrowsArgumentException(string name)
     {
-        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyDesktopProfileToLiveAsync(name, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => ProfileEngine.ApplyDesktopProfileToLiveAsync(name, ct: TestContext.Current.CancellationToken, autoSync: true));
     }
 
     [Theory]
@@ -203,7 +203,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         Directory.CreateDirectory(ProfileDir("orphan"));
 
         FileNotFoundException ex = await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "orphan", ct: TestContext.Current.CancellationToken));
+            ProfileEngine.ApplyProfileToLiveAsync(ClaudeEnvironment.Empty, "orphan", ct: TestContext.Current.CancellationToken, autoSync: true));
 
         MessageAssert.Contains("orphan", ex.Message,
             "The error message should name the offending profile.");
@@ -400,7 +400,7 @@ public sealed class ProfileEngineAsyncTests : IDisposable
         Directory.CreateDirectory(DesktopProfileDir("d-orphan"));
 
         FileNotFoundException ex = await Assert.ThrowsAsync<FileNotFoundException>(() =>
-            ProfileEngine.ApplyDesktopProfileToLiveAsync("d-orphan", ct: TestContext.Current.CancellationToken));
+            ProfileEngine.ApplyDesktopProfileToLiveAsync("d-orphan", ct: TestContext.Current.CancellationToken, autoSync: true));
 
         OrdinalAssert.Contains("d-orphan", ex.Message);
         OrdinalAssert.Contains("claude_desktop_config.json", ex.Message);

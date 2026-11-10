@@ -92,7 +92,7 @@ public static class SchemaRefresher
     public static async Task<IReadOnlyList<SchemaRefreshResult>> RefreshAsync(
         SchemaRegistry registry,
         IEnumerable<ProductDescriptor> products,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(products);

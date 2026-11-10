@@ -139,7 +139,7 @@ public sealed class SchemaProvenanceBadgeTests : IDisposable
     private static async Task<string> BundledShaAsync(ProductDescriptor product)
     {
         using SchemaRegistry probe = new();
-        _ = await probe.GetSettingsNodeAsync(product);
+        _ = await probe.GetSettingsNodeAsync(product, ct: TestContext.Current.CancellationToken);
         return probe.ProvenanceFor(product.SchemaFileName)!.ShortSha;
     }
 

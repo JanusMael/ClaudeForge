@@ -20,7 +20,7 @@ words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	.Text("Cr
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	2 => TabMsixFixId,	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	CheckForRunningClaudeProcesses();	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	DialogMessage msixMsg = DialogMessage.Builder()	1
-words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync();	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync(CancellationToken.None);	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = MsixPathProbe.Instance.Probe();	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = OperatingSystem.IsWindows() ? MsixPathProbe.Instance.Probe() : null;	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	OnPropertyChanged(nameof(ShowMsixTab));	1
@@ -69,7 +69,7 @@ words	src/AgentForge.Core/Backup/MsixPathProbe.cs	bool HasMsixInstall,	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	if (!status.HasMsixInstall)	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	if (HasCmdMetachars(std) || HasCmdMetachars(msix))	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public MsixStatus Probe()	1
-words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public async Task<MsixFixResult> CreateJunctionAsync(CancellationToken ct = default)	1
+words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public async Task<MsixFixResult> CreateJunctionAsync(CancellationToken ct)	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public sealed class MsixPathProbe	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public sealed record MsixFixResult(bool Succeeded, string Message);	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	public sealed record MsixStatus(	1
@@ -261,8 +261,8 @@ words	src/AgentForge.Core/Profile/ProfileEngine.cs	private static async Task Mer
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	private static async Task RemoveMcpFromClaudeJsonAsync(CancellationToken ct)	1
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	private static string ResolveProfileDirSecurely(ClaudeEnvironment env, string profileName)	1
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static IReadOnlyList<ProfileInfo> DiscoverProfiles(ClaudeEnvironment env)	1
-words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static async Task SyncFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)	1
-words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static async Task<bool> CreateFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static async Task SyncFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct)	1
+words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static async Task<bool> CreateFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct)	1
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static string? ReadCurrentProfileName(ClaudeEnvironment env)	1
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	public static void WriteCurrentProfileName(ClaudeEnvironment env, string? name)	1
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	string claudeJson = PlatformPaths.ClaudeJsonPath;	3
@@ -289,8 +289,8 @@ words	src/AgentForge.Core/Schema/SchemaRegistry.cs	bool isClaudeCode,	2
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,	2
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new(ClaudeCodeProductId, "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct = default)	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct)	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct)	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public const string ClaudeCodeSettingsSchemaUrl = "https://json.schemastore.org/claude-code-settings.json";	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static ProductDescriptor ClaudeCodeProductFor(ClaudeEnvironment env) =>	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly ProductDescriptor ClaudeDesktopProduct =	1

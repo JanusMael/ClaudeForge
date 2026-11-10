@@ -35,7 +35,7 @@ public sealed class WorktreeProbe
     /// </summary>
     public async Task<WorktreeDiscoveryResult> DiscoverExternalAsync(
         IEnumerable<string> projectRoots,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(projectRoots);
 

@@ -170,7 +170,7 @@ public sealed class GithubReleaseChecker
     /// </param>
     public async Task<UpdateCheckResult> CheckAsync(
         Version currentVersion,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(currentVersion);
 

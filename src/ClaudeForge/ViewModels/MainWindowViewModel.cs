@@ -1298,7 +1298,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             // Seed from the current live ~/.claude/settings.json (+ CLAUDE.md + mcpServers)
             // so the profile starts from real state rather than an empty object.
             // CreateFromLiveAsync falls back to writing {} when the live file is absent.
-            await ProfileEngine.CreateFromLiveAsync(_env, name);
+            await ProfileEngine.CreateFromLiveAsync(_env, name, CancellationToken.None);
 
             // Refresh the ComboBox first so the new item is visible when the
             // binding updates SelectedProfile.
@@ -3422,7 +3422,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                 }
 
                 writer.AddTextEntry("manifest.json", ZipArchiveWriter.SerialiseExportManifest(manifest));
-                await writer.CommitAsync();
+                await writer.CommitAsync(progress: null, CancellationToken.None);
             }
 
             SetStatusSuccess(string.Format(Strings.StatusExportedFmt, Path.GetFileName(destination)));
@@ -3971,7 +3971,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // / screenshots to exercise badge styling without bumping the schema.
         bool flagAllAsNew = DebugFlags.ShowAllNewBadges;
 
-        JsonSchemaNode ccSchema = await _schemaRegistry.GetClaudeCodeSettingsNodeAsync();
+        JsonSchemaNode ccSchema = await _schemaRegistry.GetClaudeCodeSettingsNodeAsync(CancellationToken.None);
         HashSet<string> ccKnown = _snapshotService.LoadSnapshot("claude-code-settings");
         // Offload the CPU-bound schema-tree build off the UI thread — it produces plain
         // SchemaNode data (no UI objects), so it's safe on a worker and keeps the
@@ -3986,7 +3986,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _snapshotService.SaveSnapshot("claude-code-settings", _renderedPathsBySchema["claude-code-settings"]);
         }
 
-        JsonSchemaNode dtSchema = await _schemaRegistry.GetClaudeDesktopConfigNodeAsync();
+        JsonSchemaNode dtSchema = await _schemaRegistry.GetClaudeDesktopConfigNodeAsync(CancellationToken.None);
         HashSet<string> dtKnown = _snapshotService.LoadSnapshot("claude-desktop-config");
         // Same off-thread schema-tree build as the Claude Code section above.
         IReadOnlyList<SchemaNode> dtNodes =
@@ -4019,8 +4019,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         {
             // Both candidates are Claude products, so both take Claude's merge rules —
             // the same policy the SDK clients supply for their own loads.
-            ccCandidate = await ConfigFileLoader.LoadWorkspaceAsync(ccFiles, ClaudeMergePolicy.Instance);
-            dtCandidate = await ConfigFileLoader.LoadWorkspaceAsync(dtFiles, ClaudeMergePolicy.Instance);
+            ccCandidate = await ConfigFileLoader.LoadWorkspaceAsync(ccFiles, ClaudeMergePolicy.Instance, CancellationToken.None);
+            dtCandidate = await ConfigFileLoader.LoadWorkspaceAsync(dtFiles, ClaudeMergePolicy.Instance, CancellationToken.None);
         }
         catch (Exception ex) when (ex is JsonException
                                        or IOException

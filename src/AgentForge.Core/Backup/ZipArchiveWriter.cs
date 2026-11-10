@@ -294,8 +294,8 @@ public sealed class ZipArchiveWriter : IAsyncDisposable
     /// surface in the manifest's <c>SkippedFiles</c> warning row.
     /// </remarks>
     public async Task PrecomputeTransformsAsync(
-        int maxDegreeOfParallelism = -1,
-        CancellationToken ct = default)
+        int maxDegreeOfParallelism,
+        CancellationToken ct)
     {
         ThrowIfDisposed();
 
@@ -373,8 +373,8 @@ public sealed class ZipArchiveWriter : IAsyncDisposable
     /// archive's own overhead).
     /// </summary>
     public async Task<long> CommitAsync(
-        IProgress<BackupProgress>? progress = null,
-        CancellationToken ct = default)
+        IProgress<BackupProgress>? progress,
+        CancellationToken ct)
     {
         ThrowIfDisposed();
 

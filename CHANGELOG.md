@@ -24,6 +24,18 @@ reconcile them against and renumbering them would be guesswork.
   inside it would fail to resolve. The old package id stays on the feed at `2026.4.1019` and gets
   no newer versions. The app's own `ClaudeForge.Avalonia` is renamed `ClaudeForge.AvaloniaUI` for
   the same reason; it is not a package.
+- **Every public `CancellationToken` in `AgentForge.Core` is now required** (32 methods), so a
+  caller can no longer leave cancellation out by accident. Nine methods also lose the default of an
+  optional parameter that came before the token, because C# requires required parameters first.
+  Passing the old default keeps the old behaviour:
+  - `BackupEngine.CreateAsync` and `RestoreAsync`, `ZipArchiveWriter.CommitAsync`: `progress` (`null`)
+  - `ZipArchiveWriter.PrecomputeTransformsAsync`: `maxDegreeOfParallelism` (`-1`)
+  - `ConfigFileLoader.SaveAsync` and `SaveDirtyAsync`: `headerComment` (`null`)
+  - `ProfileEngine.ApplyProfileToLiveAsync` and `ApplyDesktopProfileToLiveAsync`: `autoSync` (`true`)
+  - `ProfileEngine.ImportProfileAsync`: `overrideName` (`null`)
+
+  Parameters were not reordered, so code compiled against the old signatures still binds; only
+  source that omitted an argument stops compiling.
 
 ### Added
 

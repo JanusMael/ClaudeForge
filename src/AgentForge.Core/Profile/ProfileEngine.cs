@@ -137,7 +137,7 @@ public static class ProfileEngine
     /// name already exists (caller should validate beforehand via
     /// <see cref="PlatformPaths.ProfilesDirectory"/>).
     /// </returns>
-    public static async Task<bool> CreateFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)
+    public static async Task<bool> CreateFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -198,8 +198,8 @@ public static class ProfileEngine
     public static async Task ApplyProfileToLiveAsync(
         ClaudeEnvironment env,
         string name,
-        bool autoSync = true,
-        CancellationToken ct = default)
+        bool autoSync,
+        CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -261,7 +261,7 @@ public static class ProfileEngine
     /// whatever the profile previously stored. Useful for capturing external edits made
     /// directly to <c>~/.claude/settings.json</c> (e.g. via the Claude Code CLI itself).
     /// </summary>
-    public static async Task SyncFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct = default)
+    public static async Task SyncFromLiveAsync(ClaudeEnvironment env, string name, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -521,7 +521,7 @@ public static class ProfileEngine
     /// <c>claude_desktop_config.json</c>. Returns <c>false</c> if the name already exists.
     /// </summary>
     public static async Task<bool> CreateDesktopProfileFromLiveAsync(
-        string name, CancellationToken ct = default)
+        string name, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -559,8 +559,8 @@ public static class ProfileEngine
     /// </summary>
     public static async Task ApplyDesktopProfileToLiveAsync(
         string name,
-        bool autoSync = true,
-        CancellationToken ct = default)
+        bool autoSync,
+        CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -595,7 +595,7 @@ public static class ProfileEngine
     /// Copies the current live Desktop config into the profile directory,
     /// overwriting whatever was previously stored.
     /// </summary>
-    public static async Task SyncDesktopFromLiveAsync(string name, CancellationToken ct = default)
+    public static async Task SyncDesktopFromLiveAsync(string name, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -641,7 +641,7 @@ public static class ProfileEngine
         ClaudeEnvironment env,
         string name,
         string destPath,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(destPath);
@@ -722,8 +722,8 @@ public static class ProfileEngine
     public static async Task<string> ImportProfileAsync(
         ClaudeEnvironment env,
         string sourcePath,
-        string? overrideName = null,
-        CancellationToken ct = default)
+        string? overrideName,
+        CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
 

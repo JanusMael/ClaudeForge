@@ -57,7 +57,7 @@ public class ConfigFileLoaderTests
             SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
             doc.Root["model"] = "opus";
 
-            await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
+            await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null);
 
             string written = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
             Assert.True(written.Contains('\n'), "Expected indented JSON with newlines.");
@@ -83,7 +83,7 @@ public class ConfigFileLoaderTests
         SettingsDocument doc = await ConfigFileLoader.LoadAsync(file, TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken));
+            ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null));
     }
 
     // ── LoadAsync error / edge paths + workspace helpers ──
@@ -250,7 +250,7 @@ public class ConfigFileLoaderTests
             docA.Root["new"] = "set";
             docA.MarkDirty();
 
-            await ConfigFileLoader.SaveDirtyAsync(workspace, ct: TestContext.Current.CancellationToken);
+            await ConfigFileLoader.SaveDirtyAsync(workspace, ct: TestContext.Current.CancellationToken, headerComment: null);
 
             // A should be written with the new value.
             string aText = await File.ReadAllTextAsync(pathA, TestContext.Current.CancellationToken);

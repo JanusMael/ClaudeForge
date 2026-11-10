@@ -971,7 +971,7 @@ public sealed class BackupRestoreViewModelTests
             {
                 DestinationZipPath = zipPath,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            }, ct: TestContext.Current.CancellationToken);
+            }, ct: TestContext.Current.CancellationToken, progress: null);
             Assert.True(created.Succeeded, "Test prerequisite: backup must create.");
 
             StubDialogService dialog = new() { ConfirmReturns = false }; // user cancels
@@ -1021,7 +1021,7 @@ public sealed class BackupRestoreViewModelTests
             {
                 DestinationZipPath = zipPath,
                 Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
-            }, ct: TestContext.Current.CancellationToken);
+            }, ct: TestContext.Current.CancellationToken, progress: null);
             Assert.True(created.Succeeded);
 
             // Wire up a sentinel for "did we proceed past the confirm prompt?"

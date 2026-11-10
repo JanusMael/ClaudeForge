@@ -120,7 +120,7 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
     {
         BackupEntry entry = StageFixture();
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry, ct: TestContext.Current.CancellationToken);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(restore.Succeeded,
             "A backup written by a shipped build must keep restoring. " + restore.Message);
@@ -150,7 +150,7 @@ public sealed class BackupArchiveCompatibilityTests : IDisposable
         // the first product would look green everywhere else.
         BackupEntry entry = StageFixture();
 
-        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry, ct: TestContext.Current.CancellationToken);
+        RestoreResult restore = await TestBackupEngine.Default.RestoreAsync(entry, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(restore.Succeeded, restore.Message);
 
         Assert.True(File.Exists(PlatformPaths.DesktopConfigPath),

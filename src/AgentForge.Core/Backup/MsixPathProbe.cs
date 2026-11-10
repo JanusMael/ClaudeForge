@@ -140,7 +140,7 @@ public sealed class MsixPathProbe
     /// exit code is surfaced as a failure result.
     /// </remarks>
     [SupportedOSPlatform("windows")]
-    public async Task<MsixFixResult> CreateJunctionAsync(CancellationToken ct = default)
+    public async Task<MsixFixResult> CreateJunctionAsync(CancellationToken ct)
     {
         if (!OperatingSystem.IsWindows())
         {

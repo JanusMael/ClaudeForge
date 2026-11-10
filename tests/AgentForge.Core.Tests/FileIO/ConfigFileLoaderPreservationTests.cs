@@ -53,7 +53,7 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
 
         DiscoveredFile file = new(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
                                   Exists: true, IsReadOnly: false);
-        return (path, await ConfigFileLoader.LoadAsync(file));
+        return (path, await ConfigFileLoader.LoadAsync(file, ct: TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         (string path, SettingsDocument doc) = await LoadFixtureAsync(original);
 
         doc.Root["model"] = "opus";
-        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null);
 
         string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
@@ -107,7 +107,7 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         permissions["defaultMode"] = "acceptEdits";
         doc.Root["permissions"] = permissions;
 
-        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null);
 
         string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
@@ -154,7 +154,7 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         (string path, SettingsDocument doc) = await LoadFixtureAsync(original);
 
         doc.Root.Remove("verbose");
-        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null);
 
         string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 
@@ -180,7 +180,7 @@ public sealed class ConfigFileLoaderPreservationTests : IDisposable
         (string path, SettingsDocument doc) = await LoadFixtureAsync(original);
 
         doc.Root["model"] = "opus";
-        await ConfigFileLoader.SaveAsync(doc, writer: new LegacySerializingWriter(), ct: TestContext.Current.CancellationToken);
+        await ConfigFileLoader.SaveAsync(doc, writer: new LegacySerializingWriter(), ct: TestContext.Current.CancellationToken, headerComment: null);
 
         string after = await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken);
 

@@ -62,7 +62,7 @@ public sealed class ConfigFileLoadFailureTests : IDisposable
         await File.WriteAllTextAsync(path, contents);
         return await ConfigFileLoader.LoadAsync(
             new DiscoveredFile(ConfigScope.User, ConfigFileType.ClaudeCodeSettings, path,
-                               Exists: true, IsReadOnly: false));
+                               Exists: true, IsReadOnly: false), ct: TestContext.Current.CancellationToken);
     }
 
     [Fact]

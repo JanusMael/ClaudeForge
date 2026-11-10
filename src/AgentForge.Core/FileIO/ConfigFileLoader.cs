@@ -72,7 +72,7 @@ public static class ConfigFileLoader
     /// Load a SettingsDocument from a DiscoveredFile.
     /// Returns a document with an empty root if the file does not exist.
     /// </summary>
-    public static async Task<SettingsDocument> LoadAsync(DiscoveredFile file, CancellationToken ct = default)
+    public static async Task<SettingsDocument> LoadAsync(DiscoveredFile file, CancellationToken ct)
     {
         JsonObject root;
         string? originalText = null;
@@ -144,8 +144,8 @@ public static class ConfigFileLoader
     /// Writer to render with. Defaults to <see cref="DefaultWriter"/> (comment-preserving);
     /// pass a <see cref="LegacySerializingWriter"/> to restore the pre-Phase-2 behaviour.
     /// </param>
-    public static async Task SaveAsync(SettingsDocument document, string? headerComment = null,
-                                       CancellationToken ct = default, IConfigWriter? writer = null)
+    public static async Task SaveAsync(SettingsDocument document, string? headerComment,
+                                       CancellationToken ct, IConfigWriter? writer = null)
     {
         ArgumentNullException.ThrowIfNull(document);
 
@@ -224,7 +224,7 @@ public static class ConfigFileLoader
     public static async Task<SettingsWorkspace> LoadWorkspaceAsync(
         IReadOnlyList<DiscoveredFile> files,
         IMergePolicy mergePolicy,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         List<SettingsDocument> documents = new(files.Count);
         foreach (DiscoveredFile file in files)
@@ -244,8 +244,8 @@ public static class ConfigFileLoader
     /// method for details.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="writer">Forwarded to each <see cref="SaveAsync"/> call.</param>
-    public static async Task SaveDirtyAsync(SettingsWorkspace workspace, string? headerComment = null,
-                                            CancellationToken ct = default, IConfigWriter? writer = null)
+    public static async Task SaveDirtyAsync(SettingsWorkspace workspace, string? headerComment,
+                                            CancellationToken ct, IConfigWriter? writer = null)
     {
         foreach (SettingsDocument doc in workspace.DirtyDocuments())
         {
