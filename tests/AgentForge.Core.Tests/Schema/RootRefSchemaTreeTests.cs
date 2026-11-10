@@ -94,7 +94,7 @@ public class RootRefSchemaTreeTests
     }
 
     /// <summary>
-    /// The real config schema, as a regression count. 48 is not a magic number: it is every
+    /// The real config schema, as a regression count. 49 is not a magic number: it is every
     /// root property of <c>opencode-config.json</c>, which is what the user must be able to
     /// edit. Any change means upstream altered the schema and the count should be updated
     /// deliberately.
@@ -111,14 +111,17 @@ public class RootRefSchemaTreeTests
     {
         List<SchemaNode> nodes = TopLevel("opencode-config.json");
 
-        MessageAssert.Equal(48, nodes.Count,
-            "Expected the 48 root properties of opencode-config.json (measured 2026-10-19, when "
-            + "upstream inlined its root). A different count means upstream changed the schema; "
-            + "confirm the new shape and update this number deliberately.");
+        // 48 on 2026-10-19, when upstream inlined its root; 49 on 2026-11-10, when upstream added
+        // `timezone` ("IANA time zone for schedules"), measured by diffing the root property names
+        // of the two bundled copies. Nothing was removed.
+        MessageAssert.Equal(49, nodes.Count,
+            "Expected the 49 root properties of opencode-config.json (measured 2026-11-10). A "
+            + "different count means upstream changed the schema; diff the root property names "
+            + "against the previous bundled copy and update this number deliberately.");
 
         // Spot-check identity, not just arity: a builder that read the wrong subschema could
-        // still yield 48 of something else.
-        foreach (string expected in new[] { "model", "permission", "provider", "agent" })
+        // still yield 49 of something else.
+        foreach (string expected in new[] { "model", "permission", "provider", "agent", "timezone" })
         {
             Assert.True(
                 nodes.Any(n => n.Name == expected),
