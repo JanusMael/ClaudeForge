@@ -338,5 +338,10 @@ internal static class ElementAssert
 /// The collection a converted <c>[DoNotParallelize]</c> class joins. Its tests run after every
 /// parallel collection has finished, one at a time — MSTest's meaning for the attribute.
 /// </summary>
+/// <remarks>
+/// Emitted whether or not a converted class joins it, so a suite with no <c>[DoNotParallelize]</c>
+/// class leaves it unused, which xUnit's analyzers report from xunit.v3 4.0.3 on (xUnit1073).
+/// </remarks>
 [CollectionDefinition("DoNotParallelize", DisableParallelization = true)]
+[SuppressMessage("Usage", "xUnit1073", Justification = "Emitted for any converted [DoNotParallelize] class; unused until one joins it.")]
 public sealed class DoNotParallelizeDefinition;
