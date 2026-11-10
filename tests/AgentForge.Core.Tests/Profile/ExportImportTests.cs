@@ -188,7 +188,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "old.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
         MessageAssert.Contains("Incompatible export version", ex.Message,
             "Error message must surface the version mismatch clearly.");
     }
@@ -210,7 +210,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "exists.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        IOException ex = await Assert.ThrowsAsync<IOException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        IOException ex = await Assert.ThrowsAsync<IOException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
         MessageAssert.Contains("already exists", ex.Message,
             "Error must mirror claudectx's 'profile %q already exists' phrasing.");
     }
@@ -250,7 +250,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "nosettings.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
     }
 
     [Fact]
@@ -259,7 +259,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "broken.json");
         await File.WriteAllTextAsync(path, "{ this is not valid json ", TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
     }
 
     // ── Path-traversal guards (security regressions) ───────────────────────
@@ -282,7 +282,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "traversal.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
         MessageAssert.Contains("not a valid", ex.Message,
             "Error message must surface the rejection clearly.");
 
@@ -317,7 +317,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "abs.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "backslash.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
     }
 
     [Fact]
@@ -367,7 +367,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "fslash.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
     }
 
     [Fact]
@@ -386,7 +386,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "dotdot.json");
         await File.WriteAllTextAsync(path, fixture, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidDataException>(() => ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null));
     }
 
     [Fact]
@@ -505,7 +505,7 @@ public sealed class ExportImportTests : IDisposable
         string path = Path.Combine(_sandbox, "from-claudectx.json");
         await File.WriteAllTextAsync(path, claudectxStyle, TestContext.Current.CancellationToken);
 
-        string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken);
+        string landed = await ProfileEngine.ImportProfileAsync(ClaudeEnvironment.Empty, path, ct: TestContext.Current.CancellationToken, overrideName: null);
         Assert.Equal("shared", landed);
 
         // Verify all three files landed correctly.

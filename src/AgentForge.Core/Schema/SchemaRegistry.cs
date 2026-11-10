@@ -306,7 +306,7 @@ public sealed class SchemaRegistry : IDisposable
     /// </summary>
     public async Task<JsonSchemaNode> GetSettingsNodeAsync(
         ProductDescriptor product,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(product);
         JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
@@ -317,7 +317,7 @@ public sealed class SchemaRegistry : IDisposable
                ?? throw new InvalidOperationException("Loaded schema had a null root node.");
     }
 
-    public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct = default)
+    public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct)
     {
         // Schema only: nothing here resolves a path, so the environment cannot matter and the
         // descriptor never escapes this call.
@@ -327,7 +327,7 @@ public sealed class SchemaRegistry : IDisposable
     /// <summary>
     /// Get the Claude Desktop config schema root node.
     /// </summary>
-    public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct = default)
+    public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct)
     {
         return GetSettingsNodeAsync(ClaudeDesktopProduct, ct);
     }
@@ -638,7 +638,7 @@ public sealed class SchemaRegistry : IDisposable
     /// nothing has checked. A section that cannot load its schema is broken, and the hosts
     /// already degrade a failed section visibly.
     /// </exception>
-    public async Task<JsonSchema> GetSchemaAsync(string url, string cacheFileName, CancellationToken ct = default)
+    public async Task<JsonSchema> GetSchemaAsync(string url, string cacheFileName, CancellationToken ct)
     {
         // 1. Memory cache — one resolution per URL per process, whatever the source.
         if (_memoryCache.TryGetValue(url, out JsonSchema? cached))
@@ -1058,7 +1058,7 @@ public sealed class SchemaRegistry : IDisposable
     /// request retries the network even after an earlier probe failed — the latch exists to
     /// keep startup fast, not to refuse a deliberate retry.
     /// </remarks>
-    public async Task<JsonSchema> RefreshAsync(string url, string cacheFileName, CancellationToken ct = default)
+    public async Task<JsonSchema> RefreshAsync(string url, string cacheFileName, CancellationToken ct)
     {
         _memoryCache.TryRemove(url, out JsonSchema? _);
         _materialisedBytes.TryRemove(cacheFileName, out byte[]? _);
@@ -1317,7 +1317,7 @@ public sealed class SchemaRegistry : IDisposable
     public Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
         SettingsWorkspace workspace,
         bool isClaudeCode,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         // Schema only, as above: validation reads SchemaUrl and SchemaFileName, never a path.
         return ValidateWorkspaceAsync(
@@ -1330,7 +1330,7 @@ public sealed class SchemaRegistry : IDisposable
     public async Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
         SettingsWorkspace workspace,
         ProductDescriptor product,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(product);
         JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
@@ -1455,7 +1455,7 @@ public sealed class SchemaRegistry : IDisposable
     public Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
         SettingsWorkspace workspace,
         bool isClaudeCode,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         // Schema only, as above.
         return ValidateAllWorkspaceAsync(
@@ -1468,7 +1468,7 @@ public sealed class SchemaRegistry : IDisposable
     public async Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
         SettingsWorkspace workspace,
         ProductDescriptor product,
-        CancellationToken ct = default)
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(product);
         JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);

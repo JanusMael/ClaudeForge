@@ -51,7 +51,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         {
             w.AddFile(src, "ClaudeCode/claude.json");
             w.AddTextEntry("manifest.json", "{\"kind\":\"backup\"}");
-            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
         }
 
         await using FileStream fs = File.OpenRead(dest);
@@ -91,7 +91,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddTextEntry("a.txt", "one");
-            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
         }
 
         await using FileStream fs = File.OpenRead(dest);
@@ -127,7 +127,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         string dest = Path.Combine(_scratch, "idempotent.zip");
         ZipArchiveWriter w = ZipArchiveWriter.Create(dest);
         w.AddTextEntry("a.txt", "hello");
-        await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+        await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
 
         // First dispose (simulates the implicit await-using cleanup).
         await w.DisposeAsync();
@@ -155,7 +155,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         await cts.CancelAsync();
         try
         {
-            await w.CommitAsync(ct: cts.Token);
+            await w.CommitAsync(ct: cts.Token, progress: null);
             Assert.Fail("Expected OperationCanceledException");
         }
         catch (OperationCanceledException)
@@ -190,7 +190,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "proj");
-            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
         }
 
         List<string> entries = GetEntryNames(dest);
@@ -212,7 +212,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "proj2");
-            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
         }
 
         List<string> entries = GetEntryNames(dest);
@@ -234,7 +234,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         await using (ZipArchiveWriter w = ZipArchiveWriter.Create(dest))
         {
             w.AddDirectory(srcDir, "proj3");
-            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
         }
 
         List<string> entries = GetEntryNames(dest);
@@ -283,7 +283,7 @@ public sealed class ZipArchiveWriterTests : IDisposable
         {
             w.AddDirectory(srcDir, "src");
             MessageAssert.Equal(1, w.SkippedSymlinks.Count, "Symlink should have been detected and skipped.");
-            await w.CommitAsync(ct: TestContext.Current.CancellationToken);
+            await w.CommitAsync(ct: TestContext.Current.CancellationToken, progress: null);
         }
 
         await using FileStream fs = File.OpenRead(dest);

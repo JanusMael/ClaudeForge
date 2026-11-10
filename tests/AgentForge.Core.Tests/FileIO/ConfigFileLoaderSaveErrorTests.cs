@@ -65,7 +65,7 @@ public sealed class ConfigFileLoaderSaveErrorTests : IDisposable
         string path = Path.Combine(_sandbox, "ro.json");
         SettingsDocument doc = NewDoc(path, isReadOnly: true);
 
-        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken));
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null));
 
         OrdinalAssert.Contains("read-only", ex.Message);
         OrdinalAssert.Contains(path, ex.Message);
@@ -84,7 +84,7 @@ public sealed class ConfigFileLoaderSaveErrorTests : IDisposable
         string path = Path.Combine(nestedDir, "settings.json");
         Assert.False(Directory.Exists(nestedDir), "Pre-condition: directory must not exist.");
 
-        await ConfigFileLoader.SaveAsync(NewDoc(path), ct: TestContext.Current.CancellationToken);
+        await ConfigFileLoader.SaveAsync(NewDoc(path), ct: TestContext.Current.CancellationToken, headerComment: null);
 
         Assert.True(Directory.Exists(nestedDir), "Save must create the missing directory.");
         Assert.True(File.Exists(path), "Save must produce the destination file.");
@@ -102,7 +102,7 @@ public sealed class ConfigFileLoaderSaveErrorTests : IDisposable
         doc.MarkDirty();
         Assert.True(doc.IsDirty, "Pre-condition: MarkDirty must flip the dirty latch.");
 
-        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
+        await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null);
 
         Assert.False(doc.IsDirty,
             "After a successful SaveAsync, the document must be marked clean.");
@@ -227,7 +227,7 @@ public sealed class ConfigFileLoaderSaveErrorTests : IDisposable
         Exception? caught = null;
         try
         {
-            await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken);
+            await ConfigFileLoader.SaveAsync(doc, ct: TestContext.Current.CancellationToken, headerComment: null);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -256,7 +256,7 @@ public sealed class ConfigFileLoaderSaveErrorTests : IDisposable
         using CancellationTokenSource cts = new();
         await cts.CancelAsync(); // pre-cancel so WriteAllTextAsync sees the token already faulted
 
-        await Assert.ThrowsAsync<TaskCanceledException>(() => ConfigFileLoader.SaveAsync(doc, ct: cts.Token));
+        await Assert.ThrowsAsync<TaskCanceledException>(() => ConfigFileLoader.SaveAsync(doc, ct: cts.Token, headerComment: null));
 
         Assert.False(File.Exists(path),
             "Cancelled save must not leave a destination file behind.");

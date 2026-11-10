@@ -31,7 +31,7 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
         SchemaRegistry registry = new();
         // var: GetClaudeCodeSettingsNodeAsync returns Json.Schema.JsonSchemaNode, and importing
         // that namespace would make SchemaRegistry ambiguous (Json.Schema also defines one).
-        var root = await registry.GetClaudeCodeSettingsNodeAsync();
+        var root = await registry.GetClaudeCodeSettingsNodeAsync(ct: TestContext.Current.CancellationToken);
         return SchemaTreeBuilder.BuildTopLevel(root);
     }
 

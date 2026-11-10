@@ -1213,7 +1213,10 @@ public partial class BackupRestoreViewModel : ObservableObject, IDisposable, INa
         ProgressMessage = _text.ProgressCreatingJunction;
         try
         {
-            MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync();
+            // Not registered with _operationCts on purpose: the junction merges a real folder into
+            // the MSIX path and then removes it, and a cancel between the two would leave it
+            // half-merged. The token was a default before plans/00010 made it required.
+            MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync(CancellationToken.None);
             StatusMessage = result.Message;
             MsixStatus = MsixPathProbe.Instance.Probe();
         }

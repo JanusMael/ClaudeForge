@@ -104,8 +104,8 @@ public sealed class BackupEngine
     /// </summary>
     public async Task<BackupResult> CreateAsync(
         BackupRequest request,
-        IProgress<BackupProgress>? progress = null,
-        CancellationToken ct = default)
+        IProgress<BackupProgress>? progress,
+        CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -395,7 +395,7 @@ public sealed class BackupEngine
             // No-op for non-Sanitized modes (FileTransformer is null).
             if (request.Mode == BackupMode.Sanitized)
             {
-                await writer.PrecomputeTransformsAsync(ct: ct).ConfigureAwait(false);
+                await writer.PrecomputeTransformsAsync(maxDegreeOfParallelism: -1, ct).ConfigureAwait(false);
             }
 
             // --- Manifest goes last so a truncated archive is obviously broken ---
@@ -1141,8 +1141,8 @@ public sealed class BackupEngine
     /// </param>
     public Task<RestoreResult> RestoreAsync(
         BackupEntry entry,
-        IProgress<BackupProgress>? progress = null,
-        CancellationToken ct = default,
+        IProgress<BackupProgress>? progress,
+        CancellationToken ct,
         IReadOnlyCollection<string>? openProjectRoots = null)
     {
         return RestoreEngine.RestoreAsync(_env, entry, _restorableProducts, progress, ct, openProjectRoots);

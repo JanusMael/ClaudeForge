@@ -116,7 +116,7 @@ public sealed class AppUpdateCoordinator
     /// opt-out (the click is consent, whatever the preference says). Still honours the simulate
     /// flag, so one debug flag exercises the button and the banner in a single session.
     /// </remarks>
-    public async Task<UpdateCheckResult> CheckManualAsync(CancellationToken ct = default)
+    public async Task<UpdateCheckResult> CheckManualAsync(CancellationToken ct)
     {
         if (_options.IsSimulatingUpdate())
         {
@@ -138,7 +138,7 @@ public sealed class AppUpdateCoordinator
     /// the view-model layer can only let one call through. Second and later calls cost one
     /// compare-exchange.
     /// </remarks>
-    public async Task<UpdateCheckResult> CheckOncePerLaunchAsync(CancellationToken ct = default)
+    public async Task<UpdateCheckResult> CheckOncePerLaunchAsync(CancellationToken ct)
     {
         if (Interlocked.CompareExchange(ref _checkFired, 1, 0) != 0)
         {
@@ -156,7 +156,7 @@ public sealed class AppUpdateCoordinator
     /// kick, and this is meant to fire repeatedly. It DOES honour the opt-out: a background
     /// timer is not consent, so a user who turned the check off must get no periodic banners.
     /// </remarks>
-    public async Task<UpdateCheckResult> CheckPeriodicAsync(CancellationToken ct = default)
+    public async Task<UpdateCheckResult> CheckPeriodicAsync(CancellationToken ct)
     {
         return await RunAutoCheckAsync(ct).ConfigureAwait(false);
     }
