@@ -134,15 +134,13 @@ public sealed class AssemblyQualityTests
 
         List<Assembly> packable = [];
         List<Assembly> products = [];
-        foreach (string dir in Directory.GetDirectories(src).Order(StringComparer.Ordinal))
+        IEnumerable<string> srcProjects = Directory.GetDirectories(src)
+            .Order(StringComparer.Ordinal)
+            .Select(dir => Directory.GetFiles(dir, "*.csproj"))
+            .Where(projects => projects.Length > 0)
+            .Select(projects => Assert.Single(projects));
+        foreach (string project in srcProjects)
         {
-            string[] projects = Directory.GetFiles(dir, "*.csproj");
-            if (projects.Length == 0)
-            {
-                continue;
-            }
-
-            string project = Assert.Single(projects);
             (IsPackable(project) ? packable : products).Add(Load(Path.GetFileNameWithoutExtension(project)));
         }
 
