@@ -1,4 +1,4 @@
-﻿using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
+﻿using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Save;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
@@ -19,7 +19,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// neutral dialog would have looked tidier and quietly un-translated them: the parity
 /// test resolves <c>src/ClaudeForge/Localization</c> by path, so nothing outside that
 /// directory is checked — which is exactly why the 93 strings already living in
-/// <c>ClaudeForge.Avalonia</c> have no locales at all.
+/// <c>ClaudeForge.AvaloniaUI</c> have no locales at all.
 /// </para>
 /// </summary>
 public static class ClaudeSaveDialogText

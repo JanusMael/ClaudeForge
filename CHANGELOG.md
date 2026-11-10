@@ -16,6 +16,15 @@ reconcile them against and renumbering them would be guesswork.
 
 ## [Unreleased]
 
+### Breaking — for consumers of the `Bennewitz.Ninja.AgentForge.*` packages
+
+- **`AgentForge.Avalonia.Shell` is now `AgentForge.AvaloniaUI.Shell`**: the package id
+  (`Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell`), the assembly and the namespace. The `.Avalonia`
+  segment shadowed the Avalonia framework's root namespace, so any `Avalonia.*` name written
+  inside it would fail to resolve. The old package id stays on the feed at `2026.4.1019` and gets
+  no newer versions. The app's own `ClaudeForge.Avalonia` is renamed `ClaudeForge.AvaloniaUI` for
+  the same reason; it is not a package.
+
 ### Added
 
 - **Claude Fable 5.2, Sonnet 5.5 and Haiku 5.5.** The `fable`, `sonnet` and `haiku` aliases now

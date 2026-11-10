@@ -156,7 +156,7 @@ public sealed class AssemblyLayeringTests
             foreach (string reference in referencePaths)
             {
                 // Check every path segment, not just the file name. A project file does not
-                // have to be named after its directory — 'ClaudeForge.Avalonia\Renamed.csproj'
+                // have to be named after its directory — 'ClaudeForge.AvaloniaUI\Renamed.csproj'
                 // is a real violation that a file-name-only check would wave through.
                 string[] segments = reference.Replace('\\', '/').Split('/',
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

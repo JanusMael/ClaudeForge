@@ -1,7 +1,7 @@
 ﻿using System.Collections;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
@@ -15,7 +15,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

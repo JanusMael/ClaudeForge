@@ -104,7 +104,7 @@ A node with `Editor == null` is a header (section divider); never add a result t
 
 ## §3 `SearchViewModel` contract
 
-⚠ **`SearchViewModel` lives in `src/AgentForge.Avalonia.Shell/Search/`, not here.**
+⚠ **`SearchViewModel` lives in `src/AgentForge.AvaloniaUI.Shell/Search/`, not here.**
 Phase 5 slice 3 moved the whole search machinery — the debounce, the tree walk, the
 schema flattening, the snippet, the result cap — to the neutral shell. This app
 supplies the parts that are Claude's.
@@ -273,7 +273,7 @@ Rules worth knowing before editing the tables:
 
 ## §4d Save / restore confirmation dialog — `SaveDialogText`
 
-The dialog's model and its builder live in `src/AgentForge.Avalonia.Shell/Save/`.
+The dialog's model and its builder live in `src/AgentForge.AvaloniaUI.Shell/Save/`.
 Nothing in them is product-specific: which documents are dirty, how the diffs are
 computed, how paths are shortened to `~/…`, how values are truncated, how the summary
 counts read — all identical for any layered-config product.
@@ -293,7 +293,7 @@ pin the startup culture.
 should not either. `LocalizationParityTests` finds its resx files by walking to
 `src/ClaudeForge/Localization` **by hardcoded path**. A resource set anywhere else is
 checked by nothing: not the every-key-in-every-locale contract, not the `TODO`
--placeholder rejection, not the copy-of-English detection. `ClaudeForge.Avalonia`
+-placeholder rejection, not the copy-of-English detection. `ClaudeForge.AvaloniaUI`
 already demonstrates the consequence — 93 strings, zero locale siblings, no failing
 test. Moving these twelve translated keys out of the guarded directory would have
 silently un-translated them in eight locales while looking like tidier architecture.
@@ -417,7 +417,7 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 | `ClaudeSyntheticSearch.cs`                 | This app's pinned search rows: trigger phrases, nav targets, card titles     |
 | `ClaudeSaveDialogText.cs`                  | This app's wording for the save / restore dialog (12 keys); model is in the shell |
 | `../Services/NavigationTreeBuilder.cs`     | This app's schema→page tables; arrangement is `SchemaPageLayout` (see §4c)   |
-| ⚠ `SearchViewModel.cs` / `SearchResultViewModel.cs` | **moved** — `src/AgentForge.Avalonia.Shell/Search/` (see §3) |
+| ⚠ `SearchViewModel.cs` / `SearchResultViewModel.cs` | **moved** — `src/AgentForge.AvaloniaUI.Shell/Search/` (see §3) |
 | `SettingsGroupEditorViewModel.cs`          | Generic property group editor; exposes `SchemaNodes`, `Editors`, `GroupName` |
 | `Editors/PermissionsEditorViewModel.cs`    | Specialized editor; `IJsonPathScopedEditor` ⇒ `"permissions"`                |
 | `Editors/HooksEditorViewModel.cs`          | Specialized editor; `IJsonPathScopedEditor` ⇒ `"hooks"`                      |
@@ -430,6 +430,6 @@ replaced on `ReloadAsync`. Always call it at the point of use.
 | Seam                                    | File                             | Usage                                                           |
 |-----------------------------------------|----------------------------------|-----------------------------------------------------------------|
 | `GetClaudeCodeSdkClientForTesting()`    | `MainWindowViewModel.cs`         | Access live SDK client for mutation-based integration tests     |
-| `SearchViewModel` delegate constructor  | `AgentForge.Avalonia.Shell/Search/SearchViewModel.cs` | Pass fake `getNavigationTree` + `isLoadingProbe`; omit `getSyntheticEntries` for a product-free fixture |
+| `SearchViewModel` delegate constructor  | `AgentForge.AvaloniaUI.Shell/Search/SearchViewModel.cs` | Pass fake `getNavigationTree` + `isLoadingProbe`; omit `getSyntheticEntries` for a product-free fixture |
 | `PlatformPaths.TestUserProfileOverride` | `Core/Platform/PlatformPaths.cs` | Redirect `~/.claude/` to sandbox                                |
 | `DebugFlags.ResetForTesting()`          | `Services/DebugFlags.cs`         | Reset flags + `PlatformInfo.Current` in `Dispose`              |

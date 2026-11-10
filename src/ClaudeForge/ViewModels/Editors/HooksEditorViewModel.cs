@@ -1,11 +1,11 @@
 ﻿using System.Collections.ObjectModel;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Adapters;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;

@@ -2,7 +2,7 @@ using System.Globalization;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Serilog;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 
 namespace Bennewitz.Ninja.ClaudeForge.Services;
 

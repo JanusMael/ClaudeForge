@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ScopedEditors.ViewModels;
 

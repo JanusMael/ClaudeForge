@@ -21,7 +21,7 @@ a compat dictionary that closes the gap.
 
 ## What the report says about ClaudeForge
 
-Under Semi, ClaudeForge's views (`src/ClaudeForge`, `src/ClaudeForge.Avalonia`,
+Under Semi, ClaudeForge's views (`src/ClaudeForge`, `src/ClaudeForge.AvaloniaUI`,
 `src/LayeredEditors.Avalonia`) referenced seven keys that resolve to nothing in every variant:
 
 | Key | With the compat dictionaries |

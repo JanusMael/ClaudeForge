@@ -1,6 +1,6 @@
-﻿using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+﻿using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Avalonia.Threading;

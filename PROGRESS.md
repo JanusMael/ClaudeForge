@@ -265,6 +265,9 @@ step 3. The items below are kept in order; those marked ✅ are done.
    text: with `text=auto`, a bundled schema is CRLF in a Windows checkout and LF elsewhere. ⚠ A
    schema refresh that changes a bundled file re-mints `backup.json` on purpose. ▶ **Next: step 4**
    (`AgentForge.Avalonia.Shell.Tests`).
+   - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
+     renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
+     plan keeps the old name.
    - **Drift: the neutral test product's frozen archive moves from step 3 to step 5.** Step 3 was
      to mint it, but the neutral test product is only created in step 5.
    Drift from the plan, recorded here and never in it:

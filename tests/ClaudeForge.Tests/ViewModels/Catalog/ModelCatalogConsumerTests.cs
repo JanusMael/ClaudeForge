@@ -5,7 +5,7 @@ using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.ClaudeForge.Tests.ViewModels; // FakeEnvironmentProvider
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Catalog;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Catalog;
 

@@ -8,7 +8,7 @@ using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

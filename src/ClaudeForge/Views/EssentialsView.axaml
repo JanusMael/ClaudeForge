@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Bennewitz.Ninja.ClaudeForge.ViewModels"
-             xmlns:ess="using:Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials"
+             xmlns:ess="using:Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials"
              xmlns:loc="clr-namespace:Bennewitz.Ninja.ClaudeForge.Localization"
              xmlns:ctrl="using:Bennewitz.Ninja.ClaudeForge.Controls"
              xmlns:leconv="using:Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Converters"

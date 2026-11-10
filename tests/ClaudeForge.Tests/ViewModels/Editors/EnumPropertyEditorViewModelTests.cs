@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Adapters;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
 

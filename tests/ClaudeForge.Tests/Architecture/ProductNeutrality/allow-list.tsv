@@ -12,29 +12,29 @@ resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode
 resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.overlay.json	1
 shape	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Settings.ScopeLadder::.cctor new ScopeLadder	1
 shape	AgentForge.Sdk	Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog::.cctor new FootprintCatalog	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	"Create MSIX junction?", msixMsg,	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	"merged into the MSIX path (MSIX wins on conflict) and then removed. ")	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	.Path(_options.CredentialsPathDisplay)	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	.Text(" to ").Path(MsixStatus.VirtualisedPath).Text("?\n\n")	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	.Text("Create an NTFS junction from ").Path(MsixStatus.StandardPath)	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	2 => TabMsixFixId,	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	CheckForRunningClaudeProcesses();	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	DialogMessage msixMsg = DialogMessage.Builder()	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync();	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = MsixPathProbe.Instance.Probe();	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = OperatingSystem.IsWindows() ? MsixPathProbe.Instance.Probe() : null;	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	OnPropertyChanged(nameof(ShowMsixTab));	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	TabMsixFixId => 2,	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	[ObservableProperty] private MsixStatus? _msixStatus;	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	if (MsixStatus?.NeedsFix != true)	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	if (index == 2 && !ShowMsixTab)	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	partial void OnMsixStatusChanged(MsixStatus? value)	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	private async Task FixMsixAsync()	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	private void CheckForRunningClaudeProcesses()	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	public bool ShowMsixTab => OperatingSystem.IsWindows() && MsixStatus?.NeedsFix == true;	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	public const string TabMsixFixId = "msix-fix";	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	return Path.GetFileName(item).Equals(".credentials.json", StringComparison.OrdinalIgnoreCase)	1
-words	src/AgentForge.Avalonia.Shell/Backup/BackupRestoreViewModel.cs	string tab = value switch { 0 => "Backup", 1 => "Restore", 2 => "MsixFix", _ => "?" };	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	"Create MSIX junction?", msixMsg,	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	"merged into the MSIX path (MSIX wins on conflict) and then removed. ")	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	.Path(_options.CredentialsPathDisplay)	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	.Text(" to ").Path(MsixStatus.VirtualisedPath).Text("?\n\n")	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	.Text("Create an NTFS junction from ").Path(MsixStatus.StandardPath)	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	2 => TabMsixFixId,	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	CheckForRunningClaudeProcesses();	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	DialogMessage msixMsg = DialogMessage.Builder()	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixFixResult result = await MsixPathProbe.Instance.CreateJunctionAsync();	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = MsixPathProbe.Instance.Probe();	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	MsixStatus = OperatingSystem.IsWindows() ? MsixPathProbe.Instance.Probe() : null;	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	OnPropertyChanged(nameof(ShowMsixTab));	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	TabMsixFixId => 2,	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	[ObservableProperty] private MsixStatus? _msixStatus;	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	if (MsixStatus?.NeedsFix != true)	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	if (index == 2 && !ShowMsixTab)	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	partial void OnMsixStatusChanged(MsixStatus? value)	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	private async Task FixMsixAsync()	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	private void CheckForRunningClaudeProcesses()	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	public bool ShowMsixTab => OperatingSystem.IsWindows() && MsixStatus?.NeedsFix == true;	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	public const string TabMsixFixId = "msix-fix";	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	return Path.GetFileName(item).Equals(".credentials.json", StringComparison.OrdinalIgnoreCase)	1
+words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	string tab = value switch { 0 => "Backup", 1 => "Restore", 2 => "MsixFix", _ => "?" };	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/projects/{name}");	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}");	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment env,	1

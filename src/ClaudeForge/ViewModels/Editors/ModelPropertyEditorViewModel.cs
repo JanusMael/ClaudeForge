@@ -1,6 +1,6 @@
 ﻿using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using LibVm = Bennewitz.Ninja.ScopedEditors.ViewModels;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Profile;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.AppServices.Abstractions;

@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.AgentForge.Sdk;

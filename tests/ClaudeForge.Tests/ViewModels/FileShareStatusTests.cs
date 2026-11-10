@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Status;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;

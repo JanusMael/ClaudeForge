@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Globalization;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 

@@ -224,7 +224,7 @@ The same helper is the natural home for several gaps already recorded here:
   package is wanted anyway.
 
 ⭐ **Either shape belongs in a neutral library, not an app.** `LayeredEditors.Avalonia` or
-`AgentForge.Avalonia.Shell` — it must make sense for both products, and an automation-surface
+`AgentForge.AvaloniaUI.Shell` — it must make sense for both products, and an automation-surface
 helper plainly does.
 
 ## ⭐ It is not Windows-only

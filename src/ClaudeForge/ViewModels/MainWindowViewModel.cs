@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
 using System.ComponentModel;
 using System.Globalization;
 using System.Security;
@@ -27,7 +27,7 @@ using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Status;
 using Bennewitz.Ninja.AppServices.AvaloniaUI;
 using Bennewitz.Ninja.ScopedEditors.Messages;
 using Bennewitz.Ninja.AppServices;
@@ -39,9 +39,9 @@ using CommunityToolkit.Mvvm.Messaging;
 using Json.Schema;
 using Serilog;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Save;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 
 // SDK clients live alongside the legacy SettingsWorkspace
@@ -49,7 +49,7 @@ using Bennewitz.Ninja.ClaudeForge.Adapters;
 // Core and Sdk (ConfigScope, SchemaValidationError). Code in MWVM continues to
 // use the Core types by default; the SDK-typed names are reached via Sdk.* .
 // the public Status property below shadows the
-// AgentForge.Avalonia.Shell.Status namespace; this alias gives unambiguous
+// AgentForge.AvaloniaUI.Shell.Status namespace; this alias gives unambiguous
 // access to the namespace's types (StatusKind, StatusController) inside
 // MainWindowViewModel. Phase 5 slice 1 moved those two types to the neutral
 // shell — the shadowing hazard is unchanged, only the namespace moved.
@@ -622,7 +622,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Centre status-bar text + lifecycle.  Replaces the prior bare
     /// <c>string? StatusMessage</c> that never auto-cleared — see
-    /// <see cref="Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status.StatusController"/> and
+    /// <see cref="Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Status.StatusController"/> and
     /// <c>CLAUDE.md</c> "Status bar" for the full lifecycle rules.
     /// </summary>
     /// <remarks>
@@ -2284,7 +2284,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // Save-confirmation dialog construction (BuildChangeSummaryViewModel +
     // AppendSdkSections + AppendSection + DiffJsonObjects + TruncateJson +
     // ToDisplayPath) moved out of this class; Phase 5 slice 5 then moved the
-    // builder itself to AgentForge.Avalonia.Shell.Save. Call sites use
+    // builder itself to AgentForge.AvaloniaUI.Shell.Save. Call sites use
     // SaveDialogBuilder.Build directly, passing this app's wording.
 
     /// <summary>

@@ -33,7 +33,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 ///
 /// <para>
 /// <b>Why a text scan rather than reflection.</b> The item types live in different assemblies
-/// (<c>AgentForge.Avalonia.Shell</c> and <c>OpenCode.Avalonia</c>), and this test project does not
+/// (<c>AgentForge.AvaloniaUI.Shell</c> and <c>OpenCode.Avalonia</c>), and this test project does not
 /// reference all of them — a reflection-based check would silently skip whatever it could not
 /// load, which is the failure mode a guard must not have. Reading the declaring source file works
 /// uniformly and cannot skip.

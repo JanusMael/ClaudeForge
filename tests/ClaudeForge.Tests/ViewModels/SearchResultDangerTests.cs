@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;

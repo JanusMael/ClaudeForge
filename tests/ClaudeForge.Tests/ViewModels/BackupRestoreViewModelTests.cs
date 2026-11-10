@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -17,14 +17,14 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 /// </summary>
 /// <remarks>
 /// ⭐ <b>ClaudeForge's REAL options, not a stub.</b> The page moved to
-/// <c>AgentForge.Avalonia.Shell.Backup</c> and the host now supplies its wording, products, engine
+/// <c>AgentForge.AvaloniaUI.Shell.Backup</c> and the host now supplies its wording, products, engine
 /// and process names; a hand-rolled set here would let this suite pass while the app wired
 /// something else. Running these 1,675 lines against the real options is what makes them evidence
 /// that the extraction preserved behaviour rather than merely compiled.
 /// </remarks>
 internal static class BackupPageTestOptions
 {
-    internal static AgentForge.Avalonia.Shell.Backup.BackupPageOptions Create(
+    internal static AgentForge.AvaloniaUI.Shell.Backup.BackupPageOptions Create(
         IReadOnlyList<ProductDescriptor>? products = null) =>
         ClaudeBackupPage.Options(
             ClaudeEnvironment.Empty,

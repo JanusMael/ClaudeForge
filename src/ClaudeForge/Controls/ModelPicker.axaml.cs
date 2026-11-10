@@ -5,7 +5,7 @@ using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 
 namespace Bennewitz.Ninja.ClaudeForge.Controls;
 

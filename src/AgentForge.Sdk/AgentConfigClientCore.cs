@@ -1047,7 +1047,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// Build a short snippet around the first occurrence of
     /// <paramref name="query"/> in <paramref name="text"/>.
     /// Mirrors <c>SearchViewModel.BuildSnippet</c> — both must stay in sync
-    /// (see <c>src/AgentForge.Avalonia.Shell/Search/SearchViewModel.cs</c>).
+    /// (see <c>src/AgentForge.AvaloniaUI.Shell/Search/SearchViewModel.cs</c>).
     /// </summary>
     private static string BuildSearchSnippet(string text, string query, int maxLen = 70)
     {

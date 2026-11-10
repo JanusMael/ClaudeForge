@@ -91,7 +91,7 @@ scope change.
 
 ## 2. `ConfigScopeAdapter` — the ordering invariant is GONE (Phase 3)
 
-Source: `src/AgentForge.Avalonia.Shell/Adapters/ConfigScopeAdapter.cs`.
+Source: `src/AgentForge.AvaloniaUI.Shell/Adapters/ConfigScopeAdapter.cs`.
 
 This section used to document a hard invariant: `_cache` was an array indexed by
 `(int)scope`, so its entries had to appear in `ConfigScope` numeric order, and getting
@@ -229,7 +229,7 @@ If you add a new editor that also computes `OtherScopesWithData` from
 
 ## 6. `_selfWriting` guard
 
-Source: `src/AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs` —
+Source: `src/AgentForge.AvaloniaUI.Shell/Settings/SettingsGroupEditorViewModel.cs` —
 the `_selfWriting` field, the `OnWorkspaceChanged` early-out, and the
 live-write try/finally block in `ApplyToWorkspace`.
 
@@ -294,7 +294,7 @@ The only writes happen in the constructor, `MarkClean()`, and `UpdateRoot()`.
 | Concern                                  | File                                                                                                                                                                                                                                                                                                                                               |
 |------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Disk I/O (`LoadAsync` / `SaveAsync`)     | `src/AgentForge.Core/FileIO/ConfigFileLoader.cs` (search for `LoadAsync`)                                                                                                                                                                                                                                                         |
-| Workspace adapter for the editor library | `src/AgentForge.Avalonia.Shell/Adapters/SettingsWorkspaceAdapter.cs`, `LayeredValueAdapter.cs`                                                                                                                                                                                                                                                                      |
+| Workspace adapter for the editor library | `src/AgentForge.AvaloniaUI.Shell/Adapters/SettingsWorkspaceAdapter.cs`, `LayeredValueAdapter.cs`                                                                                                                                                                                                                                                                      |
 | Editor base class                        | `PropertyEditorViewModel`, package `Bennewitz.Ninja.ScopedEditors.ViewModels`                                                                                                                                                                                                                                                                                |
 | App-shim editor base                     | `src/ClaudeForge/ViewModels/Editors/PropertyEditorViewModel.cs`                                                                                                                                                                                                                                                                                    |
 | Top-level orchestration                  | `src/ClaudeForge/ViewModels/MainWindowViewModel.cs` (`OnAnyWorkspaceChanged`, `ComputeHasActualChanges`)                                                                                                                                                                                                                                           |
