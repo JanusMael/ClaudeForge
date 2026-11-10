@@ -142,10 +142,10 @@ the defect.
 | | |
 |---|---|
 | `main` | 2026-10-19: ten PRs merged one at a time, each green on its own head — #119 and #122 from sessions, and Dependabot's #109, #112, #115–#118, #120 and #121 (#121 after a requested rebase). The combined head `abc2bd8e` then ran all 7 CI jobs green plus CodeQL. #110 and #111 were closed as superseded: all three AppServices PRs edited the one `AppServicesVersion` line, and #109 had landed it. #103 then #108 merged on top. ⓘ `git log -1` is the answer for HEAD |
-| Suite | **3,255 · 0 failed · 12–13 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies (= six test csproj), Debug — measured 2026-10-19 on #108 merged with that day's `main`: exactly **+17** over the 3,238 measured on #103's merge an hour earlier, with nothing else landing between, so those are #108's guards. Two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present (13 with it, 12 without). ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
+| Suite | **3,256 · 0 failed · 12–13 skipped**, xUnit **v4 on MTP v2** (#101), across **six** test assemblies (= six test csproj), Debug — measured 2026-11-10 on `fix/opencode-schema-redesign`: **+1** over the 3,255 that #138, #140 and #141 each left unchanged, which is the synthetic root-`$ref` test. 3,255 was measured 2026-10-19 on #108 merged with that day's `main`: exactly **+17** over the 3,238 measured on #103's merge an hour earlier, with nothing else landing between, so those are #108's guards. Two of the skips are the explicit writers `WriteAllowList` and `WriteGoldens`, and one flips with `artifacts/localfeed` present (13 with it, 12 without). ⛔ A `Passed!` line with a SHORT total is a crashed test host (drift 15) — compare the total. ⚠ On MTP v2, `dotnet test <sln> -- --report-trx` (or `-- --coverage`) writes nothing: use `dotnet test --solution … --report-trx`, or run the test executable directly |
 | CI on `main` | `Feed Restore` and `Published Version` restore the published AgentForge packages at `SharedPackageVersion` **`2026.4.1019`**. ⓘ `Published Version` was RED BY CONSTRUCTION between #108's merge and this pin: #108 added `AgentForge.Core.Text.LinearRegex`, and the packages at `2026.3.925` did not contain it (`CS0234`). Cured as one release, in order — `packages-v2026.4.1019` preflighted (5 packages, one version, assemblies `2026.4.1019.1548`, none already on the feed), tagged on #108's merge, published, then verified **5 of 5 on the feed id by id** with the downloaded `AgentForge.Core` carrying `LinearRegex` — and only then this pin. #103 (rule VALIDATION) and #108 (rule MATCHING) both merged 2026-10-19, which ends the permission-rule regex timeout that once failed a permissions test under load in CI on #105 |
 | Packages consumed | ScopedEditors **`2026.4.1110`**, AppServices **`2026.4.1110`** and JsonC **`2026.4.1031`** (nuget.org), Avalonia **12.1.6**, DataGrid **12.1.2** (it ships on its own cadence and has no 12.1.6), JsonSchema.Net **9.6.0**, AutoVersioning **`2026.4.1031`**, xunit.v3 **4.0.3**, XamlQuality **`2026.4.1109`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted). Moved by `plans/00009` Phase 1 on 2026-11-10: every `src` project built unchanged at the new ScopedEditors and AppServices. The one break was xunit.v3 4.0.3's new `xUnit1073` against the `DoNotParallelize` collection in `tests/Shared/MessageAssert.cs`, which five of the six assemblies never join. Fixed by **regenerating** the file with Templates' `mstest-to-xunit.cs --emit-helpers` at `2584de1`, which carries upstream's own fix (`06995308`); the regenerated file differs from the old one only by that fix. Suite unchanged: **3,255 · 0 · 13**, all six assemblies |
-| ⛔ Schema-refresh bot | `schema-refresh.yml` recreates `chore/schema-refresh` from `main` every Monday, and on 2026-11-09 erased #114's test commit `5134ef47` from the remote. The commit survives only locally, tagged `backup/opencode-redesign-tests`. `plans/00009` Phase 2 lands it from `fix/opencode-schema-redesign` and fixes the workflow (decisions 12–13). **Never push to `chore/schema-refresh`** |
+| ⛔ Schema-refresh bot | `schema-refresh.yml` recreates `chore/schema-refresh` from `main` every Monday, and on 2026-11-09 erased #114's test commit `5134ef47` from the remote. The commit survives only locally, tagged `backup/opencode-redesign-tests`. Landed from `fix/opencode-schema-redesign` (`plans/00010` step S), which also fixed the workflow: it now leaves a branch carrying any commit it did not make alone. ⚠ **Drift from 00010 decision 13**, which said "a commit not *authored* by `github-actions[bot]`". The bot's own commit `4aeb1ead` is authored by `JanusMael` (create-pull-request uses the triggering actor) and *committed* by `github-actions[bot]`, so the guard keys on the committer. **Still land redesigns from your own branch**: AGENTS.md *The weekly schema refresh opened a PR* |
 
 **Next:** `plans/00010`'s order of work: U (#140, Ultracode leaves the catalog) → M (the three new
 models) → S (the schema PR, closing #114, the refresh-bot fix) → R (the `.AvaloniaUI` renames) → C
@@ -347,6 +347,29 @@ step 3. The items below are kept in order; those marked ✅ are done.
      side: ⚠ the existing suite never loaded them hard enough to time out, so the load runs show only
      that the fix adds no load sensitivity (the 17 new tests passed all 4 loaded rounds). The fail-open
      proof is the canary, not the load. Those failures were #103's, which merged 2026-10-19.
+
+### ⚠ When OpenCodeForge rejoins — `feat/agentforge-opencodeforge`
+
+Claims about the parked shell that nothing on this branch can check. Each carries the date it was
+written, so the merge can re-check it rather than trust it (AGENTS.md §6, rule 3).
+
+- **2026-10-19 — the OpenCode `model` property changed TYPE.** Upstream's config schema now types
+  the top-level `model` as `anyOf` a `provider/model[#variant]` string **or** a
+  `{providerID, model, variant}` object (landed by the schema PR that replaced #114). Online,
+  OpenCodeForge already loads this shape, because schema loading is network-first; the bundled
+  offline copy matches it from that PR on. Whatever editor the parked shell gives `model` was
+  written for a plain string and has to handle the object branch — re-find it, test both
+  branches, and check what an `anyOf` renders as before assuming. The same refresh inlined the
+  schema root, removed `$defs/Config` and grew the config from 36 to 48 root properties; on
+  2026-11-10 upstream added a 49th, `timezone` (for schedules); `BundledOpenCodeSchemaTests` and
+  `RootRefSchemaTreeTests` pin the new shape on this branch.
+- **2026-11-10 — the AgentForge packages break source compatibility at the next package release**
+  (`plans/00010`): Core's 32 defaulted `CancellationToken`s become required, and
+  `AgentForge.Avalonia.Shell` becomes `AgentForge.AvaloniaUI.Shell` with a new package id.
+- **2026-09-25 — `ConfigScopeAdapter.ToConfigScope` lost its id fallback.** The parked branch's
+  `ConfigScopeAdapterTests.cs:99` (`ToConfigScope_ResolvesRealWrappersAndForeignScopesAlike`)
+  asserts the removed fallback and must take the new contract. Detail under the `plans/00006`
+  drift, item 10.
 
 ### ▶ Where [`plans/00006`](plans/00006-tests-move-to-xunit-v3.md) stands — branch `feat/tests-xunit-v3`
 

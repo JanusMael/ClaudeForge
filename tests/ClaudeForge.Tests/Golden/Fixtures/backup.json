@@ -50,7 +50,7 @@
     },
     {
       "name": "Schemas/claude-code-settings.json",
-      "sha256": "6D4A6E3C7ADEDFFCE8079CCAEF0A4BAB5F5718B054421B4475C788A0AE4BEDFE"
+      "sha256": "F26F028AD94A1E2A28E9DAD1F80832AB196A8E080BD3A7D7A32E6428A15E0611"
     },
     {
       "name": "Schemas/claude-code-settings.overlay.json",
