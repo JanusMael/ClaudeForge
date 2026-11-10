@@ -8,6 +8,7 @@ using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AppServices.AvaloniaUI;
+using Bennewitz.Ninja.AppServices.EntryPoint;
 using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Localization;
 using Serilog;
 
@@ -15,8 +16,58 @@ namespace Bennewitz.Ninja.ClaudeForge;
 
 internal sealed class Program
 {
+    /// <summary>
+    /// The entry point: <see cref="AppMain.RunDesktop"/> around <see cref="Run"/> (plans/00010 step E).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>What the entry point adds over the hand-written <c>Main</c> it replaced.</b> A failure that
+    /// escapes <see cref="Run"/> now exits <b>1</b>, where <c>void Main</c> exited 0 whatever happened, so
+    /// a script or installer can tell a crash from a quit. The failure is reported on stderr before any
+    /// callback runs, so it survives a broken logger. The log is flushed exactly once on every exit,
+    /// SIGTERM included. <c>--version</c>, as the only argument, prints the release version.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Two of the library's defaults are overridden on purpose.</b> <see cref="Run"/> keeps the
+    /// in-process <c>FatalErrorDialog</c> attempt on a bootstrap failure, which the library's options
+    /// do not make. And an unobserved task exception is left to <c>App.OnUnobservedTaskException</c>,
+    /// which filters the Linux D-Bus noise; the library would log every one of them a second time.
+    /// </para>
+    /// </remarks>
     [STAThread]
-    public static void Main(string[] args)
+    public static int Main(string[] args)
+    {
+        // ⚠ A WinExe starts detached from its console, so --version would print to nowhere on
+        // Windows. Attach first, for that one argument only: attaching on every launch would tie a
+        // GUI started from a terminal to that terminal.
+        if (args is ["--version"])
+        {
+            TryAttachParentConsole();
+        }
+
+        AppMainOptions defaults = AvaloniaDiagnostics.EntryPointOptions();
+        AppMainOptions options = new()
+        {
+            // The library's: log the failure as fatal, then show the native-OS dialog.
+            OnFatal = defaults.OnFatal,
+            // Left unset: App.OnUnobservedTaskException owns these (see the remarks).
+            OnUnobservedTaskException = null,
+            FlushLog = () =>
+            {
+                // Permanent: the very last log line before the Serilog pipeline shuts down. Pairs
+                // with "Starting ClaudeForge" and with the [App.Shutdown] line MainWindow.OnClosed
+                // writes on a normal quit, so a post-mortem can tell a crash (Starting, no Exiting)
+                // from a clean quit (both, with [App.Shutdown] between).
+                Log.Information("Exiting ClaudeForge");
+                defaults.FlushLog?.Invoke();
+            },
+        };
+
+        return AppMain.RunDesktop(typeof(Program).Assembly, args, Run, options);
+    }
+
+    /// <summary>The app itself: everything <see cref="Main"/> did before step E, returning an exit code.</summary>
+    private static int Run(string[] args)
     {
         // 1. Debug flags — parse the command-line FIRST so the --culture
         //    flag is available to LocalizationService.ApplyCulture() in
@@ -98,17 +149,9 @@ internal sealed class Program
             var _ => key,
         };
 
-        // 3. AppDomain crash handler — catches fatal exceptions on non-Avalonia threads
-        //    (e.g. background threads that crash before the UI thread even starts) and
-        //    true-fatal errors during CLR initialisation. The Avalonia runtime is likely
-        //    dead at this point, so we use the native-OS dialog rather than the in-process
-        //    FatalErrorDialog.
-        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-        {
-            Exception? ex = e.ExceptionObject as Exception;
-            Log.Fatal(ex, "AppDomain.UnhandledException (IsTerminating={IsTerm})", e.IsTerminating);
-            AvaloniaDiagnostics.ShowNativeFatalError(ex?.ToString() ?? "Unknown fatal error.");
-        };
+        // 3. (Was the AppDomain crash handler.) AppMain.RunDesktop owns a failure on another thread
+        //    now: it reports it on stderr, then OnFatal logs it as fatal and shows the native-OS
+        //    dialog, which is what this handler did. A second handler would report it twice.
 
         // 4. One-line logging pipeline: rolling file sink (8h buckets, 3d retention) +
         //    Trace + F12 live-log window + Avalonia logger bridge. All toggles left at
@@ -151,47 +194,32 @@ internal sealed class Program
             if (string.Equals(arg, "--cleanup-restore-sidecars", StringComparison.OrdinalIgnoreCase))
             {
                 RunRestoreSidecarCleanup();
-                return;
+                return 0;
             }
         }
 
         // 7. Boot.
+        Log.Information("Starting ClaudeForge v{Version}",
+            typeof(Program).Assembly.GetName().Version);
+        // emit the resolved log directory once on startup
+        // so users (especially on Linux) can find the rolling .txt files
+        // without spelunking the deploy tree.  Stderr because stdout may
+        // be closed in some launch contexts (e.g. detached desktop launch).
+        Console.Error.WriteLine($"[ClaudeForge] log directory: {PlatformPaths.AppLogsDirectory}");
+        Log.Information("Log directory: {LogDir}", PlatformPaths.AppLogsDirectory);
         try
         {
-            Log.Information("Starting ClaudeForge v{Version}",
-                typeof(Program).Assembly.GetName().Version);
-            // emit the resolved log directory once on startup
-            // so users (especially on Linux) can find the rolling .txt files
-            // without spelunking the deploy tree.  Stderr because stdout may
-            // be closed in some launch contexts (e.g. detached desktop launch).
-            Console.Error.WriteLine($"[ClaudeForge] log directory: {PlatformPaths.AppLogsDirectory}");
-            Log.Information("Log directory: {LogDir}", PlatformPaths.AppLogsDirectory);
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Fatal error during Avalonia bootstrap");
-
             // Try the Avalonia FatalErrorDialog first (works when the runtime is partially alive).
+            // Then rethrow: the entry point reports it on stderr, OnFatal logs it as fatal and shows
+            // the native-OS dialog (which covers an Avalonia too broken for this one), and the
+            // process exits 1. ⚠ Not logged here, or the log would carry it twice.
             AvaloniaDiagnostics.ShowFatalErrorDialog(
                 "ClaudeForge encountered a fatal error during startup.", ex);
-
-            // Then show the native OS dialog as an additional fallback (covers the case where
-            // Avalonia is completely unusable and FatalErrorDialog.ShowSafe silently no-ops).
-            AvaloniaDiagnostics.ShowNativeFatalError(ex.ToString());
-        }
-        finally
-        {
-            // Permanent: the very last log line before the Serilog pipeline
-            // shuts down.  Pairs with the matching "Starting ClaudeForge"
-            // line at the top of try and the [App.Shutdown] line emitted by
-            // MainWindow.OnClosed in the normal-quit path.  Together they
-            // bracket the session so post-mortems can tell "did the app
-            // crash mid-flight?" (Starting present, Exiting absent) from
-            // "did the user quit cleanly?" (both lines present, plus the
-            // [App.Shutdown] one in between).
-            Log.Information("Exiting ClaudeForge");
-            Log.CloseAndFlush();
+            throw;
         }
     }
 

@@ -150,7 +150,12 @@ the defect.
 
 **Next:** `plans/00010`'s order of work. ✅ Done: U #140, M #141, S #142, R #143, C #144, then the
 early package release `packages-v2026.4.1110` and its pin #145 (CI all green), then Q #146 (the
-quality packages; see the Q row). ▶ **W** (the Essentials workflow cards) is on `feat/workflow-cards`:
+quality packages; see the Q row). ▶ **E** (`AppServices.EntryPoint`) is on `feat/entrypoint`, branched from W: `Main` returns
+`AppMain.RunDesktop(...)`, keeping the in-process `FatalErrorDialog` attempt and leaving unobserved
+task exceptions to `App`'s D-Bus-filtering handler. Measured: `--version` prints `2026.4.1199` and
+exits 0 from a build given `-p:PublicVersion=2026.4.1199`. ⚠ A dev build carries no `PublicVersion`
+metadata, so there `--version` says so on stderr and exits 1; the release sets it through
+`scripts/Resolve-ReleaseVersion.ps1`. **W** (the Essentials workflow cards) is on `feat/workflow-cards`:
 three cards after Model, each "View in" the Advanced page where the tree files those keys, with real
 translations in all eight locales and `ultracode` as a search trigger. Then **E** (`Program.cs` onto `AppServices.EntryPoint`, added 2026-11-10), then the **second** package
 release and pin for Q's Core fix (`ConfigFileWatcher`) — after W and E, by the maintainer's choice, so
