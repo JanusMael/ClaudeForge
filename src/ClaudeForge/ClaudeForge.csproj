@@ -2,6 +2,10 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <IsPackable>false</IsPackable>  <!-- an app, not a library -->
+        <!-- plans/00010 decision 6: BNCQ1002 is off in this project.
+             The app is the last consumer, not a library: nothing binds against its surface, and its
+             public members are public for XAML binding and tests. -->
+        <NoWarn>$(NoWarn);BNCQ1002</NoWarn>
         <RootNamespace>Bennewitz.Ninja.ClaudeForge</RootNamespace>
         <AssemblyName>ClaudeForge</AssemblyName>
         <!-- Per-app, matching the sibling. The repo-wide default in Directory.Build.props is the

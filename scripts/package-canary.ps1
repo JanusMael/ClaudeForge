@@ -194,6 +194,18 @@ function Main {
         # the output names the option. The `-p:` switches are consumed by MSBuild and are fine.
         Invoke-Dotnet -What 'test'  -DotnetArgs (@('test', '--solution', $solution, '-c', 'Release', '--no-build') + $switch)
 
+        # ⭐ BNAQ1006 ON THE PACKAGES, named rather than implied (plans/00010 decision 9). This is
+        # the one place where published binaries meet newer dependencies, which is the case the
+        # rule exists for: a reference that no longer resolves, or an internal no longer granted.
+        # The suite above already runs it; this step makes its absence a failure, because a test
+        # that silently stopped running reports exactly what a clean one does.
+        $qualityTests = Join-Path $repoRoot 'tests/ClaudeForge.Tests/ClaudeForge.Tests.csproj'
+        Invoke-Dotnet -What 'BNAQ1006 over the packages' -DotnetArgs (@(
+            'test', '--project', $qualityTests, '-c', 'Release', '--no-build',
+            '--filter-method', '*.AssemblyQualityTests.BNAQ1006_*',
+            '--minimum-expected-tests', '1'
+        ) + $switch)
+
         if (-not $SkipPublish) {
             $rid = if ($RuntimeIdentifier) {
                 $RuntimeIdentifier

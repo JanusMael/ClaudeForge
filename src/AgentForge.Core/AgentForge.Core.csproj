@@ -2,6 +2,11 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
+        <!-- plans/00010 decision 6: BNCQ1002 is off in this project.
+             JsonNode is the settings model's currency here by design: documents, workspaces, merge
+             results and schema nodes are JsonNode/JsonObject, and every consumer already binds to
+             System.Text.Json through them. -->
+        <NoWarn>$(NoWarn);BNCQ1002</NoWarn>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Core</RootNamespace>
         <AssemblyName>AgentForge.Core</AssemblyName>
         <Description>

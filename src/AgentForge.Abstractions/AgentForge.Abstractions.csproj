@@ -2,6 +2,10 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
+        <!-- plans/00010 decision 6: BNCQ1002 is off in this project.
+             The writer contract (IConfigWriter.Render) is defined over the JsonObject the whole settings
+             stack edits; it is the seam, not a leak. -->
+        <NoWarn>$(NoWarn);BNCQ1002</NoWarn>
         <RootNamespace>Bennewitz.Ninja.AgentForge.Abstractions</RootNamespace>
         <AssemblyName>AgentForge.Abstractions</AssemblyName>
         <Description>

@@ -2,6 +2,10 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <IsPackable>true</IsPackable>
+        <!-- plans/00010 decision 6: BNCQ1002 is off in this project.
+             Its editors load and store settings values, and a settings value is a JsonNode (see
+             AgentForge.Core); a wrapper type here would only move the binding one hop. -->
+        <NoWarn>$(NoWarn);BNCQ1002</NoWarn>
         <RootNamespace>Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell</RootNamespace>
         <AssemblyName>AgentForge.AvaloniaUI.Shell</AssemblyName>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>

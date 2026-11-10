@@ -31,6 +31,9 @@ public sealed class ConfigFileWatcher : IDisposable
     /// <summary>How often a file whose watcher failed is checked instead.</summary>
     internal static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
 
+    /// <summary>The longest debounce <see cref="Task.Delay(TimeSpan, TimeProvider, CancellationToken)"/> accepts.</summary>
+    internal static readonly TimeSpan MaxDebounce = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+
     private readonly Dictionary<string, FileSystemWatcher> _watchers = new();
     private readonly Dictionary<string, FileStamp> _polled = new();
     private readonly TimeSpan _debounce;
@@ -50,6 +53,16 @@ public sealed class ConfigFileWatcher : IDisposable
     /// </remarks>
     public event EventHandler<string>? FileChanged;
 
+    /// <summary>A watcher that reports a change once <paramref name="debounce"/> has passed without another.</summary>
+    /// <param name="debounce">
+    /// How long a file must stay unchanged before it is reported. <see cref="TimeSpan.Zero"/> means
+    /// 400 ms.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="debounce"/> is negative, or longer than about 49.7 days. Either used to
+    /// be accepted here and thrown later, by <see cref="Task.Delay(TimeSpan, TimeProvider, CancellationToken)"/>
+    /// inside a <see cref="FileSystemWatcher"/> callback, where nothing catches and the process ends.
+    /// </exception>
     public ConfigFileWatcher(TimeSpan debounce = default)
         : this(debounce, TimeProvider.System, log: null)
     {
@@ -64,6 +77,8 @@ public sealed class ConfigFileWatcher : IDisposable
     internal ConfigFileWatcher(TimeSpan debounce, TimeProvider time, ILogger? log)
     {
         ArgumentNullException.ThrowIfNull(time);
+        ArgumentOutOfRangeException.ThrowIfLessThan(debounce, TimeSpan.Zero);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(debounce, MaxDebounce);
         _debounce = debounce == TimeSpan.Zero ? TimeSpan.FromMilliseconds(400) : debounce;
         _time = time;
         _log = log;
@@ -103,10 +118,55 @@ public sealed class ConfigFileWatcher : IDisposable
                 NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
             };
 
-            watcher.Changed += (_, _) => OnChanged(filePath);
-            watcher.Created += (_, _) => OnChanged(filePath);
-            watcher.Deleted += (_, _) => OnChanged(filePath);
-            watcher.Renamed += (_, _) => OnChanged(filePath);
+            // ⛔ These run on a FileSystemWatcher thread that no caller catches: a throw there ends
+            // the process on Windows and silences the watcher on Linux (BNCQ1009). So each body is
+            // wholly inside one try/catch that logs, and catches everything on purpose: nothing
+            // above it can act on the exception, and losing one change report is recoverable while
+            // losing the process is not.
+            watcher.Changed += (_, _) =>
+            {
+                try
+                {
+                    OnChanged(filePath);
+                }
+                catch (Exception ex)
+                {
+                    LogCallbackFailure(ex, filePath, "Changed");
+                }
+            };
+            watcher.Created += (_, _) =>
+            {
+                try
+                {
+                    OnChanged(filePath);
+                }
+                catch (Exception ex)
+                {
+                    LogCallbackFailure(ex, filePath, "Created");
+                }
+            };
+            watcher.Deleted += (_, _) =>
+            {
+                try
+                {
+                    OnChanged(filePath);
+                }
+                catch (Exception ex)
+                {
+                    LogCallbackFailure(ex, filePath, "Deleted");
+                }
+            };
+            watcher.Renamed += (_, _) =>
+            {
+                try
+                {
+                    OnChanged(filePath);
+                }
+                catch (Exception ex)
+                {
+                    LogCallbackFailure(ex, filePath, "Renamed");
+                }
+            };
             watcher.Error += (_, e) => OnWatcherFailed(filePath, e.GetException());
 
             // Turned on once every handler is attached, so a change in between is not lost.
@@ -134,6 +194,11 @@ public sealed class ConfigFileWatcher : IDisposable
             }
         }
     }
+
+    private void LogCallbackFailure(Exception ex, string filePath, string watcherEvent) =>
+        Logger.Error(ex,
+            "[Watcher] Handling {Event} for {Path} threw; this change is not reported, and the watcher keeps running.",
+            watcherEvent, filePath);
 
     /// <summary>The watcher on <paramref name="filePath"/>, for a test to raise its <c>Error</c> as the kernel would.</summary>
     internal FileSystemWatcher? WatcherFor(string filePath)

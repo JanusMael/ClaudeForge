@@ -12,8 +12,8 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 /// <para>
 /// <b>Visibility:</b> declared <c>internal</c> because the inputs are
 /// <see cref="JsonObject"/> — a <c>System.Text.Json.Nodes</c> type the
-/// SDK keeps off its public surface (see <c>NoPublicApi_LeaksSystemTextJsonNodes</c>
-/// in the SDK contract tests).  In-process consumers (the GUI app, the
+/// SDK keeps off its public surface (see <c>AssemblyQualityTests.BNAQ1002_TheSdkLeaksNoJsonNodeOrNewtonsoftType</c>
+/// in <c>ClaudeForge.Tests</c>).  In-process consumers (the GUI app, the
 /// in-tree test projects) reach this through <c>InternalsVisibleTo</c>;
 /// out-of-process consumers should serialise to JSON strings and use a
 /// future string-based wrapper if/when one is added.

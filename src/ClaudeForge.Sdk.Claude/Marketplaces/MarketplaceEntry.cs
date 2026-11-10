@@ -23,7 +23,8 @@ public sealed record MarketplaceEntry(
     /// </summary>
     /// <remarks>
     /// Marked <c>internal</c> to keep <see cref="JsonObject"/> out of the
-    /// public SDK surface (locked by <c>NoPublicApi_LeaksSystemTextJsonNodes</c>).
+    /// public surface, by the convention <c>AgentForge.Sdk</c> enforces with BNAQ1002. ⚠ Nothing
+    /// enforces it in this assembly: that rule covers <c>AgentForge.Sdk</c> only (plans/00010 decision 6).
     /// </remarks>
     internal JsonObject? PreservedFields { get; init; }
 

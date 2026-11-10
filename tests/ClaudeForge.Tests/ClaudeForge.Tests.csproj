@@ -40,6 +40,12 @@
           the family there instead of a broad prefix.
         -->
         <PackageReference Include="Bennewitz.Ninja.XamlQuality" Version="2026.4.1109" />
+        <!--
+          BNAQ1001-1006 read the compiled src assemblies by reflection: Architecture/AssemblyQualityTests.
+          TEST-ONLY for the same reason as XamlQuality above, and for one more: the rules are not
+          trim-safe, and src/ is trimmed. Routed to nuget.org by the same `*` mapping.
+        -->
+        <PackageReference Include="Bennewitz.Ninja.AssemblyQuality" Version="2026.4.1031" />
     </ItemGroup>
 
     <ItemGroup>

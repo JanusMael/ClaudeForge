@@ -180,10 +180,22 @@ public partial class MainWindow : Window
         _saveDebounceTimer.Start();
     }
 
+    // ⛔ One throw from a Tick handler stops the timer for good while IsEnabled still reads true,
+    // and Dispatcher.UnhandledException never hears of it (BNCQ3001, plans/00010 decision 11).
+    // WindowStateService.Save catches only IOException and UnauthorizedAccessException, so the
+    // whole body is inside one try/catch that logs. Catching everything is deliberate: a lost
+    // window-geometry save is harmless, and nothing above this handler can act on the exception.
     private void OnSaveDebounceTick(object? sender, EventArgs e)
     {
-        _saveDebounceTimer?.Stop();
-        FlushWindowStateSave();
+        try
+        {
+            _saveDebounceTimer?.Stop();
+            FlushWindowStateSave();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[WindowState] Saving the window geometry threw; this save is skipped.");
+        }
     }
 
     private void FlushWindowStateSave()
