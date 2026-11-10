@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Essentials;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;

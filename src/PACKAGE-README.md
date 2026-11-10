@@ -19,7 +19,7 @@ reference each other. Every package here is consumable by a host that knows noth
 | `AgentForge.Core` | Schema, backup, settings, platform |
 | `AgentForge.Artifacts` | Artifact resolution |
 | `AgentForge.Sdk` | Client core |
-| `AgentForge.Avalonia.Shell` | Nav, search, save, Essentials, Backup page |
+| `AgentForge.AvaloniaUI.Shell` | Nav, search, save, Essentials, Backup page |
 
 All five ship at one lockstep version and target `net10.0`.
 

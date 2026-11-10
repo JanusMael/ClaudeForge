@@ -1139,7 +1139,7 @@ The chain, all of it in shared code:
 
 | Step | Where |
 |---|---|
-| 1 · the shell reads the editor's value | `AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs:773` — `JsonCurrency.ToJsonNode(editor.ToValue())` |
+| 1 · the shell reads the editor's value | `AgentForge.AvaloniaUI.Shell/Settings/SettingsGroupEditorViewModel.cs:773` — `JsonCurrency.ToJsonNode(editor.ToValue())` |
 | 2 · it writes that at the editor's **path** | `WriteEditorValue` → `_sdkClient.SetValue(jsonPath, value, scope)` — a **replace**, not a merge |
 | 3 · editing a child re-writes the whole parent | this file's own `OnChildPropertyChanged`: the force-fire exists *"so the hosting group editor always re-invokes `ToValue()` and writes the complete updated object"* |
 | 4 · `ToValue()` rebuilds from schema children | a key with no child has no way to survive |

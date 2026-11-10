@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Media;
 using Bennewitz.Ninja.AgentForge.Abstractions.Permissions;
-using Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions;
+using Bennewitz.Ninja.ClaudeForge.AvaloniaUI.Permissions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Converters;
 

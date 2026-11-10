@@ -1,5 +1,5 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Danger;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Save;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;

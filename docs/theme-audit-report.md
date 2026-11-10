@@ -45,7 +45,7 @@ _none_
 | AvaloniaEdit Fluent theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Fluent` | 1 | 22 | 9 | 12 | `2ce29f295821` | Fluent, Semi, Semi + compat |
 | AvaloniaEdit Simple theme | `reference/AvaloniaEdit/src/AvaloniaEdit/Themes/Simple` | 1 | 22 | 9 | 12 | `ce6e5435da8d` | Simple, Semi, Semi + compat |
 | Fluent controls | `reference/Avalonia/src/Avalonia.Themes.Fluent/Controls` | 80 | 1381 | 925 | 319 | `d91a9d48208f` | Fluent, Semi, Semi + compat |
-| ClaudeForge | `../cl/ClaudeForge/src/ClaudeForge or reference/ClaudeForge/src/ClaudeForge`, `../cl/ClaudeForge/src/ClaudeForge.Avalonia or reference/ClaudeForge/src/ClaudeForge.Avalonia`, `../cl/ClaudeForge/src/LayeredEditors.Avalonia or reference/ClaudeForge/src/LayeredEditors.Avalonia` | 41 | 418 | 67 | 75 | `2046348f366d` | Semi, Semi + compat |
+| ClaudeForge | `../cl/ClaudeForge/src/ClaudeForge or reference/ClaudeForge/src/ClaudeForge`, `../cl/ClaudeForge/src/ClaudeForge.AvaloniaUI or reference/ClaudeForge/src/ClaudeForge.AvaloniaUI`, `../cl/ClaudeForge/src/LayeredEditors.Avalonia or reference/ClaudeForge/src/LayeredEditors.Avalonia` | 41 | 418 | 67 | 75 | `2046348f366d` | Semi, Semi + compat |
 
 ## Undefined keys
 

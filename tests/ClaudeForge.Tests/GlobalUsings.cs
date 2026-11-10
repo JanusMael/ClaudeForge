@@ -10,9 +10,9 @@ global using System.Text.Json.Nodes;
 global using HookCommandType = Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks.HookCommandType;
 // Phase 5 slice 2 moved NavDeepPath / IDeepNavigable to the neutral shell. Global for the
 // same reason ConfigScope is: deep-path types appear across nav, state and editor tests.
-global using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+global using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 // Phase 5 slice 3 moved the search machinery to the neutral shell. Global because the
 // result row type reaches nav tests and headless tests, not only the search tests.
-global using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search;
+global using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search;
 // Phase 5 slice 5 moved the save-confirmation dialog's model + builder to the shell.
-global using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
+global using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Save;

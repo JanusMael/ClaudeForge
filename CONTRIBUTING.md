@@ -57,7 +57,7 @@ restored from the parked branch when a second product returns — see plans/0000
 | `src/AgentForge.Core` | Config model, file I/O, schema registry — no Avalonia dependencies |
 | `src/AgentForge.Sdk` | Product-neutral typed accessors over Core (`IAgentConfigClient`, `AgentConfigClientCore`, MCP servers, env, backup, schema search) |
 | `src/ClaudeForge.Sdk.Claude` | The Claude-only SDK surface: hooks, marketplaces, plugins, model catalog, Claude permission syntax, and the two concrete clients (`IClaudeConfigClient`) |
-| `src/AgentForge.Avalonia.Shell` | The product-neutral half of the desktop shell — chrome and services any layered-config editor needs regardless of which agent product it edits: the status bar, deep-path navigation, global search, the page-navigation lifecycle, schema→page layout, and the save-confirmation dialog's model. Phase 5 of the OpenCodeForge plan fills this in slices; **nothing here may name a product**, enforced by `AssemblyLayeringTests` |
+| `src/AgentForge.AvaloniaUI.Shell` | The product-neutral half of the desktop shell — chrome and services any layered-config editor needs regardless of which agent product it edits: the status bar, deep-path navigation, global search, the page-navigation lifecycle, schema→page layout, and the save-confirmation dialog's model. Phase 5 of the OpenCodeForge plan fills this in slices; **nothing here may name a product**, enforced by `AssemblyLayeringTests` |
 | `src/ClaudeForge` | Avalonia UI application — views, view-models, converters |
 | `tests/AgentForge.Core.Tests` | Domain logic |
 | `tests/AgentForge.Sdk.Tests` | Product-neutral SDK contracts + regression tests. Builds without either product — uses its own `TestConfigClient` where a live client is needed |
@@ -66,7 +66,7 @@ restored from the parked branch when a second product returns — see plans/0000
 
 Three libraries come from their own repositories as nuget.org packages rather than living here: the layered-config editor (`Bennewitz.Ninja.ScopedEditors.*`, with `Bennewitz.Ninja.AppServices.*`; plans/00005) and the comment- and formatting-preserving JSONC reader and writer (`Bennewitz.Ninja.JsonC`; plans/00007, contract in [`docs/JSONC-WRITER.md`](docs/JSONC-WRITER.md)). Their pins are in the root `Directory.Build.props`.
 
-When in doubt about which project a file belongs in: if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`. If it has Avalonia references, ask whether it names a product: shell chrome that does not is `AgentForge.Avalonia.Shell`, and anything Claude-shaped stays in `ClaudeForge`. `AgentForge.*` may never reference `ClaudeForge.*` — `AssemblyLayeringTests` fails the build on both the project graph and compiled references, so guessing wrong is caught rather than merged.
+When in doubt about which project a file belongs in: if it's pure JSON / file-IO / domain logic it's `AgentForge.Core` or `AgentForge.Sdk`. If it has Avalonia references, ask whether it names a product: shell chrome that does not is `AgentForge.AvaloniaUI.Shell`, and anything Claude-shaped stays in `ClaudeForge`. `AgentForge.*` may never reference `ClaudeForge.*` — `AssemblyLayeringTests` fails the build on both the project graph and compiled references, so guessing wrong is caught rather than merged.
 
 **`AgentForge.*` may never reference `ClaudeForge.*` or `OpenCode.*`.** The shared
 foundation only stays shared if it cannot see either product, and a

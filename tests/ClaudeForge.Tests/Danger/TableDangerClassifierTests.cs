@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Danger;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Danger;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;

@@ -8,7 +8,7 @@ using Bennewitz.Ninja.ClaudeForge.Diagnostics;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Services;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Save;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Save;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ClaudeForge.Views;
 using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Controls;

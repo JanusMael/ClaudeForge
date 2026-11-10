@@ -10,7 +10,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// <para>
 /// ⛔⛔ <b>Third container type, same defect, found the same way — by running the app.</b>
 /// OpenCodeForge's search results announced
-/// <c>Bennewitz.Ninja.AgentForge.Avalonia.Shell.Search.SearchResultViewModel</c> for every row,
+/// <c>Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search.SearchResultViewModel</c> for every row,
 /// measured via UI Automation. <c>SearchResultViewModel</c> had no <c>ToString()</c>, and a
 /// <c>ListBoxItem</c> generated from <c>ItemsSource</c> takes its name from the ITEM.
 /// </para>

@@ -1,6 +1,6 @@
 ﻿using System.Collections;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Status;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Status;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;

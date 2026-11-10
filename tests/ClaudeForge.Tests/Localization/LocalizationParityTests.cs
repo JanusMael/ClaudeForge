@@ -385,7 +385,7 @@ public sealed class LocalizationParityTests
     [
         ("ClaudeForge", true,
             "The app. Nine cultures; the four contracts above run against this one."),
-        ("ClaudeForge.Avalonia", false,
+        ("ClaudeForge.AvaloniaUI", false,
             "Editor-library strings for Claude's permission controls. English-only; no "
             + "translations have been written for them."),
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. The "OpenCodeForge" and "OpenCode.Avalonia"

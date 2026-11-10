@@ -16,7 +16,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// repo held one app.  Every AXAML file outside that one folder was invisible
 /// to the guard: <c>src/OpenCodeForge/Views/</c>,
 /// <c>src/OpenCode.Avalonia/Permissions/</c>,
-/// <c>src/ClaudeForge.Avalonia/</c>, <c>src/ClaudeForge/Controls/</c> and
+/// <c>src/ClaudeForge.AvaloniaUI/</c>, <c>src/ClaudeForge/Controls/</c> and
 /// <c>src/LayeredEditors.Avalonia/</c> could ship an unnamed control and the
 /// suite stayed green.  The scan is now repo-wide, and
 /// <see cref="AxamlScan_CoversEveryUiProject_NotOneHardcodedDirectory"/>
@@ -27,7 +27,7 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Accessibility;
 /// This is the same class of blind spot as
 /// <c>LocalizationParityTests.FindLocalizationDirectory()</c>, which hardcodes
 /// <c>src/ClaudeForge/Localization</c> and is why
-/// <c>src/ClaudeForge.Avalonia/Localization/Strings.resx</c> has user-facing
+/// <c>src/ClaudeForge.AvaloniaUI/Localization/Strings.resx</c> has user-facing
 /// strings, no locale siblings, and no failing test.  That one is tracked
 /// separately as "Problem 8" in <c>docs/OPENCODEFORGE-PLAN.md</c>; widening it
 /// is NOT part of this change.
@@ -143,7 +143,7 @@ public sealed class AxamlAccessibilityCoverageTests
     private static readonly string[] ProjectsThatMustContributeAxaml =
     {
         "ClaudeForge",
-        "ClaudeForge.Avalonia",
+        "ClaudeForge.AvaloniaUI",
         // TWO-APP GUARD NARROWED — plans/00003 Phase 0. "OpenCode.Avalonia" and "OpenCodeForge"
         // were here; restore both when OpenCodeForge rejoins this tree.
         // LIBRARY GUARD NARROWED — plans/00005. "LayeredEditors.Avalonia" was here; it left as the
@@ -221,7 +221,7 @@ public sealed class AxamlAccessibilityCoverageTests
             // Everything else the widened scan newly reached already scores 0
             // and so needs no entry — including all of src/OpenCodeForge/,
             // src/OpenCode.Avalonia/Permissions/OpenCodePermissionEditorView.axaml
-            // (verified 0, not assumed), src/ClaudeForge.Avalonia/Permissions/,
+            // (verified 0, not assumed), src/ClaudeForge.AvaloniaUI/Permissions/,
             // and the remaining src/ClaudeForge/Controls|Resources|Views files.
             // They are held at the strict
             // zero default by the missing-entry rule.

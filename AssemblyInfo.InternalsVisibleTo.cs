@@ -39,13 +39,13 @@ using System.Runtime.CompilerServices;
 // ── Shipping libraries: the neutral stack ────────────────────────────────────────────────────
 [assembly: InternalsVisibleTo("AgentForge.Abstractions")]
 [assembly: InternalsVisibleTo("AgentForge.Artifacts")]
-[assembly: InternalsVisibleTo("AgentForge.Avalonia.Shell")]
+[assembly: InternalsVisibleTo("AgentForge.AvaloniaUI.Shell")]
 [assembly: InternalsVisibleTo("AgentForge.Core")]
 [assembly: InternalsVisibleTo("AgentForge.Sdk")]
 
 // ── Product-specific halves and the two app assemblies ───────────────────────────────────────
 [assembly: InternalsVisibleTo("ClaudeForge")]
-[assembly: InternalsVisibleTo("ClaudeForge.Avalonia")]
+[assembly: InternalsVisibleTo("ClaudeForge.AvaloniaUI")]
 [assembly: InternalsVisibleTo("ClaudeForge.Sdk.Claude")]
 
 // ── Test projects ────────────────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("AgentForge.Artifacts.Tests")]
 [assembly: InternalsVisibleTo("AgentForge.Core.Tests")]
 [assembly: InternalsVisibleTo("AgentForge.Sdk.Tests")]
-[assembly: InternalsVisibleTo("ClaudeForge.Avalonia.Tests")]
+[assembly: InternalsVisibleTo("ClaudeForge.AvaloniaUI.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Sdk.Claude.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Tests")]
 

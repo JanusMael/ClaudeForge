@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Data.Converters;

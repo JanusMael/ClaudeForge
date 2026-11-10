@@ -1,5 +1,5 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Backup;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
@@ -13,7 +13,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The page itself moved to <c>AgentForge.Avalonia.Shell.Backup</c>. Its machinery — listing
+/// The page itself moved to <c>AgentForge.AvaloniaUI.Shell.Backup</c>. Its machinery — listing
 /// archives, retention, progress, drag-drop validation, restore orchestration, the credentials
 /// prompt — was already product-neutral: <b>18 Claude references in 1,405 lines</b>, and the only
 /// <c>PlatformPaths</c> use was <c>PlatformId</c>. What stayed behind is this file.

@@ -1,5 +1,5 @@
 ﻿using Bennewitz.Ninja.ClaudeForge.ViewModels;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using PropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel;
 // the App-bridge StringPropertyEditorViewModel was deleted;

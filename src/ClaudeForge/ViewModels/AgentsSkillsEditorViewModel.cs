@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Collections.ObjectModel;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Settings;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Settings;
 using System.Globalization;
 using System.Security;
 using Bennewitz.Ninja.ClaudeForge.Localization;
@@ -13,7 +13,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Serilog;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Navigation;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

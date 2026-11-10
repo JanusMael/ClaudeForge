@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.ClaudeForge.Avalonia.Permissions;
+using Bennewitz.Ninja.ClaudeForge.AvaloniaUI.Permissions;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Permissions.Matching;
@@ -13,7 +13,7 @@ namespace Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
 /// taxonomy/list editing surface.
 /// <para>
 /// The editor itself plays both host roles for the reusable
-/// <c>ClaudeForge.Avalonia</c> controls: it is the <see cref="IPermissionRuleSink"/>
+/// <c>ClaudeForge.AvaloniaUI</c> controls: it is the <see cref="IPermissionRuleSink"/>
 /// the builder adds rules into (routing through the existing
 /// <c>AddTo{Allow,Deny,Ask}</c> path so dedupe + dirty-tracking are unchanged)
 /// and the <see cref="IPermissionRuleSource"/> the tester reads from (so the

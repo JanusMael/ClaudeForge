@@ -50,7 +50,7 @@ Wired into `IClaudeConfigClient.Env` alongside `Permissions` / `Hooks` / `McpSer
 ### Layer 2 — GUI: synthetic Essentials nav page
 
 ```
-src/AgentForge.Avalonia.Shell/Essentials/        ← product-NEUTRAL, shared by both apps
+src/AgentForge.AvaloniaUI.Shell/Essentials/        ← product-NEUTRAL, shared by both apps
 ├── EssentialsCardViewModel.cs       (per-card model — value, source labels, danger predicate)
 ├── EssentialsCardOptions.cs         (the card definition record — see below)
 ├── EssentialsCardKindConverters.cs  (Kind → bool converters for AXAML IsVisible bindings)
@@ -99,7 +99,7 @@ A reload calls `RefreshAsync(newClient)`, which re-binds every card's read deleg
 
 `ClaudeSyntheticSearch.EssentialsTriggers` (in `src/ClaudeForge/ViewModels/`) is a static dictionary mapping each card id (the `EssentialsCardViewModel.Id`, which doubles as the search-deep-link key) to a list of trigger phrases. `ClaudeSyntheticSearch.Build` turns each entry into a `SyntheticSearchEntry` whose `SearchTrigger.Phrases` rule matches bidirectionally — the query contains a phrase, or a phrase contains the query (so partial typing lands early). The neutral `SearchViewModel` walks that list and adds a hit pointing at the Essentials node with the card id in `PropertyKey`.
 
-> ⚠ Phase 5 slice 3 moved the search machinery to `src/AgentForge.Avalonia.Shell/Search/`; only the trigger **data** is Claude's. Matching, ordering and suppression are the shell's.
+> ⚠ Phase 5 slice 3 moved the search machinery to `src/AgentForge.AvaloniaUI.Shell/Search/`; only the trigger **data** is Claude's. Matching, ordering and suppression are the shell's.
 
 `MainWindowViewModel.SelectSearchResult` picks up `IsSynthetic` + `PropertyKey` for results whose `Node.Editor` is the Essentials VM and calls `ActivateAmberCalloutFor(cardId)` — same flow as the existing `PermissionsEditorViewModel.ActivateDangerHint()` for the `--dangerouslySkipPermissions` synthetic.
 

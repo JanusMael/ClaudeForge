@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
-using Bennewitz.Ninja.AgentForge.Avalonia.Shell.Adapters;
+using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Adapters;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
 

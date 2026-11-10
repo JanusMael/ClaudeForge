@@ -4,7 +4,7 @@
 // therefore safe and speeds the suite up.
 //
 // Contrast: the Avalonia/headless test assemblies (ClaudeForge.Tests and
-// ClaudeForge.Avalonia.Tests) disable parallelization because
+// ClaudeForge.AvaloniaUI.Tests) disable parallelization because
 // Avalonia.Headless.HeadlessUnitTestSession runs a single serial dispatcher per
 // assembly and wedges under parallel execution.
 //

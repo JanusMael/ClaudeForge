@@ -112,10 +112,10 @@ files, read out of git at the tag and off disk at HEAD:
 
 ✅ **And it runs.** `[Editor.Rebuild] group=… editors=N`, which appears twelve times per run in
 *both* builds' logs, is emitted by
-`AgentForge.Avalonia.Shell/Settings/SettingsGroupEditorViewModel.cs`. Every settings group in
+`AgentForge.AvaloniaUI.Shell/Settings/SettingsGroupEditorViewModel.cs`. Every settings group in
 ClaudeForge is built by the shared shell. `src/ClaudeForge.Core` and `src/ClaudeForge.Sdk` no
 longer exist; `ClaudeForge.csproj` references `AgentForge.Core`, `AgentForge.Sdk`,
-`AgentForge.Avalonia.Shell`, `ClaudeForge.Sdk.Claude` and four `LayeredEditors.*` projects.
+`AgentForge.AvaloniaUI.Shell`, `ClaudeForge.Sdk.Claude` and four `LayeredEditors.*` projects.
 
 ### 2.1 · ⚠ The app/shell half is much smaller than the plan assumes
 
@@ -127,7 +127,7 @@ The **app** barely moved:
 | | Baseline | HEAD | Change |
 |---|---|---|---|
 | `src/ClaudeForge` | 41,371 | 38,301 | **−3,070 (−7%)** |
-| `AgentForge.Avalonia.Shell` | — | 7,693 | new |
+| `AgentForge.AvaloniaUI.Shell` | — | 7,693 | new |
 
 ⛔ The plan carries an unmeasured estimate that *"`src/ClaudeForge` … Roughly 60/40 generic shell
 vs Claude-specific — **an eyeball estimate from the file list, not a measurement**"*, which implies
@@ -217,7 +217,7 @@ Reality matches that decision:
 | Piece | Expected by the revision | Actual |
 |---|---|---|
 | Shared vocabulary | ~50 lines | `AgentForge.Abstractions/Permissions/PermissionOutcome.cs` — **55 lines**, shipped in `a453063` |
-| Claude's implementation | stays Claude-only | 13 files in `ClaudeForge.Sdk.Claude`, 6 + 2 in `ClaudeForge.Avalonia`, 8 + 5 in `ClaudeForge` |
+| Claude's implementation | stays Claude-only | 13 files in `ClaudeForge.Sdk.Claude`, 6 + 2 in `ClaudeForge.AvaloniaUI`, 8 + 5 in `ClaudeForge` |
 | OpenCode's own implementation | 400–600 lines | **~1,790 lines** — `OpenCodePermissionModel` (500), `…EditorViewModel` (639), `…ToolViewModel` (295), `…RowViewModel` (96), view (238 + 22) |
 
 **Nothing is outstanding.** The uncertainty is a bookkeeping artifact: the roadmap's at-a-glance
@@ -258,6 +258,6 @@ than none.
    glance instead of requiring a read of three revisions.
 4. **Decide what the app/shell number means** — §2.1 measures it for the first time, and it is well
    short of the plan's estimate. Either more of `src/ClaudeForge` should move into
-   `AgentForge.Avalonia.Shell`, or the estimate should be replaced with the measured figure and the
+   `AgentForge.AvaloniaUI.Shell`, or the estimate should be replaced with the measured figure and the
    topology re-argued from it. What should not happen is the eyeball estimate continuing to sit in
    the plan now that a real number exists.

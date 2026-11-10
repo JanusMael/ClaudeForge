@@ -266,7 +266,7 @@
       Strings.<Key> somewhere in the project's own source OR the test projects,
       and emits a build error otherwise.
 
-      Coverage is automatic: any project (today the app + ClaudeForge.Avalonia)
+      Coverage is automatic: any project (today the app + ClaudeForge.AvaloniaUI)
       that has Localization/Strings.resx is checked; no per-project opt-in.
       Scanning the project dir + the repo's tests/ keeps test-only references from
       false-positiving while never producing a false error (an unrelated match
