@@ -18,7 +18,7 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Catalog;
 /// <remarks>
 /// The <c>effortLevel</c> comparison is against the catalog's <b>persistable</b>
 /// effort ids, not every effort the catalog knows. Upstream deliberately excludes
-/// session-only levels (<c>max</c>, <c>ultracode</c>) from the persisted-setting
+/// the session-only level (<c>max</c>) from the persisted-setting
 /// <c>effortLevel</c> enum — they're set via <c>CLAUDE_CODE_EFFORT_LEVEL</c> / <c>/effort</c>,
 /// never written to settings.json — and the catalog mirrors that with
 /// <c>EffortLevelInfo.Persists=false</c>. So the invariant is: schema's persisted enum ==
@@ -41,8 +41,8 @@ public sealed class ModelCatalogSchemaParityTests
     {
         JsonNode schema = LoadMergedSchema();
         HashSet<string> schemaEnum = EnumAt(schema["properties"]!["effortLevel"]!["enum"]!);
-        // Persisted-setting enum ↔ persistable catalog ids. Session-only levels
-        // (max/ultracode, Persists=false) are intentionally absent from the schema's
+        // Persisted-setting enum ↔ persistable catalog ids. The session-only level
+        // (max, Persists=false) is intentionally absent from the schema's
         // effortLevel enum, so they're excluded here too — see class remarks.
         HashSet<string> catalog = ModelCatalogLoader.Load().PersistableEffortIds.ToHashSet(StringComparer.Ordinal);
 

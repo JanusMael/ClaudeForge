@@ -22,7 +22,8 @@ public sealed record ModelInfo(
 /// <summary>One effort level and its ordering / persistence semantics.</summary>
 /// <param name="Id">Effort id, e.g. <c>high</c>.</param>
 /// <param name="Order">Faster→Smarter ordinal (low = 0). Used for nearest-analog selection.</param>
-/// <param name="Persists">False for session-only levels (e.g. <c>max</c>) that are never written to settings.json.</param>
+/// <param name="Persists">False for session-only levels (today only <c>max</c>) that are never written to settings.json.
+/// Ultracode is not an effort level: it is a workflow mode, and it is not in the catalog (plans/00010).</param>
 public sealed record EffortLevelInfo(string Id, int Order, bool Persists);
 
 /// <summary>One <c>permissions.defaultMode</c> value and its gating metadata.</summary>
@@ -163,7 +164,7 @@ public sealed class ModelCatalog
         return m is null ? EffortLevels.Select(e => e.Id).ToList() : m.SupportedEffortLevels;
     }
 
-    /// <summary>Supported effort levels intersected with the persistable set (drops <c>max</c>, etc.).</summary>
+    /// <summary>Supported effort levels intersected with the persistable set (drops the session-only <c>max</c>).</summary>
     public IReadOnlyList<string> PersistableEffortLevels(string? modelId)
     {
         HashSet<string> persistable = new(PersistableEffortIds, Ord);

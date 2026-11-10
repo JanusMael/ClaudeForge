@@ -13,6 +13,13 @@ contract, the editor behavior, and how the file is kept honest.
   don't support `xhigh`**; **Haiku exposes no effort at all**; `max` is
   **session-only** (never persisted to `settings.json`); `[1m]` is a *suffix*,
   not a separate model.
+- **Ultracode is not an effort level, and the catalog does not carry it.**
+  Claude Code's settings schema has no enum containing `ultracode`. It is the
+  prompt keyword that starts a dynamic workflow (`workflowKeywordTriggerEnabled`,
+  beside `disableWorkflows` and `workflowSizeGuideline`), and while it runs the
+  effort *"reports as xhigh"*. Claude Desktop shows it as a toggle beside the
+  effort list. The catalog had it as a sixth level above `max` until
+  `plans/00010`; its JSON schema now rejects the id.
 - `permissions.defaultMode = auto` is **gated**: it needs an auto-capable model
   (Opus 4.6+/Sonnet 4.6+) and is silently ignored outside **User** scope.
 
