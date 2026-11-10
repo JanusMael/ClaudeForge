@@ -47,10 +47,10 @@ public sealed class EssentialsViewModelTests
     // ── Card list shape ──────────────────────────────────────────────────
 
     [Fact]
-    public void Cards_PinnedSet_HasElevenCards()
+    public void Cards_PinnedSet_HasFourteenCards()
     {
         EssentialsViewModel vm = MakeVm();
-        MessageAssert.Equal(11, vm.Cards.Count,
+        MessageAssert.Equal(14, vm.Cards.Count,
             "Pinned set is hand-curated; promoting / demoting a card must update both " +
             "EssentialsViewModel.BuildCards and this test in lock-step.");
     }
@@ -138,11 +138,14 @@ public sealed class EssentialsViewModelTests
             EssentialsViewModel.CardIdEffortLevel, // 4
             EssentialsViewModel.CardIdFastMode, // 5
             EssentialsViewModel.CardIdModel, // 6
-            EssentialsViewModel.CardIdDisableBypass, // 7
-            EssentialsViewModel.CardIdEnableAllProjectMcp, // 8
-            EssentialsViewModel.CardIdSandboxEnabled, // 9
-            EssentialsViewModel.CardIdSandboxDomains, // 10
-            EssentialsViewModel.CardIdAutoUpdatesChannel, // 11
+            EssentialsViewModel.CardIdDisableWorkflows, // 7
+            EssentialsViewModel.CardIdWorkflowKeywordTrigger, // 8
+            EssentialsViewModel.CardIdWorkflowSizeGuideline, // 9
+            EssentialsViewModel.CardIdDisableBypass, // 10
+            EssentialsViewModel.CardIdEnableAllProjectMcp, // 11
+            EssentialsViewModel.CardIdSandboxEnabled, // 12
+            EssentialsViewModel.CardIdSandboxDomains, // 13
+            EssentialsViewModel.CardIdAutoUpdatesChannel, // 14
         ];
 
         MessageAssert.SequenceEqual(expected, ids,

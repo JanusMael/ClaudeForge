@@ -2697,6 +2697,24 @@ Es posible que algunas rutas dentro de los archivos de configuración requieran 
   <data name="EssentialsCardFastModeBody" xml:space="preserve">
     <value>Omite algunas pasadas opcionales de razonamiento para obtener respuestas más ágiles. Compromiso: calidad ligeramente inferior en tareas complejas a cambio de menor latencia y coste.</value>
   </data>
+  <data name="EssentialsCardWorkflowKeywordTitle" xml:space="preserve">
+    <value>Palabra clave ultracode</value>
+  </data>
+  <data name="EssentialsCardWorkflowKeywordBody" xml:space="preserve">
+    <value>Escribir «ultracode» en un prompt inicia un flujo de trabajo dinámico, que ejecuta muchos agentes. Se ignora mientras los flujos de trabajo estén desactivados. Requiere Claude Code v2.1.157 o posterior.</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsTitle" xml:space="preserve">
+    <value>Desactivar flujos de trabajo</value>
+  </data>
+  <data name="EssentialsCardDisableWorkflowsBody" xml:space="preserve">
+    <value>Desactiva los flujos de trabajo dinámicos y los comandos de flujo de trabajo incluidos, incluida la palabra clave «ultracode». La variable de entorno CLAUDE_CODE_DISABLE_WORKFLOWS hace lo mismo.</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeTitle" xml:space="preserve">
+    <value>Tamaño del flujo de trabajo</value>
+  </data>
+  <data name="EssentialsCardWorkflowSizeBody" xml:space="preserve">
+    <value>Cuántos agentes intenta usar Claude al escribir un flujo de trabajo dinámico: unrestricted, small, medium o large. Se envía a Claude como recomendación, no se impone como límite. Requiere Claude Code v2.1.202 o posterior.</value>
+  </data>
 
   <!-- Card 9 — Auto-updates channel -->
   <data name="EssentialsCardAutoUpdatesChannelTitle" xml:space="preserve">
