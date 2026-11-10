@@ -165,6 +165,29 @@ the new Core behaviour is excluded in package mode while the pin is `2026.4.1110
 finished step measured), interleaved with 00009 Phase 3, then step 5, whose neutral test product also gets the frozen archive moved there from
 step 3. The items below are kept in order; those marked ✅ are done.
 
+**After this release — decided 2026-11-10, each outside this repository:**
+
+- **BNCQ1009/BNCQ3001 accept a fatal-only filter** (Inspections). CodeQL's `cs/catch-of-all-exceptions`
+  flags the five unfiltered catch-alls Q added (`ConfigFileWatcher` ×4, `MainWindow.OnSaveDebounceTick`),
+  and BNCQ1009 rejects the filtered form `when (ex is not OutOfMemoryException)` — measured: the build
+  fails. Letting only OOM through does not reintroduce the risk the rule exists for, so the rule is
+  stricter than its rationale. Once a CodeQuality release accepts that shape, use it here and the five
+  alerts close. ⛔ The five stay OPEN until then, as the reminder; the other 19 alerts of that rule are
+  the cases it exists for, so it is not excluded repo-wide. ⚠ The local
+  `C:\c\cl\Bennewitz.Ninja.CodeQuality` checkout is the OLD standalone repository (stopped at
+  2026.3.928); the package now ships from `Bennewitz.Ninja.Inspections`, not cloned on this machine.
+- **The `Dispatcher.UIThread.UnhandledException` hook moves into AppServices.Avalonia**, with a filter
+  parameter for the Linux D-Bus noise `App.OnUnobservedTaskException` filters today, so a package bump
+  fixes every app, as `AvaloniaDiagnostics.EntryPointOptions()` already does for the entry point.
+- ✗ **Declined:** next-launch crash detection.
+- ⓘ **Measured, for whoever revisits crash handling** (two probes on .NET 10, Windows): a fault in
+  MANAGED code (`Marshal.ReadInt32(IntPtr.Zero)`) is an ordinary, catchable `AccessViolationException` —
+  `catch` and `finally` ran and the process carried on. A fault in NATIVE code (a P/Invoke to
+  `RtlMoveMemory` writing to address 0, the shape a Skia crash has) prints `Fatal error. 0xC0000005` and
+  a stack to stderr and ends the process at once: no `catch`, no `finally`, no
+  `AppDomain.UnhandledException`, no `ProcessExit`, so no `FlushLog` and no dialog. Only a crash dump
+  (`DOTNET_DbgEnableMiniDump`, set before launch) captures more.
+
 1. ✅ **`packages-v2026.3.925` — the BREAKING release of the six — is PUBLISHED** (2026-09-25, run
    `36137772405`, tagged by the agent on the maintainer's explicit instruction for this one release;
    releasing is otherwise the maintainer's). All six verified on the feed. `SharedPackageVersion` is
