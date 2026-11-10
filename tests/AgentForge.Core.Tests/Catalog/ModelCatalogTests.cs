@@ -50,27 +50,44 @@ public sealed class ModelCatalogTests
             Catalog.PersistableEffortLevels("claude-opus-4-8").ToList());
     }
 
+    /// <summary>
+    /// The effort axis is exactly Claude Code's: <c>low</c> to <c>max</c>, with <c>max</c> the
+    /// top and the only session-only level, and no model may name a level outside it.
+    /// </summary>
+    /// <remarks>
+    /// ⓘ <b>Corrected 2026-11-10 (plans/00010).</b> This was
+    /// <c>SessionOnlyEffortLevels_MirrorFullRange_ButStayNonPersistable</c>, which pinned
+    /// <c>ultracode</c> as a sixth level "above max on the Faster→Smarter axis", to mirror a
+    /// Claude Desktop slider. Ultracode is not an effort level. Claude Code's settings schema has
+    /// no enum containing it: it is the prompt keyword that starts a dynamic workflow
+    /// (<c>workflowKeywordTriggerEnabled</c>), it "reports as xhigh", and Desktop now shows it as
+    /// a toggle beside the effort list. The catalog's own JSON schema no longer accepts it, so
+    /// <c>ModelCatalogSchemaParityTests</c> also fails on a catalog that re-adds it.
+    /// </remarks>
     [Fact]
-    public void SessionOnlyEffortLevels_MirrorFullRange_ButStayNonPersistable()
+    public void MaxIsTheTopEffortLevel_AndTheOnlySessionOnlyOne()
     {
-        // "Mirror the UI": the catalog carries the full effort range Claude Desktop shows —
-        // including session-only `max` AND `ultracode` (the dynamic-workflow tier that
-        // reports as xhigh) — so ClaudeForge's model matches reality rather than pretending
-        // they don't exist. Both are persists:false, so neither reaches the settings-file
-        // effortLevel dropdown (which can only hold persistable values).
-        EffortLevelInfo ultra = Catalog.EffortLevels.Single(e => e.Id == "ultracode");
-        Assert.False(ultra.Persists, "ultracode is session-only (not accepted in settings.json).");
-        Assert.True(
-            ultra.Order > Catalog.EffortLevels.Single(e => e.Id == "max").Order,
-            "ultracode sits above max on the Faster→Smarter axis.");
+        string[] axis = ["low", "medium", "high", "xhigh", "max"];
 
-        // Full range (incl. ultracode) is exposed for models that carry xhigh+max…
-        Assert.Contains("ultracode", Catalog.SupportedEffortLevels("claude-opus-4-8").ToList());
-        // …but the persistable set stays low/medium/high/xhigh (no max, no ultracode).
-        Assert.DoesNotContain("ultracode", Catalog.PersistableEffortLevels("claude-opus-4-8").ToList());
+        MessageAssert.Equal(
+            string.Join(",", axis),
+            string.Join(",", Catalog.EffortLevels.Select(e => e.Id)),
+            "The effort levels, ordered Faster→Smarter, must be exactly Claude Code's.");
 
-        // Models without xhigh don't gain the ultracode tier (it reports as xhigh).
-        Assert.DoesNotContain("ultracode", Catalog.SupportedEffortLevels("claude-sonnet-4-6").ToList());
+        MessageAssert.SameElements(
+            new[] { "max" },
+            Catalog.EffortLevels.Where(e => !e.Persists).Select(e => e.Id).ToArray(),
+            "max must be the only session-only effort level.");
+
+        // Premise before claim: a catalog with no models would pass the loop below vacuously.
+        Assert.NotEmpty(Catalog.Models);
+        foreach (ModelInfo model in Catalog.Models)
+        {
+            string[] outside = Catalog.SupportedEffortLevels(model.Id).Except(axis).ToArray();
+            Assert.True(
+                outside.Length == 0,
+                $"'{model.Id}' names effort levels outside Claude Code's axis: {string.Join(", ", outside)}.");
+        }
     }
 
     [Fact]

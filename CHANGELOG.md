@@ -24,6 +24,12 @@ reconcile them against and renumbering them would be guesswork.
   could fail with "the process cannot access the file because it is being used by another
   process" if it landed at that moment. ClaudeForge now reads without locking writers out. A file caught half-written is treated like a malformed one: the reload
   keeps the settings it already had.
+- **Ultracode is no longer treated as an effort level.** The model catalog listed it as a
+  sixth level above Max. It is not one: it is the prompt keyword that starts a dynamic
+  workflow, and Claude Desktop shows it as a separate toggle. It never appeared in an effort
+  picker, so nothing you see changes. One edge case does: a settings file hand-edited to
+  `"effortLevel": "ultracode"`, which Claude Code rejects anyway, now falls back to the model's
+  default effort when you change models, where it used to become `xhigh`.
 
 ## [2026.3.922] - 2026-09-22
 

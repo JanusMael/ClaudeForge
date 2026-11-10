@@ -137,7 +137,7 @@ the defect.
 
 ---
 
-## ▶ RESUME HERE — `plans/00009` is in progress (approved 2026-11-10, #137); `plans/00008` is PAUSED at Phase B step 4 until 00009's pin merges (00009 decision 14)
+## ▶ RESUME HERE — `plans/00010` governs the next release (approved 2026-11-10, #139; supersedes `00009` in part); `plans/00008` is PAUSED at Phase B step 4 until 00010's pin merges
 
 | | |
 |---|---|
@@ -147,9 +147,13 @@ the defect.
 | Packages consumed | ScopedEditors **`2026.4.1110`**, AppServices **`2026.4.1110`** and JsonC **`2026.4.1031`** (nuget.org), Avalonia **12.1.6**, DataGrid **12.1.2** (it ships on its own cadence and has no 12.1.6), JsonSchema.Net **9.6.0**, AutoVersioning **`2026.4.1031`**, xunit.v3 **4.0.3**, XamlQuality **`2026.4.1109`** (test-only; adopts `BNXQ1001`, and since 2026-09-28 `BNXQ1008` and `BNXQ1009` in `XamlQualityRuleGuardsTests`, each canaried red on a planted defect; `BNXQ1007`'s 309-control AutomationId sweep is not adopted). Moved by `plans/00009` Phase 1 on 2026-11-10: every `src` project built unchanged at the new ScopedEditors and AppServices. The one break was xunit.v3 4.0.3's new `xUnit1073` against the `DoNotParallelize` collection in `tests/Shared/MessageAssert.cs`, which five of the six assemblies never join. Fixed by **regenerating** the file with Templates' `mstest-to-xunit.cs --emit-helpers` at `2584de1`, which carries upstream's own fix (`06995308`); the regenerated file differs from the old one only by that fix. Suite unchanged: **3,255 · 0 · 13**, all six assemblies |
 | ⛔ Schema-refresh bot | `schema-refresh.yml` recreates `chore/schema-refresh` from `main` every Monday, and on 2026-11-09 erased #114's test commit `5134ef47` from the remote. The commit survives only locally, tagged `backup/opencode-redesign-tests`. `plans/00009` Phase 2 lands it from `fix/opencode-schema-redesign` and fixes the workflow (decisions 12–13). **Never push to `chore/schema-refresh`** |
 
-**Next:** `plans/00009`, in order: Phase 1, the dependency PR (`build/deps-2026-11`); Phase 1b, the
-three new models; Phase 2, the schema PR, `packages-v2026.4.MMDD` and the pin; then the app release.
-After the pin, `plans/00008` resumes at step 4 (item 8 below has the state, the drift and what each
+**Next:** `plans/00010`'s order of work: U (#140, Ultracode leaves the catalog) → M (the three new
+models) → S (the schema PR, closing #114, the refresh-bot fix) → R (the `.AvaloniaUI` renames) → C
+(required `CancellationToken`s in Core) → Q (the quality packages) → W (the Essentials workflow
+cards) → P (one package release and pin) → A (the app release). ✅ `00009` Phase 1 is done (#138).
+⚠ `Published Version` is red BY CONSTRUCTION from U's merge until P's pin, and so is `Feed Restore`
+from R's merge; `scripts/package-canary.ps1` passing locally is the gate for every merge in that
+window (00010 decision 1). After the pin, `plans/00008` resumes at step 4 (item 8 below has the state, the drift and what each
 finished step measured), interleaved with 00009 Phase 3, then step 5, whose neutral test product also gets the frozen archive moved there from
 step 3. The items below are kept in order; those marked ✅ are done.
 
