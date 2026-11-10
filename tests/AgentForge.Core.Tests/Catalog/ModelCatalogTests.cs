@@ -26,6 +26,9 @@ public sealed class ModelCatalogTests
     {
         Assert.Equal("claude-opus-5-5", Catalog.Resolve("opus[1m]")?.Id);
         Assert.Equal("claude-opus-5-5", Catalog.Resolve("opus")?.Id);
+        Assert.Equal("claude-fable-5-2", Catalog.Resolve("fable")?.Id);
+        Assert.Equal("claude-sonnet-5-5", Catalog.Resolve("sonnet")?.Id);
+        Assert.Equal("claude-haiku-5-5", Catalog.Resolve("haiku")?.Id);
         Assert.Equal("claude-sonnet-4-6", Catalog.Resolve("claude-sonnet-4-6[1m]")?.Id);
         MessageAssert.Null(Catalog.Resolve("some-custom-model"), "Unknown id resolves to null.");
         Assert.Null(Catalog.Resolve(null));
@@ -196,7 +199,9 @@ public sealed class ModelCatalogTests
     {
         List<string> s = Catalog.ModelSuggestions().ToList();
         MessageAssert.Contains("opus[1m]", s, "Opus supports 1m → its [1m] variant is offered.");
-        MessageAssert.DoesNotContain("haiku[1m]", s, "Haiku does not support 1m → no [1m] variant.");
+        MessageAssert.DoesNotContain("haiku[1m]", s,
+            "Haiku has no [1m] variant: Haiku 4.5 has no 1M window, and Haiku 5.5 runs with it "
+            + "natively, 'with no [1m] suffix to select' (Claude Code model-config docs).");
     }
 
     [Fact]

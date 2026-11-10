@@ -3,10 +3,20 @@
   "schemaVersion": 1,
   "models": [
     {
-      "id": "claude-fable-5-1",
+      "id": "claude-fable-5-2",
       "alias": "fable",
-      "label": "Fable 5.1",
+      "label": "Fable 5.2",
       "legacy": false,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "defaultEffortLevel": "medium",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-fable-5-1",
+      "alias": null,
+      "label": "Fable 5.1",
+      "legacy": true,
       "supports1m": true,
       "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
       "defaultEffortLevel": "high",
@@ -43,20 +53,40 @@
       "supportsAutoMode": true
     },
     {
-      "id": "claude-sonnet-5",
+      "id": "claude-sonnet-5-5",
       "alias": "sonnet",
-      "label": "Sonnet 5",
+      "label": "Sonnet 5.5",
       "legacy": false,
+      "supports1m": true,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "defaultEffortLevel": "medium",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-sonnet-5",
+      "alias": null,
+      "label": "Sonnet 5",
+      "legacy": true,
       "supports1m": true,
       "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
       "defaultEffortLevel": "high",
       "supportsAutoMode": true
     },
     {
-      "id": "claude-haiku-4-5",
+      "id": "claude-haiku-5-5",
       "alias": "haiku",
-      "label": "Haiku 4.5",
+      "label": "Haiku 5.5",
       "legacy": false,
+      "supports1m": false,
+      "supportedEffortLevels": ["low", "medium", "high", "xhigh", "max"],
+      "defaultEffortLevel": "medium",
+      "supportsAutoMode": true
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "alias": null,
+      "label": "Haiku 4.5",
+      "legacy": true,
       "supports1m": false,
       "supportedEffortLevels": [],
       "defaultEffortLevel": null,
@@ -104,10 +134,10 @@
     }
   ],
   "aliases": {
-    "fable": "claude-fable-5-1",
+    "fable": "claude-fable-5-2",
     "opus": "claude-opus-5-5",
-    "sonnet": "claude-sonnet-5",
-    "haiku": "claude-haiku-4-5"
+    "sonnet": "claude-sonnet-5-5",
+    "haiku": "claude-haiku-5-5"
   },
   "effortLevels": [
     { "id": "low", "order": 0, "persists": true },

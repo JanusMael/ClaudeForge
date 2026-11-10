@@ -16,6 +16,14 @@ reconcile them against and renumbering them would be guesswork.
 
 ## [Unreleased]
 
+### Added
+
+- **Claude Fable 5.2, Sonnet 5.5 and Haiku 5.5.** The `fable`, `sonnet` and `haiku` aliases now
+  resolve to them, and Fable 5.1, Sonnet 5 and Haiku 4.5 move to legacy: still pinnable, no longer
+  in the default suggestions. All three default to **medium** effort, as Claude Code documents.
+  Haiku 5.5 is a step change from Haiku 4.5: it supports every effort level from low to max, and
+  auto permission mode, and runs with the 1M-token context window natively.
+
 ### Fixed
 
 - **Reloading no longer blocks anyone else from saving your settings.** While ClaudeForge read
