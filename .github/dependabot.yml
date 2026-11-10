@@ -9,8 +9,15 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 10
+    # Was 10, and exactly ten stale PRs held the queue shut from 2026-11-02: Dependabot proposes
+    # nothing new while the limit is reached, so Avalonia 12.1.6 was never offered (plans/00009).
+    open-pull-requests-limit: 20
     groups:
+      # The maintainer's own packages release as families (one AppServices release opened three
+      # PRs, #127-#129), so one group keeps a family's bump in one PR.
+      bennewitz:
+        patterns:
+          - "Bennewitz.Ninja.*"
       # Avalonia packages are versioned in lockstep — group them so a single PR
       # bumps all of them together and the project stays in a consistent state.
       avalonia:
