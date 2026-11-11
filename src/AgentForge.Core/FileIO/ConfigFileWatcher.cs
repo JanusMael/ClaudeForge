@@ -120,16 +120,19 @@ public sealed class ConfigFileWatcher : IDisposable
 
             // ⛔ These run on a FileSystemWatcher thread that no caller catches: a throw there ends
             // the process on Windows and silences the watcher on Linux (BNCQ1009). So each body is
-            // wholly inside one try/catch that logs, and catches everything on purpose: nothing
-            // above it can act on the exception, and losing one change report is recoverable while
-            // losing the process is not.
+            // wholly inside one try/catch that logs, and catches everything but an out-of-memory
+            // failure on purpose: nothing above it can act on the exception, and losing one change
+            // report is recoverable while losing the process is not. The filter lets OOM through,
+            // which is the one failure no log line can recover from; CodeQuality 2026.4.1111 is
+            // the first BNCQ1009 to accept that shape, and it is what closes CodeQL's
+            // cs/catch-of-all-exceptions here.
             watcher.Changed += (_, _) =>
             {
                 try
                 {
                     OnChanged(filePath);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OutOfMemoryException)
                 {
                     LogCallbackFailure(ex, filePath, "Changed");
                 }
@@ -140,7 +143,7 @@ public sealed class ConfigFileWatcher : IDisposable
                 {
                     OnChanged(filePath);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OutOfMemoryException)
                 {
                     LogCallbackFailure(ex, filePath, "Created");
                 }
@@ -151,7 +154,7 @@ public sealed class ConfigFileWatcher : IDisposable
                 {
                     OnChanged(filePath);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OutOfMemoryException)
                 {
                     LogCallbackFailure(ex, filePath, "Deleted");
                 }
@@ -162,7 +165,7 @@ public sealed class ConfigFileWatcher : IDisposable
                 {
                     OnChanged(filePath);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OutOfMemoryException)
                 {
                     LogCallbackFailure(ex, filePath, "Renamed");
                 }
