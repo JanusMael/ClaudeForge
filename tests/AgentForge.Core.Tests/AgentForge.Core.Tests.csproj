@@ -30,17 +30,6 @@
     </ItemGroup>
 
     <!--
-        ConfigFileWatcherDebounceTests pins the debounce guard plans/00010 step Q added to
-        AgentForge.Core, which the published 2026.4.1110 does not carry: in package mode it would
-        fail rather than not compile, and a red published-version job could then hide a real
-        regression. KEYED ON THE PIN, as the block above is: the next pin compiles it again with no
-        edit here. The package canary packs this commit, so it runs the test throughout.
-    -->
-    <ItemGroup Condition="'$(UseSharedPackages)' == 'true' And '$(SharedPackageVersion)' == '2026.4.1110'">
-        <Compile Remove="FileIO/ConfigFileWatcherDebounceTests.cs"/>
-    </ItemGroup>
-
-    <!--
         Frozen backup archives, restored by BackupArchiveCompatibilityTests.
 
         ⛔ These are BINARY FIXTURES and must never be regenerated to make a test pass. Each one
