@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ScopedEditors.ViewModels;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels;
 
 /// <summary>
 /// Drives the neutral search machinery with a <em>fabricated</em> product — no

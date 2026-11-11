@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Adapters;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.Adapters;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.Adapters;
 
 /// <summary>
 /// Key order through the value-currency layer, which for some configuration is meaning rather

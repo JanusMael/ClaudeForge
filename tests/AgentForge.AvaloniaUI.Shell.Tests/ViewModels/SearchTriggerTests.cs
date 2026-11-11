@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels;
 
 /// <summary>
 /// The neutral half of the synthetic-search seam: when a product's declared

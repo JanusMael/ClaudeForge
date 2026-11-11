@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests</RootNamespace>
+        <Description>
+            Tests of the product-neutral shell, built without either product (plans/00008 step 4).
+            Until this project existed the shell was tested only through ClaudeForge.Tests, so most
+            of its coverage arrived by way of Claude's view models and could not move with it. It is
+            the safety net for the plan's later rewrites of BackupRestoreViewModel and
+            SettingsGroupEditorViewModel: the tests here drive them through a neutral test client.
+        </Description>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\AgentForge.AvaloniaUI.Shell\AgentForge.AvaloniaUI.Shell.csproj"/>
+        <!-- Deliberately NO reference to any ClaudeForge.* project: this project exists to show
+             what the shell does without one. AssemblyLayeringTests holds that for every
+             AgentForge.* csproj, tests included. -->
+    </ItemGroup>
+</Project>

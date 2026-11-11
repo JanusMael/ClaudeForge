@@ -54,6 +54,7 @@ using System.Runtime.CompilerServices;
 // edit — and what makes the cost above concrete, since each name is also a grant against every
 // shipping assembly.
 [assembly: InternalsVisibleTo("AgentForge.Artifacts.Tests")]
+[assembly: InternalsVisibleTo("AgentForge.AvaloniaUI.Shell.Tests")]
 [assembly: InternalsVisibleTo("AgentForge.Core.Tests")]
 [assembly: InternalsVisibleTo("AgentForge.Sdk.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.AvaloniaUI.Tests")]

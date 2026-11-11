@@ -30,5 +30,6 @@
         <Project Path="tests/AgentForge.Sdk.Tests/AgentForge.Sdk.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.Sdk.Claude.Tests/ClaudeForge.Sdk.Claude.Tests.csproj"/>
         <Project Path="tests/ClaudeForge.AvaloniaUI.Tests/ClaudeForge.AvaloniaUI.Tests.csproj"/>
+        <Project Path="tests/AgentForge.AvaloniaUI.Shell.Tests/AgentForge.AvaloniaUI.Shell.Tests.csproj"/>
     </Folder>
 </Solution>

@@ -1,7 +1,6 @@
-using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.ScopedEditors.ViewModels;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels;
 
 /// <summary>
 /// Grammar + resolution contract for <see cref="NavDeepPath"/> — the

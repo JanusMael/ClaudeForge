@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Danger;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.Danger;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.Danger;
 
 /// <summary>
 /// The neutral matching mechanism, tested against purpose-built rule tables rather than a
