@@ -38,5 +38,8 @@
     <ItemGroup Condition="'$(UseSharedPackages)' == 'true' And '$(SharedPackageVersion)' == '2026.4.1111'">
         <Compile Remove="ViewModels/SearchResultDangerTests.cs"/>
         <Compile Remove="ViewModels/SearchViewModelSeamTests.cs"/>
+        <Compile Remove="ViewModels/BackupRestoreViewModelTests.cs"/>
+        <Compile Remove="ViewModels/SettingsGroupEditorViewModelTests.cs"/>
+        <Compile Remove="TestSupport/TestConfigClient.cs"/>
     </ItemGroup>
 </Project>

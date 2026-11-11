@@ -321,10 +321,32 @@ step 3. The items below are kept in order; those marked ✅ are done.
    `SearchViewModel.ExecuteSearch`, which is internal, and the published `2026.4.1111` packages
    predate this project's friend grant, so `Published Version` failed CS1061 on the first push.
    Those two files are `Compile Remove`d when `UseSharedPackages` and the pin is `2026.4.1111`, as
-   Core's tests were for `2026.4.1110`; the package canary still runs them. ▶ **Next: step 4's second half** — a
-   neutral test client and editor factory, then tests driving `BackupRestoreViewModel` and
-   `SettingsGroupEditorViewModel` to at least `ClaudeForge.Tests`' coverage of them, which is
-   measured first on `main`.
+   Core's tests were for `2026.4.1110`; the package canary still runs them.
+   ✅ **Step 4, second half (branch `test/shell-viewmodel-coverage`):** the project's
+   `TestSupport/` holds a neutral host — `TestBackupPage` (options whose every string is its own
+   property name, with the shipped English's placeholders), `TestEditorFactory` (the library's
+   `DefaultPropertyEditorFactory` through the shell's adapters), `TestSettingsGroupText`, and
+   copies of `AgentForge.Sdk.Tests`' `TestConfigClient` and `TestMergePolicy`. ClaudeForge's
+   suites for the two pages are **copied, not moved** — the originals still prove the app's own
+   wiring — with every app reference swapped for the neutral host, plus three smaller suites
+   (`GroupEditorDeepNavigation`, `DeprecatedFilter`, `ApplyToWorkspaceDeadlockRegression`) and two
+   new files of host tests for what `main` reached only through the app. **Coverage, decision 9's
+   instrument** (`Microsoft.Testing.Extensions.CodeCoverage` 18.11.2, test executable run
+   directly, compiler-generated nested types folded into their parent):
+
+   | Type | `ClaudeForge.Tests` on `main` | `AgentForge.AvaloniaUI.Shell.Tests` alone |
+   |---|---|---|
+   | `BackupRestoreViewModel` | 440 / 699 | **440 / 699** |
+   | `SettingsGroupEditorViewModel` | 550 / 609 | **560 / 609** |
+
+   The one line `main` reaches and this does not is `OnWorkspaceChanged`'s off-UI-thread
+   `Dispatcher.UIThread.Post`, which needs a headless session. ⚠ **`main`'s figure for the backup
+   page's agent-running warning depended on who ran the suite**: it fired only when a real `claude`
+   process was running. The new test names the test process itself, so it fires every time.
+   Canaried: making the page classify effective rows at the EDITING scope reddened exactly
+   `EffectiveRows_CarryTheHostClassifiersAssessment_AtTheWinningScope`. Five files reach shared
+   internals and sit in the pin-keyed package-mode exclusion above (114 tests run there, all pass).
+   ▶ **Next: step 5**, the neutral test product.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.
