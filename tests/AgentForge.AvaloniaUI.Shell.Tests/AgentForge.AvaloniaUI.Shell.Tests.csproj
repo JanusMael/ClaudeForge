@@ -25,4 +25,18 @@
              what the shell does without one. AssemblyLayeringTests holds that for every
              AgentForge.* csproj, tests included. -->
     </ItemGroup>
+
+    <!--
+        Files that reach the shared libraries' INTERNALS. Internals are granted by name in
+        AssemblyInfo.InternalsVisibleTo.cs, compiled into each library, and the published packages
+        at 2026.4.1111 were built before this project's name was added there — so in package mode
+        these files do not compile (CS1061 / CS0122 / CS0117). KEYED ON THE PIN, like the exclusion
+        AgentForge.Core.Tests carried for 2026.4.1110: the next package release carries the grant,
+        and the pin that consumes it compiles these again with no edit here. The package canary
+        packs this commit, grant included, so it runs them throughout.
+    -->
+    <ItemGroup Condition="'$(UseSharedPackages)' == 'true' And '$(SharedPackageVersion)' == '2026.4.1111'">
+        <Compile Remove="ViewModels/SearchResultDangerTests.cs"/>
+        <Compile Remove="ViewModels/SearchViewModelSeamTests.cs"/>
+    </ItemGroup>
 </Project>

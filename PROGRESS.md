@@ -316,7 +316,12 @@ step 3. The items below are kept in order; those marked ✅ are done.
    `StatusController`, `NavDeepPath` and `NavDeepPathSourceEncoding` (the last two lost an unused
    ClaudeForge `using`). Found by building them, not by reading usings: `ClaudeForge.Tests`' global
    usings hide what a file needs. `Compare-TestNames.ps1 -Pairing` against `main`: **106 methods,
-   109 results, all clean `MOVED`**, totals unchanged at 3,274. ▶ **Next: step 4's second half** — a
+   109 results, all clean `MOVED`**, totals unchanged at 3,274. ⚠ **In package mode, 19 of the 109
+   do not run until the next package release.** `SearchResultDanger` and `SearchViewModelSeam` call
+   `SearchViewModel.ExecuteSearch`, which is internal, and the published `2026.4.1111` packages
+   predate this project's friend grant, so `Published Version` failed CS1061 on the first push.
+   Those two files are `Compile Remove`d when `UseSharedPackages` and the pin is `2026.4.1111`, as
+   Core's tests were for `2026.4.1110`; the package canary still runs them. ▶ **Next: step 4's second half** — a
    neutral test client and editor factory, then tests driving `BackupRestoreViewModel` and
    `SettingsGroupEditorViewModel` to at least `ClaudeForge.Tests`' coverage of them, which is
    measured first on `main`.
