@@ -161,7 +161,10 @@ translations in all eight locales and `ultracode` as a search trigger. Then **E*
 release and pin for Q's Core fix (`ConfigFileWatcher`) — after W and E, by the maintainer's choice, so
 one release lands just before A as decision 1 intended — then **A** (the app release; the maintainer
 signs and submits to winget). ✅ Q #146, W #147 and E #148 are merged, `packages-v2026.4.1111` is
-published and verified, and its pin is the PR on `build/pin-2026.4.1111`. ▶ Next: **A**, the app release. ✅ `00009` Phase 1 is done (#138). After the pin, `plans/00008` resumes at step 4 (item 8 below has the state, the drift and what each
+published and verified, and its pin is #149. ✅ **A** is done: `v2026.4.1111` released 2026-11-11
+(run 43062118007, six assets), its notes trimmed to user-facing changes, the Windows zips signed and
+re-uploaded by the maintainer. ⚠ `release.yml`'s generated download text carried an em dash, which
+the winget submission copies into `ReleaseNotes`; it is ASCII from the next release on. ✅ `00009` Phase 1 is done (#138). After the pin, `plans/00008` resumes at step 4 (item 8 below has the state, the drift and what each
 finished step measured), interleaved with 00009 Phase 3, then step 5, whose neutral test product also gets the frozen archive moved there from
 step 3. The items below are kept in order; those marked ✅ are done.
 

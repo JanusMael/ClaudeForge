@@ -438,7 +438,7 @@ jobs:
           | macOS (Apple Silicon) | ARM64          | \`${{ env.APP_NAME }}-osx-arm64.tar.gz\`                                  |
 
           The version (${{ env.VERSION }}) is encoded in the release tag rather than in
-          the archive filenames — publish.ps1 produces unversioned artefact names
+          the archive filenames - publish.ps1 produces unversioned artefact names
           so local dev builds and CI builds share one filename pattern.
 
           **Linux:** Extract, then run the bundled \`linux-setup.sh\` to install a per-user \`.desktop\` entry so Wayland compositors render the window icon correctly:
