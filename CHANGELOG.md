@@ -14,7 +14,7 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
-## [Unreleased]
+## [2026.4.1111] - 2026-11-11
 
 ### Breaking — for consumers of the `Bennewitz.Ninja.AgentForge.*` packages
 
