@@ -161,7 +161,10 @@ public sealed class SettingsGroupEditorViewModelHostTests
     public void Dispose_StopsFollowingTheSharedScope_AndIsIdempotent()
     {
         SharedScopeContext shared = new(ConfigScope.User) { AvailableScopes = [ConfigScope.User, ConfigScope.Project] };
-        SettingsGroupEditorViewModel vm = Page([Node("alpha")],
+        // `using`, so the page is disposed even if Activate throws. The two explicit calls below are
+        // the behaviour under test (dispose, then dispose again); the using's is a third, which the
+        // idempotence being asserted makes harmless.
+        using SettingsGroupEditorViewModel vm = Page([Node("alpha")],
             MakeWorkspace((ConfigScope.Project, "{}"), (ConfigScope.User, "{}")), shared);
         vm.Activate();
 

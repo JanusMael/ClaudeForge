@@ -302,13 +302,12 @@ public partial class SettingsGroupEditorViewModelTests
         LayeredValue layered = workspace.GetLayeredValue("env");
         JsonObject? effective = layered.EffectiveValue as JsonObject;
         MessageAssert.NotNull(effective, "Effective env value should be a JsonObject.");
-        Assert.True(effective.ContainsKey("CLAUDE_CODE_MAX_OUTPUT_TOKENS"),
+        Assert.True(effective.TryGetPropertyValue("CLAUDE_CODE_MAX_OUTPUT_TOKENS", out JsonNode? maxTokens),
             "Out-of-band write to env.CLAUDE_CODE_MAX_OUTPUT_TOKENS was clobbered by " +
             "ApplyToWorkspace.  The group editor flushed its stale in-memory env snapshot " +
             "(which didn't include the out-of-band key) back over the workspace.  This is " +
             "to make sure the _userEditedPaths gate is intact.");
-        Assert.Equal("60000",
-            effective["CLAUDE_CODE_MAX_OUTPUT_TOKENS"]!.GetValue<string>());
+        Assert.Equal("60000", maxTokens!.GetValue<string>());
     }
 
     /// <summary>
