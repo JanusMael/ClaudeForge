@@ -28,10 +28,17 @@ internal sealed class Program
     /// SIGTERM included. <c>--version</c>, as the only argument, prints the release version.
     /// </para>
     /// <para>
-    /// ⚠ <b>Two of the library's defaults are overridden on purpose.</b> <see cref="Run"/> keeps the
-    /// in-process <c>FatalErrorDialog</c> attempt on a bootstrap failure, which the library's options
-    /// do not make. And an unobserved task exception is left to <c>App.OnUnobservedTaskException</c>,
-    /// which filters the Linux D-Bus noise; the library would log every one of them a second time.
+    /// ⚠ <b>Only <c>FlushLog</c> differs from the library's options</b>, which adds the closing log line.
+    /// <see cref="Run"/> also keeps the in-process <c>FatalErrorDialog</c> attempt on a bootstrap
+    /// failure, which the library's options do not make.
+    /// </para>
+    /// <para>
+    /// ⭐ <b>The app has no exception handler of its own</b> (AppServices 2026.4.1113). The package's
+    /// handles a UI-thread failure and an unobserved task exception the same way: logged at Error and
+    /// shown in the <c>FatalErrorDialog</c>, one dialog at a time, with repeats counted. What it calls
+    /// benign comes from <see cref="IsBenignLinuxInfrastructureException"/>, passed as
+    /// <c>IsBenignException</c> in <see cref="Run"/>, for both paths and for the stderr report; an
+    /// unobserved exception that is nothing but cancellations is benign in the package itself.
     /// </para>
     /// </remarks>
     [STAThread]
@@ -46,12 +53,8 @@ internal sealed class Program
         }
 
         AppMainOptions defaults = AvaloniaDiagnostics.EntryPointOptions();
-        AppMainOptions options = new()
+        AppMainOptions options = defaults with
         {
-            // The library's: log the failure as fatal, then show the native-OS dialog.
-            OnFatal = defaults.OnFatal,
-            // Left unset: App.OnUnobservedTaskException owns these (see the remarks).
-            OnUnobservedTaskException = null,
             FlushLog = () =>
             {
                 // Permanent: the very last log line before the Serilog pipeline shuts down. Pairs
@@ -176,6 +179,10 @@ internal sealed class Program
             // separator it parses back when pruning. "config-events" throws, and it throws
             // from ConfigureLogging - before any logging exists - so the app dies silently.
             EventLogFileNamePrefix = "events",
+            // One filter for the UI thread, unobserved task exceptions and their stderr report.
+            // ⚠ Cancellations stay OUT of it: the package already calls an unobserved one benign,
+            // and one that escapes on the UI thread is a bug that should still be shown.
+            IsBenignException = IsBenignLinuxInfrastructureException,
         });
 
         // 5. Flush any deferred debug-flag warnings (e.g. invalid --culture
@@ -221,6 +228,48 @@ internal sealed class Program
                 "ClaudeForge encountered a fatal error during startup.", ex);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="ex"/> is a known benign
+    /// Linux infrastructure miss — the XDG portal or DBus session service is absent
+    /// or not running on this desktop environment.  These are capability-detection
+    /// failures (the app tried to use a portal that is not installed), not bugs.
+    /// </summary>
+    /// <remarks>
+    /// Passed to the package as <c>IsBenignException</c>, which hands it each inner exception of an
+    /// aggregate in turn, so it never sees an <see cref="AggregateException"/> itself.
+    /// Detection strategy:
+    /// <list type="bullet">
+    ///   <item><c>Tmds.DBus.Protocol.DBusException</c> type name — the concrete exception
+    ///         Avalonia's portal layer throws; type-name comparison avoids a hard package
+    ///         reference to Tmds.DBus.</item>
+    ///   <item>Message prefix <c>org.freedesktop.DBus.Error.*</c> — well-known DBus error
+    ///         namespace (ServiceUnknown, NoReply, AccessDenied, …).</item>
+    ///   <item>Message prefix <c>org.freedesktop.portal.*</c> — XDG portal error namespace
+    ///         (e.g. org.freedesktop.portal.Error.NotAllowed on sandboxed desktops).</item>
+    /// </list>
+    /// The <see cref="OperatingSystem.IsLinux"/> guard on the message-prefix clauses is
+    /// intentional: the type-name check is inherently Linux-specific, but the prefix
+    /// checks are purely textual — the guard prevents a coincidentally named exception
+    /// on Windows or macOS from being silently downgraded.
+    /// </remarks>
+    private static bool IsBenignLinuxInfrastructureException(Exception ex)
+    {
+        // Type check — catches the Tmds.DBus concrete type without a hard reference.
+        if (ex.GetType().FullName == "Tmds.DBus.Protocol.DBusException")
+        {
+            return true;
+        }
+
+        // Message-prefix checks are textual → Linux-only guard.
+        if (!OperatingSystem.IsLinux())
+        {
+            return false;
+        }
+
+        return ex.Message.StartsWith("org.freedesktop.DBus.Error.", StringComparison.Ordinal) ||
+               ex.Message.StartsWith("org.freedesktop.portal.", StringComparison.Ordinal);
     }
 
     // LogToTrace() deliberately not called: Avalonia log events reach Trace through the
