@@ -182,7 +182,7 @@
       so they check nothing. A zero from them is not a guard (decision 10).
     -->
     <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1104" PrivateAssets="all" />
+        <PackageReference Include="Bennewitz.Ninja.CodeQuality" Version="2026.4.1111" PrivateAssets="all" />
     </ItemGroup>
 
 </Project>

@@ -183,8 +183,10 @@ public partial class MainWindow : Window
     // ⛔ One throw from a Tick handler stops the timer for good while IsEnabled still reads true,
     // and Dispatcher.UnhandledException never hears of it (BNCQ3001, plans/00010 decision 11).
     // WindowStateService.Save catches only IOException and UnauthorizedAccessException, so the
-    // whole body is inside one try/catch that logs. Catching everything is deliberate: a lost
-    // window-geometry save is harmless, and nothing above this handler can act on the exception.
+    // whole body is inside one try/catch that logs. Catching everything but an out-of-memory
+    // failure is deliberate: a lost window-geometry save is harmless, and nothing above this
+    // handler can act on the exception. Letting OOM through is the fatal-only filter BNCQ1009
+    // accepts from CodeQuality 2026.4.1111, and it closes CodeQL's cs/catch-of-all-exceptions here.
     private void OnSaveDebounceTick(object? sender, EventArgs e)
     {
         try
@@ -192,7 +194,7 @@ public partial class MainWindow : Window
             _saveDebounceTimer?.Stop();
             FlushWindowStateSave();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             Log.Error(ex, "[WindowState] Saving the window geometry threw; this save is skipped.");
         }
