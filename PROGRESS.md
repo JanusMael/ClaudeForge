@@ -195,8 +195,14 @@ step 3. The items below are kept in order; those marked ✅ are done.
   dialog: `2026.4.1113` calls an unobserved exception of nothing but cancellations benign itself, and
   shows the dialog by default, so neither is needed. Cancellations stay out of the filter so that one
   escaping on the UI thread is still shown. Behaviour change: such a cancellation was logged at Verbose,
-  now at Debug. ⓘ Suite unchanged at 3,401; the trimmed linux-x64 publish is clean; all five
-  AppServices DLLs carry `IsTrimmable`.
+  now at Debug. ⛔ **Found on the way, by CodeQL (`cs/erroneous-class-compare`):** the classifier's
+  type check compared `GetType().FullName` with `"Tmds.DBus.Protocol.DBusException"`, a type that does
+  not exist in the Tmds.DBus.Protocol 0.95 line Avalonia 12 ships (its exceptions derive from
+  `DBusExceptionBase`), so it never matched and only the Linux message-prefix checks ever applied. It
+  is now `ex is DBusExceptionBase`, through Avalonia.FreeDesktop's own dependency, and
+  `BenignLinuxInfrastructureExceptionTests` throws the package's real exceptions: canaried, all five
+  D-Bus cases go red against the old comparison. ⓘ Suite 3,409 (+8, those tests); the trimmed
+  linux-x64 publish is clean; all five AppServices DLLs carry `IsTrimmable`.
 - ✗ **Declined:** next-launch crash detection.
 - ⓘ **Measured, for whoever revisits crash handling** (two probes on .NET 10, Windows): a fault in
   MANAGED code (`Marshal.ReadInt32(IntPtr.Zero)`) is an ordinary, catchable `AccessViolationException` —

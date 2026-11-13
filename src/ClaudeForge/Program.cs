@@ -11,6 +11,7 @@ using Bennewitz.Ninja.AppServices.AvaloniaUI;
 using Bennewitz.Ninja.AppServices.EntryPoint;
 using Bennewitz.Ninja.ScopedEditors.AvaloniaUI.Localization;
 using Serilog;
+using Tmds.DBus.Protocol;
 
 namespace Bennewitz.Ninja.ClaudeForge;
 
@@ -241,9 +242,12 @@ internal sealed class Program
     /// aggregate in turn, so it never sees an <see cref="AggregateException"/> itself.
     /// Detection strategy:
     /// <list type="bullet">
-    ///   <item><c>Tmds.DBus.Protocol.DBusException</c> type name — the concrete exception
-    ///         Avalonia's portal layer throws; type-name comparison avoids a hard package
-    ///         reference to Tmds.DBus.</item>
+    ///   <item><see cref="DBusExceptionBase"/> — the base of every exception Tmds.DBus.Protocol
+    ///         throws, which Avalonia's Linux backend uses for the portals and the session bus. A
+    ///         type test, not a name: this was a comparison of <c>GetType().FullName</c> with
+    ///         <c>"Tmds.DBus.Protocol.DBusException"</c>, a type that does not exist in the
+    ///         0.95 line Avalonia 12 ships, so it never matched and only the message checks below
+    ///         ever applied. The package is Avalonia.FreeDesktop's dependency, not a new one.</item>
     ///   <item>Message prefix <c>org.freedesktop.DBus.Error.*</c> — well-known DBus error
     ///         namespace (ServiceUnknown, NoReply, AccessDenied, …).</item>
     ///   <item>Message prefix <c>org.freedesktop.portal.*</c> — XDG portal error namespace
@@ -254,10 +258,9 @@ internal sealed class Program
     /// checks are purely textual — the guard prevents a coincidentally named exception
     /// on Windows or macOS from being silently downgraded.
     /// </remarks>
-    private static bool IsBenignLinuxInfrastructureException(Exception ex)
+    internal static bool IsBenignLinuxInfrastructureException(Exception ex)
     {
-        // Type check — catches the Tmds.DBus concrete type without a hard reference.
-        if (ex.GetType().FullName == "Tmds.DBus.Protocol.DBusException")
+        if (ex is DBusExceptionBase)
         {
             return true;
         }
