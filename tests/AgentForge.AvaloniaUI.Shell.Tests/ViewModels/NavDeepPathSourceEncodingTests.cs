@@ -1,6 +1,5 @@
-using Bennewitz.Ninja.ClaudeForge.ViewModels;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels;
 
 /// <summary>
 /// A plugin artifact's source is itself a path

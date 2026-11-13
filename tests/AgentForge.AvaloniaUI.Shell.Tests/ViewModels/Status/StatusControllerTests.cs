@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Status;
 using Microsoft.Extensions.Time.Testing;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Status;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels.Status;
 
 /// <summary>
 /// Locks <see cref="StatusController"/>'s lifecycle rules.  The five kinds

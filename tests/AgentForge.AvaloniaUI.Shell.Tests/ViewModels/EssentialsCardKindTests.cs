@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels;
 
 /// <summary>
 /// The kind/payload invariants the card constructor enforces, and the one member a picker's

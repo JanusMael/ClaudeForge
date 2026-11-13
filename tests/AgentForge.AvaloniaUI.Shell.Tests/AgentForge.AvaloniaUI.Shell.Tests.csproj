@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests</RootNamespace>
+        <Description>
+            Tests of the product-neutral shell, built without either product (plans/00008 step 4).
+            Until this project existed the shell was tested only through ClaudeForge.Tests, so most
+            of its coverage arrived by way of Claude's view models and could not move with it. It is
+            the safety net for the plan's later rewrites of BackupRestoreViewModel and
+            SettingsGroupEditorViewModel: the tests here drive them through a neutral test client.
+        </Description>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\AgentForge.AvaloniaUI.Shell\AgentForge.AvaloniaUI.Shell.csproj"/>
+        <!-- Deliberately NO reference to any ClaudeForge.* project: this project exists to show
+             what the shell does without one. AssemblyLayeringTests holds that for every
+             AgentForge.* csproj, tests included. -->
+    </ItemGroup>
+
+    <!--
+        Files that reach the shared libraries' INTERNALS. Internals are granted by name in
+        AssemblyInfo.InternalsVisibleTo.cs, compiled into each library, and the published packages
+        at 2026.4.1111 were built before this project's name was added there — so in package mode
+        these files do not compile (CS1061 / CS0122 / CS0117). KEYED ON THE PIN, like the exclusion
+        AgentForge.Core.Tests carried for 2026.4.1110: the next package release carries the grant,
+        and the pin that consumes it compiles these again with no edit here. The package canary
+        packs this commit, grant included, so it runs them throughout.
+    -->
+    <ItemGroup Condition="'$(UseSharedPackages)' == 'true' And '$(SharedPackageVersion)' == '2026.4.1111'">
+        <Compile Remove="ViewModels/SearchResultDangerTests.cs"/>
+        <Compile Remove="ViewModels/SearchViewModelSeamTests.cs"/>
+    </ItemGroup>
+</Project>

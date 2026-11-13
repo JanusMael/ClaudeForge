@@ -6,7 +6,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using Bennewitz.Ninja.ScopedEditors.ViewModels;
 
-namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
+namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.ViewModels;
 
 /// <summary>
 /// Whether a search hit carries the severity of the knob it points at — on every branch that can
