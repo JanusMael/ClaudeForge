@@ -49,10 +49,8 @@ public class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Wire up global exception handlers before showing any UI so that
-            // crashes during startup are also captured.
-            Dispatcher.UIThread.UnhandledException += OnUiThreadUnhandledException;
-            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+            // No exception handlers here: AppServices' own, installed by InstallAvaloniaHooks()
+            // above, own the UI thread and unobserved task exceptions. See Program.Main's remarks.
 
             // CreateWithNetwork, not `new`: a bare registry is OFFLINE by design, and this
             // line said `new()` from the initial commit. That was harmless while the chain
@@ -163,109 +161,5 @@ public class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
-    }
-
-    // -----------------------------------------------------------------------
-    // Global exception handlers
-    // -----------------------------------------------------------------------
-
-    private void OnUiThreadUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        // Mark as handled so Avalonia does not terminate the process immediately,
-        // giving us a chance to show the fatal-error dialog.
-        e.Handled = true;
-
-        // Unwrap so the benign-check works the same way for both handler paths.
-        AggregateException? inner = e.Exception is AggregateException agg ? agg.Flatten() : null;
-
-        if (IsBenignLinuxInfrastructureException(e.Exception) ||
-            (inner is not null && inner.InnerExceptions.All(IsBenignLinuxInfrastructureException)))
-        {
-            Log.Debug(e.Exception, "DBus/portal unavailable ({Source}) — ignored", "UIThread");
-            return;
-        }
-
-        Log.Error(e.Exception, "Unhandled exception on {Source}", "UIThread");
-        ShowCrashDialog(e.Exception);
-    }
-
-    private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
-    {
-        // Prevent the runtime from re-throwing on the finalizer thread (which would crash).
-        e.SetObserved();
-        AggregateException ex = e.Exception.Flatten();
-
-        // OperationCanceledException (and its subclass TaskCanceledException) is normal
-        // control flow for user-initiated cancellations — e.g., the user cancels a backup
-        // or restore via the Cancel button.  If every inner exception is a cancellation,
-        // log at Verbose and skip the crash dialog entirely to avoid alarming the user.
-        if (ex.InnerExceptions.All(inner => inner is OperationCanceledException))
-        {
-            Log.Verbose(ex, "Task cancelled silently ({Source})", "TaskScheduler");
-            return;
-        }
-
-        // Avalonia's XDG portal layer (Tmds.DBus) throws when a portal service is not
-        // present or not running on this desktop environment (e.g. Cosmic, minimal GNOME).
-        // This is an infrastructure capability miss, not an app error — log at Debug and
-        // skip the crash dialog so the user is not alarmed.
-        if (ex.InnerExceptions.All(IsBenignLinuxInfrastructureException))
-        {
-            Log.Debug(ex, "DBus/portal unavailable ({Source}) — ignored", "TaskScheduler");
-            return;
-        }
-
-        Log.Error(ex, "Unhandled exception on {Source}", "TaskScheduler");
-        // Marshal to the UI thread so the dialog can open a window.
-        Dispatcher.UIThread.Post(() => ShowCrashDialog(ex));
-    }
-
-    /// <summary>
-    /// Returns <see langword="true"/> when <paramref name="ex"/> is a known benign
-    /// Linux infrastructure miss — the XDG portal or DBus session service is absent
-    /// or not running on this desktop environment.  These are capability-detection
-    /// failures (the app tried to use a portal that is not installed), not bugs.
-    /// </summary>
-    /// <remarks>
-    /// Detection strategy:
-    /// <list type="bullet">
-    ///   <item><c>Tmds.DBus.Protocol.DBusException</c> type name — the concrete exception
-    ///         Avalonia's portal layer throws; type-name comparison avoids a hard package
-    ///         reference to Tmds.DBus.</item>
-    ///   <item>Message prefix <c>org.freedesktop.DBus.Error.*</c> — well-known DBus error
-    ///         namespace (ServiceUnknown, NoReply, AccessDenied, …).</item>
-    ///   <item>Message prefix <c>org.freedesktop.portal.*</c> — XDG portal error namespace
-    ///         (e.g. org.freedesktop.portal.Error.NotAllowed on sandboxed desktops).</item>
-    /// </list>
-    /// The <see cref="OperatingSystem.IsLinux"/> guard on the message-prefix clauses is
-    /// intentional: the type-name check is inherently Linux-specific, but the prefix
-    /// checks are purely textual — the guard prevents a coincidentally named exception
-    /// on Windows or macOS from being silently downgraded.
-    /// </remarks>
-    private static bool IsBenignLinuxInfrastructureException(Exception ex)
-    {
-        // Type check — catches the Tmds.DBus concrete type without a hard reference.
-        if (ex.GetType().FullName == "Tmds.DBus.Protocol.DBusException")
-        {
-            return true;
-        }
-
-        // Message-prefix checks are textual → Linux-only guard.
-        if (!OperatingSystem.IsLinux())
-        {
-            return false;
-        }
-
-        return ex.Message.StartsWith("org.freedesktop.DBus.Error.", StringComparison.Ordinal) ||
-               ex.Message.StartsWith("org.freedesktop.portal.", StringComparison.Ordinal);
-    }
-
-    private static void ShowCrashDialog(Exception exception)
-    {
-        const string message =
-            "The application encountered an unexpected error.\n" +
-            "You can copy the details below for bug reporting.";
-
-        AvaloniaDiagnostics.ShowFatalErrorDialog(message, exception);
     }
 }
