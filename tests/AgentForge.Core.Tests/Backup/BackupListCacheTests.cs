@@ -1,6 +1,6 @@
 ﻿using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -35,8 +35,8 @@ public sealed class BackupListCacheTests : IDisposable
         _fakeHome = Path.Combine(Path.GetTempPath(), "blc-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_fakeHome);
         PlatformPaths.TestUserProfileOverride = _fakeHome;
-        Directory.CreateDirectory(Path.Combine(_fakeHome, ".claude"));
-        File.WriteAllText(Path.Combine(_fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""");
+        // A product that is not Claude: what is cached is a manifest, whoever wrote the archive.
+        NeutralTestProduct.Seed(_fakeHome);
 
         BackupEngine.InvalidateListCache();
     }
@@ -71,7 +71,7 @@ public sealed class BackupListCacheTests : IDisposable
         await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [NeutralTestProduct.For(_fakeHome)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         // First List: parses + caches.
@@ -95,7 +95,7 @@ public sealed class BackupListCacheTests : IDisposable
         await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [NeutralTestProduct.For(_fakeHome)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         // Prime the cache.
@@ -119,7 +119,7 @@ public sealed class BackupListCacheTests : IDisposable
         await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [NeutralTestProduct.For(_fakeHome)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         // Populate the cache.
@@ -136,7 +136,7 @@ public sealed class BackupListCacheTests : IDisposable
         await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [NeutralTestProduct.For(_fakeHome)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         IReadOnlyList<BackupEntry> afterRecreate = TestBackupEngine.Default.List(_fakeHome);
         Assert.Single(afterRecreate);
@@ -151,7 +151,7 @@ public sealed class BackupListCacheTests : IDisposable
         await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [NeutralTestProduct.For(_fakeHome)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         IReadOnlyList<BackupEntry> first = TestBackupEngine.Default.List(_fakeHome);

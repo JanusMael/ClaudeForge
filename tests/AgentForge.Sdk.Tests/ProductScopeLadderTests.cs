@@ -5,6 +5,7 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
@@ -90,7 +91,9 @@ public sealed class ProductScopeLadderTests
     private sealed class LadderClient(ScopeLadder scopes) : AgentConfigClientCore(
         scopes.DefaultEditableScope, schemaRegistry: null)
     {
-        protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
+        // A product that is not Claude (plans/00008 step 5): these tests are about the ladder the
+        // product supplies, and the client is never loaded, so no destination is ever resolved.
+        protected override ProductDescriptor Product { get; } = NeutralTestProduct.For(Path.GetTempPath());
 
         protected override IMergePolicy MergePolicy => new TestMergePolicy();
 
