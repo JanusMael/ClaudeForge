@@ -1,10 +1,7 @@
-// ClaudeForge.Tests uses Avalonia.Headless (HeadlessUnitTestSession +
-// [assembly: AvaloniaTestApplication]), which runs ONE serial dispatcher thread
-// per assembly. Running its test classes/methods in parallel wedges the test
-// host (the headless dispatcher is not concurrent-safe), so this assembly MUST
-// stay serial. DoNotParallelize enforces that even if a global .runsettings
-// enables parallelization. See docs/ASYNC-FIRST-MIGRATION-PLAN.md / the
-// test-parallelism notes.
+// ClaudeForge.Tests stays serial. Its tests share process-global seams (DebugFlags, sandboxed
+// temp settings files, Avalonia's lazily-bound Dispatcher.UIThread) that two classes running at
+// once would interleave on. The headless-session tests that first made this assembly serial moved
+// to ClaudeForge.Headless.Tests; see its csproj Description for why they live apart.
 //
 // xUnit v4 replaced CollectionBehavior(DisableTestParallelization = true) with this attribute; the
 // old property is obsolete-as-error there. ParallelMode.None is the same setting: no two test

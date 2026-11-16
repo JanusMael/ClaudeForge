@@ -121,7 +121,7 @@ All new user-visible strings (page header + card titles + bodies + danger banner
 | `tests/ClaudeForge.Sdk.Tests/Env/EnvAccessorTests.cs` | Get/Set/All round-trip, typed property setters (int parse, bool parse, null = remove), per-scope reads, save+reload survival, argument validation. |
 | `tests/ClaudeForge.Tests/ViewModels/EssentialsViewModelTests.cs` | Card list shape, value bindings, save round-trip through the SDK, danger-banner toggle, env-var source attribution, amber-callout deep-link, reload contract, and dispose/refresh lifecycle (post-dispose refresh is a safe no-op; dispose during an in-flight gated refresh does not fault). |
 | `tests/ClaudeForge.Tests/ViewModels/SearchViewModelTests.cs` (extended) | Synthetic-hit production per trigger phrase + table-coverage guard. |
-| `tests/ClaudeForge.Tests/Headless/ReloadHardeningTests.cs` (extended) | `_essentialsVm` survives reload (H-2 contract). |
+| `tests/ClaudeForge.Headless.Tests/Headless/ReloadHardeningTests.cs` (extended) | `_essentialsVm` survives reload (H-2 contract). |
 
 ## Adding a new card
 
