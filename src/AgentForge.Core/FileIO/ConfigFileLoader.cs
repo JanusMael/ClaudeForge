@@ -189,7 +189,7 @@ public static class ConfigFileLoader
         try
         {
             await File.WriteAllTextAsync(tmp, json, ct).ConfigureAwait(false);
-            File.Move(tmp, document.FilePath, overwrite: true);
+            await MoveIntoPlaceAsync(tmp, document.FilePath, ct).ConfigureAwait(false);
         }
         catch (Exception)
         {
@@ -216,6 +216,81 @@ public static class ConfigFileLoader
         // re-serializing, since the writer would be diffing against stale text.
         document.SetOriginalText(json);
         document.MarkClean();
+    }
+
+    /// <summary>
+    /// How long to wait before each retry of the final move when another handle briefly holds
+    /// the target open. About three-quarters of a second in total.
+    /// </summary>
+    internal static readonly TimeSpan[] MoveRetryDelays =
+    [
+        TimeSpan.FromMilliseconds(25),
+        TimeSpan.FromMilliseconds(50),
+        TimeSpan.FromMilliseconds(100),
+        TimeSpan.FromMilliseconds(200),
+        TimeSpan.FromMilliseconds(400),
+    ];
+
+    /// <summary>
+    /// Renames the finished temp file over <paramref name="target"/>, retrying while another
+    /// process briefly holds the target open.
+    /// </summary>
+    /// <remarks>
+    /// ⛔ <b>On Windows a replacing rename fails while ANY handle on the target lacks
+    /// <c>FILE_SHARE_DELETE</c></b>: an antivirus scan, the search indexer, an editor, or a
+    /// reader in this process. .NET reports it as <see cref="UnauthorizedAccessException"/>
+    /// ("Access to the path is denied") or as an <see cref="IOException"/> sharing violation.
+    /// These handles live for milliseconds. Without the retry, the user's save failed and
+    /// their edit never reached disk (measured 2026-11-16: <c>SavePreservationTests</c> read the
+    /// old value back 3 times in about 76 local runs, with this stack in the app log). The last
+    /// failure is rethrown unchanged, so a lock that outlasts the budget surfaces exactly as
+    /// before.
+    /// </remarks>
+    private static async Task MoveIntoPlaceAsync(string tmp, string target, CancellationToken ct)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                File.Move(tmp, target, overwrite: true);
+                return;
+            }
+            catch (Exception ex) when (attempt < MoveRetryDelays.Length && IsTransientReplaceFailure(ex, target))
+            {
+                Log.Warning("[Save] Replacing {Target} failed ({Error}); retry {Attempt} of {Max} in {DelayMs} ms",
+                    target, ex.Message, attempt + 1, MoveRetryDelays.Length,
+                    MoveRetryDelays[attempt].TotalMilliseconds);
+                await Task.Delay(MoveRetryDelays[attempt], ct).ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether a failed replace of <paramref name="target"/> can clear on its own: a sharing or
+    /// lock violation, or "access denied" on a target that is an ordinary, writable FILE.
+    /// </summary>
+    /// <remarks>
+    /// "Access denied" is also what a directory at the target path or a read-only file
+    /// produces. Neither clears by waiting, so both are excluded and fail at once, as before.
+    /// A genuine ACL denial on a writable file cannot be told apart from a transient lock. It
+    /// costs one retry budget, then surfaces unchanged.
+    /// </remarks>
+    internal static bool IsTransientReplaceFailure(Exception ex, string target)
+    {
+        const int ErrorSharingViolation = 32;
+        const int ErrorLockViolation = 33;
+
+        switch (ex)
+        {
+            case UnauthorizedAccessException:
+                return File.Exists(target)
+                       && (File.GetAttributes(target) & FileAttributes.ReadOnly) == 0;
+            case IOException io:
+                int win32 = io.HResult & 0xFFFF;
+                return win32 is ErrorSharingViolation or ErrorLockViolation;
+            default:
+                return false;
+        }
     }
 
     /// <summary>
