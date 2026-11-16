@@ -1,3 +1,4 @@
+using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Reflection;
 using Avalonia.Headless;
 using Bennewitz.Ninja.ClaudeForge.Services;
@@ -31,7 +32,7 @@ public sealed class NavigationTreeBuilderThreadSafetyTests
         SchemaRegistry registry = new();
         // var: GetClaudeCodeSettingsNodeAsync returns Json.Schema.JsonSchemaNode, and importing
         // that namespace would make SchemaRegistry ambiguous (Json.Schema also defines one).
-        var root = await registry.GetClaudeCodeSettingsNodeAsync(ct: TestContext.Current.CancellationToken);
+        var root = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
         return SchemaTreeBuilder.BuildTopLevel(root);
     }
 

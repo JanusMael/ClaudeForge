@@ -75,14 +75,14 @@ public class ProductDescriptorSchemaTests
     [Fact]
     public void HookMetadata_IsDeclaredByClaudeCodesSchemaAndAbsentFromDesktops()
     {
-        Assert.True(SchemaRegistry.GetHookEvents(ClaudeCodeSchemaFile).Count > 0,
+        Assert.True(SchemaRegistry.GetHookEvents(BundledProduct.Named(ClaudeCodeSchemaFile)).Count > 0,
             "Claude Code's schema declares hook events.");
-        Assert.True(SchemaRegistry.GetHookCommandVariants(ClaudeCodeSchemaFile).Count > 0,
+        Assert.True(SchemaRegistry.GetHookCommandVariants(BundledProduct.Named(ClaudeCodeSchemaFile)).Count > 0,
             "Claude Code's schema declares hook command variants.");
 
-        MessageAssert.Equal(0, SchemaRegistry.GetHookEvents(ClaudeDesktopSchemaFile).Count,
+        MessageAssert.Equal(0, SchemaRegistry.GetHookEvents(BundledProduct.Named(ClaudeDesktopSchemaFile)).Count,
             "Desktop has no hooks. The client no longer hardcodes that — it reads it here.");
-        MessageAssert.Equal(0, SchemaRegistry.GetHookCommandVariants(ClaudeDesktopSchemaFile).Count,
+        MessageAssert.Equal(0, SchemaRegistry.GetHookCommandVariants(BundledProduct.Named(ClaudeDesktopSchemaFile)).Count,
             "Desktop has no hook command variants, for the same reason.");
     }
 

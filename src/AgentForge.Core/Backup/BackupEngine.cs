@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO.Compression;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -42,7 +41,7 @@ public sealed class BackupEngine
 
     private readonly WorktreeProbe _worktreeProbe;
     private readonly IBackupFileSystem _fs;
-    private readonly IReadOnlyList<ProductDescriptor>? _restorableProducts;
+    private readonly IReadOnlyList<ProductDescriptor> _restorableProducts;
     private readonly ClaudeEnvironment _env;
 
     /// <summary>
@@ -55,8 +54,12 @@ public sealed class BackupEngine
     /// in-memory implementation to exercise retention, discovery, and similar
     /// purely-file-system code paths without real disk I/O.</param>
     /// <param name="restorableProducts">
-    /// The products whose archive sections a restore applies. Defaults to Claude Code and Claude
-    /// Desktop.
+    /// The products whose archive sections a restore applies, and whose files it validates.
+    /// <para>
+    /// ⛔ <b>Required since plans/00008 step 6.</b> It defaulted to Claude Code and Claude Desktop,
+    /// which meant this neutral library had to build Claude's descriptors. A host now says which
+    /// products it restores; an empty list restores nothing.
+    /// </para>
     /// <para>
     /// ⛔ <b>This is how a host that edits a different product restores ITS archives.</b> A backup
     /// takes its products from <see cref="BackupRequest.Products"/>, but a restore is driven by an
@@ -81,11 +84,12 @@ public sealed class BackupEngine
     /// </param>
     public BackupEngine(
         ClaudeEnvironment environment,
+        IReadOnlyList<ProductDescriptor> restorableProducts,
         WorktreeProbe? worktreeProbe = null,
-        IBackupFileSystem? fileSystem = null,
-        IReadOnlyList<ProductDescriptor>? restorableProducts = null)
+        IBackupFileSystem? fileSystem = null)
     {
         ArgumentNullException.ThrowIfNull(environment);
+        ArgumentNullException.ThrowIfNull(restorableProducts);
 
         _worktreeProbe = worktreeProbe ?? new WorktreeProbe();
         _fs = fileSystem ?? RealBackupFileSystem.Instance;
@@ -347,8 +351,10 @@ public sealed class BackupEngine
             // ⚠ Still product-specific, and not from a lack of trying: these are driven by the
             // manifest's project list and by git worktree discovery, not by a fixed archive path,
             // so there is no section that describes them. OpenCode's equivalent — if it has one —
-            // will not be a directory-per-project either.
-            if (request.Includes(SchemaRegistry.ClaudeCodeProductFor(_env)))
+            // will not be a directory-per-project either. Recognised by its archive folder, a wire
+            // string, until plans/00008 step 8 makes per-project items part of a product's layout.
+            if (request.Products.Any(p => string.Equals(
+                    p.ArchiveFolder, ExportManifest.LegacyClaudeCodeFolder, StringComparison.Ordinal)))
             {
                 foreach (string projectRoot in projects)
                 {
@@ -360,7 +366,7 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/projects/{name}");
+                    AddProjectClaudeData(writer, projectRoot, $"{ExportManifest.LegacyClaudeCodeFolder}/projects/{name}");
                 }
 
                 foreach (BackupWorktreeEntry wt in worktrees)
@@ -373,11 +379,11 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}");
+                    AddProjectClaudeData(writer, wt.WorktreePath, $"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}");
                     // Stash the worktree's project-root mapping so restore can re-locate it.
                     BackupWorktreeEntry meta = new() { ProjectRoot = wt.ProjectRoot, WorktreePath = wt.WorktreePath };
                     string metaJson = JsonSerializer.Serialize(meta, BackupJsonContext.Default.BackupWorktreeEntry);
-                    writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
+                    writer.AddTextEntry($"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
                 }
             }
 
@@ -1153,75 +1159,53 @@ public sealed class BackupEngine
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Copies the embedded schema resources <b>this archive's products can be validated
-    /// against</b> into the archive under <c>Schemas/</c>. Called during
-    /// <see cref="CreateAsync"/> so that the archive carries the exact schema version that
-    /// was current when the backup was made.
+    /// Copies the bundled schema of each of this archive's products, with that schema's overlay,
+    /// into the archive under <c>Schemas/</c>. Called during <see cref="CreateAsync"/> so that the
+    /// archive carries the exact schema version that was current when the backup was made.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Why this filters by product rather than bundling everything.</b> It used to copy
-    /// every <c>.json</c> under <c>Assets/Schemas/</c>, which was harmless while every
-    /// bundled schema belonged to a hosted Claude product. It stops being harmless the
-    /// moment a second agent's schemas ship in the same folder: OpenCode's TUI schema alone
-    /// is ~1.1 MB, so every ClaudeForge backup would grow by more than a megabyte of rules
-    /// it can never be checked against, and every restore would parse them.
+    /// ⭐ <b>Read through each product's <see cref="ProductDescriptor.BundledFiles"/>, never from a
+    /// manifest.</b> This used to filter this assembly's own resources by a name prefix, which
+    /// both tied every product's schemas to the neutral library and carried a silent failure: a
+    /// prefix that stopped matching bundled ZERO schemas, and <see cref="RestoreEngine"/> reads a
+    /// missing <c>Schemas/</c> folder as "made before schemas were bundled" and skips validation.
+    /// Asking the product by file name has no prefix to drift, and
+    /// <see cref="EmbeddedResourceFiles"/> refuses a prefix that matches nothing when the product's
+    /// descriptor is built.
     /// </para>
     /// <para>
-    /// <see cref="RestoreEngine"/> would still be <i>correct</i> — it routes each config
-    /// file to the schema its own product names, so an irrelevant schema is loaded and then
-    /// never matched. This is about size and parse cost, not correctness, which is why it
-    /// would never have surfaced as a failure.
+    /// Only the archive's own products contribute, which keeps another agent's schemas (OpenCode's
+    /// TUI schema alone is ~1.1 MB) out of an archive they can never validate. A product with no
+    /// bundled files contributes nothing, and its configs are then restored unvalidated.
     /// </para>
     /// <para>
-    /// Each product contributes its <see cref="ProductDescriptor.SchemaFileName"/> and that
-    /// schema's overlay sibling. An unknown resource under <c>Assets/Schemas/</c> belonging
-    /// to no requested product is skipped, which is also the behaviour that keeps a future
-    /// product's schemas out of this product's archives.
+    /// ⚠ The text is decoded the way it always was, by a UTF-8 <see cref="StreamReader"/>, which
+    /// drops a byte-order mark. The entries are compared by SHA-256 against archives made before
+    /// this change, so a different decoding would be a different archive.
     /// </para>
     /// </remarks>
     private static void BundleSchemas(ZipArchiveWriter writer, IReadOnlyList<ProductDescriptor> products)
     {
-        HashSet<string> wanted = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> written = new(StringComparer.OrdinalIgnoreCase);
         foreach (ProductDescriptor product in products)
         {
-            wanted.Add(product.SchemaFileName);
-            wanted.Add(SchemaRegistry.OverlayFileNameFor(product.SchemaFileName));
-        }
-
-        Assembly assembly = typeof(SchemaRegistry).Assembly;
-        foreach (string resourceName in assembly.GetManifestResourceNames())
-        {
-            // Only include resources under Assets/Schemas/. The prefix is derived from the
-            // assembly's root namespace (see ResourceHelper) rather than written out here:
-            // a hardcoded copy that stops matching bundles ZERO schemas, and RestoreEngine
-            // then reads the missing folder as "archive predates bundling" and silently
-            // skips validation.
-            string prefix = ResourceHelper.SchemasPrefix;
-            if (!resourceName.StartsWith(prefix, StringComparison.Ordinal))
+            if (product.BundledFiles is not { } files)
             {
                 continue;
             }
 
-            string fileName = resourceName[prefix.Length..];
-            if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            foreach (string fileName in (string[])
+                     [product.SchemaFileName, SchemaRegistry.OverlayFileNameFor(product.SchemaFileName)])
             {
-                continue;
-            }
+                if (!written.Add(fileName) || files.TryRead(fileName) is not { } bytes)
+                {
+                    continue;
+                }
 
-            if (!wanted.Contains(fileName))
-            {
-                continue;
+                using StreamReader reader = new(new MemoryStream(bytes), Encoding.UTF8);
+                writer.AddTextEntry($"Schemas/{fileName}", reader.ReadToEnd());
             }
-
-            using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null)
-            {
-                continue;
-            }
-
-            using StreamReader reader = new(stream, Encoding.UTF8);
-            writer.AddTextEntry($"Schemas/{fileName}", reader.ReadToEnd());
         }
     }
 }

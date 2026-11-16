@@ -82,6 +82,28 @@ public sealed record ProductDescriptor(
     public ProductBackupLayout Backup => BackupLayout ?? ProductBackupLayout.Empty;
 
     /// <summary>
+    /// The files this product ships in its own binary: its bundled schema, the schema's overlay and
+    /// its enum descriptions. <see langword="null"/> for a product that bundles nothing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>An <c>init</c> property, not a seventh positional parameter</b>: six is the ceiling
+    /// (see <see cref="BackupLayout"/>), and a property that most constructions leave out reads
+    /// better named at the one site that sets it.
+    /// </para>
+    /// <para>
+    /// ⚠ <b>Without it the schema has no offline fallback.</b> The registry then has only the network
+    /// and its disk cache, and throws <c>SchemaUnavailableException</c> when neither answers; a
+    /// backup carries no schema for this product, so its restore skips validation. A product whose
+    /// <see cref="SchemaUrl"/> is <c>bundled://</c> has no network either, and needs this.
+    /// </para>
+    /// <para>
+    /// Not compared by equality, like everything but <see cref="Id"/>.
+    /// </para>
+    /// </remarks>
+    public IBundledFiles? BundledFiles { get; init; }
+
+    /// <summary>
     /// Two descriptors are the same product when their <see cref="Id"/> matches. Nothing else is
     /// compared.
     /// </summary>

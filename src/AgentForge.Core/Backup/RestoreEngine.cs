@@ -52,13 +52,14 @@ internal static class RestoreEngine
     internal static async Task<RestoreResult> RestoreAsync(
         ClaudeEnvironment env,
         BackupEntry entry,
-        IReadOnlyList<ProductDescriptor>? restorableProducts = null,
+        IReadOnlyList<ProductDescriptor> restorableProducts,
         IProgress<BackupProgress>? progress = null,
         CancellationToken ct = default,
         IReadOnlyCollection<string>? openProjectRoots = null)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        IReadOnlyList<ProductDescriptor> products = restorableProducts ?? DefaultRestorableProductsFor(env);
+        ArgumentNullException.ThrowIfNull(restorableProducts);
+        IReadOnlyList<ProductDescriptor> products = restorableProducts;
         if (entry.IsCorrupt || entry.Manifest == null)
         {
             return new RestoreResult(false, "Backup is corrupt or missing a manifest.", 0);
@@ -143,7 +144,7 @@ internal static class RestoreEngine
             // claims.  Refuse the restore with a tamper message so the
             // user's working config isn't overwritten with placeholder
             // strings.
-            if (ContainsRedactedMarker(tempRoot))
+            if (ContainsRedactedMarker(tempRoot, products))
             {
                 return new RestoreResult(
                     Succeeded: false,
@@ -163,7 +164,7 @@ internal static class RestoreEngine
             // the backup contained invalid configs BEFORE it was made.  Validation is
             // non-blocking — warnings are logged by the caller; the restore proceeds.
             IReadOnlyList<string> validationWarnings =
-                await ValidateExtractedConfigsAsync(tempRoot, ct).ConfigureAwait(false);
+                await ValidateExtractedConfigsAsync(tempRoot, products, ct).ConfigureAwait(false);
 
             // Signal start of the apply phase.
             // applySections counts every row of ArchiveSections plus the two manifest-driven
@@ -962,7 +963,7 @@ internal static class RestoreEngine
         List<string> fileFailures = journal.FileFailures;
         // Folder from the descriptor, not a literal — the write side has always used it, and a
         // rename on one side only would silently stop matching rather than erroring.
-        string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "projects");
+        string projectsDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "projects");
         if (!Directory.Exists(projectsDir))
         {
             return 0;
@@ -1017,7 +1018,7 @@ internal static class RestoreEngine
         ArgumentNullException.ThrowIfNull(journal);
         List<string> skipped = journal.Skipped;
         List<string> fileFailures = journal.FileFailures;
-        string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "worktrees");
+        string wtDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "worktrees");
         if (!Directory.Exists(wtDir))
         {
             return 0;
@@ -1092,7 +1093,7 @@ internal static class RestoreEngine
     /// legitimate restore because of one malformed file.
     /// </para>
     /// </remarks>
-    internal static bool ContainsRedactedMarker(string tempRoot)
+    internal static bool ContainsRedactedMarker(string tempRoot, IReadOnlyList<ProductDescriptor> products)
     {
         if (!Directory.Exists(tempRoot))
         {
@@ -1100,7 +1101,7 @@ internal static class RestoreEngine
         }
 
         const string marker = JsonRedactor.RedactedMarker;
-        foreach ((string filePath, ProductDescriptor _) in FindConfigFilesToValidate(tempRoot))
+        foreach ((string filePath, ProductDescriptor _) in FindConfigFilesToValidate(tempRoot, products))
         {
             string content;
             try
@@ -1191,7 +1192,7 @@ internal static class RestoreEngine
     /// were bundled).  Never throws — all exceptions are caught and returned as warnings.
     /// </returns>
     private static async Task<IReadOnlyList<string>> ValidateExtractedConfigsAsync(
-        string tempRoot, CancellationToken ct)
+        string tempRoot, IReadOnlyList<ProductDescriptor> products, CancellationToken ct)
     {
         List<string> warnings = new();
         try
@@ -1232,7 +1233,7 @@ internal static class RestoreEngine
 
             EvaluationOptions evalOpts = new() { OutputFormat = OutputFormat.List };
 
-            foreach ((string filePath, ProductDescriptor product) in FindConfigFilesToValidate(tempRoot))
+            foreach ((string filePath, ProductDescriptor product) in FindConfigFilesToValidate(tempRoot, products))
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -1322,110 +1323,47 @@ internal static class RestoreEngine
     }
 
     /// <summary>
-    /// The products a restore knows how to apply when the caller names none — Claude's two.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// ⛔ <b>A DEFAULT, not the list.</b> A restore is driven by an archive, and
-    /// <c>manifest.json</c> records only archive FOLDER NAMES — turning those back into descriptors
-    /// needs a lookup, and a host that edits a different product supplies its own via
-    /// <see cref="BackupEngine(WorktreeProbe, IBackupFileSystem, IReadOnlyList{ProductDescriptor})"/>.
-    /// This assembly must never reference <c>OpenCode.Sdk</c>, so it could not name that product
-    /// even if it wanted to.
-    /// </para>
-    /// <para>
-    /// ⚠ <b>Claude's two stay the default deliberately.</b> Every existing caller keeps restoring
-    /// exactly what it restored before, which is what makes the frozen v1 fixture still pass.
-    /// </para>
-    /// </remarks>
-    internal static IReadOnlyList<ProductDescriptor> DefaultRestorableProductsFor(ClaudeEnvironment env) =>
-    [
-        SchemaRegistry.ClaudeCodeProductFor(env),
-        SchemaRegistry.ClaudeDesktopProduct,
-    ];
-
-    /// <summary>
-    /// A Claude Code descriptor for reading files <b>inside an archive</b>, where no destination
-    /// on the user's disk is ever resolved.
-    /// </summary>
-    /// <remarks>
-    /// ⚠ <b>Deliberately built with <see cref="ClaudeEnvironment.Empty"/>, and safe only because
-    /// of what it is used for.</b> <see cref="ValidatableConfigs"/> walks paths under the
-    /// extracted temp root, so every path it forms is archive-relative and no user home takes
-    /// part. ⛔ Do not hand this to a backup or restore <i>destination</i>: it resolves the
-    /// default home, which is the wrong tree for anyone who has set <c>CLAUDE_CONFIG_DIR</c>.
-    /// </remarks>
-    private static readonly ProductDescriptor ArchiveOnlyClaudeCode =
-        SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
-
-    /// <summary>
-    /// Which config files a backup archive can contain, as data: each row pairs the product
-    /// whose schema validates those files with the archive-relative directory they live in,
-    /// the file names to look for there, and whether to recurse.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This replaces a <c>bool IsClaudeCode</c> that the validator turned straight back into
-    /// one of two schema file names with a ternary — the <i>second</i> such boolean in the
-    /// codebase; Phase 4a removed the first, on <c>AgentConfigClientCore</c>. Naming the
-    /// product per row makes a third product one more row instead of a third branch, and
-    /// reduces the schema selection at the call site to a dictionary lookup on
-    /// <see cref="ProductDescriptor.SchemaFileName"/>.
-    /// </para>
-    /// <para>
-    /// The top-level folder is <b>not</b> restated here: each row takes it from its own
-    /// <see cref="ProductDescriptor.ArchiveFolder"/>, the same property
-    /// <see cref="BackupEngine"/> writes with. Phase 4b left those as literals on both sides
-    /// and flagged the hazard — a folder renamed on one side only does not error, it silently
-    /// stops matching, and a config that stops being found just stops being validated.
-    /// Only the sub-paths below (<c>claude-dir</c>, <c>profiles</c>) remain per-row data.
-    /// </para>
-    /// </remarks>
-    private static readonly (ProductDescriptor Product, string[] SubDir, string[] FileNames, SearchOption Depth)[]
-        ValidatableConfigs =
-        [
-            // Claude Code: claude.json at the product root — deliberately NOT recursive, or a
-            // claude.json captured under projects/ would be validated as a settings file.
-            (ArchiveOnlyClaudeCode, [], ["claude.json"],
-                SearchOption.TopDirectoryOnly),
-
-            // Claude Code: settings.json / settings.local.json anywhere under claude-dir.
-            (ArchiveOnlyClaudeCode, ["claude-dir"],
-                ["settings.json", "settings.local.json"], SearchOption.AllDirectories),
-
-            // Claude Desktop: the main config.
-            (SchemaRegistry.ClaudeDesktopProduct, [], ["claude_desktop_config.json"],
-                SearchOption.TopDirectoryOnly),
-
-            // Claude Desktop: every profile config, whatever it is named.
-            (SchemaRegistry.ClaudeDesktopProduct, ["profiles"], ["*.json"],
-                SearchOption.AllDirectories),
-        ];
-
-    /// <summary>
     /// Enumerates config files under <paramref name="tempRoot"/> that should be validated,
     /// each paired with the product whose schema validates it.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// ⭐ <b>Each product names its own files</b>, through
+    /// <see cref="ProductBackupLayout.ValidatableFiles"/>. This was a table here that paired
+    /// Claude's two descriptors with their paths, so it could only ever hold products this neutral
+    /// library could name (plans/00008).
+    /// </para>
+    /// <para>
+    /// The top-level folder is each product's own <see cref="ProductDescriptor.ArchiveFolder"/>,
+    /// the property <see cref="BackupEngine"/> writes with, so the two cannot drift: a folder
+    /// renamed on one side only would not error, it would silently stop matching, and a config
+    /// that stops being found just stops being validated.
+    /// </para>
+    /// </remarks>
     private static IEnumerable<(string FilePath, ProductDescriptor Product)> FindConfigFilesToValidate(
-        string tempRoot)
+        string tempRoot, IReadOnlyList<ProductDescriptor> products)
     {
-        foreach ((ProductDescriptor product, string[] subDir, string[] fileNames, SearchOption depth)
-                 in ValidatableConfigs)
+        foreach (ProductDescriptor product in products)
         {
-            string dir = Path.Combine([tempRoot, product.ArchiveFolder, .. subDir]);
-            if (!Directory.Exists(dir))
+            foreach (ProductValidatableFiles files in product.Backup.Validatable)
             {
-                continue;
-            }
-
-            // One file NAME at a time rather than one directory at a time: preserves the
-            // order the four hardcoded yield blocks produced (every settings.json, then
-            // every settings.local.json), which is the order warnings accumulate in.
-            foreach (string fileName in fileNames)
-            {
-                foreach (string file in Directory.EnumerateFiles(dir, fileName, depth))
+                string dir = Path.Combine([tempRoot, product.ArchiveFolder, .. files.SubPath]);
+                if (!Directory.Exists(dir))
                 {
-                    yield return (file, product);
+                    continue;
+                }
+
+                SearchOption depth = files.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+
+                // One file NAME at a time rather than one directory at a time: every
+                // settings.json, then every settings.local.json, which is the order warnings
+                // accumulate in.
+                foreach (string fileName in files.FileNames)
+                {
+                    foreach (string file in Directory.EnumerateFiles(dir, fileName, depth))
+                    {
+                        yield return (file, product);
+                    }
                 }
             }
         }

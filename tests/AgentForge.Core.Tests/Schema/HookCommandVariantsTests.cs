@@ -16,7 +16,7 @@ public sealed class HookCommandVariantsTests
     [Fact]
     public void GetHookCommandVariants_ReadsBundledSchema_TypesAndDescriptions()
     {
-        IReadOnlyList<HookCommandVariantInfo> variants = SchemaRegistry.GetHookCommandVariants(SchemaFile);
+        IReadOnlyList<HookCommandVariantInfo> variants = SchemaRegistry.GetHookCommandVariants(BundledProduct.Named(SchemaFile));
 
         // The bundled schema defines the standard hook command shapes; the parse must
         // surface each variant keyed by its `type` const, carrying the schema description.
@@ -34,7 +34,7 @@ public sealed class HookCommandVariantsTests
     public void GetHookCommandVariants_CarriesFieldDescriptions_ExcludingDiscriminator()
     {
         HookCommandVariantInfo command = SchemaRegistry
-            .GetHookCommandVariants(SchemaFile)
+            .GetHookCommandVariants(BundledProduct.Named(SchemaFile))
             .First(v => v.Type == "command");
 
         // Field descriptions flow through for the per-field tooltips headless consumers use.
@@ -54,6 +54,6 @@ public sealed class HookCommandVariantsTests
     public void GetHookCommandVariants_MissingResource_ReturnsEmpty()
     {
         // A schema filename with no bundled resource → fail-open empty list, never a throw.
-        Assert.Empty(SchemaRegistry.GetHookCommandVariants("does-not-exist.json"));
+        Assert.Empty(SchemaRegistry.GetHookCommandVariants(BundledProduct.Named("does-not-exist.json")));
     }
 }

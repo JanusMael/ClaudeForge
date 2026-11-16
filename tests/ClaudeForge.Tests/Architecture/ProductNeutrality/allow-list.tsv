@@ -35,24 +35,26 @@ words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	public bo
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	public const string TabMsixFixId = "msix-fix";	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	return Path.GetFileName(item).Equals(".credentials.json", StringComparison.OrdinalIgnoreCase)	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	string tab = value switch { 0 => "Backup", 1 => "Restore", 2 => "MsixFix", _ => "?" };	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, projectRoot, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/projects/{name}");	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, wt.WorktreePath, $"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}");	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, projectRoot, $"{ExportManifest.LegacyClaudeCodeFolder}/projects/{name}");	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, wt.WorktreePath, $"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}");	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment env,	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment environment,	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeForgeSanitizationError: reason,	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath);	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	Path.Combine(PlatformPaths.ClaudeHome(env), "settings.local.json"),	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	foreach (string item in new[] { ".claude", ".mcp.json", "CLAUDE.md", "CLAUDE.local.md" })	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	if (request.Includes(SchemaRegistry.ClaudeCodeProductFor(_env)))	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	p.ArchiveFolder, ExportManifest.LegacyClaudeCodeFolder, StringComparison.Ordinal)))	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	private readonly ClaudeEnvironment _env;	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	private static void AddProjectClaudeData(ZipArchiveWriter writer, string projectRoot, string entryPrefix)	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	writer.AddTextEntry($"{SchemaRegistry.ClaudeCodeArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);	1
+words	src/AgentForge.Core/Backup/BackupEngine.cs	writer.AddTextEntry($"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);	1
 words	src/AgentForge.Core/Backup/BackupJsonContext.cs	string ClaudeForgeSanitizationError,	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	LegacyIncludesClaudeCode.HasValue || LegacyIncludesClaudeDesktop.HasValue;	1
-words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(SchemaRegistry.ClaudeCodeArchiveFolder);	1
-words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(LegacyClaudeCodeFolder);	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(LegacyClaudeDesktopFolder);	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	if (manifest.LegacyIncludesClaudeCode == true)	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	if (manifest.LegacyIncludesClaudeDesktop == true)	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	internal static readonly string LegacyClaudeCodeFolder = "";	1
+words	src/AgentForge.Core/Backup/ExportManifest.cs	internal static readonly string LegacyClaudeDesktopFolder = "";	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	public bool? LegacyIncludesClaudeCode { get; set; }	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	public bool? LegacyIncludesClaudeDesktop { get; set; }	1
 words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	if (string.IsNullOrWhiteSpace(claudeJsonPath) || !File.Exists(claudeJsonPath))	1
@@ -87,20 +89,10 @@ words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string candidate = Path.Combin
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string msix = status.VirtualisedPath!;	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string? match = Directory.EnumerateDirectories(packages, "Claude_*", SearchOption.TopDirectoryOnly)	1
 words	src/AgentForge.Core/Backup/RestoreEngine.cs	$"ClaudeRestore-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Path.GetRandomFileName()[..4]}");	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	(ArchiveOnlyClaudeCode, ["claude-dir"],	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	(ArchiveOnlyClaudeCode, [], ["claude.json"],	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	(SchemaRegistry.ClaudeDesktopProduct, ["profiles"], ["*.json"],	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	(SchemaRegistry.ClaudeDesktopProduct, [], ["claude_desktop_config.json"],	1
 words	src/AgentForge.Core/Backup/RestoreEngine.cs	.ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots)	1
 words	src/AgentForge.Core/Backup/RestoreEngine.cs	ClaudeEnvironment env,	2
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	SchemaRegistry.ClaudeCodeProductFor(env),	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	SchemaRegistry.ClaudeDesktopProduct,	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	["settings.json", "settings.local.json"], SearchOption.AllDirectories),	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	internal static IReadOnlyList<ProductDescriptor> DefaultRestorableProductsFor(ClaudeEnvironment env) =>	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	private static readonly ProductDescriptor ArchiveOnlyClaudeCode =	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	string projectsDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "projects");	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	string wtDir = Path.Combine(tempRoot, SchemaRegistry.ClaudeCodeArchiveFolder, "worktrees");	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	string projectsDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "projects");	1
+words	src/AgentForge.Core/Backup/RestoreEngine.cs	string wtDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "worktrees");	1
 words	src/AgentForge.Core/Backup/RestoreSidecarCleanup.cs	public static Result Run(string claudeHome, Action<int>? onProgress = null)	1
 words	src/AgentForge.Core/Backup/RestoreSidecarCleanup.cs	string home = claudeHome;	1
 words	src/AgentForge.Core/Backup/TextRedactor.cs	[GeneratedRegex(@"sk-ant-[A-Za-z0-9_\-]{40,}")]	1
@@ -281,23 +273,20 @@ words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"Restoring the Claude home di
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ArchiveFolder: "ClaudeDesktop",	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ArchiveFolder: ClaudeCodeArchiveFolder,	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	CredentialFileName: ".credentials.json"));	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	CredentialFileName: ".credentials.json",	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.File("claude.json", () => PlatformPaths.ClaudeJsonPath,	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.File("claude_desktop_config.json", () => PlatformPaths.DesktopConfigPath,	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.Home("claude-dir", () => PlatformPaths.ClaudeHome(env),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	bool isClaudeCode,	2
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,	2
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new(ClaudeCodeProductId, "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct)	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct)	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new(["claude-dir"], ["settings.json", "settings.local.json"], Recursive: true),	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new([], ["claude.json"], Recursive: false),	1
+words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new([], ["claude_desktop_config.json"], Recursive: false),	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public const string ClaudeCodeSettingsSchemaUrl = "https://json.schemastore.org/claude-code-settings.json";	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static ProductDescriptor ClaudeCodeProductFor(ClaudeEnvironment env) =>	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly ProductDescriptor ClaudeDesktopProduct =	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly string ClaudeCodeArchiveFolder = "ClaudeCode";	1
 words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly string ClaudeCodeProductId = "claude-code";	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	return GetSettingsNodeAsync(ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct);	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	return GetSettingsNodeAsync(ClaudeDesktopProduct, ct);	1
 words	src/AgentForge.Core/Schema/SchemaTreeBuilder.cs	if ((token.Contains("ANTHROPIC_") || token.Contains("CLAUDE")) && seen.Add(token))	1
 words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeCodeSettings,	1
 words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeDesktopConfig,	1
