@@ -1,6 +1,6 @@
 ﻿using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -35,8 +35,8 @@ public sealed class BackupEngineTryReadEntryTests : IDisposable
         Directory.CreateDirectory(_tmp);
 
         _fakeHome = Path.Combine(_tmp, "home");
-        Directory.CreateDirectory(Path.Combine(_fakeHome, ".claude"));
-        File.WriteAllText(Path.Combine(_fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""");
+        // A product that is not Claude: what is parsed is a manifest, whoever wrote the archive.
+        NeutralTestProduct.Seed(_fakeHome);
         PlatformPaths.TestUserProfileOverride = _fakeHome;
 
         BackupEngine.InvalidateListCache();
@@ -94,7 +94,7 @@ public sealed class BackupEngineTryReadEntryTests : IDisposable
         BackupResult result = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = zipPath,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [NeutralTestProduct.For(_fakeHome)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(result.Succeeded, "Test prerequisite: backup must be creatable.");
 
