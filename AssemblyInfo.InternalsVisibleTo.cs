@@ -58,6 +58,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("AgentForge.Core.Tests")]
 [assembly: InternalsVisibleTo("AgentForge.Sdk.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.AvaloniaUI.Tests")]
+[assembly: InternalsVisibleTo("ClaudeForge.Headless.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Sdk.Claude.Tests")]
 [assembly: InternalsVisibleTo("ClaudeForge.Tests")]
 

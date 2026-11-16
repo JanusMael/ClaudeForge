@@ -19,7 +19,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia.Headless" Version="12.1.6" />
+        <!-- ⛔ No Avalonia.Headless here. Tests that dispatch on the headless session live in
+             ClaudeForge.Headless.Tests, which runs it with PerAssembly isolation; leaving the package
+             out makes a headless test added here a compile error rather than a quiet return of the
+             PerTest race. -->
         <!--
           BNXQ1001 replaces this repo's hand-rolled Expander automation-name scan. It was XQ1001
           through 2026.3.924; the family prefix is permanent from 2026.3.925.

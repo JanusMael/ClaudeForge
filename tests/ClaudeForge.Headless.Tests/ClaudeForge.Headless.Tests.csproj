@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <!-- The moved tests keep their original namespaces, so a test's full name is the same as
+             it was in ClaudeForge.Tests and a before/after name-set comparison shows only the move. -->
+        <RootNamespace>Bennewitz.Ninja.ClaudeForge.Tests</RootNamespace>
+        <Description>
+            Every test that runs on Avalonia's headless session, and nothing else. They live apart
+            from ClaudeForge.Tests because this assembly runs the session with PerAssembly isolation:
+            one Application for the whole process, built by an assembly fixture before any test runs.
+            Under the default PerTest isolation each dispatch resets Dispatcher.UIThread and rebuilds
+            the app, and a background thread that reads Dispatcher.UIThread during that rebuild takes
+            the UI thread; that was the intermittent "a different thread owns it" failure in
+            EnsureIsolatedApplication. PerAssembly closes that window, but the one Application is
+            visible to every test in the process. Ordinary tests written for a process with no app
+            (Application.Current null) broke when they shared it, so they stay in ClaudeForge.Tests.
+            Rule: a test that dispatches on the headless session goes here; a test that does not,
+            does not.
+        </Description>
+        <!-- Same reason as ClaudeForge.Tests: an executable referencing the self-contained app. -->
+        <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+    </PropertyGroup>
+
+    <!-- The solution's friend grants, in one shared file next to the .slnx. LINKED, not
+         copied, by a relative path with forward slashes so Linux and macOS resolve it the
+         same way Windows does. Read that file before adding a name: it is compiled into
+         every assembly, so a grant there applies to all of them. -->
+    <ItemGroup>
+        <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+    </ItemGroup>
+
+    <!-- LINKED from ClaudeForge.Tests, never copied: the moved tests were written against that
+         project's global usings and teardown helper, and one copy of each keeps the two
+         assemblies from drifting apart. -->
+    <ItemGroup>
+        <Compile Include="../ClaudeForge.Tests/GlobalUsings.cs" Link="Linked/GlobalUsings.cs"/>
+        <Compile Include="../ClaudeForge.Tests/TestSupport/TestCleanupHelpers.cs" Link="Linked/TestCleanupHelpers.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Headless" Version="12.1.6" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\AgentForge.Core\AgentForge.Core.csproj"/>
+        <ProjectReference Include="..\..\src\ClaudeForge\ClaudeForge.csproj"/>
+    </ItemGroup>
+</Project>
