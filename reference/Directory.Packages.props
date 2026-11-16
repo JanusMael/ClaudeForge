@@ -1,0 +1,12 @@
+<Project>
+  <!-- A shield, committed, and written again by fetch-reference.cs beside it when it is missing.
+
+       The folders beside it are read-only upstream checkouts. NuGet imports the first
+       Directory.Packages.props it finds walking up from a project, so a checkout that ships none
+       of its own would inherit the repository's central package management, and every
+       PackageReference with a Version would fail with NU1008, as DiffView's CI did. The flag set
+       false here hands each checkout back to its own rules. It pins nothing. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

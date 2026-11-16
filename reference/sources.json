@@ -1,0 +1,16 @@
+{
+  // The upstream sources this repository builds against, fetched read-only into the folders beside this
+  // file by fetch-reference.cs, for reading and searching: no test, build or CI job reads them. Each is
+  // fetched at the commit its packages' nuspecs record for the version the repository pins, here in
+  // src/ClaudeForge.AvaloniaUI's csproj, so a raise there leaves its checkout off its pin until the script
+  // runs with --update. "sparse" lists the folders a checkout holds; without it, it holds everything.
+  // README.md beside this file describes every field.
+  "sources": [
+    {
+      "name": "Semi.Avalonia",
+      "dir": "reference/Semi.Avalonia",
+      "packages": ["Semi.Avalonia"],
+      "sparse": ["src/Semi.Avalonia"]
+    }
+  ]
+}

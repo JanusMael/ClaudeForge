@@ -424,6 +424,15 @@ A cherry-pick is impossible across the Phase-1 renames — `ClaudeForge.Core` �
 
 ⓘ No test reads a live database — CI has no OpenCode install, and a guard that skips is a guard that never fires. Capture happens on a maintainer's machine; the suite guards invariants over the committed artifact.
 
+### X = Reading an upstream's source (which Semi.Avalonia resource key a control uses)
+
+`reference/` holds read-only checkouts of upstream sources at the versions the build pins, fetched by `reference/fetch-reference.cs` from `reference/sources.json`. [`reference/README.md`](./reference/README.md) is the whole account.
+
+- [ ] `dotnet run --file reference/fetch-reference.cs -- --status` first. A plain run fetches what is missing; `-- --update` re-fetches a checkout left off its pin by a package raise.
+- [ ] Search a checkout **by its path** (`rg -n ListBoxItemSelectedBackground reference/Semi.Avalonia/src`). ⛔ The checkouts are a **vendored tree**: git ignores them, so a search of the repository skips them, and it must keep skipping them unless the task is about one.
+- [ ] ⛔ **Never edit a checkout**; a change an upstream needs is a pull request there.
+- [ ] A new source is an entry in `sources.json`, pinned by the package that ships it. The script is AppKit's canonical copy (`JanusMael/Bennewitz.Ninja.AppKit`, `reference/`): a change to it goes there first.
+
 ---
 
 ## 3. Test seam quick-reference
