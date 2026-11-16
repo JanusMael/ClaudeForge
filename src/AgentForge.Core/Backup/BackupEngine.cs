@@ -1195,8 +1195,8 @@ public sealed class BackupEngine
                 continue;
             }
 
-            foreach (string fileName in (string[])
-                     [product.SchemaFileName, SchemaRegistry.OverlayFileNameFor(product.SchemaFileName)])
+            string[] fileNames = [product.SchemaFileName, SchemaRegistry.OverlayFileNameFor(product.SchemaFileName)];
+            foreach (string fileName in fileNames)
             {
                 if (!written.Add(fileName) || files.TryRead(fileName) is not { } bytes)
                 {

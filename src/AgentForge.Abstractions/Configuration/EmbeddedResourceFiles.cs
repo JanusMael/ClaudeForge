@@ -26,6 +26,7 @@ public sealed class EmbeddedResourceFiles : IBundledFiles
     private readonly Assembly _assembly;
     private readonly string[] _prefixes;
 
+    /// <summary>Reads files from <paramref name="assembly"/>'s manifest, under the given prefixes.</summary>
     /// <param name="assembly">The assembly whose manifest holds the files.</param>
     /// <param name="resourcePrefixes">
     /// Logical-name prefixes, each ending in a dot, tried in order; for example
