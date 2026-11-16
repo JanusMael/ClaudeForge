@@ -14,6 +14,16 @@ The two oldest sections predate that and keep their original `[from] - [to]`
 range headings: the releases they describe carry no notes, so there is nothing to
 reconcile them against and renumbering them would be guesswork.
 
+## [Unreleased]
+
+### Fixed
+
+- **Saving on Windows no longer fails when another program briefly has the settings file open.**
+  An antivirus scan, the search indexer or an editor holding `settings.json` for a moment made the
+  save fail with "Access to the path is denied", and the edit never reached disk. ClaudeForge now
+  retries for up to about a second before reporting the failure. A file that is genuinely
+  read-only still fails at once.
+
 ## [2026.4.1111] - 2026-11-11
 
 ### Breaking — for consumers of the `Bennewitz.Ninja.AgentForge.*` packages
