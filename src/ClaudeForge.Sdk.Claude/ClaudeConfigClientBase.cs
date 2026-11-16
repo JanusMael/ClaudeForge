@@ -122,7 +122,7 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
         // No product test needed: GetHookEvents returns empty for a schema with no hooks
         // section, which is exactly what Desktop's is. The former `IsClaudeCode ? … : []`
         // hardcoded that answer instead of reading it.
-        return SchemaRegistryInstance.GetHookEventsFor(Product.SchemaFileName);
+        return SchemaRegistryInstance.GetHookEventsFor(Product);
     }
 
     /// <summary>
@@ -136,5 +136,5 @@ public abstract class ClaudeConfigClientBase : AgentConfigClientCore, IClaudeCon
     /// share one source for the per-type picker text and per-field descriptions.
     /// </summary>
     internal IReadOnlyList<HookCommandVariantInfo> SchemaHookCommandVariants() =>
-        SchemaRegistryInstance.GetHookCommandVariantsFor(Product.SchemaFileName);
+        SchemaRegistryInstance.GetHookCommandVariantsFor(Product);
 }

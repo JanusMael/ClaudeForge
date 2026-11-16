@@ -120,7 +120,7 @@ public sealed class SchemaRegistryOverlayTests
         // Reading the production bundled schema through the merged loader
         // must surface the overlay's `model.examples` + `default` even
         // though the base file no longer carries them.
-        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("claude-code-settings.json"));
         Assert.NotNull(bytes);
 
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
@@ -152,7 +152,7 @@ public sealed class SchemaRegistryOverlayTests
     [Fact]
     public void TryReadBundledBytesMerged_AppliesOpenCodeTuiOverlay()
     {
-        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("opencode-tui.json");
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("opencode-tui.json"));
         Assert.NotNull(bytes);
 
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
@@ -199,7 +199,7 @@ public sealed class SchemaRegistryOverlayTests
         }
 
         byte[]? baseBytes = BundledResource.TryRead("Schemas", "opencode-tui.json");
-        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("opencode-tui.json");
+        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("opencode-tui.json"));
         Assert.NotNull(baseBytes);
         Assert.NotNull(merged);
 
@@ -227,7 +227,7 @@ public sealed class SchemaRegistryOverlayTests
     {
         // claude-desktop-config.json has no .overlay.json sibling — the
         // merged helper must return the base bytes verbatim.
-        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("claude-desktop-config.json");
+        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("claude-desktop-config.json"));
         Assert.NotNull(merged);
 
         // Sanity: the base file must parse as JSON (the merge is a no-op
@@ -239,7 +239,7 @@ public sealed class SchemaRegistryOverlayTests
     [Fact]
     public void TryReadBundledBytesMerged_NoSuchSchema_ReturnsNull()
     {
-        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged("definitely-not-a-real-schema.json");
+        byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("definitely-not-a-real-schema.json"));
         Assert.Null(merged);
     }
 
@@ -275,7 +275,7 @@ public sealed class SchemaRegistryOverlayTests
         // overlay merge.  Pre-fix, the overlay's `model` patch moved the key
         // to the end of the properties OrderedDictionary, and the editor's
         // property list rendered `model` as the last entry.
-        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("claude-code-settings.json"));
         Assert.NotNull(bytes);
         JsonNode? node = JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
         JsonObject? properties = node?["properties"] as JsonObject;
@@ -361,7 +361,7 @@ public sealed class SchemaRegistryOverlayTests
 
     private static JsonNode? LoadMerged()
     {
-        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("claude-code-settings.json"));
         Assert.NotNull(bytes);
         return JsonNode.Parse(Encoding.UTF8.GetString(bytes!));
     }

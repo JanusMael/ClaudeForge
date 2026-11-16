@@ -3971,13 +3971,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // / screenshots to exercise badge styling without bumping the schema.
         bool flagAllAsNew = DebugFlags.ShowAllNewBadges;
 
-        JsonSchemaNode ccSchema = await _schemaRegistry.GetClaudeCodeSettingsNodeAsync(CancellationToken.None);
+        ProductDescriptor ccProduct = SchemaRegistry.ClaudeCodeProductFor(_env);
+        JsonSchemaNode ccSchema = await _schemaRegistry.GetSettingsNodeAsync(ccProduct, CancellationToken.None);
         HashSet<string> ccKnown = _snapshotService.LoadSnapshot("claude-code-settings");
         // Offload the CPU-bound schema-tree build off the UI thread — it produces plain
         // SchemaNode data (no UI objects), so it's safe on a worker and keeps the
         // just-painted startup window responsive instead of frozen during the build.
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> ccEnumDescriptions =
-            SchemaRegistry.GetEnumDescriptions("claude-code-settings.json");
+            SchemaRegistry.GetEnumDescriptions(ccProduct);
         IReadOnlyList<SchemaNode> ccNodes =
             await Task.Run(() => SchemaTreeBuilder.BuildTopLevel(ccSchema, ccKnown, flagAllAsNew, ccEnumDescriptions));
         _renderedPathsBySchema["claude-code-settings"] = SchemaTreeBuilder.CollectPaths(ccNodes);
@@ -3986,7 +3987,8 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             _snapshotService.SaveSnapshot("claude-code-settings", _renderedPathsBySchema["claude-code-settings"]);
         }
 
-        JsonSchemaNode dtSchema = await _schemaRegistry.GetClaudeDesktopConfigNodeAsync(CancellationToken.None);
+        JsonSchemaNode dtSchema =
+            await _schemaRegistry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, CancellationToken.None);
         HashSet<string> dtKnown = _snapshotService.LoadSnapshot("claude-desktop-config");
         // Same off-thread schema-tree build as the Claude Code section above.
         IReadOnlyList<SchemaNode> dtNodes =

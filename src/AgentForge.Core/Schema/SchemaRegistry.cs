@@ -274,9 +274,31 @@ public sealed class SchemaRegistry : IDisposable
                     new("local",
                         "The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),
                 ],
-                CredentialFileName: ".credentials.json"));
+                CredentialFileName: ".credentials.json",
+                ValidatableFiles:
+                [
+                    // claude.json at the product root, deliberately NOT recursive, or a claude.json
+                    // captured under projects/ would be validated as a settings file.
+                    new([], ["claude.json"], Recursive: false),
+                    // settings.json / settings.local.json anywhere under the home section.
+                    new(["claude-dir"], ["settings.json", "settings.local.json"], Recursive: true),
+                ]))
+        {
+            BundledFiles = CoreBundledFiles,
+        };
 
-    /// <inheritdoc cref="ClaudeCodeProduct"/>
+    /// <summary>
+    /// Where Claude's two descriptors find their bundled schemas, overlay and enum descriptions:
+    /// this assembly's manifest, until plans/00008 step 6 moves them to the product.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Declared before <see cref="ClaudeDesktopProduct"/> on purpose: static fields initialise in
+    /// text order, and the Desktop descriptor reads this one.
+    /// </remarks>
+    internal static readonly IBundledFiles CoreBundledFiles = new EmbeddedResourceFiles(
+        typeof(SchemaRegistry).Assembly, ResourceHelper.SchemasPrefix, ResourceHelper.DescriptionsPrefix);
+
+    /// <inheritdoc cref="ClaudeCodeProductFor"/>
     public static readonly ProductDescriptor ClaudeDesktopProduct =
         new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",
             ArchiveFolder: "ClaudeDesktop",
@@ -293,7 +315,16 @@ public sealed class SchemaRegistry : IDisposable
                 // Desktop's config is a flat file plus a profiles directory; it has no home tree to
                 // walk, so there is nothing to skip. An empty list is the honest answer — not an
                 // oversight.
-                SkippedSubdirs: []));
+                SkippedSubdirs: [],
+                ValidatableFiles:
+                [
+                    new([], ["claude_desktop_config.json"], Recursive: false),
+                    // Every profile config, whatever it is named.
+                    new(["profiles"], ["*.json"], Recursive: true),
+                ]))
+        {
+            BundledFiles = CoreBundledFiles,
+        };
 
     /// <summary>
     /// Get the settings schema root node for <paramref name="product"/>.
@@ -309,27 +340,12 @@ public sealed class SchemaRegistry : IDisposable
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(product);
-        JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
+        JsonSchema schema = await GetSchemaAsync(product, ct);
         // Root is non-null for any successfully parsed schema, and there is no longer an
         // empty-schema fallback that could hand back a null one — so this throw now only fires
         // on a library contract break rather than on the ordinary offline path.
         return schema.Root
                ?? throw new InvalidOperationException("Loaded schema had a null root node.");
-    }
-
-    public Task<JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(CancellationToken ct)
-    {
-        // Schema only: nothing here resolves a path, so the environment cannot matter and the
-        // descriptor never escapes this call.
-        return GetSettingsNodeAsync(ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct);
-    }
-
-    /// <summary>
-    /// Get the Claude Desktop config schema root node.
-    /// </summary>
-    public Task<JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(CancellationToken ct)
-    {
-        return GetSettingsNodeAsync(ClaudeDesktopProduct, ct);
     }
 
     /// <summary>Shared empty result for <see cref="GetEnumDescriptions"/>.</summary>
@@ -342,23 +358,19 @@ public sealed class SchemaRegistry : IDisposable
     /// <c>"permissions.defaultMode"</c>). Powers per-item tooltips on the value picker.
     /// </summary>
     /// <remarks>
-    /// Sourced from a dedicated resource under <c>Assets/Descriptions/</c> (e.g.
-    /// <c>claude-code-settings.enumdescriptions.json</c>) — deliberately NOT inside the JSON
-    /// Schema/overlay and NOT under <c>Assets/Schemas/</c>. Two reasons: JsonSchema.Net
-    /// strict-rejects unknown keywords for this dialect (a custom keyword in the schema crashes
-    /// <see cref="ParseSchema"/> and the <c>RestoreEngine</c> validation path), and
-    /// <c>BackupEngine.BundleSchemas</c> bundles everything under <c>Assets/Schemas/</c> into
-    /// backups where <c>RestoreEngine</c> would then try to parse it as a schema. Read here via
-    /// <see cref="System.Text.Json"/>, never through JsonSchema.Net. Resource shape:
+    /// Sourced from the product's bundled file <c>&lt;schema&gt;.enumdescriptions.json</c> (see
+    /// <see cref="EnumDescriptionsFileNameFor"/>), deliberately NOT inside the JSON Schema or its
+    /// overlay: JsonSchema.Net strict-rejects unknown keywords for this dialect, so a custom keyword
+    /// in the schema crashes <see cref="ParseSchema"/> and the <c>RestoreEngine</c> validation path.
+    /// Read here via <see cref="System.Text.Json"/>, never through JsonSchema.Net. Shape:
     /// <c>{ "&lt;jsonPath&gt;": { "&lt;value&gt;": "&lt;desc&gt;" } }</c>; non-object root entries
-    /// (e.g. a <c>"$comment"</c> string) are ignored.
+    /// (e.g. a <c>"$comment"</c> string) are ignored. Empty for a product that bundles none.
     /// </remarks>
-    public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> GetEnumDescriptions(string cacheFileName)
+    public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> GetEnumDescriptions(
+        ProductDescriptor product)
     {
-        string descFileName = Path.GetFileNameWithoutExtension(cacheFileName)
-                              + ".enumdescriptions"
-                              + Path.GetExtension(cacheFileName);
-        byte[]? bytes = BundledResource.TryRead("Descriptions", descFileName);
+        ArgumentNullException.ThrowIfNull(product);
+        byte[]? bytes = product.BundledFiles?.TryRead(EnumDescriptionsFileNameFor(product.SchemaFileName));
         if (bytes is null)
         {
             return EmptyEnumDescriptions;
@@ -422,8 +434,8 @@ public sealed class SchemaRegistry : IDisposable
     /// overlay over disk/network), so the two stay consistent. Returns an empty list when the
     /// resource is missing or malformed (fail-open — never blocks the editor).
     /// </remarks>
-    public static IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariants(string cacheFileName)
-        => ParseHookCommandVariants(TryReadBundledBytesMerged(cacheFileName));
+    public static IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariants(ProductDescriptor product)
+        => ParseHookCommandVariants(TryReadBundledBytesMerged(product));
 
     /// <summary>
     /// The hook command variants of the schema copy that actually loaded, not always the bundled one.
@@ -435,8 +447,8 @@ public sealed class SchemaRegistry : IDisposable
     /// static describes a different document — silently, because both parse fine and neither
     /// is empty. The symptom would be an editor offering last release's shapes.
     /// </remarks>
-    public IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariantsFor(string cacheFileName)
-        => ParseHookCommandVariants(MaterialisedOrBundled(cacheFileName));
+    public IReadOnlyList<HookCommandVariantInfo> GetHookCommandVariantsFor(ProductDescriptor product)
+        => ParseHookCommandVariants(MaterialisedOrBundled(product));
 
     /// <summary>Shared body, over bytes that already have the overlay applied.</summary>
     internal static IReadOnlyList<HookCommandVariantInfo> ParseHookCommandVariants(byte[]? bytes)
@@ -513,8 +525,8 @@ public sealed class SchemaRegistry : IDisposable
     /// source the tree derives from — so the two stay consistent. Fail-open empty on a missing
     /// or malformed resource.
     /// </summary>
-    public static IReadOnlyList<HookEventInfo> GetHookEvents(string cacheFileName)
-        => ParseHookEvents(TryReadBundledBytesMerged(cacheFileName));
+    public static IReadOnlyList<HookEventInfo> GetHookEvents(ProductDescriptor product)
+        => ParseHookEvents(TryReadBundledBytesMerged(product));
 
     /// <summary>
     /// The hook events of the schema copy that actually loaded, not always the bundled one.
@@ -526,8 +538,8 @@ public sealed class SchemaRegistry : IDisposable
     /// static describes a different document — silently, because both parse fine and neither
     /// is empty. The symptom would be an editor offering last release's shapes.
     /// </remarks>
-    public IReadOnlyList<HookEventInfo> GetHookEventsFor(string cacheFileName)
-        => ParseHookEvents(MaterialisedOrBundled(cacheFileName));
+    public IReadOnlyList<HookEventInfo> GetHookEventsFor(ProductDescriptor product)
+        => ParseHookEvents(MaterialisedOrBundled(product));
 
     /// <summary>Shared body, over bytes that already have the overlay applied.</summary>
     internal static IReadOnlyList<HookEventInfo> ParseHookEvents(byte[]? bytes)
@@ -638,8 +650,12 @@ public sealed class SchemaRegistry : IDisposable
     /// nothing has checked. A section that cannot load its schema is broken, and the hosts
     /// already degrade a failed section visibly.
     /// </exception>
-    public async Task<JsonSchema> GetSchemaAsync(string url, string cacheFileName, CancellationToken ct)
+    public async Task<JsonSchema> GetSchemaAsync(ProductDescriptor product, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(product);
+        string url = product.SchemaUrl;
+        string cacheFileName = product.SchemaFileName;
+
         // 1. Memory cache — one resolution per URL per process, whatever the source.
         if (_memoryCache.TryGetValue(url, out JsonSchema? cached))
         {
@@ -648,7 +664,7 @@ public sealed class SchemaRegistry : IDisposable
 
         // The overlay is BAKED INTO the cached artifact, so its digest decides whether a cached
         // copy still describes the rules this build ships. Computed once, used by both branches.
-        string overlaySha = CurrentOverlayDigest(cacheFileName);
+        string overlaySha = CurrentOverlayDigest(product);
 
         // ⛔ --schema-source bundled resolves in MEMORY ONLY and must not touch disk. A debug flag
         // has no business mutating durable state, and writing here would clobber a fetched
@@ -656,7 +672,7 @@ public sealed class SchemaRegistry : IDisposable
         // exist to prevent.
         if (_sourceOverride == SchemaSourceOverride.Bundled)
         {
-            return MaterialiseBundledOrThrow(url, cacheFileName, writeToDisk: false, overlaySha, ct);
+            return MaterialiseBundledOrThrow(product, writeToDisk: false, overlaySha, ct);
         }
 
         // Declared ahead of the call rather than inline: with `_disk` null the short-circuit
@@ -696,7 +712,7 @@ public sealed class SchemaRegistry : IDisposable
 
                 if (result.Json is { } body)
                 {
-                    JsonSchema fetched = Materialise(body, cacheFileName, SchemaSource.Fetched, out byte[] merged);
+                    JsonSchema fetched = Materialise(body, product, SchemaSource.Fetched, out byte[] merged);
                     _memoryCache[url] = fetched;
                     Log.Information("[Schema] {File} loaded from {Url}", cacheFileName, url);
 
@@ -793,7 +809,7 @@ public sealed class SchemaRegistry : IDisposable
             // A bundled-sourced artifact, on the other hand, SHOULD be replaced when this build
             // ships different bundled bytes — otherwise upgrading the app would leave the user on
             // the schema their old build happened to extract.
-            string? bundledSha = CurrentBundledDigest(cacheFileName);
+            string? bundledSha = CurrentBundledDigest(product);
             if (bundledSha is not null
                 && string.Equals(diskSidecar.BundledSourceSha256, bundledSha, StringComparison.OrdinalIgnoreCase))
             {
@@ -807,7 +823,7 @@ public sealed class SchemaRegistry : IDisposable
 
         // 4. Extract the bundled copy — always present for every product this repo ships, so in
         //    practice this is what runs whenever the network is slow, blocked or absent.
-        return MaterialiseBundledOrThrow(url, cacheFileName, writeToDisk: true, overlaySha, ct);
+        return MaterialiseBundledOrThrow(product, writeToDisk: true, overlaySha, ct);
     }
 
     /// <summary>
@@ -862,16 +878,18 @@ public sealed class SchemaRegistry : IDisposable
     /// There is no bundled copy either. See the exception's remarks for why this is not <c>{}</c>.
     /// </exception>
     private JsonSchema MaterialiseBundledOrThrow(
-        string url, string cacheFileName, bool writeToDisk, string overlaySha, CancellationToken ct)
+        ProductDescriptor product, bool writeToDisk, string overlaySha, CancellationToken ct)
     {
-        byte[]? bundledBytes = TryReadBundledBytes(cacheFileName);
+        string url = product.SchemaUrl;
+        string cacheFileName = product.SchemaFileName;
+        byte[]? bundledBytes = TryReadBundledBytes(product, cacheFileName);
         if (bundledBytes is null)
         {
             throw new SchemaUnavailableException(url, cacheFileName);
         }
 
         JsonSchema schema = Materialise(
-            Encoding.UTF8.GetString(bundledBytes), cacheFileName, SchemaSource.Bundled, out byte[] merged);
+            Encoding.UTF8.GetString(bundledBytes), product, SchemaSource.Bundled, out byte[] merged);
         _memoryCache[url] = schema;
 
         if (writeToDisk && _disk is not null)
@@ -904,9 +922,9 @@ public sealed class SchemaRegistry : IDisposable
     /// "no overlay" across launches instead of being a second kind of unknown. Only 2 of the 4
     /// schemas have one.
     /// </remarks>
-    private static string CurrentOverlayDigest(string cacheFileName)
+    private static string CurrentOverlayDigest(ProductDescriptor product)
     {
-        byte[]? overlay = TryReadBundledBytes(OverlayFileNameFor(cacheFileName));
+        byte[]? overlay = TryReadBundledBytes(product, OverlayFileNameFor(product.SchemaFileName));
         return overlay is null ? string.Empty : SchemaDiskCache.Digest(overlay);
     }
 
@@ -917,9 +935,9 @@ public sealed class SchemaRegistry : IDisposable
     /// Hashing the merged result instead would conflate the two and rebuild the cache whenever
     /// either moved, without saying which.
     /// </remarks>
-    private static string? CurrentBundledDigest(string cacheFileName)
+    private static string? CurrentBundledDigest(ProductDescriptor product)
     {
-        byte[]? bundled = TryReadBundledBytes(cacheFileName);
+        byte[]? bundled = TryReadBundledBytes(product, product.SchemaFileName);
         return bundled is null ? null : SchemaDiskCache.Digest(bundled);
     }
 
@@ -940,8 +958,9 @@ public sealed class SchemaRegistry : IDisposable
     /// <c>_materialisedBytes</c> because this is exactly what gets written to disk, and a caller
     /// that had to look it up again could look up a different entry.
     /// </param>
-    private JsonSchema Materialise(string json, string cacheFileName, SchemaSource source, out byte[] merged)
+    private JsonSchema Materialise(string json, ProductDescriptor product, SchemaSource source, out byte[] merged)
     {
+        string cacheFileName = product.SchemaFileName;
         string stripped = StripExternalRefs(json);
 
         // ⛔ The strip is LINE-based, so an external $ref sharing a line with its siblings
@@ -955,7 +974,7 @@ public sealed class SchemaRegistry : IDisposable
             throw new UnstrippableSchemaRefException(cacheFileName);
         }
 
-        merged = MergeOverlayOnto(Encoding.UTF8.GetBytes(stripped), cacheFileName);
+        merged = MergeOverlayOnto(Encoding.UTF8.GetBytes(stripped), product);
         _materialisedBytes[cacheFileName] = merged;
 
         // Hash the MERGED bytes, not the raw source — see SchemaProvenance for why. Recorded
@@ -1058,14 +1077,15 @@ public sealed class SchemaRegistry : IDisposable
     /// request retries the network even after an earlier probe failed — the latch exists to
     /// keep startup fast, not to refuse a deliberate retry.
     /// </remarks>
-    public async Task<JsonSchema> RefreshAsync(string url, string cacheFileName, CancellationToken ct)
+    public async Task<JsonSchema> RefreshAsync(ProductDescriptor product, CancellationToken ct)
     {
-        _memoryCache.TryRemove(url, out JsonSchema? _);
-        _materialisedBytes.TryRemove(cacheFileName, out byte[]? _);
-        _provenance.TryRemove(cacheFileName, out SchemaProvenance? _);
+        ArgumentNullException.ThrowIfNull(product);
+        _memoryCache.TryRemove(product.SchemaUrl, out JsonSchema? _);
+        _materialisedBytes.TryRemove(product.SchemaFileName, out byte[]? _);
+        _provenance.TryRemove(product.SchemaFileName, out SchemaProvenance? _);
         _networkUnavailable = false;
 
-        return await GetSchemaAsync(url, cacheFileName, ct).ConfigureAwait(false);
+        return await GetSchemaAsync(product, ct).ConfigureAwait(false);
     }
 
     // -----------------------------------------------------------------------
@@ -1155,13 +1175,23 @@ public sealed class SchemaRegistry : IDisposable
     /// entirely without, a <see cref="GetSchemaAsync"/> for that file. Bundled is the right
     /// answer then — it is what the tree would be built from too.
     /// </remarks>
-    private byte[]? MaterialisedOrBundled(string cacheFileName)
-        => _materialisedBytes.TryGetValue(cacheFileName, out byte[]? bytes)
+    private byte[]? MaterialisedOrBundled(ProductDescriptor product)
+        => _materialisedBytes.TryGetValue(product.SchemaFileName, out byte[]? bytes)
             ? bytes
-            : TryReadBundledBytesMerged(cacheFileName);
+            : TryReadBundledBytesMerged(product);
 
-    private static byte[]? TryReadBundledBytes(string cacheFileName)
-        => BundledResource.TryRead("Schemas", cacheFileName);
+    /// <summary>One of the product's bundled files, or <see langword="null"/> when it ships none.</summary>
+    private static byte[]? TryReadBundledBytes(ProductDescriptor product, string fileName)
+        => product.BundledFiles?.TryRead(fileName);
+
+    /// <summary>
+    /// The enum-descriptions sibling for a schema file name: for <c>foo.json</c> it is
+    /// <c>foo.enumdescriptions.json</c>.
+    /// </summary>
+    internal static string EnumDescriptionsFileNameFor(string schemaFileName)
+        => Path.GetFileNameWithoutExtension(schemaFileName)
+           + ".enumdescriptions"
+           + Path.GetExtension(schemaFileName);
 
     /// <summary>
     /// The overlay sibling for a bundled schema file name: for <c>foo.json</c> it is
@@ -1192,10 +1222,11 @@ public sealed class SchemaRegistry : IDisposable
     /// skipped with a warning and the base bytes are returned unchanged —
     /// fail-open so a broken overlay never prevents the app from starting.
     /// </remarks>
-    internal static byte[]? TryReadBundledBytesMerged(string cacheFileName)
+    internal static byte[]? TryReadBundledBytesMerged(ProductDescriptor product)
     {
-        byte[]? baseBytes = TryReadBundledBytes(cacheFileName);
-        return baseBytes == null ? null : MergeOverlayOnto(baseBytes, cacheFileName);
+        ArgumentNullException.ThrowIfNull(product);
+        byte[]? baseBytes = TryReadBundledBytes(product, product.SchemaFileName);
+        return baseBytes == null ? null : MergeOverlayOnto(baseBytes, product);
     }
 
     /// <summary>
@@ -1207,9 +1238,10 @@ public sealed class SchemaRegistry : IDisposable
     /// merge lived inside that reader, only the bundled copy could carry hand-curated
     /// additions — which is the whole reason bundled used to have to outrank the network.
     /// </remarks>
-    internal static byte[] MergeOverlayOnto(byte[] baseBytes, string cacheFileName)
+    internal static byte[] MergeOverlayOnto(byte[] baseBytes, ProductDescriptor product)
     {
-        byte[]? overlayBytes = TryReadBundledBytes(OverlayFileNameFor(cacheFileName));
+        string cacheFileName = product.SchemaFileName;
+        byte[]? overlayBytes = TryReadBundledBytes(product, OverlayFileNameFor(cacheFileName));
         if (overlayBytes == null)
         {
             return baseBytes; // no overlay, return base unchanged
@@ -1291,49 +1323,21 @@ public sealed class SchemaRegistry : IDisposable
         return result;
     }
 
-    private static JsonSchema LoadBundledFallback(string cacheFileName)
-    {
-        // Same overlay path as the primary loader so the fallback respects
-        // hand-curated additions too.
-        byte[]? bytes = TryReadBundledBytesMerged(cacheFileName);
-        if (bytes == null)
-        {
-            return ParseSchema("{}"); // absolute last resort — empty schema
-        }
-
-        return ParseSchema(Encoding.UTF8.GetString(bytes));
-    }
-
     /// <summary>
     /// Validates every dirty, writable document in <paramref name="workspace"/> against the
-    /// JSON schema for that product (<paramref name="isClaudeCode"/> selects Claude Code
-    /// settings vs. Claude Desktop config).
+    /// JSON schema <paramref name="product"/> names.
     /// </summary>
     /// <returns>
     /// An empty list when all documents pass, or a list of <see cref="SchemaValidationError"/>
-    /// entries describing each violation.  Returns an empty list without blocking when the
-    /// schema could not be loaded (fail-open — we never prevent saves due to missing schema).
+    /// entries describing each violation.
     /// </returns>
-    public Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
-        SettingsWorkspace workspace,
-        bool isClaudeCode,
-        CancellationToken ct)
-    {
-        // Schema only, as above: validation reads SchemaUrl and SchemaFileName, never a path.
-        return ValidateWorkspaceAsync(
-            workspace,
-            isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,
-            ct);
-    }
-
-    /// <inheritdoc cref="ValidateWorkspaceAsync(SettingsWorkspace, bool, CancellationToken)"/>
     public async Task<IReadOnlyList<SchemaValidationError>> ValidateWorkspaceAsync(
         SettingsWorkspace workspace,
         ProductDescriptor product,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(product);
-        JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
+        JsonSchema schema = await GetSchemaAsync(product, ct);
 
         List<SchemaValidationError> errors = new();
         EvaluationOptions evalOpts = new() { OutputFormat = OutputFormat.List };
@@ -1452,26 +1456,13 @@ public sealed class SchemaRegistry : IDisposable
     ///   surfaced even when the workspace is otherwise clean.</description></item>
     /// </list>
     /// </remarks>
-    public Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
-        SettingsWorkspace workspace,
-        bool isClaudeCode,
-        CancellationToken ct)
-    {
-        // Schema only, as above.
-        return ValidateAllWorkspaceAsync(
-            workspace,
-            isClaudeCode ? ClaudeCodeProductFor(ClaudeEnvironment.Empty) : ClaudeDesktopProduct,
-            ct);
-    }
-
-    /// <inheritdoc cref="ValidateAllWorkspaceAsync(SettingsWorkspace, bool, CancellationToken)"/>
     public async Task<IReadOnlyList<SchemaValidationError>> ValidateAllWorkspaceAsync(
         SettingsWorkspace workspace,
         ProductDescriptor product,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(product);
-        JsonSchema schema = await GetSchemaAsync(product.SchemaUrl, product.SchemaFileName, ct);
+        JsonSchema schema = await GetSchemaAsync(product, ct);
 
         List<SchemaValidationError> errors = new();
         EvaluationOptions evalOpts = new() { OutputFormat = OutputFormat.List };

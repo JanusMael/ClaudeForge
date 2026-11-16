@@ -52,15 +52,17 @@ public sealed class ProductNeutralityTests
     /// word search, so they never need the allow-list. Adding one is a decision, not a fix.
     /// </summary>
     /// <remarks>
-    /// ⓘ The legacy archive folders <c>"ClaudeCode"</c> and <c>"ClaudeDesktop"</c> join this list
-    /// in plans/00008 step 6, when they come to rest in <c>ExportManifest</c> for reading old
-    /// archives; today they live in <c>SchemaRegistry</c>, which step 6 moves out. An entry naming
-    /// a literal its file does not hold would exempt nothing and read as protection.
+    /// ⓘ The legacy archive folders <c>"ClaudeCode"</c> and <c>"ClaudeDesktop"</c> joined in
+    /// plans/00008 step 6, when they came to rest in <c>ExportManifest</c> for reading v1 exports.
+    /// Only the literal is exempt: the identifiers that name them stay on the allow-list until
+    /// step 8 stops the engines using the Claude Code folder for per-project data.
     /// </remarks>
     private static readonly (string File, string Literal)[] PermanentWireStrings =
     [
         ("src/AgentForge.Core/Backup/ExportManifest.cs", "\"includesClaudeCode\""),
         ("src/AgentForge.Core/Backup/ExportManifest.cs", "\"includesClaudeDesktop\""),
+        ("src/AgentForge.Core/Backup/ExportManifest.cs", "\"ClaudeCode\""),
+        ("src/AgentForge.Core/Backup/ExportManifest.cs", "\"ClaudeDesktop\""),
         ("src/AgentForge.Core/Backup/BackupJsonContext.cs", "\"_claudeforge_sanitization_error\""),
     ];
 

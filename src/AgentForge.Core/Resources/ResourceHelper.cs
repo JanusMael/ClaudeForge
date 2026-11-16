@@ -11,11 +11,12 @@ namespace Bennewitz.Ninja.AgentForge.Core;
 /// dependency, so a rename breaks it at *runtime*, silently.
 /// </para>
 /// <para>
-/// The worst instance: <c>BackupEngine.BundleSchemas</c> filters manifest resources by this
-/// prefix. If the prefix stops matching, archives bundle <b>zero</b> schemas, and
-/// <c>RestoreEngine</c> then treats the missing <c>Schemas/</c> folder as "archive predates
-/// bundling" and <b>silently skips validation</b>. Nothing throws; backups just quietly stop
-/// being validatable.
+/// The worst instance was <c>BackupEngine.BundleSchemas</c>, which filtered manifest resources by
+/// this prefix: had it stopped matching, archives would have bundled <b>zero</b> schemas, and
+/// <c>RestoreEngine</c> treats a missing <c>Schemas/</c> folder as "archive predates bundling" and
+/// <b>silently skips validation</b>. Since plans/00008 step 6 the engine reads through each
+/// product's <c>BundledFiles</c>, and <c>EmbeddedResourceFiles</c> refuses a prefix that matches
+/// nothing when the descriptor is built.
 /// </para>
 /// <para>
 /// So the prefix is <b>derived</b> from <see cref="System.Type.Namespace"/> rather than
@@ -42,6 +43,12 @@ internal static class ResourceHelper
     /// including the trailing dot. Used to filter <c>GetManifestResourceNames()</c>.
     /// </summary>
     public static readonly string SchemasPrefix = $"{RootNamespace}.Assets.Schemas.";
+
+    /// <summary>
+    /// Logical-name prefix of every resource under <c>Assets/Descriptions/</c>, including the
+    /// trailing dot.
+    /// </summary>
+    public static readonly string DescriptionsPrefix = $"{RootNamespace}.Assets.Descriptions.";
 
     /// <summary>
     /// The logical name of the resource at <c>Assets/&lt;subNamespace&gt;/&lt;fileName&gt;</c>.

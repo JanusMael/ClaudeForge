@@ -1,7 +1,7 @@
 class Bennewitz.Ninja.AgentForge.Core.Backup.AdditionalDirectoriesResolver
     static System.Collections.Generic.IReadOnlyList<System.String> Resolve(System.Collections.Generic.IEnumerable<System.String> settingsFilePaths)
 class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine [sealed]
-    .ctor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment environment, Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts = null)
+    .ctor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment environment, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts, Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null)
     Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry TryReadEntry(System.String archivePath)
     System.Boolean Delete(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry)
     System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry> List(System.String backupDirectory)
@@ -638,25 +638,21 @@ class Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRefresher
 class Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry [sealed] implements System.IDisposable
     .ctor(System.Net.Http.HttpClient httpClient = null, System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> sourceOverride = null, System.String cacheDirectory = null)
     Bennewitz.Ninja.AgentForge.Core.Schema.SchemaProvenance ProvenanceFor(System.String cacheFileName)
-    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookCommandVariantInfo> GetHookCommandVariantsFor(System.String cacheFileName)
-    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookEventInfo> GetHookEventsFor(System.String cacheFileName)
-    System.Threading.Tasks.Task<Json.Schema.JsonSchema> GetSchemaAsync(System.String url, System.String cacheFileName, System.Threading.CancellationToken ct)
-    System.Threading.Tasks.Task<Json.Schema.JsonSchema> RefreshAsync(System.String url, System.String cacheFileName, System.Threading.CancellationToken ct)
-    System.Threading.Tasks.Task<Json.Schema.JsonSchemaNode> GetClaudeCodeSettingsNodeAsync(System.Threading.CancellationToken ct)
-    System.Threading.Tasks.Task<Json.Schema.JsonSchemaNode> GetClaudeDesktopConfigNodeAsync(System.Threading.CancellationToken ct)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookCommandVariantInfo> GetHookCommandVariantsFor(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
+    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookEventInfo> GetHookEventsFor(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
+    System.Threading.Tasks.Task<Json.Schema.JsonSchema> GetSchemaAsync(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
+    System.Threading.Tasks.Task<Json.Schema.JsonSchema> RefreshAsync(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task<Json.Schema.JsonSchemaNode> GetSettingsNodeAsync(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAllWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
-    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAllWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, System.Boolean isClaudeCode, System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
-    System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, System.Boolean isClaudeCode, System.Threading.CancellationToken ct)
     System.Void Dispose()
     const System.String ClaudeCodeSettingsSchemaUrl
     static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeCodeProductFor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeDesktopProduct
     static Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry CreateWithNetwork(System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> sourceOverride = null, System.String cacheDirectory = null)
-    static System.Collections.Generic.IReadOnlyDictionary<System.String, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>> GetEnumDescriptions(System.String cacheFileName)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookCommandVariantInfo> GetHookCommandVariants(System.String cacheFileName)
-    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookEventInfo> GetHookEvents(System.String cacheFileName)
+    static System.Collections.Generic.IReadOnlyDictionary<System.String, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>> GetEnumDescriptions(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookCommandVariantInfo> GetHookCommandVariants(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
+    static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookEventInfo> GetHookEvents(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
     static System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> ProcessSourceOverride { get;set; }
     static System.String ClaudeCodeArchiveFolder
     static System.String ClaudeCodeProductId

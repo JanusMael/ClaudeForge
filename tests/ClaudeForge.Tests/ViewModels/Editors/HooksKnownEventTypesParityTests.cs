@@ -1,4 +1,6 @@
-﻿namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
+﻿using Bennewitz.Ninja.AgentForge.Core.Platform;
+
+namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
 
 /// <summary>
 /// The "overlay ⊆ schema" guard. The editor now derives its live hook-event list
@@ -53,7 +55,7 @@ public sealed class HooksKnownEventTypesParityTests
         foreach (string eventName in HookEventCatalog.CuratedOrder)
         {
             SettingsWorkspace ws = WorkspaceWithEvent(eventName);
-            IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
+            IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
             // The only acceptable error here is one that does NOT name our
             // event (e.g. a coincidentally-failing branch elsewhere). Any

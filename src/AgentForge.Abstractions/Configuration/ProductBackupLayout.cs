@@ -41,11 +41,22 @@ namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 /// treatment, so naming it here is what stops that being a second branch later.
 /// </para>
 /// </param>
+/// <param name="ValidatableFiles">
+/// The config files in this product's part of an archive that a restore validates against the
+/// product's schema, or <see langword="null"/> to validate none. See
+/// <see cref="ProductValidatableFiles"/>.
+/// </param>
 public sealed record ProductBackupLayout(
     IReadOnlyList<ProductArchiveSection> Sections,
     IReadOnlyList<ProductSkippedSubdir> SkippedSubdirs,
-    string? CredentialFileName = null)
+    string? CredentialFileName = null,
+    IReadOnlyList<ProductValidatableFiles>? ValidatableFiles = null)
 {
     /// <summary>A layout that contributes nothing — the default for a product with no backup support.</summary>
     public static ProductBackupLayout Empty { get; } = new([], []);
+
+    /// <summary>
+    /// <see cref="ValidatableFiles"/>, or an empty list when the product names none.
+    /// </summary>
+    public IReadOnlyList<ProductValidatableFiles> Validatable => ValidatableFiles ?? [];
 }

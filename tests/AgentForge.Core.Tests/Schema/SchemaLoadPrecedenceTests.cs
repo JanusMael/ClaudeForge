@@ -174,7 +174,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        JsonSchemaNode root = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         IReadOnlyList<string> names = TopLevelNames(root);
 
         Assert.True(
@@ -191,7 +191,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        JsonSchemaNode root = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         IReadOnlyList<string> names = TopLevelNames(root);
 
         Assert.False(
@@ -235,7 +235,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         CannedHandler handler = new(upstreamShape);
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        JsonSchemaNode root = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         SchemaNode? model = SchemaTreeBuilder
                             .BuildTopLevel(root)
                             .FirstOrDefault(n => string.Equals(n.Name, "model", StringComparison.Ordinal));
@@ -292,8 +292,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         CannedHandler handler = new(withExternalRef);
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchema schema = await registry.GetSchemaAsync(
-            "https://example.invalid/stripme.json", "stripme.json", TestContext.Current.CancellationToken);
+        JsonSchema schema = await registry.GetSchemaAsync(BundledProduct.For("https://example.invalid/stripme.json", "stripme.json"), TestContext.Current.CancellationToken);
 
         SchemaNode? node = SchemaTreeBuilder
                            .BuildTopLevel(schema.Root!)
@@ -390,7 +389,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         CannedHandler handler = new(inlineRef);
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        JsonSchemaNode root = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         IReadOnlyList<string> names = TopLevelNames(root);
 
         Assert.True(names.Count > 1,
@@ -417,9 +416,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
 
         SchemaUnavailableException ex =
             await Assert.ThrowsAsync<SchemaUnavailableException>(
-                () => registry.GetSchemaAsync(
-                    "https://example.invalid/no-such-schema.json",
-                    "no-such-bundled-schema.json",
+                () => registry.GetSchemaAsync(BundledProduct.For("https://example.invalid/no-such-schema.json", "no-such-bundled-schema.json"),
                     TestContext.Current.CancellationToken));
 
         Assert.Equal("no-such-bundled-schema.json", ex.CacheFileName);
@@ -441,13 +438,11 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         MessageAssert.Equal(1, handler.Attempts, "Premise: the first load probes the network once.");
 
         // A DIFFERENT url and file, so nothing can be served from the memory cache.
-        await registry.GetSchemaAsync(
-            "https://example.invalid/opencode-config.json",
-            "opencode-config.json",
+        await registry.GetSchemaAsync(BundledProduct.For("https://example.invalid/opencode-config.json", "opencode-config.json"),
             TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(1, handler.Attempts,
@@ -467,12 +462,10 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         FailingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         int afterFirstLoad = handler.Attempts;
 
-        await registry.RefreshAsync(
-            SchemaRegistry.ClaudeCodeSettingsSchemaUrl,
-            ClaudeCodeCacheFileName,
+        await registry.RefreshAsync(BundledProduct.For(SchemaRegistry.ClaudeCodeSettingsSchemaUrl, ClaudeCodeCacheFileName),
             TestContext.Current.CancellationToken);
 
         Assert.True(handler.Attempts > afterFirstLoad,
@@ -499,14 +492,14 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         using SchemaRegistry registry = new(new HttpClient(handler));
 
         Assert.True(
-            SchemaRegistry.GetHookCommandVariants(ClaudeCodeCacheFileName).Count > 0,
+            SchemaRegistry.GetHookCommandVariants(BundledProduct.Named(ClaudeCodeCacheFileName)).Count > 0,
             "Premise: the BUNDLED Claude Code schema does declare hook command variants.");
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(
             0,
-            registry.GetHookCommandVariantsFor(ClaudeCodeCacheFileName).Count,
+            registry.GetHookCommandVariantsFor(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)).Count,
             "The instance reader still reported the bundled hook variants after a fetched copy "
             + "won the load. The hook editor would offer shapes the loaded schema does not "
             + "define, with nothing failing anywhere.");
@@ -550,7 +543,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         using SchemaRegistry registry = new(new HttpClient(new SlowHandler()));
 
         long startedAt = Environment.TickCount64;
-        JsonSchemaNode root = await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        JsonSchemaNode root = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         long elapsedMs = Environment.TickCount64 - startedAt;
 
         Assert.True(
@@ -649,7 +642,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         SchemaProvenance? p = registry.ProvenanceFor(ClaudeCodeCacheFileName);
         Assert.NotNull(p);
@@ -668,7 +661,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
     {
         using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         SchemaProvenance? p = registry.ProvenanceFor(ClaudeCodeCacheFileName);
         Assert.NotNull(p);
@@ -705,12 +698,10 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
                             """;
 
         using SchemaRegistry withOverlay = new(new HttpClient(new CannedHandler(body)));
-        await withOverlay.GetSchemaAsync(
-            "https://example.invalid/a.json", ClaudeCodeCacheFileName, TestContext.Current.CancellationToken);
+        await withOverlay.GetSchemaAsync(BundledProduct.For("https://example.invalid/a.json", ClaudeCodeCacheFileName), TestContext.Current.CancellationToken);
 
         using SchemaRegistry withoutOverlay = new(new HttpClient(new CannedHandler(body)));
-        await withoutOverlay.GetSchemaAsync(
-            "https://example.invalid/b.json", "no-overlay-for-this.json", TestContext.Current.CancellationToken);
+        await withoutOverlay.GetSchemaAsync(BundledProduct.For("https://example.invalid/b.json", "no-overlay-for-this.json"), TestContext.Current.CancellationToken);
 
         string merged = withOverlay.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256;
         string bare = withoutOverlay.ProvenanceFor("no-overlay-for-this.json")!.Sha256;
@@ -726,11 +717,11 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
     {
         CannedHandler h1 = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry a = new(new HttpClient(h1));
-        await a.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await a.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         CannedHandler h2 = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry b = new(new HttpClient(h2));
-        await b.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await b.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(
             a.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256,
@@ -754,13 +745,11 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         MutableHandler handler = new() { Body = SentinelSchema("zzzBeforeRefresh") };
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         string before = registry.ProvenanceFor(ClaudeCodeCacheFileName)!.Sha256;
 
         handler.Body = SentinelSchema("zzzAfterRefresh");
-        await registry.RefreshAsync(
-            SchemaRegistry.ClaudeCodeSettingsSchemaUrl,
-            ClaudeCodeCacheFileName,
+        await registry.RefreshAsync(BundledProduct.For(SchemaRegistry.ClaudeCodeSettingsSchemaUrl, ClaudeCodeCacheFileName),
             TestContext.Current.CancellationToken);
 
         SchemaProvenance after = registry.ProvenanceFor(ClaudeCodeCacheFileName)!;
@@ -790,13 +779,13 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
         MutableHandler handler = new() { Body = SentinelSchema("zzzFirstLoad") };
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        await registry.GetSchemaAsync(url, file, TestContext.Current.CancellationToken);
+        await registry.GetSchemaAsync(BundledProduct.For(url, file), TestContext.Current.CancellationToken);
         MessageAssert.NotNull(registry.ProvenanceFor(file), "Premise: the first load recorded one.");
 
         handler.Failing = true;
 
         await Assert.ThrowsAsync<SchemaUnavailableException>(
-            () => registry.RefreshAsync(url, file, TestContext.Current.CancellationToken));
+            () => registry.RefreshAsync(BundledProduct.For(url, file), TestContext.Current.CancellationToken));
 
         MessageAssert.Null(registry.ProvenanceFor(file),
             "After a refresh that could load nothing, the provenance still describes the "
@@ -808,7 +797,7 @@ public sealed class SchemaLoadPrecedenceTests : IDisposable
     public async Task TheShortDigestIsAPrefixOfTheFullOne()
     {
         using SchemaRegistry registry = new(new HttpClient(new FailingHandler()));
-        await registry.GetClaudeCodeSettingsNodeAsync(TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         SchemaProvenance p = registry.ProvenanceFor(ClaudeCodeCacheFileName)!;
 

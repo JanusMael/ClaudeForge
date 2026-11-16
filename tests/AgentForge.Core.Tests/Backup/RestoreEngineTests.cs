@@ -148,7 +148,7 @@ public sealed class RestoreEngineTests : IDisposable
         File.WriteAllText(Path.Combine(probe, "claude.json"),
             """{ "env": "[redacted]", "theme": "dark" }""");
 
-        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir),
+        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts),
             "Redacted-marker leaf must trigger tamper-detection.");
     }
 
@@ -160,7 +160,7 @@ public sealed class RestoreEngineTests : IDisposable
         File.WriteAllText(Path.Combine(probe, "claude.json"),
             """{ "theme": "dark", "model": "claude-opus" }""");
 
-        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir),
+        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts),
             "Plain config with no marker must not trigger the scan.");
     }
 
@@ -177,7 +177,7 @@ public sealed class RestoreEngineTests : IDisposable
         File.WriteAllText(Path.Combine(probe, "claude.json"),
             """{ "description": "Replace sensitive values with [redacted] before sharing." }""");
 
-        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir),
+        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts),
             "Prose mentioning the marker word must not fire tamper-detection — only exact-equal leaf values do.");
     }
 
@@ -190,7 +190,7 @@ public sealed class RestoreEngineTests : IDisposable
         File.WriteAllText(Path.Combine(probe, "settings.json"),
             """{ "mcpServers": { "gh": { "headers": "[redacted]" } } }""");
 
-        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir));
+        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts));
     }
 
     // ═══════════════════════════════════════════════════════════════════════

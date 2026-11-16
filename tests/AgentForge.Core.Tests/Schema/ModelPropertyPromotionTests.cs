@@ -37,7 +37,7 @@ public sealed class ModelPropertyPromotionTests
         // date; the overlay now carries `default`, `examples`, and the
         // enriched description.  Production goes through the same merge
         // step via SchemaRegistry.GetSchemaAsync's bundled-resource branch.
-        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("claude-code-settings.json"));
         MessageAssert.NotNull(bytes, "Bundled schema resource must exist.");
         string json = Encoding.UTF8.GetString(bytes!);
 
@@ -77,7 +77,7 @@ public sealed class ModelPropertyPromotionTests
         // into BuildTopLevel.
         JsonSchemaNode root = LoadBundledClaudeCodeRoot();
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> descriptions =
-            SchemaRegistry.GetEnumDescriptions("claude-code-settings.json");
+            SchemaRegistry.GetEnumDescriptions(BundledProduct.Named("claude-code-settings.json"));
 
         IReadOnlyList<SchemaNode> top =
             SchemaTreeBuilder.BuildTopLevel(root, knownPaths: null, flagAllAsNew: false, descriptions);

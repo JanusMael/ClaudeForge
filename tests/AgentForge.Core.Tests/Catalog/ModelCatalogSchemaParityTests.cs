@@ -28,7 +28,7 @@ public sealed class ModelCatalogSchemaParityTests
 {
     private static JsonNode LoadMergedSchema()
     {
-        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged("claude-code-settings.json");
+        byte[]? bytes = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("claude-code-settings.json"));
         MessageAssert.NotNull(bytes, "Bundled claude-code-settings.json must be present.");
         return JsonNode.Parse(bytes)!;
     }

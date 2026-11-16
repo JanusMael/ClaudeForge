@@ -97,6 +97,68 @@ internal static class NeutralTestProduct
                 ],
                 CredentialFileName: CredentialFileName));
 
+    /// <summary>The bundled schema's overlay, named by the engines' convention.</summary>
+    public const string OverlayFileName = "neutral-test-settings.overlay.json";
+
+    /// <summary>The bundled enum descriptions, named by the engines' convention.</summary>
+    public const string EnumDescriptionsFileName = "neutral-test-settings.enumdescriptions.json";
+
+    /// <summary>
+    /// The bundled schema: an object whose <c>theme</c> is one of two strings. The overlay adds a
+    /// <c>default</c> the base does not carry, so a test can tell whether it was applied.
+    /// </summary>
+    public const string SchemaJson = """
+        {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "neutral": { "type": "boolean" },
+            "theme": { "type": "string", "enum": ["dark", "light"] }
+          }
+        }
+        """;
+
+    /// <summary>Adds <c>theme.default</c>; see <see cref="SchemaJson"/>.</summary>
+    public const string OverlayJson = """{ "properties": { "theme": { "default": "dark" } } }""";
+
+    /// <summary>One description per <c>theme</c> value.</summary>
+    public const string EnumDescriptionsJson =
+        """{ "theme": { "dark": "Dark background.", "light": "Light background." } }""";
+
+    /// <summary>The three files above, as the product would ship them.</summary>
+    public static InMemoryBundledFiles Bundle { get; } = new(new Dictionary<string, string>
+    {
+        [SchemaFileName] = SchemaJson,
+        [OverlayFileName] = OverlayJson,
+        [EnumDescriptionsFileName] = EnumDescriptionsJson,
+    });
+
+    /// <summary>
+    /// <see cref="For"/>, plus a bundled schema and the archive files a restore validates against
+    /// it: the config file, and every <c>settings.json</c> in the home.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="For"/> so the engine tests written before the descriptor carried
+    /// data keep the archives they were written against: a bundled schema adds entries under
+    /// <c>Schemas/</c>.
+    /// </remarks>
+    public static ProductDescriptor WithBundle(string root)
+    {
+        ProductDescriptor plain = For(root);
+        return plain with
+        {
+            BackupLayout = plain.Backup with
+            {
+                ValidatableFiles =
+                [
+                    new([], [ConfigSection], Recursive: false),
+                    new([HomeSection], ["settings.json"], Recursive: true),
+                ],
+            },
+            BundledFiles = Bundle,
+        };
+    }
+
     /// <summary>
     /// Writes a small live footprint under <paramref name="root"/>: the config file, a settings
     /// file in the home, and one file in each of the skipped and full-only subdirectories.
@@ -110,5 +172,24 @@ internal static class NeutralTestProduct
         File.WriteAllText(Path.Combine(home, "settings.json"), """{"theme":"dark"}""");
         File.WriteAllText(Path.Combine(home, SkippedSubdir, "work.tmp"), "scratch");
         File.WriteAllText(Path.Combine(home, FullOnlySubdir, "session.jsonl"), """{"turn":1}""");
+    }
+}
+
+/// <summary>
+/// <see cref="IBundledFiles"/> over strings held in memory, for a test product that ships its data
+/// without an assembly to embed it in. Counts its reads, so a test can show a file was asked for.
+/// </summary>
+internal sealed class InMemoryBundledFiles(IReadOnlyDictionary<string, string> files) : IBundledFiles
+{
+    private int _reads;
+
+    /// <summary>How many times <see cref="TryRead"/> has been called.</summary>
+    public int Reads => Volatile.Read(ref _reads);
+
+    /// <inheritdoc/>
+    public byte[]? TryRead(string fileName)
+    {
+        Interlocked.Increment(ref _reads);
+        return files.TryGetValue(fileName, out string? text) ? System.Text.Encoding.UTF8.GetBytes(text) : null;
     }
 }

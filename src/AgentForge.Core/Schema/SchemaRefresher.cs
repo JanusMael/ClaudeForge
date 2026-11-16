@@ -114,7 +114,7 @@ public static class SchemaRefresher
             try
             {
                 _ = await registry
-                    .RefreshAsync(product.SchemaUrl, product.SchemaFileName, ct)
+                    .RefreshAsync(product, ct)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException)

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 
@@ -173,25 +172,49 @@ public sealed class ExportManifest
     /// The v1 booleans expressed as archive folder names.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Naming Claude's two products here is deliberate and not a product assumption: those
     /// two booleans only ever existed for Claude Code and Claude Desktop, so the mapping is
     /// a statement about archives already written, not about which products the app may
-    /// host. It reads <see cref="ProductDescriptor.ArchiveFolder"/> rather than repeating
-    /// the literals so it tracks the one property the writer and the restore layout share.
+    /// host.
+    /// </para>
+    /// <para>
+    /// ⛔ <b>The folder names are written out here, and that is the point</b> (plans/00008,
+    /// decision 5). They are persisted wire strings: a reader of a v1 export has to know them
+    /// whatever the products are called today. This used to read them from Claude's
+    /// descriptors, which leave this library; the descriptors now pin themselves to these
+    /// values in their own tests.
+    /// </para>
     /// </remarks>
     private static List<string> LegacyProductFolders(ExportManifest manifest)
     {
         List<string> folders = new(2);
         if (manifest.LegacyIncludesClaudeCode == true)
         {
-            folders.Add(SchemaRegistry.ClaudeCodeArchiveFolder);
+            folders.Add(LegacyClaudeCodeFolder);
         }
 
         if (manifest.LegacyIncludesClaudeDesktop == true)
         {
-            folders.Add(SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
+            folders.Add(LegacyClaudeDesktopFolder);
         }
 
         return folders;
     }
+
+    /// <summary>
+    /// The archive folder a v1 export's <c>includesClaudeCode</c> stands for. A persisted wire
+    /// string: see <see cref="LegacyProductFolders"/>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Also where the backup and restore engines find Claude Code's per-project data, until
+    /// plans/00008 step 8 gives a product's layout its own per-project items.
+    /// </remarks>
+    internal static readonly string LegacyClaudeCodeFolder = "ClaudeCode";
+
+    /// <summary>
+    /// The archive folder a v1 export's <c>includesClaudeDesktop</c> stands for. A persisted
+    /// wire string: see <see cref="LegacyProductFolders"/>.
+    /// </summary>
+    internal static readonly string LegacyClaudeDesktopFolder = "ClaudeDesktop";
 }

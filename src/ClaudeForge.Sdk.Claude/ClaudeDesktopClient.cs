@@ -89,7 +89,11 @@ public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
         // request carries the Desktop product alone, so that work is unreachable. Threading a
         // real environment in would suggest Desktop paths respond to CLAUDE_CONFIG_DIR. They
         // do not.
-        return new BackupClient(new BackupEngine(ClaudeEnvironment.Empty), [Product]);
+        return new BackupClient(
+            new BackupEngine(
+                ClaudeEnvironment.Empty,
+                [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), Product]),
+            [Product]);
     }
 
     /// <summary>

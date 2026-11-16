@@ -121,7 +121,7 @@ public sealed class SchemaDiskCacheTests : IDisposable
         OfflineHandler handler = new();
         SchemaRegistry registry = Offline(handler);
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         Assert.True(System.IO.File.Exists(ArtifactPath), "The resolved artifact must be written.");
         Assert.True(System.IO.File.Exists(SidecarPath), "Its sidecar must be written too.");
@@ -139,7 +139,7 @@ public sealed class SchemaDiskCacheTests : IDisposable
     {
         OfflineHandler handler = new();
         SchemaRegistry registry = Offline(handler);
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         byte[] onDisk = System.IO.File.ReadAllBytes(ArtifactPath);
         string recorded = SidecarString("sha256");
@@ -159,12 +159,12 @@ public sealed class SchemaDiskCacheTests : IDisposable
     public async Task ASecondOfflineLaunch_ReusesTheCachedArtifact()
     {
         OfflineHandler first = new();
-        _ = await Offline(first).GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await Offline(first).GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
         DateTime writtenAt = System.IO.File.GetLastWriteTimeUtc(ArtifactPath);
 
         OfflineHandler second = new();
         SchemaRegistry registry = Offline(second);
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(writtenAt, System.IO.File.GetLastWriteTimeUtc(ArtifactPath),
             "An unchanged bundled source must not cause a rewrite on every launch.");
@@ -180,13 +180,13 @@ public sealed class SchemaDiskCacheTests : IDisposable
         const string Fetched = """{"type":"object","properties":{"fetchedOnly":{"type":"string"}}}""";
         ConditionalHandler online = new(Fetched, "\"v1\"");
         SchemaRegistry day1 = new(new HttpClient(online), sourceOverride: null, cacheDirectory: _dir);
-        _ = await day1.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await day1.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
         Assert.Equal("Fetched", SidecarString("source"));
         string fetchedArtifact = System.IO.File.ReadAllText(ArtifactPath);
 
         OfflineHandler offline = new();
         SchemaRegistry day2 = Offline(offline);
-        _ = await day2.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await day2.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal("Fetched", SidecarString("source"),
             "⛔ Bundled overwrote a fetched artifact because the network was down. That silently "
@@ -202,7 +202,7 @@ public sealed class SchemaDiskCacheTests : IDisposable
         // Simulate "an older build wrote this cache": same file, but recorded against bundled
         // bytes that no longer match what this build ships.
         OfflineHandler first = new();
-        _ = await Offline(first).GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await Offline(first).GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         string sidecar = System.IO.File.ReadAllText(SidecarPath);
         string stale = sidecar.Replace(
@@ -222,7 +222,7 @@ public sealed class SchemaDiskCacheTests : IDisposable
 
         OfflineHandler second = new();
         SchemaRegistry registry = Offline(second);
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.NotEqual("{\"type\":\"object\"}", System.IO.File.ReadAllText(ArtifactPath),
             "A build shipping different bundled bytes must refresh a bundled-sourced cache — "
@@ -241,12 +241,12 @@ public sealed class SchemaDiskCacheTests : IDisposable
         ConditionalHandler handler = new(Body, "\"abc\"");
 
         SchemaRegistry first = new(new HttpClient(handler), sourceOverride: null, cacheDirectory: _dir);
-        _ = await first.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await first.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
         Assert.Equal(1, handler.BodiesServed);
         DateTimeOffset? firstFetchedAt = first.ProvenanceFor(File)!.FetchedUtc;
 
         SchemaRegistry second = new(new HttpClient(handler), sourceOverride: null, cacheDirectory: _dir);
-        _ = await second.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await second.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal("\"abc\"", handler.LastIfNoneMatch,
             "The second launch must replay the stored ETag, or the 304 path never engages.");
@@ -263,11 +263,11 @@ public sealed class SchemaDiskCacheTests : IDisposable
     {
         // Offline first, so the cache is bundled-sourced.
         OfflineHandler offline = new();
-        _ = await Offline(offline).GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await Offline(offline).GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         ConditionalHandler handler = new("""{"type":"object"}""", "\"zzz\"");
         SchemaRegistry registry = new(new HttpClient(handler), sourceOverride: null, cacheDirectory: _dir);
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Null(handler.LastIfNoneMatch,
             "Replaying a tag recorded against a BUNDLED artifact invites a 304 meaning 'your copy "
@@ -282,14 +282,14 @@ public sealed class SchemaDiskCacheTests : IDisposable
     public async Task ACorruptArtifact_IsRebuiltRatherThanParsed()
     {
         OfflineHandler first = new();
-        _ = await Offline(first).GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await Offline(first).GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         // Truncation is the realistic corruption: a killed process mid-write.
         System.IO.File.WriteAllText(ArtifactPath, "{\"type\":\"obj");
 
         OfflineHandler second = new();
         SchemaRegistry registry = Offline(second);
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         Assert.True(System.IO.File.ReadAllText(ArtifactPath).Length > 100,
             "A digest mismatch must rebuild. Parsing a truncated schema yields one that permits "
@@ -303,14 +303,14 @@ public sealed class SchemaDiskCacheTests : IDisposable
     {
         ConditionalHandler online = new("""{"type":"object","properties":{"x":{"type":"string"}}}""", "\"v1\"");
         SchemaRegistry fetched = new(new HttpClient(online), sourceOverride: null, cacheDirectory: _dir);
-        _ = await fetched.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await fetched.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
         string before = System.IO.File.ReadAllText(ArtifactPath);
 
         SchemaRegistry forced = new(
             new HttpClient(new OfflineHandler()),
             SchemaSourceOverride.Bundled,
             cacheDirectory: _dir);
-        _ = await forced.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await forced.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(before, System.IO.File.ReadAllText(ArtifactPath),
             "⛔ A debug flag must not mutate durable state — and writing here would clobber a "
@@ -324,7 +324,7 @@ public sealed class SchemaDiskCacheTests : IDisposable
     public async Task ARegistryWithNoCacheDirectory_WritesNothing()
     {
         SchemaRegistry registry = new(new HttpClient(new OfflineHandler()));
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, Directory.GetFileSystemEntries(_dir).Length,
             "Null means no disk. This is what keeps the 34 bare-registry test sites off a real "

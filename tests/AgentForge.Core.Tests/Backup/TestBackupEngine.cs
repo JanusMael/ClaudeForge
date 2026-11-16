@@ -1,5 +1,7 @@
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -28,6 +30,13 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// </remarks>
 internal static class TestBackupEngine
 {
+    /// <summary>
+    /// Claude Code and Claude Desktop, the products the engine restored by default until plans/00008
+    /// step 6 made the caller name them.
+    /// </summary>
+    internal static IReadOnlyList<ProductDescriptor> ClaudeProducts { get; } =
+        [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct];
+
     /// <summary>A shared engine over the default environment, for fixtures that do not relocate it.</summary>
-    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty);
+    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, ClaudeProducts);
 }

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using Bennewitz.Ninja.AgentForge.Core.Platform;
+using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -83,7 +84,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         ws.SetValue("hooks", edited["hooks"]!.DeepClone(), ConfigScope.User);
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         if (errors.Count != 0)
         {
@@ -141,7 +142,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         }, ConfigScope.User);
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, isClaudeCode: true, ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "A hook that matches no anyOf branch must still emit errors — the "

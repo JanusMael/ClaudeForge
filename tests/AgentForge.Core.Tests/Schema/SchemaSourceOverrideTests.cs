@@ -85,7 +85,7 @@ public sealed class SchemaSourceOverrideTests
         ServingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Bundled);
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, handler.Calls,
             "The network was contacted despite --schema-source bundled, so the flag only changes "
@@ -101,7 +101,7 @@ public sealed class SchemaSourceOverrideTests
         using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
 
         await Assert.ThrowsAsync<SchemaUnavailableException>(
-            () => registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken));
+            () => registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken));
 
         Assert.True(handler.Calls > 0, "Premise: the fetch must have been attempted.");
     }
@@ -112,7 +112,7 @@ public sealed class SchemaSourceOverrideTests
         ServingHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         Assert.Equal(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source);
         Assert.True(handler.Calls > 0);
@@ -131,7 +131,7 @@ public sealed class SchemaSourceOverrideTests
         OfflineHandler handler = new();
         using SchemaRegistry registry = new(new HttpClient(handler));
 
-        _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+        _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
         Assert.Equal(SchemaSource.Bundled, registry.ProvenanceFor(File)!.Source);
     }
@@ -154,7 +154,7 @@ public sealed class SchemaSourceOverrideTests
             ServingHandler handler = new();
             using SchemaRegistry registry = new(new HttpClient(handler));
 
-            _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+            _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
             MessageAssert.Equal(0, handler.Calls,
                 "The process-wide override did not reach a registry constructed without one, so "
@@ -181,7 +181,7 @@ public sealed class SchemaSourceOverrideTests
             ServingHandler handler = new();
             using SchemaRegistry registry = new(new HttpClient(handler), SchemaSourceOverride.Fetched);
 
-            _ = await registry.GetSchemaAsync(Url, File, TestContext.Current.CancellationToken);
+            _ = await registry.GetSchemaAsync(BundledProduct.For(Url, File), TestContext.Current.CancellationToken);
 
             MessageAssert.Equal(SchemaSource.Fetched, registry.ProvenanceFor(File)!.Source,
                 "The constructor argument lost to the process default.");

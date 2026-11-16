@@ -108,6 +108,6 @@ public sealed class ProductScopeLadderTests
         protected override IReadOnlyList<DiscoveredFile> DiscoverFiles(string? projectRoot) => [];
 
         protected override IBackupClient CreateBackupClient() =>
-            new BackupClient(new BackupEngine(ClaudeEnvironment.Empty), [Product]);
+            new BackupClient(new BackupEngine(ClaudeEnvironment.Empty, [Product]), [Product]);
     }
 }
