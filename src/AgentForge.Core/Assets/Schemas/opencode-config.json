@@ -494,6 +494,9 @@
         "portable_shell_scanner": {
           "type": "boolean"
         },
+        "codemode_vm": {
+          "type": "boolean"
+        },
         "all_flags": {
           "type": "boolean"
         },
@@ -512,13 +515,10 @@
         "artifacts": {
           "type": "boolean"
         },
-        "codemode_vm": {
-          "type": "boolean"
-        },
-        "shell_timeout_background": {
-          "type": "boolean"
-        },
         "console_watches": {
+          "type": "boolean"
+        },
+        "mcp_events": {
           "type": "boolean"
         },
         "part_rows": {
@@ -2347,6 +2347,27 @@
         "none"
       ]
     },
+    "Provider.Tls": {
+      "type": "object",
+      "properties": {
+        "cert": {
+          "type": "string",
+          "description": "PEM client certificate, usually `{file:/path/to/client.pem}`"
+        },
+        "key": {
+          "type": "string",
+          "description": "PEM private key, usually `{file:/path/to/client.key}`"
+        },
+        "passphrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cert",
+        "key"
+      ],
+      "additionalProperties": false
+    },
     "Config.Provider.Settings": {
       "type": "object",
       "properties": {
@@ -2400,6 +2421,9 @@
         },
         "encoding": {
           "$ref": "#/$defs/Provider.Encoding"
+        },
+        "tls": {
+          "$ref": "#/$defs/Provider.Tls"
         }
       },
       "allOf": [
@@ -2497,6 +2521,14 @@
         }
       ]
     },
+    "Tool.FreeformFormat": {
+      "type": "string",
+      "enum": [
+        "text",
+        "regex",
+        "lark"
+      ]
+    },
     "Config.Model.Reasoning": {
       "anyOf": [
         {
@@ -2561,6 +2593,12 @@
       "properties": {
         "tools": {
           "type": "boolean"
+        },
+        "freeform": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tool.FreeformFormat"
+          }
         },
         "input": {
           "type": "array",
