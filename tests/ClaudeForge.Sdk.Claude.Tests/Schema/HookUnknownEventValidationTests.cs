@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// Pins the schema's behaviour when the user (via the editor or external edit)
@@ -41,7 +41,7 @@ public sealed class HookUnknownEventValidationTests
     private static SettingsWorkspace WorkspaceWithUnknownEvent(string eventName)
     {
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
 
         JsonObject hookEntry = new()
         {

@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// Smoke-tests the anyOf-leakage suppression in
@@ -86,7 +86,7 @@ public sealed class AnyOfLeakageCoverageTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json",
             baseline.DeepClone()!.AsObject(),
             isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         ws.SetValue(key, value, ConfigScope.User);
         return ws;
     }
@@ -344,7 +344,7 @@ public sealed class AnyOfLeakageCoverageTests
                 ["model"] = 42, // single type-mismatch error
             },
             isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
 
         using SchemaRegistry registry = CreateRegistry();
         IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);

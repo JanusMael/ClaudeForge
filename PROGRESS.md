@@ -425,7 +425,26 @@ step 3. The items below are kept in order; those marked ✅ are done.
      app restores and validates exactly what it did.
    ✅ **Released as `packages-v2026.4.1116`** with #162 and #164, and pinned, so `Published Version`
    builds 6a's API again.
-   ▶ **Next: step 6b**, the move.
+   ✅ **Step 6b-1, Claude's data tests leave Core's tests (2026-11-17, branch
+   `refactor/claude-data-to-sdk-claude`):** tests only, nothing in `src/` changed. 13 files that
+   check Claude's schemas, overlay and model catalog moved whole to `ClaudeForge.Sdk.Claude.Tests`;
+   three were split under the same class name (`SchemaDeprecatedTests` 2 tests,
+   `SchemaLoadPrecedenceTests` 2, `SchemaRegistryOverlayTests` 6). The load-chain, disk-cache,
+   source-override and refresher tests stay in Core on a neutral sample bundle in
+   `tests/AgentForge.Core.Tests/BundledProduct.cs`, whose overlay is the only source of `model`'s
+   `default` and `examples`; **canaried**: emptying that overlay reddens exactly
+   `TheOverlayIsAppliedToAFetchedCopy_NotOnlyTheBundledOne`. `Compare-TestNames.ps1 -Pairing`
+   over both projects against `main`: **0 differences, 74 clean moves**, 1,025 methods each side;
+   suite total unchanged at 3,437.
+   - **Drift: step 6b is three pull requests.** 6b-1 (these tests), 6b-2 (the backup tests and the
+     Shell and Sdk test clients stop building on Claude's descriptors), 6b-3 (the data,
+     `ClaudeProducts` and `ModelCatalogLoader` move, with the scripts, workflows and docs). Only
+     6b-3 changes a package, so only it needs a package release.
+   - ⚠ **Still read straight from Core's manifest, for 6b-3 to repoint:**
+     `ModelCatalogSchemaParityTests` (`BundledResource`), `PermissionToolsTests` (scans Core's
+     manifest), and Core's `BundledFilesThroughDescriptorTests`' check that `CoreBundledFiles`
+     carries Claude's files. OpenCode's tests keep reading Core's manifest until step 7.
+   ▶ **Next: step 6b-2.**
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

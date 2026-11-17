@@ -1,7 +1,5 @@
-using System.Reflection;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Json.Schema;
-using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 
@@ -13,49 +11,12 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// editor list unless a value is already set at some scope (so users can
 /// still remove legacy values).
 /// </summary>
+/// <remarks>
+/// Synthetic schemas only. The two tests that check the heuristic against Claude Code's bundled
+/// schema live in <c>ClaudeForge.Sdk.Claude.Tests</c> under the same class name.
+/// </remarks>
 public sealed class SchemaDeprecatedTests
 {
-    private static JsonSchemaNode LoadBundledClaudeCodeRoot()
-    {
-        Assembly assembly = typeof(SchemaRegistry).Assembly;
-        string resourceName = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
-
-        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        MessageAssert.NotNull(stream, $"Embedded resource '{resourceName}' must exist.");
-        using StreamReader reader = new(stream!);
-        string json = reader.ReadToEnd();
-
-        BuildOptions opts = new() { SchemaRegistry = new Json.Schema.SchemaRegistry() };
-        JsonSchema schema = JsonSchema.FromText(json, opts);
-        return schema.Root!;
-    }
-
-    [Fact]
-    public void IncludeCoAuthoredBy_IsFlagged_Deprecated_ByDescriptionHeuristic()
-    {
-        JsonSchemaNode root = LoadBundledClaudeCodeRoot();
-        IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(root);
-
-        SchemaNode? node = top.FirstOrDefault(n => n.Name == "includeCoAuthoredBy");
-        MessageAssert.NotNull(node, "includeCoAuthoredBy property must exist at top level of the schema");
-
-        Assert.True(node!.IsDeprecated,
-            "The description begins with 'DEPRECATED' so the heuristic should mark IsDeprecated=true.");
-    }
-
-    [Fact]
-    public void NonDeprecatedSibling_Is_NotFlagged()
-    {
-        JsonSchemaNode root = LoadBundledClaudeCodeRoot();
-        IReadOnlyList<SchemaNode> top = SchemaTreeBuilder.BuildTopLevel(root);
-
-        // `model` has no DEPRECATED prefix and no deprecated keyword.
-        SchemaNode? node = top.FirstOrDefault(n => n.Name == "model");
-        Assert.NotNull(node);
-        Assert.False(node!.IsDeprecated,
-            "Non-deprecated properties must not carry the IsDeprecated flag.");
-    }
-
     [Fact]
     public void ExplicitDeprecatedKeyword_Wins_OverDescriptionHeuristic()
     {

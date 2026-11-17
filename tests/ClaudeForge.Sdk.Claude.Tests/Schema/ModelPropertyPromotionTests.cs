@@ -4,7 +4,7 @@ using Json.Schema;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 using SchemaValueType = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValueType;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// the <c>model</c> property in the bundled Claude Code schema must

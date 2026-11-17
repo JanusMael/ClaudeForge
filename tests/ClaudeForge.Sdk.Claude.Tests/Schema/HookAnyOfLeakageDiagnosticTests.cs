@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// Locks the fix for the user-reported 2026-05-01 issue (3.10 manual test):
@@ -80,7 +80,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         SettingsDocument doc = new(ConfigScope.User, "settings.json",
             baseline.DeepClone()!.AsObject(),
             isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         ws.SetValue("hooks", edited["hooks"]!.DeepClone(), ConfigScope.User);
 
         using SchemaRegistry registry = CreateRegistry();
@@ -127,7 +127,7 @@ public sealed class HookAnyOfLeakageDiagnosticTests
         // would silently swallow legitimate user mistakes.
         SettingsWorkspace ws = new(
             [new SettingsDocument(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false)],
-            TestMergePolicy.Inferring);
+            ClaudeMergePolicy.Instance);
         ws.SetValue("hooks", new JsonObject
         {
             ["Stop"] = new JsonArray(new JsonObject

@@ -36,8 +36,8 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 [Collection("DoNotParallelize")]
 public sealed class SchemaSourceOverrideTests
 {
-    private const string Url = "https://json.schemastore.org/claude-code-settings.json";
-    private const string File = "claude-code-settings.json";
+    private const string Url = BundledProduct.SampleUrl;
+    private const string File = BundledProduct.SampleSchemaFileName;
 
     /// <summary>Fails every request, and records that it was asked.</summary>
     private sealed class OfflineHandler : HttpMessageHandler
