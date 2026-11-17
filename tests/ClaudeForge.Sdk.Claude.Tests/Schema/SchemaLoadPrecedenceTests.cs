@@ -21,14 +21,46 @@ public sealed class SchemaLoadPrecedenceTests
     private const string NetworkSentinelProperty = "zzzFetchedFromNetworkSentinel";
 
     /// <summary>Serves one canned body to every request.</summary>
+    /// <remarks>
+    /// Keeps every response it hands out and disposes them with itself, so none outlives the test
+    /// whether or not the caller disposes it.
+    /// </remarks>
     private sealed class CannedHandler(string body) : HttpMessageHandler
     {
+        private readonly List<HttpResponseMessage> _responses = [];
+
         protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            HttpResponseMessage response = new(HttpStatusCode.OK)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
-            });
+            };
+            lock (_responses)
+            {
+                _responses.Add(response);
+            }
+
+            return Task.FromResult(response);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                lock (_responses)
+                {
+                    foreach (HttpResponseMessage response in _responses)
+                    {
+                        response.Dispose();
+                    }
+
+                    _responses.Clear();
+                }
+            }
+
+            base.Dispose(disposing);
+        }
     }
 
     /// <summary>A schema declaring one sentinel property and nothing else.</summary>
