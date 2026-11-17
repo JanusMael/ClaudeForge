@@ -1,0 +1,9 @@
+<Project>
+  <!-- A shield, committed, and written again by fetch-reference.cs beside it when it is missing.
+
+       The folders beside it are read-only upstream checkouts. MSBuild imports the first
+       Directory.Build.props it finds walking up from a project, so a checkout that ships none of
+       its own, and the script, would import the repository's, with its packages, its analyzers
+       and warnings as errors. They find this empty one first, and import nothing: the script
+       states its own settings at its top. -->
+</Project>

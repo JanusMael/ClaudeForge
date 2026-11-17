@@ -166,7 +166,8 @@ packaging/BBWinget.md
 # manifests live in microsoft/winget-pkgs; this is throwaway generation output.
 /manifests/
 
-reference/semi-avalonia/
+# The checkouts reference/fetch-reference.cs fetches; the files beside them are tracked
+/reference/*/
 
 # PublicSurfaceBaselineTests writes the observed surface beside the baseline when they differ,
 # so the diff can be read and — if the change was deliberate — copied over the baseline. It is
