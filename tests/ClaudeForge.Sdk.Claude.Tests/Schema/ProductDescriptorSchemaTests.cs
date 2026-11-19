@@ -2,7 +2,7 @@ using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// Guards that each product's <see cref="ProductDescriptor"/> resolves to <b>its own</b>

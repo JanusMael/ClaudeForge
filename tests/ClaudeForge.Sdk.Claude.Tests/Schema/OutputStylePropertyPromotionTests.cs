@@ -1,10 +1,9 @@
-using System.Reflection;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Json.Schema;
 using SchemaRegistry = Json.Schema.SchemaRegistry;
 using SchemaValueType = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValueType;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// <c>outputStyle</c> must promote to
@@ -29,13 +28,9 @@ public sealed class OutputStylePropertyPromotionTests
 {
     private static JsonSchemaNode LoadBundledClaudeCodeRoot()
     {
-        Assembly assembly = typeof(Core.Schema.SchemaRegistry).Assembly;
-        string resourceName = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
-
-        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        MessageAssert.NotNull(stream, $"Embedded resource '{resourceName}' must exist.");
-        using StreamReader reader = new(stream!);
-        string json = reader.ReadToEnd();
+        byte[]? bytes = BundledProduct.ClaudeFiles.TryRead("claude-code-settings.json");
+        MessageAssert.NotNull(bytes, "Claude's bundled files must carry claude-code-settings.json.");
+        string json = System.Text.Encoding.UTF8.GetString(bytes!);
 
         BuildOptions opts = new() { SchemaRegistry = new SchemaRegistry() };
         JsonSchema schema = JsonSchema.FromText(json, opts);

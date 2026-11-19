@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// The user's <c>~/.claude/settings.json</c> has:
@@ -164,7 +164,7 @@ public sealed class UserReportedHookValidationTests
             ["hooks"] = BuildUserHooksBlock(),
         };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         // Simulate the user's edit: change permissions.defaultMode (anything
         // unrelated to hooks). The doc must be dirty for ValidateWorkspaceAsync
         // to visit it. "default" is in the schema's enum.
@@ -215,7 +215,7 @@ public sealed class UserReportedHookValidationTests
         // whose Root equals the user's structure.
         JsonObject initialRoot = new() { ["hooks"] = BuildUserHooksBlock() };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         // Force-dirty by setting an unrelated key.
         ws.SetValue("model", JsonValue.Create("opus"), ConfigScope.User);
 

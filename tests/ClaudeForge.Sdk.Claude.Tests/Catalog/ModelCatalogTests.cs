@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Catalog;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Catalog;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Catalog;
 
 /// <summary>
 /// Locks the bundled model catalog: that it embeds + loads, and that the

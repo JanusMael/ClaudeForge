@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
-using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
@@ -25,8 +24,8 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// </remarks>
 public sealed class SchemaRefresherTests
 {
-    private static readonly ProductDescriptor Checkable = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
-    private static readonly ProductDescriptor NoUpstream = SchemaRegistry.ClaudeDesktopProduct;
+    private static readonly ProductDescriptor Checkable = BundledProduct.Sample();
+    private static readonly ProductDescriptor NoUpstream = BundledProduct.SampleWithNoUpstream;
 
     private static string Doc(string marker) =>
         $$"""
@@ -177,16 +176,16 @@ public sealed class SchemaRefresherTests
     /// ⭐ A product with no upstream is omitted, not reported as up to date.
     /// </summary>
     /// <remarks>
-    /// Claude Desktop's schema is hand-maintained. Listing it in the result — with any status —
+    /// A product with no upstream (Claude Desktop's schema is hand-maintained). Listing it in the result — with any status —
     /// would tell the user a check happened for it, and none did.
     /// </remarks>
     [Fact]
     public async Task AProductWithNoUpstream_IsOmittedEntirely()
     {
         Assert.False(SchemaRefresher.IsCheckable(NoUpstream),
-            "Premise: Claude Desktop has no published schema URL.");
+            "Premise: the bundled-only sample has no published schema URL.");
         Assert.True(SchemaRefresher.IsCheckable(Checkable),
-            "Premise: Claude Code does, or the assertion below passes vacuously.");
+            "Premise: the sample does, or the assertion below passes vacuously.");
 
         using SchemaRegistry registry = new(new HttpClient(new ConstantHandler("stable")));
 

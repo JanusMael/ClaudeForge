@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// diagnostic suite — concern: when the workspace already had
@@ -64,7 +64,7 @@ public sealed class HookValidationDeltaTests
             ["hooks"] = hooksObject,
         };
         SettingsDocument doc = new(ConfigScope.User, "settings.json", initialRoot, isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
         // Unrelated edit (e.g. user changed permissions.defaultMode in the
         // app — but for these tests, anything that dirties the doc without
         // touching hooks works).
@@ -149,7 +149,7 @@ public sealed class HookValidationDeltaTests
         using SchemaRegistry registry = CreateRegistry();
         // Baseline: clean (no hooks).
         SettingsDocument doc = new(ConfigScope.User, "settings.json", new JsonObject(), isReadOnly: false);
-        SettingsWorkspace ws = new([doc], TestMergePolicy.Inferring);
+        SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
 
         // User adds a new malformed hook via the editor.
         JsonObject hooks = new()

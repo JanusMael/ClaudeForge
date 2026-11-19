@@ -31,8 +31,8 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
 /// </remarks>
 public sealed class SchemaDiskCacheTests : IDisposable
 {
-    private const string File = "claude-code-settings.json";
-    private const string Url = "https://example.invalid/claude-code-settings.json";
+    private const string File = BundledProduct.SampleSchemaFileName;
+    private const string Url = BundledProduct.SampleUrl;
 
     private string _dir = string.Empty;
 

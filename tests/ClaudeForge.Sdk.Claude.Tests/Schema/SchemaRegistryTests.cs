@@ -2,7 +2,7 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Json.Schema;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// Tests for SchemaRegistry caching and loading behaviour.

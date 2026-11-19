@@ -6,7 +6,7 @@ using Bennewitz.Ninja.AgentForge.Core.Catalog;
 using Json.Schema;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Catalog;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Catalog;
 
 /// <summary>
 /// Keeps the model catalog and the bundled JSON schema in lockstep. The catalog

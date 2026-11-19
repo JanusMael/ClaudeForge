@@ -1,6 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Schema;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Schema;
 
 /// <summary>
 /// Locks <see cref="SchemaRegistry.GetHookCommandVariants"/>: it reads the hook command
