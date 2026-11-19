@@ -100,8 +100,8 @@ public sealed class ExportArchiveTests : IDisposable
         MessageAssert.SequenceEqual(
             new[]
             {
-                SchemaRegistry.ClaudeCodeArchiveFolder,
-                SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder,
+                ClaudeProducts.ClaudeCodeArchiveFolder,
+                ClaudeProducts.ClaudeDesktopProduct.ArchiveFolder,
             },
             clients,
             "The manifest must name BOTH open products, in navigation order. One entry means "

@@ -126,10 +126,10 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
 
     private static List<ProductSection> BuildSections(ClaudeEnvironment env) =>
     [
-        new(SchemaRegistry.ClaudeCodeProductFor(env), NavTitleClaudeCode,
+        new(ClaudeProducts.ClaudeCodeProductFor(env), NavTitleClaudeCode,
             () => Strings.WorkspaceNameClaudeCode, ".claude/settings.json",
             ClaudeDangerTable.Settings),
-        new(SchemaRegistry.ClaudeDesktopProduct, NavTitleClaudeDesktop,
+        new(ClaudeProducts.ClaudeDesktopProduct, NavTitleClaudeDesktop,
             () => Strings.WorkspaceNameClaudeDesktop, "claude_desktop_config.json"),
     ];
 
@@ -181,14 +181,14 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
     // miss the other.
     internal ClaudeConfigClientBase? ClaudeCodeSdk
     {
-        get => SectionFor(SchemaRegistry.ClaudeCodeProductId).Client;
-        private set => SectionFor(SchemaRegistry.ClaudeCodeProductId).Client = value;
+        get => SectionFor(ClaudeProducts.ClaudeCodeProductId).Client;
+        private set => SectionFor(ClaudeProducts.ClaudeCodeProductId).Client = value;
     }
 
     internal ClaudeConfigClientBase? ClaudeDesktopSdk
     {
-        get => SectionFor(SchemaRegistry.ClaudeDesktopProduct).Client;
-        private set => SectionFor(SchemaRegistry.ClaudeDesktopProduct).Client = value;
+        get => SectionFor(ClaudeProducts.ClaudeDesktopProduct).Client;
+        private set => SectionFor(ClaudeProducts.ClaudeDesktopProduct).Client = value;
     }
 
     private bool _disposed;
@@ -3971,7 +3971,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         // / screenshots to exercise badge styling without bumping the schema.
         bool flagAllAsNew = DebugFlags.ShowAllNewBadges;
 
-        ProductDescriptor ccProduct = SchemaRegistry.ClaudeCodeProductFor(_env);
+        ProductDescriptor ccProduct = ClaudeProducts.ClaudeCodeProductFor(_env);
         JsonSchemaNode ccSchema = await _schemaRegistry.GetSettingsNodeAsync(ccProduct, CancellationToken.None);
         HashSet<string> ccKnown = _snapshotService.LoadSnapshot("claude-code-settings");
         // Offload the CPU-bound schema-tree build off the UI thread — it produces plain
@@ -3988,7 +3988,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         }
 
         JsonSchemaNode dtSchema =
-            await _schemaRegistry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, CancellationToken.None);
+            await _schemaRegistry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, CancellationToken.None);
         HashSet<string> dtKnown = _snapshotService.LoadSnapshot("claude-desktop-config");
         // Same off-thread schema-tree build as the Claude Code section above.
         IReadOnlyList<SchemaNode> dtNodes =
@@ -4486,12 +4486,12 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
                     // silently blank for most keys, confidently wrong on any that collide.
                     ? NavigationTreeBuilder.BuildGroups(
                         ccNodes, ccWorkspace, browsePath, _ccScopeContext, ccSdk, unsupportedShapes,
-                        SectionFor(SchemaRegistry.ClaudeCodeProductId).Danger)
+                        SectionFor(ClaudeProducts.ClaudeCodeProductId).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>(),
                 dtWorkspace is not null && dtSdk is not null
                     ? NavigationTreeBuilder.BuildGroups(
                         dtNodes, dtWorkspace, browsePath, _dtScopeContext, dtSdk, unsupportedShapes,
-                        SectionFor(SchemaRegistry.ClaudeDesktopProduct).Danger)
+                        SectionFor(ClaudeProducts.ClaudeDesktopProduct).Danger)
                     : (IReadOnlyList<NavigationGroup>)Array.Empty<NavigationGroup>()));
         editorBuildSw.Stop();
         Log.Debug(
@@ -4543,7 +4543,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = _aboutCodeVm,
         });
 
-        ApplyProvenanceBadge(ccHeader, _schemaRegistry, SchemaRegistry.ClaudeCodeProductFor(_env));
+        ApplyProvenanceBadge(ccHeader, _schemaRegistry, ClaudeProducts.ClaudeCodeProductFor(_env));
         NavigationTree.Add(ccHeader);
 
         // --- Claude Desktop section ---
@@ -4586,7 +4586,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
             Editor = _aboutDesktopVm,
         });
 
-        ApplyProvenanceBadge(dtHeader, _schemaRegistry, SchemaRegistry.ClaudeDesktopProduct);
+        ApplyProvenanceBadge(dtHeader, _schemaRegistry, ClaudeProducts.ClaudeDesktopProduct);
         NavigationTree.Add(dtHeader);
 
         // One-time aggregated LOG entry if any setting in either section has no

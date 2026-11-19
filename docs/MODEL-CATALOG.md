@@ -29,11 +29,11 @@ and lets the lists evolve without touching view-model code.
 ## Layers (SDK-first)
 
 ```
-ClaudeForge.Core/Assets/ModelCatalog/        ← bundled data (embedded resource)
+ClaudeForge.Sdk.Claude/Assets/ModelCatalog/  ← bundled data (embedded resource)
   model-catalog.json            base — the source of truth
   model-catalog.schema.json     Draft 2020-12 schema validating the base
   model-catalog.overlay.json    hand-curated RFC-7396 overrides (ships empty)
-ClaudeForge.Core/Catalog/        ModelCatalog domain + ModelCatalogLoader
+ClaudeForge.Sdk.Claude/Catalog/  ModelCatalog domain + ModelCatalogLoader
         ▲
 ClaudeForge.Sdk/Models/          IModelCatalogAccessor  →  IClaudeConfigClient.Models
         ▲                        (queries + coercion rule; the public contract)

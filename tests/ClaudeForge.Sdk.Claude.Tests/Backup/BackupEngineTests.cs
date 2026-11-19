@@ -88,7 +88,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(result.Succeeded);
 
@@ -113,7 +113,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(result.Succeeded, result.Message);
 
@@ -160,7 +160,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Full,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(result.Succeeded, result.Message);
 
@@ -209,7 +209,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(result.Succeeded, result.Message);
@@ -243,7 +243,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(result.Succeeded);
@@ -280,7 +280,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded, create.Message);
 
@@ -316,7 +316,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(result.Succeeded, result.Message);
@@ -357,7 +357,7 @@ public sealed class BackupEngineTests : IDisposable
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded, create.Message);
 
@@ -386,7 +386,7 @@ public sealed class BackupEngineTests : IDisposable
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded);
 
@@ -418,7 +418,7 @@ public sealed class BackupEngineTests : IDisposable
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded);
 
@@ -448,7 +448,7 @@ public sealed class BackupEngineTests : IDisposable
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded);
 
@@ -475,7 +475,7 @@ public sealed class BackupEngineTests : IDisposable
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded);
 
@@ -501,7 +501,7 @@ public sealed class BackupEngineTests : IDisposable
         BackupResult create = await TestBackupEngine.Default.CreateAsync(new BackupRequest
         {
             DestinationZipPath = dest,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded);
 
@@ -566,7 +566,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded, create.Message);
 
@@ -621,14 +621,14 @@ public sealed class BackupEngineTests : IDisposable
         // Deliberately a value-pinning test. These two strings are baked into every archive
         // ClaudeForge has ever written; they are not free to change, and the only way to say
         // so is to write them down somewhere a change has to walk past.
-        Assert.Equal("ClaudeCode", SchemaRegistry.ClaudeCodeArchiveFolder);
-        Assert.Equal("ClaudeDesktop", SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
+        Assert.Equal("ClaudeCode", ClaudeProducts.ClaudeCodeArchiveFolder);
+        Assert.Equal("ClaudeDesktop", ClaudeProducts.ClaudeDesktopProduct.ArchiveFolder);
 
         // Not derived from Id, and must not be "fixed" to match it: the ids were chosen for
         // code, the folder names were already on disk.
         MessageAssert.NotEqual(
-            SchemaRegistry.ClaudeCodeProductId,
-            SchemaRegistry.ClaudeCodeArchiveFolder,
+            ClaudeProducts.ClaudeCodeProductId,
+            ClaudeProducts.ClaudeCodeArchiveFolder,
             "The two vocabularies differ on purpose — claude-code vs ClaudeCode. Collapsing "
             + "them would orphan every existing archive.");
     }
@@ -648,7 +648,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded, create.Message);
         Assert.NotNull(create.Manifest);
@@ -681,7 +681,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(create.Succeeded, create.Message);
 
@@ -725,16 +725,16 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(result.Succeeded, result.Message);
 
         List<string> schemas = ListBundledSchemas(dest);
 
-        MessageAssert.Contains(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName, schemas,
+        MessageAssert.Contains(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName, schemas,
             "A backup must carry the schema its own config is validated against.");
-        MessageAssert.DoesNotContain(SchemaRegistry.ClaudeDesktopProduct.SchemaFileName, schemas,
+        MessageAssert.DoesNotContain(ClaudeProducts.ClaudeDesktopProduct.SchemaFileName, schemas,
             "A Claude Code-only archive must not carry another product's schema. That file "
             + "can never match anything RestoreEngine routes, so it is pure weight — and the "
             + "same rule is what keeps a second agent's schemas out of this app's backups.");
@@ -754,7 +754,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(result.Succeeded, result.Message);
@@ -762,7 +762,7 @@ public sealed class BackupEngineTests : IDisposable
         // Claude Code is the product that actually has an overlay resource; asserting the
         // pairing on a product without one would prove nothing.
         string overlay = SchemaRegistry.OverlayFileNameFor(
-            SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName);
+            ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName);
         MessageAssert.Contains(overlay, ListBundledSchemas(dest),
             $"'{overlay}' is merged onto the base schema at load time, so it has to be in "
             + "the archive too or restore validates against rules the app does not use.");
@@ -781,14 +781,14 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.SettingsOnly,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct],
         }, ct: TestContext.Current.CancellationToken, progress: null);
 
         Assert.True(result.Succeeded, result.Message);
 
         List<string> schemas = ListBundledSchemas(dest);
-        Assert.Contains(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName, schemas);
-        MessageAssert.Contains(SchemaRegistry.ClaudeDesktopProduct.SchemaFileName, schemas,
+        Assert.Contains(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaFileName, schemas);
+        MessageAssert.Contains(ClaudeProducts.ClaudeDesktopProduct.SchemaFileName, schemas,
             "The second requested product's schema is missing — a loop that stops after the "
             + "first product looks identical to a correct one in every single-product test.");
     }
@@ -838,7 +838,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             IncludeCredentials = true, // user opted in — sanitized still wins
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(result.Succeeded, result.Message);
@@ -908,7 +908,7 @@ public sealed class BackupEngineTests : IDisposable
         {
             DestinationZipPath = dest,
             Mode = BackupMode.Sanitized,
-            Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+            Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
         }, ct: TestContext.Current.CancellationToken, progress: null);
         Assert.True(result.Succeeded, result.Message);
 
@@ -971,7 +971,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projectRoot },
             }, ct: TestContext.Current.CancellationToken, progress: null);
 
@@ -1062,7 +1062,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 // NO explicit project — exercises the "Full backup with no
                 // project selected" path the user asked about.
             }, ct: TestContext.Current.CancellationToken, progress: null);
@@ -1118,7 +1118,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             }, ct: TestContext.Current.CancellationToken, progress: null);
 
             Assert.True(result.Succeeded, result.Message);
@@ -1164,7 +1164,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             }, ct: TestContext.Current.CancellationToken, progress: null);
 
             Assert.True(result.Succeeded, result.Message);
@@ -1204,7 +1204,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.Full,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projShared },  // same path also in .claude.json
             }, ct: TestContext.Current.CancellationToken, progress: null);
 
@@ -1267,7 +1267,7 @@ public sealed class BackupEngineTests : IDisposable
             {
                 DestinationZipPath = dest,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
                 ExplicitProjectDirs = new[] { projectRoot },
             }, ct: TestContext.Current.CancellationToken, progress: null);
 

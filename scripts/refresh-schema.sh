@@ -9,7 +9,9 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# The bundled schemas under src/AgentForge.Core/Assets/Schemas/ are the OFFLINE FALLBACK
+# The bundled schemas are the OFFLINE FALLBACK. Claude's live under
+# src/ClaudeForge.Sdk.Claude/Assets/Schemas/ (plans/00008 step 6b-3); OpenCode's stay under
+# src/AgentForge.Core/Assets/Schemas/ until step 7. Each table row names its own folder. They are what
 # the runtime reads when the network does not answer.  Runtime priority is
 # memory cache > HTTPS fetch (+ strip, + overlay) > bundled resource (+ strip, + overlay);
 # there is no disk cache and no empty fallback.  See CLAUDE.md "Schema loading priority".
@@ -78,15 +80,14 @@ done
 # Anchor on the script's location so relative target paths work regardless of cwd.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
-SCHEMA_DIR="$REPO_ROOT/src/AgentForge.Core/Assets/Schemas"
 
 # ── The table ────────────────────────────────────────────────────────────────
-# name|file|url — parallel-array-free so this stays bash 3.2 clean (macOS has no
-# associative arrays). Keep name equal to the file's base name.
+# name|dir|file|url — parallel-array-free so this stays bash 3.2 clean (macOS has no
+# associative arrays). Keep name equal to the file's base name; dir is relative to the repo root.
 SCHEMAS=(
-    "claude-code-settings|claude-code-settings.json|https://json.schemastore.org/claude-code-settings.json"
-    "opencode-config|opencode-config.json|https://opencode.ai/config.json"
-    "opencode-tui|opencode-tui.json|https://opencode.ai/tui.json"
+    "claude-code-settings|src/ClaudeForge.Sdk.Claude/Assets/Schemas|claude-code-settings.json|https://json.schemastore.org/claude-code-settings.json"
+    "opencode-config|src/AgentForge.Core/Assets/Schemas|opencode-config.json|https://opencode.ai/config.json"
+    "opencode-tui|src/AgentForge.Core/Assets/Schemas|opencode-tui.json|https://opencode.ai/tui.json"
 )
 
 # ANSI colours — disabled when stdout is not a tty so CI logs stay plain.
@@ -171,7 +172,7 @@ FAILED=''
 
 echo
 echo "${C_CYAN}Refreshing bundled schema(s)${C_RESET}"
-echo "  target dir : $SCHEMA_DIR"
+echo "  target dirs: src/ClaudeForge.Sdk.Claude/Assets/Schemas, src/AgentForge.Core/Assets/Schemas"
 if [[ $DRY_RUN -eq 1 ]]; then
     echo "  ${C_YELLOW}mode       : DRY RUN (no files will be written)${C_RESET}"
 fi
@@ -183,6 +184,8 @@ trap 'rm -rf "$TEMP_DIR"' EXIT
 for entry in "${SCHEMAS[@]}"; do
     NAME="${entry%%|*}"
     REST="${entry#*|}"
+    DIR="${REST%%|*}"
+    REST="${REST#*|}"
     FILE="${REST%%|*}"
     URL="${REST#*|}"
 
@@ -191,7 +194,7 @@ for entry in "${SCHEMAS[@]}"; do
     fi
     MATCHED=$((MATCHED + 1))
 
-    TARGET="$SCHEMA_DIR/$FILE"
+    TARGET="$REPO_ROOT/$DIR/$FILE"
     echo "${C_CYAN}-- $NAME${C_RESET}"
     echo "   upstream : $URL"
 
@@ -302,7 +305,7 @@ echo "${C_CYAN}Next steps:${C_RESET}"
 echo "  1. dotnet build ClaudeForge.slnx -c Debug     # the schemas still parse + bundle"
 echo "  2. dotnet test ClaudeForge.slnx -c Debug      # BundledOpenCodeSchemaTests is the"
 echo "                                                #   guard on the strip staying typed"
-echo "  3. git diff -- src/AgentForge.Core/Assets/Schemas/"
+echo "  3. git diff -- src/ClaudeForge.Sdk.Claude/Assets/Schemas/ src/AgentForge.Core/Assets/Schemas/"
 echo "  4. commit as: chore(schema): refresh bundled schemas from upstream"
 echo
 exit 0

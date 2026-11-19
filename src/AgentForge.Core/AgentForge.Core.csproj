@@ -49,10 +49,10 @@
         <ProjectReference Include="..\AgentForge.Abstractions\AgentForge.Abstractions.csproj"/>
     </ItemGroup>
 
+    <!-- OpenCode's schemas, until plans/00008 step 7. Claude's schemas, enum descriptions and model
+         catalog are embedded in ClaudeForge.Sdk.Claude since step 6b-3. -->
     <ItemGroup>
         <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
-        <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
-        <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
     </ItemGroup>
 
 </Project>

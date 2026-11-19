@@ -1,7 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Backup;
 
@@ -30,9 +29,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Backup;
 internal static class TestBackupEngine
 {
     /// <summary>Claude Code and Claude Desktop.</summary>
-    internal static IReadOnlyList<ProductDescriptor> ClaudeProducts { get; } =
-        [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct];
+    internal static IReadOnlyList<ProductDescriptor> Products { get; } =
+        [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct];
 
     /// <summary>A shared engine over the default environment, for fixtures that do not relocate it.</summary>
-    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, ClaudeProducts);
+    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, Products);
 }

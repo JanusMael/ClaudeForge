@@ -1,12 +1,5 @@
 # plans/00008 decision 1: every Claude-specific site AgentForge still holds. It may only shrink.
 # Written by ProductNeutralityTests.WriteAllowList; columns are kind, key, count.
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Descriptions.claude-code-settings.enumdescriptions.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.ModelCatalog.model-catalog.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.ModelCatalog.model-catalog.overlay.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.ModelCatalog.model-catalog.schema.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.claude-code-settings.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.claude-code-settings.overlay.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.claude-desktop-config.json	1
 resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-config.json	1
 resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.json	1
 resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.overlay.json	1
@@ -268,25 +261,6 @@ words	src/AgentForge.Core/Profile/ProfileEngine.cs	string raw = await File.ReadA
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	string raw = await File.ReadAllTextAsync(claudeMdPath, ct);	1
 words	src/AgentForge.Core/Profile/ProfileEngine.cs	string? claudeMd = null;	1
 words	src/AgentForge.Core/Profile/ProfileInfo.cs	bool HasClaudeMd,	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"Restoring claude.json…"),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"Restoring the Claude home directory…"),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	"The Claude Code binary install dir — large, platform-specific, reinstalled by the updater."),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ArchiveFolder: "ClaudeDesktop",	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ArchiveFolder: ClaudeCodeArchiveFolder,	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	CredentialFileName: ".credentials.json",	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.File("claude.json", () => PlatformPaths.ClaudeJsonPath,	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.File("claude_desktop_config.json", () => PlatformPaths.DesktopConfigPath,	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	ProductArchiveSection.Home("claude-dir", () => PlatformPaths.ClaudeHome(env),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new("claude-desktop", "Claude Desktop", "bundled://claude-desktop-config", "claude-desktop-config.json",	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new(ClaudeCodeProductId, "Claude Code", ClaudeCodeSettingsSchemaUrl, "claude-code-settings.json",	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new(["claude-dir"], ["settings.json", "settings.local.json"], Recursive: true),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new([], ["claude.json"], Recursive: false),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	new([], ["claude_desktop_config.json"], Recursive: false),	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public const string ClaudeCodeSettingsSchemaUrl = "https://json.schemastore.org/claude-code-settings.json";	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static ProductDescriptor ClaudeCodeProductFor(ClaudeEnvironment env) =>	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly ProductDescriptor ClaudeDesktopProduct =	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly string ClaudeCodeArchiveFolder = "ClaudeCode";	1
-words	src/AgentForge.Core/Schema/SchemaRegistry.cs	public static readonly string ClaudeCodeProductId = "claude-code";	1
 words	src/AgentForge.Core/Schema/SchemaTreeBuilder.cs	if ((token.Contains("ANTHROPIC_") || token.Contains("CLAUDE")) && seen.Add(token))	1
 words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeCodeSettings,	1
 words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeDesktopConfig,	1

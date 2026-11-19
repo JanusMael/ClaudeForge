@@ -4,6 +4,7 @@ using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.ClaudeForge.Localization;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -37,7 +38,7 @@ internal static class ClaudeBackupPage
     /// rather than an empty page.
     /// </remarks>
     internal static IReadOnlyList<ProductDescriptor> DefaultProductsFor(ClaudeEnvironment env) =>
-        [SchemaRegistry.ClaudeCodeProductFor(env), SchemaRegistry.ClaudeDesktopProduct];
+        [ClaudeProducts.ClaudeCodeProductFor(env), ClaudeProducts.ClaudeDesktopProduct];
 
     /// <summary>
     /// Options for the shell's Backup / Restore page.
@@ -74,12 +75,12 @@ internal static class ClaudeBackupPage
         // are a lookup rather than the descriptor's own name.
         ProductCheckboxLabel = static product =>
         {
-            if (string.Equals(product.Id, SchemaRegistry.ClaudeCodeProductId, StringComparison.Ordinal))
+            if (string.Equals(product.Id, ClaudeProducts.ClaudeCodeProductId, StringComparison.Ordinal))
             {
                 return Strings.CheckboxClaudeCode;
             }
 
-            if (string.Equals(product.Id, SchemaRegistry.ClaudeDesktopProduct.Id, StringComparison.Ordinal))
+            if (string.Equals(product.Id, ClaudeProducts.ClaudeDesktopProduct.Id, StringComparison.Ordinal))
             {
                 return Strings.CheckboxClaudeDesktop;
             }
@@ -94,8 +95,8 @@ internal static class ClaudeBackupPage
             // values are unchanged, so the cell still reads "Code+Desktop".
             ClientAbbreviations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                [SchemaRegistry.ClaudeCodeArchiveFolder] = Strings.LabelClientAbbrevClaudeCode,
-                [SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeDesktop,
+                [ClaudeProducts.ClaudeCodeArchiveFolder] = Strings.LabelClientAbbrevClaudeCode,
+                [ClaudeProducts.ClaudeDesktopProduct.ArchiveFolder] = Strings.LabelClientAbbrevClaudeDesktop,
             },
 
             // ⚠ Keyed by ProductArchiveSection.ProgressLabelId — the archive SUB-PATH, which is

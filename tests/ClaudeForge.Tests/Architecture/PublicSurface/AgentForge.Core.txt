@@ -257,72 +257,6 @@ class Bennewitz.Ninja.AgentForge.Core.Backup.ZipArchiveWriter [sealed] implement
 class Bennewitz.Ninja.AgentForge.Core.BackupConstants
     const System.String B4ForgeSuffix
     static System.String AppVersion { get; }
-class Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo>
-    .ctor(System.String Id, System.Boolean Experimental, System.Boolean RequiresAutoCapableModel, System.Boolean UserScopeOnly, System.String AliasOf = null)
-    Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo <Clone>$()
-    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo other)
-    System.Boolean Equals(System.Object obj)
-    System.Boolean Experimental { get;init; }
-    System.Boolean IsAlias { get; }
-    System.Boolean RequiresAutoCapableModel { get;init; }
-    System.Boolean UserScopeOnly { get;init; }
-    System.Int32 GetHashCode()
-    System.String AliasOf { get;init; }
-    System.String Id { get;init; }
-    System.String ToString()
-    System.Void Deconstruct(out System.String Id, out System.Boolean Experimental, out System.Boolean RequiresAutoCapableModel, out System.Boolean UserScopeOnly, out System.String AliasOf)
-    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo right)
-    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo right)
-class Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo>
-    .ctor(System.String Id, System.Int32 Order, System.Boolean Persists)
-    Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo <Clone>$()
-    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo other)
-    System.Boolean Equals(System.Object obj)
-    System.Boolean Persists { get;init; }
-    System.Int32 GetHashCode()
-    System.Int32 Order { get;init; }
-    System.String Id { get;init; }
-    System.String ToString()
-    System.Void Deconstruct(out System.String Id, out System.Int32 Order, out System.Boolean Persists)
-    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo right)
-    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo right)
-class Bennewitz.Ninja.AgentForge.Core.Catalog.ModelCatalog [sealed]
-    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo> models, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> aliases, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo> effortLevels, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo> defaultModes)
-    Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo DefaultMode(System.String id)
-    Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo Resolve(System.String idOrAlias)
-    System.Boolean IsEffortSupported(System.String modelId, System.String effort)
-    System.Boolean SupportsAutoMode(System.String modelId)
-    System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Aliases { get; }
-    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Catalog.DefaultModeCatalogInfo> DefaultModes { get; }
-    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Catalog.EffortLevelInfo> EffortLevels { get; }
-    System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo> Models { get; }
-    System.Collections.Generic.IReadOnlyList<System.String> ModelSuggestions(System.Boolean includeLegacy = false, System.Boolean include1m = true)
-    System.Collections.Generic.IReadOnlyList<System.String> PersistableEffortIds { get; }
-    System.Collections.Generic.IReadOnlyList<System.String> PersistableEffortLevels(System.String modelId)
-    System.Collections.Generic.IReadOnlyList<System.String> SupportedEffortLevels(System.String modelId)
-    System.String DefaultEffortLevel(System.String modelId)
-    System.String NearestAnalogEffort(System.String modelId, System.String effort)
-    static Bennewitz.Ninja.AgentForge.Core.Catalog.ModelCatalog Empty { get; }
-class Bennewitz.Ninja.AgentForge.Core.Catalog.ModelCatalogLoader
-    static Bennewitz.Ninja.AgentForge.Core.Catalog.ModelCatalog Load()
-class Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo>
-    .ctor(System.String Id, System.String Alias, System.String Label, System.Boolean Legacy, System.Boolean Supports1m, System.Collections.Generic.IReadOnlyList<System.String> SupportedEffortLevels, System.String DefaultEffortLevel, System.Boolean SupportsAutoMode)
-    Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo <Clone>$()
-    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo other)
-    System.Boolean Equals(System.Object obj)
-    System.Boolean Legacy { get;init; }
-    System.Boolean Supports1m { get;init; }
-    System.Boolean SupportsAutoMode { get;init; }
-    System.Collections.Generic.IReadOnlyList<System.String> SupportedEffortLevels { get;init; }
-    System.Int32 GetHashCode()
-    System.String Alias { get;init; }
-    System.String DefaultEffortLevel { get;init; }
-    System.String Id { get;init; }
-    System.String Label { get;init; }
-    System.String ToString()
-    System.Void Deconstruct(out System.String Id, out System.String Alias, out System.String Label, out System.Boolean Legacy, out System.Boolean Supports1m, out System.Collections.Generic.IReadOnlyList<System.String> SupportedEffortLevels, out System.String DefaultEffortLevel, out System.Boolean SupportsAutoMode)
-    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo right)
-    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo left, Bennewitz.Ninja.AgentForge.Core.Catalog.ModelInfo right)
 class Bennewitz.Ninja.AgentForge.Core.FileIO.ConfigFileDiscoverer
     static Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile DiscoverDesktopConfig(System.String profileName = null)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.FileIO.DiscoveredFile> DiscoverClaudeCodeSettings(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env, System.String projectRoot = null, System.String profileName = null, System.String managedRoot = null)
@@ -646,16 +580,11 @@ class Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry [sealed] implements 
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateAllWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
     System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValidationError>> ValidateWorkspaceAsync(Bennewitz.Ninja.AgentForge.Core.Settings.SettingsWorkspace workspace, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product, System.Threading.CancellationToken ct)
     System.Void Dispose()
-    const System.String ClaudeCodeSettingsSchemaUrl
-    static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeCodeProductFor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
-    static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor ClaudeDesktopProduct
     static Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry CreateWithNetwork(System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> sourceOverride = null, System.String cacheDirectory = null)
     static System.Collections.Generic.IReadOnlyDictionary<System.String, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String>> GetEnumDescriptions(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookCommandVariantInfo> GetHookCommandVariants(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
     static System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Schema.HookEventInfo> GetHookEvents(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor product)
     static System.Nullable<Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSourceOverride> ProcessSourceOverride { get;set; }
-    static System.String ClaudeCodeArchiveFolder
-    static System.String ClaudeCodeProductId
 class Bennewitz.Ninja.AgentForge.Core.Schema.SchemaSnapshotService [sealed]
     .ctor(System.String directory)
     System.Collections.Generic.HashSet<System.String> LoadSnapshot(System.String schemaName)

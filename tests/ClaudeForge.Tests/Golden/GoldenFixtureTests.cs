@@ -131,12 +131,12 @@ public sealed class GoldenFixtureTests : IDisposable
     private async Task<JsonObject> MeasureBackupAsync()
     {
         string archive = Path.Combine(_sandbox, "golden-backup.zip");
-        BackupResult result = await new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]).CreateAsync(
+        BackupResult result = await new BackupEngine(ClaudeEnvironment.Empty, [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct]).CreateAsync(
             new BackupRequest
             {
                 DestinationZipPath = archive,
                 Mode = BackupMode.SettingsOnly,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct],
             },
             progress: null,
             TestContext.Current.CancellationToken);

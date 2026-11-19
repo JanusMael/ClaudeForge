@@ -63,7 +63,7 @@ public sealed class HookUnknownEventValidationTests
         using SchemaRegistry registry = CreateRegistry();
         SettingsWorkspace workspace = WorkspaceWithUnknownEvent("PreBashToolUse");
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "Schema with additionalProperties:false on /hooks must reject the unknown event 'PreBashToolUse'.");

@@ -19,32 +19,12 @@ public class PermissionToolsTests
         // schema's $defs.permissionRule alternation — a tool added to (or removed from)
         // the schema that doesn't match the SDK constant fails here.
         //
-        // Read the schema straight from the Core assembly's embedded resource:
-        // SchemaRegistry's byte accessor is internal to Core, and the permissionRule
-        // pattern lives in the base schema (preserved across the overlay merge). Use a
-        // public Core type (ConfigScope) to locate the Core assembly without an
-        // InternalsVisibleTo dependency.
-        System.Reflection.Assembly core = typeof(ConfigScope).Assembly;
-        string? resName = null;
-        foreach (string n in core.GetManifestResourceNames())
-        {
-            if (n.EndsWith("claude-code-settings.json", System.StringComparison.Ordinal))
-            {
-                resName = n;
-                break;
-            }
-        }
+        // Read the bundled base schema, not the registry's merged copy: the permissionRule
+        // pattern lives in the base schema (preserved across the overlay merge).
+        byte[]? bytes = ClaudeProducts.BundledFiles.TryRead("claude-code-settings.json");
+        MessageAssert.NotNull(bytes, "Bundled claude-code-settings.json must be embedded in ClaudeForge.Sdk.Claude.");
 
-        MessageAssert.NotNull(resName, "Bundled claude-code-settings.json embedded resource must exist in Core.");
-
-        string json;
-        using (System.IO.Stream stream = core.GetManifestResourceStream(resName!)!)
-        using (System.IO.StreamReader reader = new(stream))
-        {
-            json = reader.ReadToEnd();
-        }
-
-        System.Text.Json.Nodes.JsonNode root = System.Text.Json.Nodes.JsonNode.Parse(json)!;
+        System.Text.Json.Nodes.JsonNode root = System.Text.Json.Nodes.JsonNode.Parse(bytes!)!;
         string? pattern = root["$defs"]?["permissionRule"]?["pattern"]?.GetValue<string>();
         Assert.False(string.IsNullOrEmpty(pattern), "$defs.permissionRule.pattern must exist.");
 

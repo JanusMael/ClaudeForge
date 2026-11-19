@@ -2,7 +2,9 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# The bundled schemas under src/AgentForge.Core/Assets/Schemas/ are the OFFLINE FALLBACK
+# The bundled schemas are the OFFLINE FALLBACK. Claude's live under
+# src/ClaudeForge.Sdk.Claude/Assets/Schemas/ (plans/00008 step 6b-3); OpenCode's stay under
+# src/AgentForge.Core/Assets/Schemas/ until step 7. Each table row names its own folder. They are what
 # the runtime reads when the network does not answer.  Runtime priority is
 # memory cache > HTTPS fetch (+ strip, + overlay) > bundled resource (+ strip, + overlay);
 # there is no disk cache and no empty fallback.  See CLAUDE.md "Schema loading priority".
@@ -90,15 +92,16 @@ $ErrorActionPreference = 'Stop'
 # (CI / nested shells / etc.).
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir '..')
-$SchemaDir = Join-Path $RepoRoot 'src/AgentForge.Core/Assets/Schemas'
+$ClaudeSchemaDir = Join-Path $RepoRoot 'src/ClaudeForge.Sdk.Claude/Assets/Schemas'
+$CoreSchemaDir = Join-Path $RepoRoot 'src/AgentForge.Core/Assets/Schemas'
 
 # ── The table ────────────────────────────────────────────────────────────────
 # Name is what -Only matches and what the summary prints. Keep it equal to the file's
 # base name so a reader never has to map between two vocabularies.
 $Schemas = @(
-    @{ Name = 'claude-code-settings'; File = 'claude-code-settings.json'; Url = 'https://json.schemastore.org/claude-code-settings.json' }
-    @{ Name = 'opencode-config'; File = 'opencode-config.json'; Url = 'https://opencode.ai/config.json' }
-    @{ Name = 'opencode-tui'; File = 'opencode-tui.json'; Url = 'https://opencode.ai/tui.json' }
+    @{ Name = 'claude-code-settings'; Dir = $ClaudeSchemaDir; File = 'claude-code-settings.json'; Url = 'https://json.schemastore.org/claude-code-settings.json' }
+    @{ Name = 'opencode-config'; Dir = $CoreSchemaDir; File = 'opencode-config.json'; Url = 'https://opencode.ai/config.json' }
+    @{ Name = 'opencode-tui'; Dir = $CoreSchemaDir; File = 'opencode-tui.json'; Url = 'https://opencode.ai/tui.json' }
 )
 
 if ($Only) {
@@ -191,7 +194,7 @@ function Test-JsonText {
 
 Write-Host ''
 Write-Host ('Refreshing ' + $Schemas.Count + ' bundled schema(s)') -ForegroundColor Cyan
-Write-Host ('  target dir : ' + $SchemaDir)
+Write-Host ('  target dirs: ' + ((@($Schemas | ForEach-Object { $_.Dir }) | Select-Object -Unique) -join ', '))
 if ($DryRun) {
     Write-Host '  mode       : DRY RUN (no files will be written)' -ForegroundColor Yellow
 }
@@ -201,7 +204,7 @@ $changed = [System.Collections.Generic.List[string]]::new()
 $failed = [System.Collections.Generic.List[string]]::new()
 
 foreach ($schema in $Schemas) {
-    $targetPath = Join-Path $SchemaDir $schema.File
+    $targetPath = Join-Path $schema.Dir $schema.File
     Write-Host ('-- ' + $schema.Name) -ForegroundColor Cyan
     Write-Host ('   upstream : ' + $schema.Url)
 
@@ -313,7 +316,7 @@ Write-Host 'Next steps:' -ForegroundColor Cyan
 Write-Host '  1. dotnet build ClaudeForge.slnx -c Debug     # the schemas still parse + bundle'
 Write-Host '  2. dotnet test ClaudeForge.slnx -c Debug      # BundledOpenCodeSchemaTests is the'
 Write-Host '                                                #   guard on the strip staying typed'
-Write-Host '  3. git diff -- src/AgentForge.Core/Assets/Schemas/'
+Write-Host '  3. git diff -- src/ClaudeForge.Sdk.Claude/Assets/Schemas/ src/AgentForge.Core/Assets/Schemas/'
 Write-Host '  4. commit as: chore(schema): refresh bundled schemas from upstream'
 Write-Host ''
 exit 0

@@ -26,7 +26,7 @@ public sealed class ProductBackupLayoutTests
 
         Assert.Equal(
             expected,
-            SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Select(r => r.Name).ToArray());
+            ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Select(r => r.Name).ToArray());
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class ProductBackupLayoutTests
         // if they ever disagree, the page's "In Standard backup?" badge is lying to the user.
         ProductSkippedSubdir[] fullOnly =
         [
-            .. SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Where(r => r.IncludedInFullBackup)
+            .. ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs.Where(r => r.IncludedInFullBackup)
         ];
 
         Assert.Single(fullOnly);
@@ -49,7 +49,7 @@ public sealed class ProductBackupLayoutTests
     {
         // The reason is what a maintainer reads when a user asks why something is missing from
         // their archive. A blank one makes the rule unexplainable without git archaeology.
-        foreach (ProductSkippedSubdir rule in SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs)
+        foreach (ProductSkippedSubdir rule in ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.SkippedSubdirs)
         {
             Assert.False(string.IsNullOrWhiteSpace(rule.Reason), $"Rule '{rule.Name}' has no reason.");
         }
@@ -64,11 +64,11 @@ public sealed class ProductBackupLayoutTests
         // BackupArchiveCompatibilityTests proves they are what a shipped build actually wrote.
         Assert.Equal(
             new[] { "claude.json", "claude-dir" },
-            SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
+            ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
 
         Assert.Equal(
             new[] { "claude_desktop_config.json", "profiles", ".desktop-current" },
-            SchemaRegistry.ClaudeDesktopProduct.Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
+            ClaudeProducts.ClaudeDesktopProduct.Backup.Sections.Select(s => string.Join('/', s.SubPath)).ToArray());
     }
 
     [Fact]
@@ -76,11 +76,11 @@ public sealed class ProductBackupLayoutTests
     {
         // ⛔ IsDirectory is the field whose failure is silent: a single file restored as a
         // directory finds nothing, restores nothing, and still reports success.
-        Assert.True(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").IsDirectory);
-        Assert.True(Section(SchemaRegistry.ClaudeDesktopProduct, "profiles").IsDirectory);
+        Assert.True(Section(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").IsDirectory);
+        Assert.True(Section(ClaudeProducts.ClaudeDesktopProduct, "profiles").IsDirectory);
 
-        Assert.False(Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude.json").IsDirectory);
-        Assert.False(Section(SchemaRegistry.ClaudeDesktopProduct, ".desktop-current").IsDirectory);
+        Assert.False(Section(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude.json").IsDirectory);
+        Assert.False(Section(ClaudeProducts.ClaudeDesktopProduct, ".desktop-current").IsDirectory);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public sealed class ProductBackupLayoutTests
         PlatformPaths.TestUserProfileOverride = sandbox;
         try
         {
-            string resolved = Section(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").Destination();
+            string resolved = Section(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), "claude-dir").Destination();
             MessageAssert.StartsWith(sandbox, resolved,
                 "The destination must follow the profile override that is current when it is CALLED.");
         }

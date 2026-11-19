@@ -6,7 +6,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.AgentForge.Core.Catalog;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Env;

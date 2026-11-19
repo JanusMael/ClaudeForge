@@ -121,7 +121,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"GitHub-source marketplace matches exactly one anyOf branch; "
@@ -147,7 +147,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"URL-source marketplace matches exactly one anyOf branch. Got:\n{FormatErrors(errors)}");
@@ -174,7 +174,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "An unknown source kind matches no anyOf branch — the failure must come through, "
@@ -198,7 +198,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"enabledPlugins array form matches exactly one anyOf branch; "
@@ -217,7 +217,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         MessageAssert.Equal(0, errors.Count,
             $"enabledPlugins boolean form matches exactly one anyOf branch. Got:\n{FormatErrors(errors)}");
@@ -237,7 +237,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         Assert.True(errors.Count > 0,
             "A number value matches none of enabledPlugins' anyOf branches — must error.");
@@ -278,7 +278,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         // Any errors that survived the leak suppression must now be
         // unique per (FilePath, InstancePath) pair — that's the contract
@@ -314,7 +314,7 @@ public sealed class AnyOfLeakageCoverageTests
             });
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         // At least one error must reference the source path AND describe it
         // as "matches none of the N permitted variants" so the user knows
@@ -347,7 +347,7 @@ public sealed class AnyOfLeakageCoverageTests
         SettingsWorkspace ws = new([doc], ClaudeMergePolicy.Instance);
 
         using SchemaRegistry registry = CreateRegistry();
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateAllWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         List<SchemaValidationError> modelErrors = errors
                                                   .Where(e => e.InstancePath == "/model")

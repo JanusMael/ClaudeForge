@@ -1,10 +1,10 @@
 using System.Text.Json.Serialization;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Catalog;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 
 /// <summary>
 /// Wire shape of <c>model-catalog.json</c>. Deserialized via the source-generated
-/// <see cref="Schema.CoreJsonContext"/> (trim-safe). Mapped to the immutable
+/// <see cref="ModelCatalogJsonContext"/> (trim-safe). Mapped to the immutable
 /// <see cref="ModelCatalog"/> domain model by <see cref="ModelCatalog.FromDto"/>.
 /// </summary>
 internal sealed class ModelCatalogDto

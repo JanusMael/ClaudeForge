@@ -320,7 +320,8 @@ deliberate. Before "fixing" a comment to match the old order, read `GetSchemaAsy
 `SchemaLoadPrecedenceTests` pins the current behaviour, including that a fetched copy gets the
 overlay.
 
-Bundled schemas live in `src/AgentForge.Core/Assets/Schemas/` and are refreshed by
+Bundled schemas live in `src/ClaudeForge.Sdk.Claude/Assets/Schemas/` (Claude's, since plans/00008
+step 6b-3) and `src/AgentForge.Core/Assets/Schemas/` (OpenCode's, until step 7), and are refreshed by
 `scripts/refresh-schema.ps1` (or its `.sh` twin, kept in byte parity). They are the offline
 fallback, so refreshing them matters for every user who is offline, on a slow link, or behind
 something that blocks the fetch — and for the first three seconds of every launch. Two things

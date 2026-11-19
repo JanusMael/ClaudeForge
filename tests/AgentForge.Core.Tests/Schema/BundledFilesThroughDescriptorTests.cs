@@ -181,9 +181,7 @@ public sealed class BundledFilesThroughDescriptorTests : IDisposable
     {
         IBundledFiles files = SchemaRegistry.CoreBundledFiles;
 
-        Assert.NotNull(files.TryRead("claude-code-settings.json"));
-        // From the second prefix: the descriptions live in a folder of their own.
-        Assert.NotNull(files.TryRead("claude-code-settings.enumdescriptions.json"));
+        Assert.NotNull(files.TryRead("opencode-config.json"));
         Assert.Null(files.TryRead("no-such-file.json"));
     }
 

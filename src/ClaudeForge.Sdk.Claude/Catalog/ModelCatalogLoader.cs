@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Serilog;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Catalog;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 
 /// <summary>
 /// Loads the bundled model catalog. Layering mirrors the bundled-schema path in
@@ -17,7 +17,6 @@ public static class ModelCatalogLoader
 {
     private const string CatalogFile = "model-catalog.json";
     private const string OverlayFile = "model-catalog.overlay.json";
-    private const string SubNamespace = "ModelCatalog";
 
     private static readonly object Gate = new();
     // volatile for the lock-free fast-path read in Load(); matches the sibling
@@ -44,7 +43,7 @@ public static class ModelCatalogLoader
     /// <summary>Test seam: parse a catalog straight from JSON text (bypasses the bundled resource + cache).</summary>
     internal static ModelCatalog Parse(string json)
     {
-        ModelCatalogDto? dto = JsonSerializer.Deserialize(json, CoreJsonContext.Default.ModelCatalogDto);
+        ModelCatalogDto? dto = JsonSerializer.Deserialize(json, ModelCatalogJsonContext.Default.ModelCatalogDto);
         return dto is null ? ModelCatalog.Empty : ModelCatalog.FromDto(dto);
     }
 
@@ -59,7 +58,7 @@ public static class ModelCatalogLoader
 
         try
         {
-            ModelCatalogDto? dto = JsonSerializer.Deserialize(bytes, CoreJsonContext.Default.ModelCatalogDto);
+            ModelCatalogDto? dto = JsonSerializer.Deserialize(bytes, ModelCatalogJsonContext.Default.ModelCatalogDto);
             return dto is null ? ModelCatalog.Empty : ModelCatalog.FromDto(dto);
         }
         catch (Exception ex) when (ex is JsonException or ArgumentException)
@@ -79,13 +78,13 @@ public static class ModelCatalogLoader
     /// </summary>
     private static byte[]? TryReadMerged()
     {
-        byte[]? baseBytes = BundledResource.TryRead(SubNamespace, CatalogFile);
+        byte[]? baseBytes = ClaudeResources.TryReadModelCatalog(CatalogFile);
         if (baseBytes is null)
         {
             return null;
         }
 
-        byte[]? overlayBytes = BundledResource.TryRead(SubNamespace, OverlayFile);
+        byte[]? overlayBytes = ClaudeResources.TryReadModelCatalog(OverlayFile);
         if (overlayBytes is null)
         {
             return baseBytes;

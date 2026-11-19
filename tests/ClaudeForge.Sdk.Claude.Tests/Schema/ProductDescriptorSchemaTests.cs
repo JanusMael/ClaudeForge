@@ -24,8 +24,8 @@ public class ProductDescriptorSchemaTests
     [Fact]
     public void Descriptors_NameDistinctProductsAndSchemas()
     {
-        ProductDescriptor code = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
-        ProductDescriptor desktop = SchemaRegistry.ClaudeDesktopProduct;
+        ProductDescriptor code = ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
+        ProductDescriptor desktop = ClaudeProducts.ClaudeDesktopProduct;
 
         Assert.Equal("claude-code", code.Id);
         Assert.Equal(ClaudeCodeSchemaFile, code.SchemaFileName);
@@ -52,9 +52,9 @@ public class ProductDescriptorSchemaTests
         // namespace here collides with Core's own Schema types (same reason
         // NavigationTreeBuilderThreadSafetyTests uses var).
         var codeRoot =
-            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
+            await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
         var desktopRoot =
-            await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
+            await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
 
         IReadOnlyList<SchemaNode> codeNodes = SchemaTreeBuilder.BuildTopLevel(codeRoot);
         IReadOnlyList<SchemaNode> desktopNodes = SchemaTreeBuilder.BuildTopLevel(desktopRoot);

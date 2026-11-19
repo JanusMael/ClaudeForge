@@ -967,10 +967,10 @@ public sealed class BackupRestoreViewModelTests
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]).CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct]).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             }, ct: TestContext.Current.CancellationToken, progress: null);
             Assert.True(created.Succeeded, "Test prerequisite: backup must create.");
 
@@ -1017,10 +1017,10 @@ public sealed class BackupRestoreViewModelTests
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]).CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct]).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
             }, ct: TestContext.Current.CancellationToken, progress: null);
             Assert.True(created.Succeeded);
 
@@ -1474,10 +1474,10 @@ public sealed class BackupRestoreViewModelTests
 
         MessageAssert.Equal(1, request.Products.Count,
             "Only the still-selected product may be requested.");
-        Assert.False(request.Includes(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)),
+        Assert.False(request.Includes(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty)),
             "Deselecting Claude Code must actually exclude it — otherwise the checkbox is "
             + "decorative and the user's choice is silently ignored.");
-        Assert.True(request.Includes(SchemaRegistry.ClaudeDesktopProduct));
+        Assert.True(request.Includes(ClaudeProducts.ClaudeDesktopProduct));
     }
 
     [Fact]

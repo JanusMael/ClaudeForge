@@ -334,7 +334,7 @@ public sealed class ClaudeDangerTableTests
     }
 
     private static string SchemaPath(string fileName) =>
-        Path.Combine(FindRepoRoot(), "src", "AgentForge.Core", "Assets", "Schemas", fileName);
+        Path.Combine(FindRepoRoot(), "src", "ClaudeForge.Sdk.Claude", "Assets", "Schemas", fileName);
 
     private static string FindRepoRoot()
     {

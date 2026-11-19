@@ -101,7 +101,7 @@ public sealed class EssentialsWorkflowCardsTests
     [Fact]
     public async Task SizeCard_OffersExactlyTheSchemasValues()
     {
-        string schemaPath = Path.Combine(FindRepoRoot(), "src", "AgentForge.Core", "Assets", "Schemas",
+        string schemaPath = Path.Combine(FindRepoRoot(), "src", "ClaudeForge.Sdk.Claude", "Assets", "Schemas",
             "claude-code-settings.json");
         JsonNode schema = JsonNode.Parse(await File.ReadAllTextAsync(schemaPath, TestContext.Current.CancellationToken))!;
         string[] fromSchema =

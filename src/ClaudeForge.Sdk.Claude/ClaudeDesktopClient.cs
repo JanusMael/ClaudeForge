@@ -76,7 +76,7 @@ public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
     }
 
     /// <inheritdoc/>
-    protected override ProductDescriptor Product => SchemaRegistry.ClaudeDesktopProduct;
+    protected override ProductDescriptor Product => ClaudeProducts.ClaudeDesktopProduct;
 
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
@@ -92,7 +92,7 @@ public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
         return new BackupClient(
             new BackupEngine(
                 ClaudeEnvironment.Empty,
-                [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), Product]),
+                [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), Product]),
             [Product]);
     }
 

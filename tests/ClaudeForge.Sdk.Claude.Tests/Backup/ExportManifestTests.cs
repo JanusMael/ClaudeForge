@@ -30,8 +30,8 @@ public sealed class ExportManifestTests
         // manifest.json inside their archive, and BackupRestoreViewModel.AbbreviateClient
         // renders BackupManifest.Clients directly. Two vocabularies for the same products is
         // precisely the mistake Phase 4d-2 removed.
-        Assert.Equal(ClaudeCodeFolder, SchemaRegistry.ClaudeCodeArchiveFolder);
-        Assert.Equal(ClaudeDesktopFolder, SchemaRegistry.ClaudeDesktopProduct.ArchiveFolder);
+        Assert.Equal(ClaudeCodeFolder, ClaudeProducts.ClaudeCodeArchiveFolder);
+        Assert.Equal(ClaudeDesktopFolder, ClaudeProducts.ClaudeDesktopProduct.ArchiveFolder);
     }
 
     // ── v1, the shape already on disk ────────────────────────────────────
