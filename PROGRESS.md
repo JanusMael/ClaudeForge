@@ -493,8 +493,11 @@ step 3. The items below are kept in order; those marked ✅ are done.
      would have exited 8. It had not run since, because nothing touched its paths. Fixed here.
    - ⚠ **Upstream `opencode-config.json` has drifted** (48 lines); the refresh run here wrote it and
      it was reverted, out of scope. The weekly workflow will raise it.
-   - Owed before merge: `package-canary.ps1` locally (`Published Version` is red until a package
-     release and pin), and the boot smoke with `--schema-source bundled`, which opens a window.
+   - **Before merge:** `package-canary.ps1` passed locally (3,444, 0 failed); `Published Version` is
+     red until a package release and pin. `Smoke-PublishedBinary.ps1` passed on win-x64. Launched
+     with `--schema-source bundled`, the trimmed win-x64 publish badges Claude Code `34e4e8fdcbe3`
+     and Claude Desktop `ed4c09df6ecc`, read through UI Automation, the same fingerprints as a
+     publish of `2bb00cb7` run the same way.
    ▶ **Next:** merge 6b-3, release `packages-v<date>` and pin, then step 7.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
