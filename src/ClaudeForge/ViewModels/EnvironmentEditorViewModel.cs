@@ -11,6 +11,7 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.AgentForge.Core.Text;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
+using Bennewitz.Ninja.AgentForge.Sdk.Diagnostics;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -368,8 +369,10 @@ public partial class EnvironmentEditorViewModel : ObservableObject, IDisposable,
             return;
         }
 
-        Log.Information("[Environment.UserEdit] action=SaveEdit name=\"{Name}\" scope={Scope} newValue={Value}",
-            SelectedEntry.Name, EditingScope, EditValue ?? "(empty)");
+        // A variable's name does not say whether its value is a secret, so the value never reaches
+        // the rolling log, which travels with bug reports. Its length says whether it was cleared.
+        Log.Information("[Environment.UserEdit] action=SaveEdit name=\"{Name}\" scope={Scope} newValue={Value} length={Length}",
+            SelectedEntry.Name, EditingScope, SensitiveKeys.RedactedMarker, EditValue?.Length ?? 0);
         if (!ApplyValue(SelectedEntry.Name, EditValue ?? string.Empty))
         {
             return;

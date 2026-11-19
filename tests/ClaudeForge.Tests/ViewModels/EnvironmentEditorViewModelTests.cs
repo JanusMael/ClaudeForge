@@ -275,6 +275,57 @@ public class EnvironmentEditorViewModelTests
         Assert.Equal("/custom/bin", envObj["PATH"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void SaveEdit_NeverLogsTheValue()
+    {
+        const string secret = "sk-ant-test-0123456789abcdef";
+        FakeEnvironmentProvider provider = new();
+        provider.Process["ANTHROPIC_API_KEY"] = "old";
+        AgentConfigClientCore client = MakeClient();
+        EnvironmentEditorViewModel vm = new(provider, client);
+
+        vm.EditingScope = EnvEditScope.Claude;
+        vm.SelectedEntry = vm.AllEntries.First(e =>
+            e.Name.Equals("ANTHROPIC_API_KEY", StringComparison.OrdinalIgnoreCase));
+        vm.EditValue = secret;
+
+        List<Serilog.Events.LogEvent> events = [];
+        Serilog.ILogger previous = Serilog.Log.Logger;
+        Serilog.Log.Logger = new Serilog.LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.Sink(new ListSink(events))
+            .CreateLogger();
+        try
+        {
+            vm.SaveEditCommand.Execute(null);
+        }
+        finally
+        {
+            Serilog.Log.Logger = previous;
+        }
+
+        Serilog.Events.LogEvent saved = Assert.Single(events, e =>
+            e.MessageTemplate.Text.StartsWith("[Environment.UserEdit] action=SaveEdit", StringComparison.Ordinal));
+        MessageAssert.DoesNotContain(secret, saved.RenderMessage(),
+            "The rolling log travels with bug reports, so the value a user typed into the environment "
+            + "editor never reaches it: the variable's name cannot say whether the value is a secret.");
+        MessageAssert.Contains($"length={secret.Length}", saved.RenderMessage(),
+            "The length is logged in its place, so the log still says whether the value was cleared.");
+        Assert.DoesNotContain(events, e => e.RenderMessage().Contains(secret, StringComparison.Ordinal));
+    }
+
+    /// <summary>Keeps every event the logger emits.</summary>
+    private sealed class ListSink(List<Serilog.Events.LogEvent> events) : Serilog.Core.ILogEventSink
+    {
+        public void Emit(Serilog.Events.LogEvent logEvent)
+        {
+            lock (events)
+            {
+                events.Add(logEvent);
+            }
+        }
+    }
+
     // -----------------------------------------------------------------------
     // RemoveFromScope → clears the variable from Claude env
     // -----------------------------------------------------------------------
