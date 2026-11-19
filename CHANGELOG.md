@@ -18,6 +18,10 @@ reconcile them against and renumbering them would be guesswork.
 
 ### Fixed
 
+- **The Environment editor no longer writes the values you save into ClaudeForge's log.** Saving
+  a variable logged the value as typed, so an API key or token saved there ended up in the log
+  file that is attached to bug reports. The log now records the variable's name, scope and the
+  value's length only.
 - **Saving on Windows no longer fails when another program briefly has the settings file open.**
   An antivirus scan, the search indexer or an editor holding `settings.json` for a moment made the
   save fail with "Access to the path is denied", and the edit never reached disk. ClaudeForge now
