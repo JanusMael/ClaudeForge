@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -143,24 +144,24 @@ public sealed class RestoreEngineTests : IDisposable
     [Fact]
     public void ContainsRedactedMarker_TrueOnRedactedValueInsideJson()
     {
-        string probe = Path.Combine(_baseDir, "ClaudeCode");
+        string probe = Path.Combine(_baseDir, NeutralTestProduct.ArchiveFolder);
         Directory.CreateDirectory(probe);
-        File.WriteAllText(Path.Combine(probe, "claude.json"),
+        File.WriteAllText(Path.Combine(probe, NeutralTestProduct.ConfigSection),
             """{ "env": "[redacted]", "theme": "dark" }""");
 
-        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts),
+        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir, [NeutralTestProduct.WithBundle(_baseDir)]),
             "Redacted-marker leaf must trigger tamper-detection.");
     }
 
     [Fact]
     public void ContainsRedactedMarker_FalseOnNormalConfig()
     {
-        string probe = Path.Combine(_baseDir, "ClaudeCode");
+        string probe = Path.Combine(_baseDir, NeutralTestProduct.ArchiveFolder);
         Directory.CreateDirectory(probe);
-        File.WriteAllText(Path.Combine(probe, "claude.json"),
+        File.WriteAllText(Path.Combine(probe, NeutralTestProduct.ConfigSection),
             """{ "theme": "dark", "model": "claude-opus" }""");
 
-        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts),
+        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir, [NeutralTestProduct.WithBundle(_baseDir)]),
             "Plain config with no marker must not trigger the scan.");
     }
 
@@ -172,12 +173,12 @@ public sealed class RestoreEngineTests : IDisposable
         // matches only when the leaf's VALUE equals the marker exactly,
         // so this should NOT fire (prevents false positives on docs
         // describing the redaction marker).
-        string probe = Path.Combine(_baseDir, "ClaudeCode");
+        string probe = Path.Combine(_baseDir, NeutralTestProduct.ArchiveFolder);
         Directory.CreateDirectory(probe);
-        File.WriteAllText(Path.Combine(probe, "claude.json"),
+        File.WriteAllText(Path.Combine(probe, NeutralTestProduct.ConfigSection),
             """{ "description": "Replace sensitive values with [redacted] before sharing." }""");
 
-        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts),
+        Assert.False(RestoreEngine.ContainsRedactedMarker(_baseDir, [NeutralTestProduct.WithBundle(_baseDir)]),
             "Prose mentioning the marker word must not fire tamper-detection — only exact-equal leaf values do.");
     }
 
@@ -185,12 +186,12 @@ public sealed class RestoreEngineTests : IDisposable
     public void ContainsRedactedMarker_TrueOnNestedRedactedValue()
     {
         // Deep nested case — marker buried inside an object/array tree.
-        string probe = Path.Combine(_baseDir, "ClaudeCode", "claude-dir");
+        string probe = Path.Combine(_baseDir, NeutralTestProduct.ArchiveFolder, NeutralTestProduct.HomeSection);
         Directory.CreateDirectory(probe);
         File.WriteAllText(Path.Combine(probe, "settings.json"),
             """{ "mcpServers": { "gh": { "headers": "[redacted]" } } }""");
 
-        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir, TestBackupEngine.ClaudeProducts));
+        Assert.True(RestoreEngine.ContainsRedactedMarker(_baseDir, [NeutralTestProduct.WithBundle(_baseDir)]));
     }
 
     // ═══════════════════════════════════════════════════════════════════════

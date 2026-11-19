@@ -1,7 +1,7 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 
@@ -31,12 +31,20 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 internal static class TestBackupEngine
 {
     /// <summary>
-    /// Claude Code and Claude Desktop, the products the engine restored by default until plans/00008
-    /// step 6 made the caller name them.
+    /// The two neutral test products, rooted at the profile
+    /// <c>PlatformPaths.TestUserProfileOverride</c> redirects and read each time a path is needed.
     /// </summary>
-    internal static IReadOnlyList<ProductDescriptor> ClaudeProducts { get; } =
-        [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct];
+    /// <remarks>
+    /// Claude's two descriptors until <c>plans/00008</c> step 6b-2; the tests of Claude's layout
+    /// moved to <c>ClaudeForge.Sdk.Claude.Tests</c>, which keeps a <c>TestBackupEngine</c> of its
+    /// own over them.
+    /// </remarks>
+    internal static IReadOnlyList<ProductDescriptor> Products { get; } =
+    [
+        NeutralTestProduct.For(() => PlatformPaths.UserProfile),
+        NeutralTestProduct.Second(() => PlatformPaths.UserProfile),
+    ];
 
     /// <summary>A shared engine over the default environment, for fixtures that do not relocate it.</summary>
-    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, ClaudeProducts);
+    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, Products);
 }

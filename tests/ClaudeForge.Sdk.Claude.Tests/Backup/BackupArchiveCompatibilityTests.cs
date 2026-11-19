@@ -2,7 +2,7 @@ using System.IO.Compression;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Backup;
 
 /// <summary>
 /// Restores a <b>frozen archive produced by a shipped build</b> and asserts every file lands where

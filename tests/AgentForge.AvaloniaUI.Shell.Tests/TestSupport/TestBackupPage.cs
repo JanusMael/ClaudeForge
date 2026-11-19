@@ -2,7 +2,7 @@ using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.TestSupport;
 
@@ -18,16 +18,16 @@ namespace Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Tests.TestSupport;
 /// real options stay under test in <c>ClaudeForge.Tests</c>, which is what proves the app's wiring.
 /// </para>
 /// <para>
-/// <b>The products are still Core's two Claude descriptors</b>, and the engine takes
-/// <see cref="ClaudeEnvironment"/>, because Core has no other products or engine today. The neutral
-/// test product is step 5; until then this is the honest double: neutral in what the HOST
-/// supplies, and Claude-shaped only where Core itself still is.
+/// <b>The products are the two neutral test products</b>, rooted at the profile
+/// <see cref="PlatformPaths.TestUserProfileOverride"/> redirects, read each time a path is needed,
+/// as a real product's are. Only the engine is still Claude-shaped: it takes
+/// <see cref="ClaudeEnvironment"/> until <c>plans/00008</c> step 8.
 /// </para>
 /// </remarks>
 internal static class TestBackupPage
 {
     internal static IReadOnlyList<ProductDescriptor> DefaultProducts =>
-        [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct];
+        [NeutralTestProduct.For(() => PlatformPaths.UserProfile), NeutralTestProduct.Second(() => PlatformPaths.UserProfile)];
 
     /// <summary>The process names the page warns about. Deliberately not any real agent's.</summary>
     internal static IReadOnlyList<string> AgentProcessNames => ["test-agent", "test-agent-gui"];
@@ -43,7 +43,7 @@ internal static class TestBackupPage
         IReadOnlyList<ProductDescriptor> chosen = products ?? DefaultProducts;
         return new BackupPageOptions
         {
-            Engine = new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]),
+            Engine = new BackupEngine(ClaudeEnvironment.Empty, DefaultProducts),
             Products = chosen,
             AgentProcessNames = AgentProcessNames,
             CredentialsPathDisplay = CredentialsPathDisplay,

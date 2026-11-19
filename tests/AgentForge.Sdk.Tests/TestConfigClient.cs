@@ -5,6 +5,7 @@ using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AgentForge.Sdk.Backup;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
 
@@ -31,8 +32,8 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Tests;
     /// Claude schemas is gone — <see cref="Product"/> is a <see cref="ProductDescriptor"/>,
     /// so this type could name any product's schema. What still ties it to Claude is
     /// <see cref="ConfigFileDiscoverer"/>, which only knows Claude's file layouts and
-    /// remains a documented deferral. So this client discovers Claude's files and
-    /// validates against Claude's schema; what it buys is that the <i>assembly
+    /// remains a documented deferral. So this client discovers Claude's files, and
+    /// validates against the neutral test product's schema; what it buys is that the <i>assembly
     /// dependency</i> is honest and the remaining Claude assumption sits in one
     /// labelled file instead of spread across a dozen test fixtures.
 /// </para>
@@ -114,11 +115,13 @@ internal sealed class TestConfigClient : AgentConfigClientCore
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Claude Code's descriptor because the alternative bundled schema is Claude
-    /// Desktop's, not a neutral one — see the class remarks. Nothing about these tests
-    /// depends on which of the two is chosen beyond the schema being loadable.
+    /// The neutral test product, with its home where <see cref="DiscoverFiles"/> finds the user
+    /// settings, so a backup through this client archives the files it edits. Measured
+    /// 2026-11-19: switching from Claude Code's descriptor changed no test's outcome except the
+    /// backup round-trip, which needed exactly that home.
     /// </remarks>
-    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
+    protected override ProductDescriptor Product { get; } =
+        NeutralTestProduct.WithHome(() => PlatformPaths.ClaudeHome(ClaudeEnvironment.Empty));
 
     /// <inheritdoc/>
     /// <remarks>
@@ -132,6 +135,6 @@ internal sealed class TestConfigClient : AgentConfigClientCore
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {
-        return new BackupClient(new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]), [Product]);
+        return new BackupClient(new BackupEngine(ClaudeEnvironment.Empty, [Product]), [Product]);
     }
 }
