@@ -1,4 +1,4 @@
-﻿using Bennewitz.Ninja.AgentForge.Core.Catalog;
+﻿using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 

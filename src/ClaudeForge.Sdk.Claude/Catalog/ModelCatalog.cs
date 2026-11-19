@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Core.Catalog;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 
 /// <summary>One model entry in the catalog (the structural source of truth).</summary>
 /// <param name="Id">Canonical model id, e.g. <c>claude-opus-4-8</c>.</param>

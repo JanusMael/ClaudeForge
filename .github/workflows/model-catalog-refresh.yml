@@ -1,7 +1,7 @@
 name: Model catalog validation
 
 # Validation gate for the bundled model catalog
-# (src/AgentForge.Core/Assets/ModelCatalog/model-catalog.json).
+# (src/ClaudeForge.Sdk.Claude/Assets/ModelCatalog/model-catalog.json).
 #
 # Design rationale — see also `.github/WORKFLOWS.md`:
 #   - Unlike the JSON schema, the catalog has NO upstream machine-readable
@@ -19,12 +19,12 @@ name: Model catalog validation
 on:
   push:
     paths:
-      - 'src/AgentForge.Core/Assets/ModelCatalog/**'
+      - 'src/ClaudeForge.Sdk.Claude/Assets/ModelCatalog/**'
       - 'scripts/validate-model-catalog.ps1'
       - '.github/workflows/model-catalog-refresh.yml'
   pull_request:
     paths:
-      - 'src/AgentForge.Core/Assets/ModelCatalog/**'
+      - 'src/ClaudeForge.Sdk.Claude/Assets/ModelCatalog/**'
       - 'scripts/validate-model-catalog.ps1'
       - '.github/workflows/model-catalog-refresh.yml'
   schedule:
@@ -64,17 +64,17 @@ jobs:
       # behave, and the catalog stays in parity with the bundled JSON schema's
       # effortLevel / permissions.defaultMode enums.
       #
-      # ⚠ One run per project that holds catalog tests (22 + 4 + 4 = the 30 the old
-      # solution-wide filter selected). Under Microsoft.Testing.Platform an assembly
-      # whose filter selects nothing exits 8, "zero tests ran", so a filtered run over
-      # the whole solution is red by construction. Per project, selecting nothing is
-      # a real finding — the tests moved — and it stays red.
+      # ⚠ One run per project that holds catalog tests. Under Microsoft.Testing.Platform an
+      # assembly whose filter selects nothing exits 8, "zero tests ran", so a filtered run over
+      # the whole solution is red by construction. Per project, selecting nothing is a real
+      # finding — the tests moved — and it stays red. plans/00008 step 6b-1 moved Core's
+      # catalog tests to ClaudeForge.Sdk.Claude.Tests, which is why Core is no longer listed.
       #
       # ⚠ xUnit v3 has no VSTest-style `--filter` ("Unknown option", exit 5). Every test the old
-      # `FullyQualifiedName~ModelCatalog` selected is in a `*ModelCatalog*` class, and the class
-      # filter selects the same 22 + 4 + 4, so the two sets are equal (measured, plans/00006).
+      # `FullyQualifiedName~ModelCatalog` selected is in a `*ModelCatalog*` class, so the class
+      # filter selects the same set (measured, plans/00006).
       - name: Catalog unit tests
         run: |
-          for p in AgentForge.Core.Tests ClaudeForge.Sdk.Claude.Tests ClaudeForge.Tests; do
+          for p in ClaudeForge.Sdk.Claude.Tests ClaudeForge.Tests; do
             dotnet test --project "tests/$p" -c Debug --filter-class "*ModelCatalog*"
           done

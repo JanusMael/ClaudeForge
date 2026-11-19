@@ -34,4 +34,13 @@
         <ProjectReference Include="..\AgentForge.Sdk\AgentForge.Sdk.csproj"/>
     </ItemGroup>
 
+    <!-- Claude's bundled data: the two schemas, Claude Code's overlay and enum descriptions, and the
+         model catalog. Moved here from AgentForge.Core by plans/00008 step 6b-3; read through
+         ClaudeProducts.BundledFiles and ModelCatalogLoader. -->
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\Schemas\**\*.json"/>
+        <EmbeddedResource Include="Assets\Descriptions\**\*.json"/>
+        <EmbeddedResource Include="Assets\ModelCatalog\**\*.json"/>
+    </ItemGroup>
+
 </Project>

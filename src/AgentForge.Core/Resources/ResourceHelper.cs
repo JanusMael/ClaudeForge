@@ -45,12 +45,6 @@ internal static class ResourceHelper
     public static readonly string SchemasPrefix = $"{RootNamespace}.Assets.Schemas.";
 
     /// <summary>
-    /// Logical-name prefix of every resource under <c>Assets/Descriptions/</c>, including the
-    /// trailing dot.
-    /// </summary>
-    public static readonly string DescriptionsPrefix = $"{RootNamespace}.Assets.Descriptions.";
-
-    /// <summary>
     /// The logical name of the resource at <c>Assets/&lt;subNamespace&gt;/&lt;fileName&gt;</c>.
     /// </summary>
     public static string AssetName(string subNamespace, string fileName) =>

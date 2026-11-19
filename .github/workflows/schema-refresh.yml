@@ -94,29 +94,31 @@ jobs:
           # The script is idempotent: hash short-circuit when upstream
           # matches the bundled copy. The hash check writes "Already up
           # to date" and exits 0, leaving the working tree unchanged.
-          # The drift path overwrites src/AgentForge.Core/Assets/Schemas/
-          # claude-code-settings.json and exits 0.
+          # The drift path overwrites the changed base files in the two schema folders
+          # (Claude's in src/ClaudeForge.Sdk.Claude/Assets/Schemas, OpenCode's in
+          # src/AgentForge.Core/Assets/Schemas until plans/00008 step 7) and exits 0.
           pwsh scripts/refresh-schema.ps1
 
       - name: Detect drift
         id: drift
         shell: bash
         run: |
-          # The whole schema directory, because the script refreshes every schema that has
-          # an upstream — three today. Scoping this to one filename is how a second schema
-          # gets refreshed on disk and then silently discarded with no PR.
+          # Both whole schema directories, because the script refreshes every schema that has
+          # an upstream — three today, across two folders. Scoping this to one filename, or
+          # one folder, is how a schema gets refreshed on disk and then silently discarded
+          # with no PR.
           #
-          # Anything OUTSIDE this directory changing would be a workflow bug, so the scope
-          # stays the directory rather than the whole tree.
-          SCOPE=src/AgentForge.Core/Assets/Schemas
-          if git diff --quiet -- "$SCOPE"; then
+          # Anything OUTSIDE these directories changing would be a workflow bug, so the scope
+          # stays the directories rather than the whole tree.
+          SCOPE=(src/ClaudeForge.Sdk.Claude/Assets/Schemas src/AgentForge.Core/Assets/Schemas)
+          if git diff --quiet -- "${SCOPE[@]}"; then
             echo "drift=false" >> "$GITHUB_OUTPUT"
             echo "No drift detected - every bundled schema matches upstream."
           else
             echo "drift=true" >> "$GITHUB_OUTPUT"
             echo "Drift detected."
             echo "::group::Diff summary"
-            git diff --stat -- "$SCOPE"
+            git diff --stat -- "${SCOPE[@]}"
             echo "::endgroup::"
 
             # Name the changed files so the PR body says WHICH schemas moved. A reviewer
@@ -124,7 +126,7 @@ jobs:
             # diff to find out which ones.
             {
               echo 'files<<SCHEMA_FILES_EOF'
-              git diff --name-only -- "$SCOPE" | sed 's|^|- `|; s|$|`|'
+              git diff --name-only -- "${SCOPE[@]}" | sed 's|^|- `|; s|$|`|'
               echo 'SCHEMA_FILES_EOF'
             } >> "$GITHUB_OUTPUT"
           fi
@@ -168,8 +170,8 @@ jobs:
           body: |
             ## What this PR does
 
-            Refreshes the bundled schemas under `src/AgentForge.Core/Assets/Schemas/` that have
-            an upstream — one or more of them has changed since the last refresh.
+            Refreshes the bundled schemas under `src/ClaudeForge.Sdk.Claude/Assets/Schemas/` and
+            `src/AgentForge.Core/Assets/Schemas/` that have an upstream — one or more of them has changed since the last refresh.
 
             ### Schemas changed in this PR
 

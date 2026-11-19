@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core;
-using Bennewitz.Ninja.AgentForge.Core.Catalog;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 using Json.Schema;
 using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
 
@@ -64,8 +64,8 @@ public sealed class ModelCatalogSchemaParityTests
     [Fact]
     public void ModelCatalogJson_ValidatesAgainstItsSchema()
     {
-        byte[]? catBytes = BundledResource.TryRead("ModelCatalog", "model-catalog.json");
-        byte[]? schBytes = BundledResource.TryRead("ModelCatalog", "model-catalog.schema.json");
+        byte[]? catBytes = ClaudeResources.TryReadModelCatalog("model-catalog.json");
+        byte[]? schBytes = ClaudeResources.TryReadModelCatalog("model-catalog.schema.json");
         MessageAssert.NotNull(catBytes, "model-catalog.json must be embedded.");
         MessageAssert.NotNull(schBytes, "model-catalog.schema.json must be embedded.");
 

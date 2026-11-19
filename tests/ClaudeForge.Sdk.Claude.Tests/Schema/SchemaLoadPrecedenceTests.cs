@@ -94,7 +94,7 @@ public sealed class SchemaLoadPrecedenceTests
     {
         CannedHandler handler = new(SentinelSchema(NetworkSentinelProperty));
         using SchemaRegistry registry = new(new HttpClient(handler));
-        ProductDescriptor claudeCode = SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
+        ProductDescriptor claudeCode = ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty);
 
         Assert.True(
             SchemaRegistry.GetHookCommandVariants(BundledProduct.Named("claude-code-settings.json")).Count > 0,

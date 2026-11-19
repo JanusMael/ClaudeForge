@@ -16,7 +16,7 @@ internal static class BundledProduct
 {
     /// <summary>The files Claude's descriptors bundle.</summary>
     internal static IBundledFiles ClaudeFiles =>
-        SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).BundledFiles!;
+        ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).BundledFiles!;
 
     /// <summary>A descriptor for <paramref name="schemaFileName"/> fetched from <paramref name="url"/>.</summary>
     internal static ProductDescriptor For(string url, string schemaFileName) =>

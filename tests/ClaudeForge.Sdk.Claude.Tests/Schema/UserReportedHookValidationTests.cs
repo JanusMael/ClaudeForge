@@ -187,7 +187,7 @@ public sealed class UserReportedHookValidationTests
         using SchemaRegistry registry = CreateRegistry();
         SettingsWorkspace workspace = WorkspaceWithUserHooks();
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(workspace, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         string formatted = errors.Count == 0
             ? "(none)"
@@ -219,7 +219,7 @@ public sealed class UserReportedHookValidationTests
         // Force-dirty by setting an unrelated key.
         ws.SetValue("model", JsonValue.Create("opus"), ConfigScope.User);
 
-        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
+        IReadOnlyList<SchemaValidationError> errors = await registry.ValidateWorkspaceAsync(ws, product: ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ct: TestContext.Current.CancellationToken);
 
         // Report any error whose InstancePath references an index >= the
         // actual array length (e.g. /hooks/Stop/0/hooks/6 when the array

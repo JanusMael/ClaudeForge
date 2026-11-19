@@ -1,4 +1,4 @@
-using Bennewitz.Ninja.AgentForge.Core.Catalog;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;

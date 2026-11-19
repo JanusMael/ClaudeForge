@@ -290,9 +290,9 @@ public sealed class SavePreviewDangerTests
         using MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
 
         ProductSection code = vm.Sections.Single(
-            s => s.Product.Id == SchemaRegistry.ClaudeCodeProductId);
+            s => s.Product.Id == ClaudeProducts.ClaudeCodeProductId);
         ProductSection desktop = vm.Sections.Single(
-            s => s.Product.Id == SchemaRegistry.ClaudeDesktopProduct.Id);
+            s => s.Product.Id == ClaudeProducts.ClaudeDesktopProduct.Id);
 
         MessageAssert.NotNull(code.Danger,
             "Claude Code's section must carry its table — this is the single place it is stated, "

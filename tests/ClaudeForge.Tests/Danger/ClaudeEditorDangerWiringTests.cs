@@ -45,7 +45,7 @@ public sealed class ClaudeEditorDangerWiringTests
     {
         SchemaRegistry registry = new();
         var root = await registry
-            .GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), CancellationToken.None)
+            .GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), CancellationToken.None)
             .ConfigureAwait(false);
         return SchemaTreeBuilder.BuildTopLevel(root);
     }

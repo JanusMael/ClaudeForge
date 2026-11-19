@@ -468,7 +468,37 @@ step 3. The items below are kept in order; those marked ✅ are done.
      so the two "true" tests went red — which is also their canary.
    - `Compare-TestNames.ps1 -Pairing` over the four projects against `main`: **0 differences, 40
      clean moves**, 1,582 methods each side; suite total unchanged at 3,437.
-   ▶ **Next: step 6b-3**, the data move.
+   ✅ **Step 6b-3, Claude's data leaves Core (2026-11-19, branch `refactor/claude-data-move`):**
+   Claude's two schemas, the overlay, the enum descriptions and the model catalog are embedded in
+   `ClaudeForge.Sdk.Claude` (moved with `git mv`, byte-identical). `ClaudeProducts` there holds
+   `ClaudeCodeProductFor`, `ClaudeDesktopProduct`, the three identity constants and `BundledFiles`;
+   `ModelCatalog`, `ModelCatalogDto` and `ModelCatalogLoader` moved to
+   `Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog`, with their own source-generated
+   `ModelCatalogJsonContext`. Core keeps OpenCode's schemas and `CoreBundledFiles` over them until
+   step 7. Repointed: both refresh scripts (each table row names its folder),
+   `validate-model-catalog.ps1`, `schema-refresh.yml` (drift scope is both folders),
+   `model-catalog-refresh.yml`, `WORKFLOWS.md`, `AGENTS.md`, `CLAUDE.md`, `docs/MODEL-CATALOG.md`,
+   and the five tests that still read Core's manifest or its folder on disk.
+   - **Measured:** Debug build 0 warnings; suite 3,444, 0 failed (7 new, in
+     `ClaudeResourceNameTests`, including that Core embeds no Claude file); the public-surface diff
+     is removals only, the catalog types and `SchemaRegistry`'s five Claude members; the
+     neutrality allow-list loses 26 entries and gains none; `GoldenFixtureTests` passes, so a backup
+     still bundles the same schema bytes; `refresh-schema.ps1` and the `.sh` under WSL both report
+     Claude's schema "already up to date" at its new path.
+   - **Drift: `src/AgentForge.Core/Assets` is still named outside `plans/`.** OpenCode's schemas
+     stay there until step 7 (decision 8), so the refresh scripts, `schema-refresh.yml` and
+     `CLAUDE.md` name it beside the new folder. The plan's "finds nothing" check holds after step 7.
+   - **Drift: `model-catalog-refresh.yml` was broken by 6b-1.** Its per-project loop still ran
+     `AgentForge.Core.Tests`, which has had no `*ModelCatalog*` class since #167, so its next run
+     would have exited 8. It had not run since, because nothing touched its paths. Fixed here.
+   - ⚠ **Upstream `opencode-config.json` has drifted** (48 lines); the refresh run here wrote it and
+     it was reverted, out of scope. The weekly workflow will raise it.
+   - **Before merge:** `package-canary.ps1` passed locally (3,444, 0 failed); `Published Version` is
+     red until a package release and pin. `Smoke-PublishedBinary.ps1` passed on win-x64. Launched
+     with `--schema-source bundled`, the trimmed win-x64 publish badges Claude Code `34e4e8fdcbe3`
+     and Claude Desktop `ed4c09df6ecc`, read through UI Automation, the same fingerprints as a
+     publish of `2bb00cb7` run the same way.
+   ▶ **Next:** merge 6b-3, release `packages-v<date>` and pin, then step 7.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

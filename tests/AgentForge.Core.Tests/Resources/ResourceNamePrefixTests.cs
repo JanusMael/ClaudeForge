@@ -42,16 +42,16 @@ public sealed class ResourceNamePrefixTests
     }
 
     [Fact]
-    public void AssetName_ResolvesTheBundledClaudeCodeSchema()
+    public void AssetName_ResolvesABundledSchema()
     {
-        string name = ResourceHelper.AssetName("Schemas", "claude-code-settings.json");
+        string name = ResourceHelper.AssetName("Schemas", "opencode-config.json");
 
         using Stream? stream = typeof(ResourceHelper).Assembly.GetManifestResourceStream(name);
 
         MessageAssert.NotNull(
             stream,
-            $"'{name}' did not resolve. Every bundled schema, the model catalog, and the enum "
-            + "descriptions are read through this path, so a mismatch here breaks all of them.\n"
+            $"'{name}' did not resolve. Every schema still bundled in Core is read through this "
+            + "path, so a mismatch here breaks all of them.\n"
             + "Actual manifest resources:\n  " + string.Join("\n  ", ManifestNames));
     }
 

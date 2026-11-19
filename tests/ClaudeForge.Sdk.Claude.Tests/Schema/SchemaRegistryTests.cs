@@ -44,8 +44,8 @@ public sealed class SchemaRegistryTests
     {
         using SchemaRegistry registry = OfflineRegistry();
 
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken); // first — registers globally
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken); // second — must hit memory cache
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, TestContext.Current.CancellationToken); // first — registers globally
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, TestContext.Current.CancellationToken); // second — must hit memory cache
     }
 
     [Fact]
@@ -54,8 +54,8 @@ public sealed class SchemaRegistryTests
     {
         using SchemaRegistry registry = OfflineRegistry();
 
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -66,12 +66,12 @@ public sealed class SchemaRegistryTests
         using SchemaRegistry registry = OfflineRegistry();
 
         // First pass (startup)
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
 
         // Second pass (Open Project / Reload / profile change)
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
-        await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
+        await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
     }
 
     // -----------------------------------------------------------------------
@@ -82,7 +82,7 @@ public sealed class SchemaRegistryTests
     public async Task GetClaudeCodeSettingsNodeAsync_ReturnsBundledSchema_WithProperties()
     {
         using SchemaRegistry registry = OfflineRegistry();
-        JsonSchemaNode node = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
+        JsonSchemaNode node = await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), TestContext.Current.CancellationToken);
 
         MessageAssert.NotNull(node, "Root schema node should not be null");
     }
@@ -91,7 +91,7 @@ public sealed class SchemaRegistryTests
     public async Task GetClaudeDesktopConfigNodeAsync_ReturnsBundledSchema_NotNull()
     {
         using SchemaRegistry registry = OfflineRegistry();
-        JsonSchemaNode node = await registry.GetSettingsNodeAsync(SchemaRegistry.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
+        JsonSchemaNode node = await registry.GetSettingsNodeAsync(ClaudeProducts.ClaudeDesktopProduct, TestContext.Current.CancellationToken);
 
         MessageAssert.NotNull(node, "Root schema node should not be null");
     }

@@ -119,7 +119,7 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
     }
 
     /// <inheritdoc/>
-    protected override ProductDescriptor Product => SchemaRegistry.ClaudeCodeProductFor(_env);
+    protected override ProductDescriptor Product => ClaudeProducts.ClaudeCodeProductFor(_env);
 
     /// <summary>
     /// The memory and footprint surfaces read the home this client resolved, not the default one.
@@ -156,6 +156,6 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
         // The engine is constructed here rather than shared: an engine must name the environment
         // its destinations resolve against, and this client is the thing that knows it.
         return new BackupClient(
-            new BackupEngine(_env, [Product, SchemaRegistry.ClaudeDesktopProduct]), [Product]);
+            new BackupEngine(_env, [Product, ClaudeProducts.ClaudeDesktopProduct]), [Product]);
     }
 }

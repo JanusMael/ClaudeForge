@@ -177,10 +177,10 @@ public sealed class SchemaProvenanceBadgeTests : IDisposable
             // Premise, asserted rather than assumed: the two products differ in exactly the
             // way this test is about. If Desktop ever gains a published schema, this test is
             // making a claim about the wrong thing and should say so here.
-            Assert.StartsWith("https://", SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaUrl,
+            Assert.StartsWith("https://", ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty).SchemaUrl,
                 StringComparison.OrdinalIgnoreCase);
             Assert.False(
-                SchemaRegistry.ClaudeDesktopProduct.SchemaUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase),
+                ClaudeProducts.ClaudeDesktopProduct.SchemaUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase),
                 "Premise: Claude Desktop's schema is hand-maintained and has no upstream URL.");
 
             MainWindowViewModel vm = await LoadedAsync(new ServingHandler());
@@ -216,7 +216,7 @@ public sealed class SchemaProvenanceBadgeTests : IDisposable
             using MainWindowViewModel vm = await LoadedAsync(new ServingHandler());
             NavigationNodeViewModel dt = Header(vm, MainWindowViewModel.NavIdClaudeDesktop);
 
-            string sha = await BundledShaAsync(SchemaRegistry.ClaudeDesktopProduct);
+            string sha = await BundledShaAsync(ClaudeProducts.ClaudeDesktopProduct);
             string noUpstream = string.Format(
                 CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipNoUpstreamFmt, sha);
             string failedFetch = string.Format(
@@ -249,7 +249,7 @@ public sealed class SchemaProvenanceBadgeTests : IDisposable
             using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
 
-            string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
+            string sha = await BundledShaAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
             string failedFetch = string.Format(
                 CultureInfo.CurrentCulture, Strings.SchemaBadgeTooltipBundledFmt, sha);
 
@@ -272,7 +272,7 @@ public sealed class SchemaProvenanceBadgeTests : IDisposable
             using MainWindowViewModel vm = await LoadedAsync(new OfflineHandler());
             NavigationNodeViewModel cc = Header(vm, MainWindowViewModel.NavIdClaudeCode);
 
-            string sha = await BundledShaAsync(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
+            string sha = await BundledShaAsync(ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty));
 
             Assert.NotNull(cc.BadgeTooltip);
             MessageAssert.Contains(sha, cc.BadgeTooltip, StringComparison.Ordinal,

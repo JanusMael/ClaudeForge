@@ -3,10 +3,9 @@ using System.Reflection;
 namespace Bennewitz.Ninja.AgentForge.Core;
 
 /// <summary>
-/// Reads files embedded under <c>src/AgentForge.Core/Assets/&lt;subNamespace&gt;/</c>
-/// from the assembly manifest. Shared by <see cref="Schema.SchemaRegistry"/> (the
-/// bundled JSON schemas) and the model-catalog loader so both resolve resource
-/// names the same way.
+/// Reads files embedded under this assembly's <c>Assets/&lt;subNamespace&gt;/</c> from the
+/// manifest: OpenCode's schemas, until plans/00008 step 7. Claude's schemas and model catalog
+/// are embedded in <c>ClaudeForge.Sdk.Claude</c> since step 6b-3.
 /// </summary>
 internal static class BundledResource
 {

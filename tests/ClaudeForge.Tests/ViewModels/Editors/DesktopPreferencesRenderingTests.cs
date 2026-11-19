@@ -1,9 +1,7 @@
-using System.Reflection;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
 using Json.Schema;
 using PropertyEditorViewModel = Bennewitz.Ninja.ScopedEditors.ViewModels.PropertyEditorViewModel;
-using ResourceHelper = Bennewitz.Ninja.AgentForge.Core.ResourceHelper;
-using SchemaRegistry = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaRegistry;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using SchemaValueType = Bennewitz.Ninja.AgentForge.Core.Schema.SchemaValueType;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels.Editors;
@@ -21,13 +19,9 @@ public class DesktopPreferencesRenderingTests
     {
         // Load the bundled schema resource directly, bypassing SchemaRegistry's on-disk cache
         // so the test asserts against the repository schema rather than a stale user cache.
-        Assembly assembly = typeof(SchemaRegistry).Assembly;
-        string resourceName = ResourceHelper.AssetName("Schemas", "claude-desktop-config.json");
-
-        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        MessageAssert.NotNull(stream, $"Embedded resource '{resourceName}' must exist.");
-        using StreamReader reader = new(stream!);
-        string json = reader.ReadToEnd();
+        byte[]? bytes = ClaudeProducts.BundledFiles.TryRead("claude-desktop-config.json");
+        MessageAssert.NotNull(bytes, "claude-desktop-config.json must be embedded in ClaudeForge.Sdk.Claude.");
+        string json = System.Text.Encoding.UTF8.GetString(bytes!);
 
         BuildOptions opts = new() { SchemaRegistry = new Json.Schema.SchemaRegistry() };
         JsonSchemaNode root = JsonSchema.FromText(json, opts).Root!;
