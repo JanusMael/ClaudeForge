@@ -17,6 +17,9 @@
          every assembly, so a grant there applies to all of them. -->
     <ItemGroup>
         <Compile Include="../../AssemblyInfo.InternalsVisibleTo.cs" Link="Properties/AssemblyInfo.InternalsVisibleTo.cs"/>
+        <!-- The product that is not Claude (plans/00008 step 5), LINKED as in Core's and Sdk's
+             tests so all three share one definition. -->
+        <Compile Include="../Shared/NeutralTestProduct.cs" Link="Shared/NeutralTestProduct.cs"/>
     </ItemGroup>
 
     <ItemGroup>

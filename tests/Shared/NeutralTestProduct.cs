@@ -78,15 +78,21 @@ internal static class NeutralTestProduct
     /// The descriptor for a product whose files live under <paramref name="root"/>: one config
     /// file and one home directory, with one skipped and one full-only subdirectory.
     /// </summary>
-    public static ProductDescriptor For(string root) =>
+    public static ProductDescriptor For(string root) => For(() => root);
+
+    /// <summary>
+    /// <see cref="For(string)"/>, with the root read each time a path is needed, as a real
+    /// product's paths follow the redirected profile.
+    /// </summary>
+    public static ProductDescriptor For(Func<string> root) =>
         new(Id, DisplayName, "bundled://neutral-test", SchemaFileName,
             ArchiveFolder: ArchiveFolder,
             BackupLayout: new ProductBackupLayout(
                 Sections:
                 [
-                    ProductArchiveSection.File(ConfigSection, () => ConfigPath(root),
+                    ProductArchiveSection.File(ConfigSection, () => ConfigPath(root()),
                         "Restoring the neutral config…"),
-                    ProductArchiveSection.Home(HomeSection, () => HomePath(root),
+                    ProductArchiveSection.Home(HomeSection, () => HomePath(root()),
                         "Restoring the neutral home…"),
                 ],
                 SkippedSubdirs:
@@ -158,6 +164,46 @@ internal static class NeutralTestProduct
             BundledFiles = Bundle,
         };
     }
+
+    /// <summary>
+    /// A second product, for tests that need two: one file, its own id, archive folder and
+    /// section, so selecting or restoring one can be told apart from the other.
+    /// </summary>
+    public static ProductDescriptor Second(string root) => Second(() => root);
+
+    /// <inheritdoc cref="Second(string)"/>
+    public static ProductDescriptor Second(Func<string> root) =>
+        new(Id + "-b", DisplayName + " B", "bundled://neutral-test-b", "neutral-test-b-settings.json",
+            ArchiveFolder: ArchiveFolder + "B",
+            BackupLayout: new ProductBackupLayout(
+                Sections:
+                [
+                    ProductArchiveSection.File("neutral-b.json", () => Path.Combine(root(), "neutral-b.json"),
+                        "Restoring the second neutral config…"),
+                ],
+                SkippedSubdirs: []));
+
+    /// <summary>
+    /// The product a test client edits: this product's names and bundled schema, with one home
+    /// section at <paramref name="home"/>, where the client's discoverer finds its settings.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ The test clients still discover through <c>ConfigFileDiscoverer</c>, which knows only
+    /// Claude's layout until <c>plans/00008</c> step 11. So the caller passes the directory that
+    /// discoverer reads, from the same <c>PlatformPaths</c> member, rather than this type copying
+    /// Claude's layout. Nothing else here is Claude's: the archive folder, the section name and the
+    /// schema are this product's own.
+    /// </remarks>
+    public static ProductDescriptor WithHome(Func<string> home) =>
+        new(Id, DisplayName, "bundled://neutral-test", SchemaFileName,
+            ArchiveFolder: ArchiveFolder,
+            BackupLayout: new ProductBackupLayout(
+                Sections: [ProductArchiveSection.Home(HomeSection, home, "Restoring the neutral home…")],
+                SkippedSubdirs: [],
+                ValidatableFiles: [new([HomeSection], ["settings.json"], Recursive: true)]))
+        {
+            BundledFiles = Bundle,
+        };
 
     /// <summary>
     /// Writes a small live footprint under <paramref name="root"/>: the config file, a settings

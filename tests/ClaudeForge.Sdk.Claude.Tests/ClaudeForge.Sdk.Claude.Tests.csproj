@@ -18,4 +18,17 @@
              against (SettingsWorkspace, SchemaRegistry). -->
         <ProjectReference Include="..\..\src\ClaudeForge.Sdk.Claude\ClaudeForge.Sdk.Claude.csproj"/>
     </ItemGroup>
+
+    <!--
+        The frozen Claude backup archive, restored by BackupArchiveCompatibilityTests. It moved
+        here from AgentForge.Core.Tests byte-for-byte (plans/00008 decision 6), because it restores
+        into Claude's paths with Claude's descriptors.
+
+        ⛔ A BINARY FIXTURE that must never be regenerated to make a test pass. It was minted by
+        the shipped engine at a known layout; regenerating it against a changed layout makes it
+        round-trip with itself and proves nothing.
+    -->
+    <ItemGroup>
+        <Content Include="Fixtures\**\*.zip" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
 </Project>

@@ -444,7 +444,31 @@ step 3. The items below are kept in order; those marked ✅ are done.
      `ModelCatalogSchemaParityTests` (`BundledResource`), `PermissionToolsTests` (scans Core's
      manifest), and Core's `BundledFilesThroughDescriptorTests`' check that `CoreBundledFiles`
      carries Claude's files. OpenCode's tests keep reading Core's manifest until step 7.
-   ▶ **Next: step 6b-2.**
+   ✅ **Merged as #167** (`2bb00cb7`, 2026-11-19).
+   ✅ **Step 6b-2, the neutral test projects stop naming Claude's descriptors (2026-11-19,
+   branch `refactor/neutral-backup-tests`):** tests only. `AgentForge.Core.Tests`,
+   `AgentForge.Sdk.Tests` and `AgentForge.AvaloniaUI.Shell.Tests` no longer reference
+   `ClaudeCodeProductFor`, `ClaudeDesktopProduct` or the Claude constants; what is left is Core's
+   own manifest (`CoreBundledFiles`, OpenCode's schemas until step 7).
+   - **Both `TestConfigClient`s** use `NeutralTestProduct.WithHome(() => PlatformPaths.ClaudeHome(…))`
+     for schema and backup. **Measured first:** swapping only the schema product changed no test's
+     outcome except the backup round-trip, which needed exactly that home. The home is still
+     Claude's because the clients discover through `ConfigFileDiscoverer` until step 11.
+   - **The Shell's backup page** offers two neutral products (`NeutralTestProduct.Second` is new),
+     rooted at `PlatformPaths.UserProfile` and read when a path is needed, so they follow a
+     redirected profile; `NeutralTestProduct.For` gained that `Func<string>` overload.
+   - **Core's backup tests split by the same class name:** `BackupEngineTests` 28 of 37,
+     `ProductBackupLayoutTests` 6 of 7 and `ExportManifestTests` 1 of 12 moved to
+     `ClaudeForge.Sdk.Claude.Tests`, selected as every test naming a Claude descriptor.
+     `BackupArchiveCompatibilityTests` moved whole with `backup-v1-claudeforge.zip`, **blob
+     `db190c03` unchanged** (decision 6). Core's `TestBackupEngine` is over the two neutral
+     products; the moved tests have their own over Claude's.
+   - ⚠ **The four redacted-marker tests needed `NeutralTestProduct.WithBundle`, not `For`.**
+     `ContainsRedactedMarker` scans only a product's validatable files, and `For` declares none,
+     so the two "true" tests went red — which is also their canary.
+   - `Compare-TestNames.ps1 -Pairing` over the four projects against `main`: **0 differences, 40
+     clean moves**, 1,582 methods each side; suite total unchanged at 3,437.
+   ▶ **Next: step 6b-3**, the data move.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

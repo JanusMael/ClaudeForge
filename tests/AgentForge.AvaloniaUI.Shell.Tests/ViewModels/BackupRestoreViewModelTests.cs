@@ -4,6 +4,7 @@ using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.AgentForge.Testing;
 using Bennewitz.Ninja.AppServices;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -947,18 +948,17 @@ public sealed class BackupRestoreViewModelTests
         // NOT confirm-true: that would actually run RestoreCommand against
         // the live ~/.claude profile, which this test must not do.
         string fakeHome = Path.Combine(Path.GetTempPath(), "vt-home-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(Path.Combine(fakeHome, ".claude"));
-        await File.WriteAllTextAsync(Path.Combine(fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""", TestContext.Current.CancellationToken);
+        NeutralTestProduct.Seed(fakeHome);
         PlatformPaths.TestUserProfileOverride = fakeHome;
         BackupEngine.InvalidateListCache();
 
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]).CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, TestBackupPage.DefaultProducts).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [TestBackupPage.DefaultProducts[0]],
             }, ct: TestContext.Current.CancellationToken, progress: null);
             Assert.True(created.Succeeded, "Test prerequisite: backup must create.");
 
@@ -997,18 +997,17 @@ public sealed class BackupRestoreViewModelTests
         // Universal X-dismiss contract: confirming-by-X must abort, never
         // proceed with the restore.
         string fakeHome = Path.Combine(Path.GetTempPath(), "vt-home-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(Path.Combine(fakeHome, ".claude"));
-        await File.WriteAllTextAsync(Path.Combine(fakeHome, ".claude", "settings.json"), """{"theme":"dark"}""", TestContext.Current.CancellationToken);
+        NeutralTestProduct.Seed(fakeHome);
         PlatformPaths.TestUserProfileOverride = fakeHome;
         BackupEngine.InvalidateListCache();
 
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty), SchemaRegistry.ClaudeDesktopProduct]).CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, TestBackupPage.DefaultProducts).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
-                Products = [SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)],
+                Products = [TestBackupPage.DefaultProducts[0]],
             }, ct: TestContext.Current.CancellationToken, progress: null);
             Assert.True(created.Succeeded);
 
@@ -1476,10 +1475,10 @@ public sealed class BackupRestoreViewModelTests
 
         MessageAssert.Equal(1, request.Products.Count,
             "Only the still-selected product may be requested.");
-        Assert.False(request.Includes(SchemaRegistry.ClaudeCodeProductFor(ClaudeEnvironment.Empty)),
-            "Deselecting Claude Code must actually exclude it — otherwise the checkbox is "
+        Assert.False(request.Includes(TestBackupPage.DefaultProducts[0]),
+            "Deselecting the first product must actually exclude it — otherwise the checkbox is "
             + "decorative and the user's choice is silently ignored.");
-        Assert.True(request.Includes(SchemaRegistry.ClaudeDesktopProduct));
+        Assert.True(request.Includes(TestBackupPage.DefaultProducts[1]));
     }
 
     [Fact]
