@@ -1,8 +1,5 @@
 # plans/00008 decision 1: every Claude-specific site AgentForge still holds. It may only shrink.
 # Written by ProductNeutralityTests.WriteAllowList; columns are kind, key, count.
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-config.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.json	1
-resource	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Assets.Schemas.opencode-tui.overlay.json	1
 shape	AgentForge.Core	Bennewitz.Ninja.AgentForge.Core.Settings.ScopeLadder::.cctor new ScopeLadder	1
 shape	AgentForge.Sdk	Bennewitz.Ninja.AgentForge.Sdk.Memory.FootprintCatalog::.cctor new FootprintCatalog	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	"Create MSIX junction?", msixMsg,	1

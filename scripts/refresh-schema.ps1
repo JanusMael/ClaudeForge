@@ -3,9 +3,9 @@
 # WHY THIS EXISTS
 # ---------------
 # The bundled schemas are the OFFLINE FALLBACK. Claude's live under
-# src/ClaudeForge.Sdk.Claude/Assets/Schemas/ (plans/00008 step 6b-3); OpenCode's stay under
-# src/AgentForge.Core/Assets/Schemas/ until step 7. Each table row names its own folder. They are what
-# the runtime reads when the network does not answer.  Runtime priority is
+# src/ClaudeForge.Sdk.Claude/Assets/Schemas/ (plans/00008 step 6b-3). OpenCode's left this branch
+# in step 7; the parked OpenCodeForge branch keeps them and its own rows. Each table row names its
+# own folder. They are what the runtime reads when the network does not answer.  Runtime priority is
 # memory cache > HTTPS fetch (+ strip, + overlay) > bundled resource (+ strip, + overlay);
 # there is no disk cache and no empty fallback.  See CLAUDE.md "Schema loading priority".
 #
@@ -27,7 +27,7 @@
 # -----
 #     pwsh scripts/refresh-schema.ps1                       # refresh all
 #     pwsh scripts/refresh-schema.ps1 -DryRun               # preview, write nothing
-#     pwsh scripts/refresh-schema.ps1 -Only opencode-config # one schema by name
+#     pwsh scripts/refresh-schema.ps1 -Only claude-code-settings # one schema by name
 #
 # Requires PowerShell 7+.  No external deps beyond Invoke-WebRequest (built-in).
 #
@@ -39,7 +39,8 @@
 #    table below.  Adding it would mean inventing a URL.
 #
 # 2. ⛔⛔ EXTERNAL $refs ARE STRIPPED, AND THAT IS LOAD-BEARING.
-#    Upstream opencode-config.json types four `model` properties with
+#    Measured on OpenCode's schema, bundled here until plans/00008 step 7, and kept for any
+#    upstream that does the same: upstream opencode-config.json typed four `model` properties with
 #    "$ref": "https://models.dev/model-schema.json#/$defs/Model" alongside a plain
 #    "type": "string".  Leaving it in makes schema evaluation throw a ref-resolution
 #    failure through ValidateWorkspaceAsync -> SaveAsync for ANY config that sets a model,
@@ -93,15 +94,12 @@ $ErrorActionPreference = 'Stop'
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir '..')
 $ClaudeSchemaDir = Join-Path $RepoRoot 'src/ClaudeForge.Sdk.Claude/Assets/Schemas'
-$CoreSchemaDir = Join-Path $RepoRoot 'src/AgentForge.Core/Assets/Schemas'
 
 # ── The table ────────────────────────────────────────────────────────────────
 # Name is what -Only matches and what the summary prints. Keep it equal to the file's
 # base name so a reader never has to map between two vocabularies.
 $Schemas = @(
     @{ Name = 'claude-code-settings'; Dir = $ClaudeSchemaDir; File = 'claude-code-settings.json'; Url = 'https://json.schemastore.org/claude-code-settings.json' }
-    @{ Name = 'opencode-config'; Dir = $CoreSchemaDir; File = 'opencode-config.json'; Url = 'https://opencode.ai/config.json' }
-    @{ Name = 'opencode-tui'; Dir = $CoreSchemaDir; File = 'opencode-tui.json'; Url = 'https://opencode.ai/tui.json' }
 )
 
 if ($Only) {
@@ -134,7 +132,7 @@ function Get-NormalisedText {
       * the $ref line ends with a comma  -> siblings follow, just drop the line
       * it does not                      -> $ref was the LAST key, so the PRECEDING
                                             line's trailing comma must go too
-    All four sites in today's opencode-config.json are the second case.
+    All four sites in OpenCode's opencode-config.json were the second case.
 #>
 function Remove-ExternalRefLine {
     param([string]$Text)
@@ -314,9 +312,8 @@ Write-Host '      whichever base wins at load time via RFC 7396 JSON Merge Patch
 Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Cyan
 Write-Host '  1. dotnet build ClaudeForge.slnx -c Debug     # the schemas still parse + bundle'
-Write-Host '  2. dotnet test ClaudeForge.slnx -c Debug      # BundledOpenCodeSchemaTests is the'
-Write-Host '                                                #   guard on the strip staying typed'
-Write-Host '  3. git diff -- src/ClaudeForge.Sdk.Claude/Assets/Schemas/ src/AgentForge.Core/Assets/Schemas/'
+Write-Host '  2. dotnet test ClaudeForge.slnx -c Debug'
+Write-Host '  3. git diff -- src/ClaudeForge.Sdk.Claude/Assets/Schemas/'
 Write-Host '  4. commit as: chore(schema): refresh bundled schemas from upstream'
 Write-Host ''
 exit 0

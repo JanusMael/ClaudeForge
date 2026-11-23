@@ -10,9 +10,9 @@
 # WHY THIS EXISTS
 # ---------------
 # The bundled schemas are the OFFLINE FALLBACK. Claude's live under
-# src/ClaudeForge.Sdk.Claude/Assets/Schemas/ (plans/00008 step 6b-3); OpenCode's stay under
-# src/AgentForge.Core/Assets/Schemas/ until step 7. Each table row names its own folder. They are what
-# the runtime reads when the network does not answer.  Runtime priority is
+# src/ClaudeForge.Sdk.Claude/Assets/Schemas/ (plans/00008 step 6b-3). OpenCode's left this branch
+# in step 7; the parked OpenCodeForge branch keeps them and its own rows. Each table row names its
+# own folder. They are what the runtime reads when the network does not answer.  Runtime priority is
 # memory cache > HTTPS fetch (+ strip, + overlay) > bundled resource (+ strip, + overlay);
 # there is no disk cache and no empty fallback.  See CLAUDE.md "Schema loading priority".
 #
@@ -24,7 +24,7 @@
 # -----
 #     bash scripts/refresh-schema.sh                        # refresh all
 #     bash scripts/refresh-schema.sh --dry-run              # preview, write nothing
-#     bash scripts/refresh-schema.sh --only opencode-config # one schema by name
+#     bash scripts/refresh-schema.sh --only claude-code-settings # one schema by name
 #
 # Works on Linux, macOS (bash 3.2) and Git Bash on Windows.  Requires curl, awk, and
 # either jq or python3 for JSON validation.
@@ -36,7 +36,8 @@
 #    resolvable URL.  Hand-maintained in-repo, deliberately absent from the table below.
 #
 # 2. EXTERNAL $refs ARE STRIPPED, AND THAT IS LOAD-BEARING.
-#    Upstream opencode-config.json types four `model` properties with
+#    Measured on OpenCode's schema, bundled here until plans/00008 step 7, and kept for any
+#    upstream that does the same: upstream opencode-config.json typed four `model` properties with
 #    "$ref": "https://models.dev/model-schema.json#/$defs/Model" alongside "type": "string".
 #    Leaving it in makes schema evaluation throw a ref-resolution failure through
 #    ValidateWorkspaceAsync -> SaveAsync for ANY config that sets a model, and the restore
@@ -86,8 +87,6 @@ REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 # associative arrays). Keep name equal to the file's base name; dir is relative to the repo root.
 SCHEMAS=(
     "claude-code-settings|src/ClaudeForge.Sdk.Claude/Assets/Schemas|claude-code-settings.json|https://json.schemastore.org/claude-code-settings.json"
-    "opencode-config|src/AgentForge.Core/Assets/Schemas|opencode-config.json|https://opencode.ai/config.json"
-    "opencode-tui|src/AgentForge.Core/Assets/Schemas|opencode-tui.json|https://opencode.ai/tui.json"
 )
 
 # ANSI colours — disabled when stdout is not a tty so CI logs stay plain.
@@ -123,7 +122,7 @@ REF_PATTERN='^[[:space:]]*"\$ref"[[:space:]]*:[[:space:]]*"https?://'
 #   * the $ref line ends with a comma -> siblings follow, drop the line alone
 #   * it does not                     -> $ref was the LAST key, so the PRECEDING line's
 #                                        trailing comma must go too
-# All four sites in today's opencode-config.json are the second case.
+# All four sites in OpenCode's opencode-config.json were the second case.
 strip_external_refs() {
     # $1 = 1 when the input ended with a newline, 0 when it did not. awk's `print`
     # ALWAYS terminates a line, so without this the two schemas that carry no trailing
@@ -172,7 +171,7 @@ FAILED=''
 
 echo
 echo "${C_CYAN}Refreshing bundled schema(s)${C_RESET}"
-echo "  target dirs: src/ClaudeForge.Sdk.Claude/Assets/Schemas, src/AgentForge.Core/Assets/Schemas"
+echo "  target dirs: src/ClaudeForge.Sdk.Claude/Assets/Schemas"
 if [[ $DRY_RUN -eq 1 ]]; then
     echo "  ${C_YELLOW}mode       : DRY RUN (no files will be written)${C_RESET}"
 fi
@@ -303,9 +302,8 @@ echo "      whichever base wins at load time via RFC 7396 JSON Merge Patch."
 echo
 echo "${C_CYAN}Next steps:${C_RESET}"
 echo "  1. dotnet build ClaudeForge.slnx -c Debug     # the schemas still parse + bundle"
-echo "  2. dotnet test ClaudeForge.slnx -c Debug      # BundledOpenCodeSchemaTests is the"
-echo "                                                #   guard on the strip staying typed"
-echo "  3. git diff -- src/ClaudeForge.Sdk.Claude/Assets/Schemas/ src/AgentForge.Core/Assets/Schemas/"
+echo "  2. dotnet test ClaudeForge.slnx -c Debug"
+echo "  3. git diff -- src/ClaudeForge.Sdk.Claude/Assets/Schemas/"
 echo "  4. commit as: chore(schema): refresh bundled schemas from upstream"
 echo
 exit 0

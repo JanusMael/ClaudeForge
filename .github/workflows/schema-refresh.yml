@@ -94,23 +94,22 @@ jobs:
           # The script is idempotent: hash short-circuit when upstream
           # matches the bundled copy. The hash check writes "Already up
           # to date" and exits 0, leaving the working tree unchanged.
-          # The drift path overwrites the changed base files in the two schema folders
-          # (Claude's in src/ClaudeForge.Sdk.Claude/Assets/Schemas, OpenCode's in
-          # src/AgentForge.Core/Assets/Schemas until plans/00008 step 7) and exits 0.
+          # The drift path overwrites the changed base files in
+          # src/ClaudeForge.Sdk.Claude/Assets/Schemas and exits 0.
           pwsh scripts/refresh-schema.ps1
 
       - name: Detect drift
         id: drift
         shell: bash
         run: |
-          # Both whole schema directories, because the script refreshes every schema that has
-          # an upstream — three today, across two folders. Scoping this to one filename, or
-          # one folder, is how a schema gets refreshed on disk and then silently discarded
-          # with no PR.
+          # Every whole schema directory the script writes, because it refreshes every schema
+          # that has an upstream. One today, in one folder (OpenCode's two left this branch in
+          # plans/00008 step 7). Scoping this to a filename is how a schema gets refreshed on
+          # disk and then silently discarded with no PR; a row in a new folder needs it here.
           #
           # Anything OUTSIDE these directories changing would be a workflow bug, so the scope
           # stays the directories rather than the whole tree.
-          SCOPE=(src/ClaudeForge.Sdk.Claude/Assets/Schemas src/AgentForge.Core/Assets/Schemas)
+          SCOPE=(src/ClaudeForge.Sdk.Claude/Assets/Schemas)
           if git diff --quiet -- "${SCOPE[@]}"; then
             echo "drift=false" >> "$GITHUB_OUTPUT"
             echo "No drift detected - every bundled schema matches upstream."
@@ -170,15 +169,14 @@ jobs:
           body: |
             ## What this PR does
 
-            Refreshes the bundled schemas under `src/ClaudeForge.Sdk.Claude/Assets/Schemas/` and
-            `src/AgentForge.Core/Assets/Schemas/` that have an upstream — one or more of them has changed since the last refresh.
+            Refreshes the bundled schemas under `src/ClaudeForge.Sdk.Claude/Assets/Schemas/`
+            that have an upstream — one or more of them has changed since the last refresh.
 
             ### Schemas changed in this PR
 
             ${{ steps.drift.outputs.files }}
 
-            The script covers `claude-code-settings.json` (schemastore.org),
-            `opencode-config.json` and `opencode-tui.json` (opencode.ai).
+            The script covers `claude-code-settings.json` (schemastore.org).
             `claude-desktop-config.json` has no upstream URL — its `$id` is a bare token — so it
             is hand-maintained and never appears here.
 
@@ -192,10 +190,6 @@ jobs:
                   `ModelPropertyPromotionTests`). No `*.overlay.json` was touched — if a
                   hand-curated key is now present upstream, delete it from the overlay so
                   upstream's value wins.
-            - [ ] ⛔ If `opencode-config.json` changed, confirm `BundledOpenCodeSchemaTests`
-                  passes. Upstream types four `model` properties with an external
-                  `models.dev` `$ref`; the script strips those, and a schema that kept one
-                  throws on save for any config that sets a model.
             - [ ] Check `SchemaRefreshDriftTests`. A changed top-level property count or a nav
                   grouping key that no longer exists both fail there deliberately — update the
                   reviewed counts in that file rather than silencing it.

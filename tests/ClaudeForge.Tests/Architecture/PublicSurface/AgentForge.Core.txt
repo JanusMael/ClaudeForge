@@ -648,8 +648,6 @@ enum Bennewitz.Ninja.AgentForge.Core.Settings.ConfigFileType : System.Int32
     ClaudeCodeSettings = 0
     ClaudeDesktopConfig = 2
     McpJson = 1
-    OpenCodeConfig = 5
-    OpenCodeTui = 6
     ProfileMcp = 4
     ProfileSettings = 3
 struct Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope>

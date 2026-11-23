@@ -182,14 +182,6 @@ public sealed class SchemaRegistry : IDisposable
         => new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sourceOverride, cacheDirectory);
 
     /// <summary>
-    /// The schemas still embedded in this assembly: OpenCode's, until plans/00008 step 7 takes them
-    /// out of Core. Claude's moved to <c>ClaudeForge.Sdk.Claude</c> in step 6b-3, with the descriptors
-    /// that read them (<c>ClaudeProducts</c>).
-    /// </summary>
-    internal static readonly IBundledFiles CoreBundledFiles = new EmbeddedResourceFiles(
-        typeof(SchemaRegistry).Assembly, ResourceHelper.SchemasPrefix);
-
-    /// <summary>
     /// Get the settings schema root node for <paramref name="product"/>.
     /// Uses the standard loading chain: memory → HTTPS (+ strip, + overlay) → bundled
     /// (+ strip, + overlay).

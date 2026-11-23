@@ -485,9 +485,9 @@ step 3. The items below are kept in order; those marked ✅ are done.
      neutrality allow-list loses 26 entries and gains none; `GoldenFixtureTests` passes, so a backup
      still bundles the same schema bytes; `refresh-schema.ps1` and the `.sh` under WSL both report
      Claude's schema "already up to date" at its new path.
-   - **Drift: `src/AgentForge.Core/Assets` is still named outside `plans/`.** OpenCode's schemas
-     stay there until step 7 (decision 8), so the refresh scripts, `schema-refresh.yml` and
-     `CLAUDE.md` name it beside the new folder. The plan's "finds nothing" check holds after step 7.
+   - **Drift: Core's `Assets` folder was still named outside `plans/` after 6b-3.** OpenCode's
+     schemas stayed there until step 7 (decision 8), so the refresh scripts, `schema-refresh.yml`
+     and `CLAUDE.md` named it beside the new folder. ✅ Step 7 removed the folder and every mention.
    - **Drift: `model-catalog-refresh.yml` was broken by 6b-1.** Its per-project loop still ran
      `AgentForge.Core.Tests`, which has had no `*ModelCatalog*` class since #167, so its next run
      would have exited 8. It had not run since, because nothing touched its paths. Fixed here.
@@ -501,7 +501,35 @@ step 3. The items below are kept in order; those marked ✅ are done.
    ✅ **Merged as #169** (`f0097e54`, 2026-11-19), with `Published Version` red by design: its three
    failures were the surface baseline, the allow-list and the no-Claude-data check, each reading the
    `2026.4.1116` Core. ✅ **Released as `packages-v2026.4.1119`** and pinned.
-   ▶ **Next: step 7**, OpenCode's data and `ConfigFileType`'s OpenCode values.
+   ✅ **Step 7, OpenCode's data leaves Core (2026-11-23, branch `refactor/opencode-data-out-of-core`):**
+   Core embeds nothing but compiled `.resx` strings. OpenCode's two schemas and the TUI overlay moved
+   with `git mv`, byte-identical, to `tests/AgentForge.Core.Tests/Fixtures/OpenCode/`, embedded in
+   the test assembly and read through `BundledProduct.OpenCodeFixtures`, an `EmbeddedResourceFiles`
+   over that prefix. They are frozen real-world shapes for the root-`$ref` fallback and the overlay
+   merge, and nothing refreshes them. `ConfigFileType.OpenCodeConfig` and `OpenCodeTui` are gone; its
+   Claude values stay until step 11. Deleted as dead once Core embeds nothing: `CoreBundledFiles`,
+   `BundledResource` and `ResourceHelper`. The refresh scripts lose their two OpenCode rows,
+   `schema-refresh.yml`'s drift scope is Claude's folder alone, and `CLAUDE.md` says so.
+   **Decision 1(b) has no allow-list now:** `ProductNeutralityTests.AgentForgeEmbedsNoData` fails on
+   any non-`.resx` resource in the five AgentForge assemblies, and the resource rows left the
+   allow-list rather than being counted down to nothing.
+   - **Measured:** Debug build 0 warnings; suite 3,439, 0 failed, 12 skipped. The public-surface
+     diff is the two enum members, nothing else. A search for Core's old `Assets` path finds
+     nothing outside `plans/`. The new guard was canaried: a stray `canary-data.json` embedded in
+     `AgentForge.Sdk` failed it and named the resource. A trimmed single-file win-x64 Release publish
+     has 0 IL diagnostics, and `Smoke-PublishedBinary.ps1` booted it for 10 seconds with no fatal log.
+   - **Test names against `main`** (`Compare-TestNames.ps1 -Pairing`): 7 removed, 1 added, 1
+     outcome. Added: `AgentForgeEmbedsNoData`. The outcome is `PackageVersionLockstepTests`, skipped
+     in a fresh worktree with no local feed and run here, which this change does not touch.
+   - **Drift: 7 tests deleted that the plan's per-PR rule does not name.** It allows moved tests,
+     decision 7's and the step's own additions. These tested what step 7 removes:
+     `ResourceNamePrefixTests` (3, Core's resource-name helper) and `BundledOpenCodeSchemaTests` (4,
+     Core's bundled OpenCode copy and the refresh strip over it). On frozen fixtures they would
+     assert a snapshot that nothing can change. The runtime strip keeps its coverage in
+     `SchemaLoadPrecedenceTests`; the parked branch keeps the OpenCode tests.
+   - ⚠ **PR #160, the weekly schema refresh, is moot once this merges.** It changes only Core's
+     `opencode-config.json`, which no longer exists, and the workflow will not raise it again.
+   ▶ **Next: step 8**, backup and restore: `ProductBackupLayout`'s additions, then the move.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

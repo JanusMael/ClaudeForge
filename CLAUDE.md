@@ -274,10 +274,10 @@ would not degrade validation, it would remove it while every surface kept report
 makes network-first safe, and it is the whole design. `*.overlay.json` siblings carry
 hand-curated additions upstream omits — `model.examples` and `model.default`, which promote
 `model` to an enum and give the editor a real picker — merged via RFC 7396 JSON Merge Patch.
-Only 2 of the 4 schemas have one.
+On this branch only Claude Code's settings schema has one.
 
 ⛔ **The strip is a runtime concern, not just the refresh script's.** Upstream
-`opencode-config.json` types four `model` properties with a `models.dev` `$ref`; a copy carrying
+`opencode-config.json` (bundled here until plans/00008 step 7) types four `model` properties with a `models.dev` `$ref`; a copy carrying
 one makes schema evaluation throw on save for any config that sets a model. Bundled files are
 already stripped by the script, so re-applying is a no-op — one code path for every source is
 what stops the two drifting. The strip is line-based, so an inline `$ref` survives it; the
@@ -320,8 +320,8 @@ deliberate. Before "fixing" a comment to match the old order, read `GetSchemaAsy
 `SchemaLoadPrecedenceTests` pins the current behaviour, including that a fetched copy gets the
 overlay.
 
-Bundled schemas live in `src/ClaudeForge.Sdk.Claude/Assets/Schemas/` (Claude's, since plans/00008
-step 6b-3) and `src/AgentForge.Core/Assets/Schemas/` (OpenCode's, until step 7), and are refreshed by
+Bundled schemas live in `src/ClaudeForge.Sdk.Claude/Assets/Schemas/` (since plans/00008 step 6b-3;
+OpenCode's left this branch in step 7, and Core's tests keep copies as frozen fixtures), and are refreshed by
 `scripts/refresh-schema.ps1` (or its `.sh` twin, kept in byte parity). They are the offline
 fallback, so refreshing them matters for every user who is offline, on a slow link, or behind
 something that blocks the fetch — and for the first three seconds of every launch. Two things
