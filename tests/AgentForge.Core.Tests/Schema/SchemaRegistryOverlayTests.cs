@@ -160,7 +160,7 @@ public sealed class SchemaRegistryOverlayTests
     /// </summary>
     /// <remarks>
     /// ⚠ Built from the MERGED bytes on purpose. The sibling tree tests read
-    /// <c>BundledResource.TryRead</c>, i.e. the raw base file, so none of them can see an overlay —
+    /// <c>BundledProduct.ReadOpenCodeFixture</c>, i.e. the raw base file, so none of them can see an overlay —
     /// which is exactly why adding this overlay broke no existing test and why this assertion had to
     /// be written rather than assumed.
     /// </remarks>
@@ -177,7 +177,7 @@ public sealed class SchemaRegistryOverlayTests
             return SchemaTreeBuilder.BuildTopLevel(root).Single(n => n.Name == "theme");
         }
 
-        byte[]? baseBytes = BundledResource.TryRead("Schemas", "opencode-tui.json");
+        byte[]? baseBytes = BundledProduct.ReadOpenCodeFixture("opencode-tui.json");
         byte[]? merged = SchemaRegistry.TryReadBundledBytesMerged(BundledProduct.Named("opencode-tui.json"));
         Assert.NotNull(baseBytes);
         Assert.NotNull(merged);

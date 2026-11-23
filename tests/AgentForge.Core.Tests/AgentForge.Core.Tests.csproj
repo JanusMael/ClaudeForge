@@ -43,4 +43,14 @@
     <ItemGroup>
         <Content Include="Fixtures\**\*.zip" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
+
+    <!--
+        OpenCode's schemas as frozen test data, read through BundledProduct.OpenCodeFixtures.
+        They left Core's manifest in plans/00008 step 7 (decision 8) and nothing refreshes them:
+        they are real-world shapes for the tree builder and the overlay merge, not a product's
+        bundled copy. The parked OpenCodeForge branch keeps the live ones.
+    -->
+    <ItemGroup>
+        <EmbeddedResource Include="Fixtures\OpenCode\*.json"/>
+    </ItemGroup>
 </Project>

@@ -45,8 +45,7 @@ public class RootRefSchemaTreeTests
 
     private static List<SchemaNode> TopLevel(string fileName)
     {
-        byte[]? bytes = BundledResource.TryRead("Schemas", fileName);
-        MessageAssert.NotNull(bytes, $"'{fileName}' is not embedded.");
+        byte[] bytes = BundledProduct.ReadOpenCodeFixture(fileName);
         return SchemaTreeBuilder.BuildTopLevel(ParseNode(Encoding.UTF8.GetString(bytes))).ToList();
     }
 

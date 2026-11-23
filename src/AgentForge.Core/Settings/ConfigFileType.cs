@@ -11,12 +11,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Settings;
 /// before treating a member here as load-bearing, and worth re-checking before making one so.
 /// </para>
 /// <para>
-/// ⏳ <b>Product-specific members in a neutral enum is a known, stated deferral.</b> It is
-/// the same debt as <c>ConfigFileDiscoverer</c>'s hardcoded Claude layouts: generalizing it
-/// is a product-model change that still has no owning phase in the plan. The OpenCode members
-/// were added when Phase 7 needed to construct a <see cref="DiscoveredFile"/> honestly rather
-/// than mislabel one as Claude's. When the generalization does happen it should take the
-/// whole enum, not carve out one product's members.
+/// ⏳ <b>The remaining members are Claude's, and they leave with <c>ConfigFileDiscoverer</c></b>,
+/// their only real user, in plans/00008 step 11. OpenCode's two members left in step 7
+/// (decision 8); the parked OpenCodeForge branch keeps its own copy.
 /// </para>
 /// </remarks>
 public enum ConfigFileType
@@ -35,10 +32,4 @@ public enum ConfigFileType
 
     /// <summary>A named profile's mcp.json under ~/.claude/profiles/{name}/.</summary>
     ProfileMcp,
-
-    /// <summary>OpenCode's main config — opencode.json / opencode.jsonc.</summary>
-    OpenCodeConfig,
-
-    /// <summary>OpenCode's terminal-UI config — tui.json.</summary>
-    OpenCodeTui,
 }

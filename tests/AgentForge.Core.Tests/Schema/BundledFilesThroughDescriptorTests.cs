@@ -179,7 +179,7 @@ public sealed class BundledFilesThroughDescriptorTests : IDisposable
     [Fact]
     public void EmbeddedResourceFiles_ReadsAFile_AndAnswersNullForOneThatIsNotThere()
     {
-        IBundledFiles files = SchemaRegistry.CoreBundledFiles;
+        IBundledFiles files = BundledProduct.OpenCodeFixtures;
 
         Assert.NotNull(files.TryRead("opencode-config.json"));
         Assert.Null(files.TryRead("no-such-file.json"));

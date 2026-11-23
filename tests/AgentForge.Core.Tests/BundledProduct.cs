@@ -5,8 +5,8 @@ using Bennewitz.Ninja.AgentForge.Testing;
 namespace Bennewitz.Ninja.AgentForge.Core.Tests;
 
 /// <summary>
-/// Descriptors for exercising the schema registry's load chain: a neutral sample bundle, and the
-/// schemas this assembly still embeds.
+/// Descriptors for exercising the schema registry's load chain: a neutral sample bundle, and
+/// OpenCode's schemas as frozen fixtures.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -84,14 +84,28 @@ internal static class BundledProduct
         };
 
     /// <summary>
-    /// A descriptor for one of the schemas this assembly still embeds, with a URL nothing serves.
+    /// OpenCode's schemas, embedded in this test assembly as frozen real-world shapes: the root
+    /// <c>$ref</c> of <c>opencode-config.json</c> and the overlay of <c>opencode-tui.json</c>.
     /// </summary>
     /// <remarks>
-    /// Only OpenCode's are left, and they leave Core in <c>plans/00008</c> step 7.
+    /// The prefix is derived from this type's namespace, which is the project's root namespace,
+    /// so a rename cannot leave it matching nothing; <see cref="EmbeddedResourceFiles"/> would
+    /// refuse it on first use if it did.
     /// </remarks>
+    internal static IBundledFiles OpenCodeFixtures { get; } = new EmbeddedResourceFiles(
+        typeof(BundledProduct).Assembly, typeof(BundledProduct).Namespace + ".Fixtures.OpenCode.");
+
+    /// <summary>The raw bytes of one of <see cref="OpenCodeFixtures"/>, with no overlay applied.</summary>
+    internal static byte[] ReadOpenCodeFixture(string fileName) =>
+        OpenCodeFixtures.TryRead(fileName)
+        ?? throw new InvalidOperationException($"'{fileName}' is not embedded under Fixtures/OpenCode/.");
+
+    /// <summary>
+    /// A descriptor for one of <see cref="OpenCodeFixtures"/>, with a URL nothing serves.
+    /// </summary>
     internal static ProductDescriptor Named(string schemaFileName) =>
         new("test-" + schemaFileName, schemaFileName, "https://example.invalid/" + schemaFileName, schemaFileName, "Test")
         {
-            BundledFiles = SchemaRegistry.CoreBundledFiles,
+            BundledFiles = OpenCodeFixtures,
         };
 }

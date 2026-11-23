@@ -23,7 +23,8 @@ namespace Bennewitz.Ninja.ClaudeForge.Tests.Architecture;
 /// </para>
 /// <para>
 /// <b>(b) Resources.</b> No <c>AgentForge.*.dll</c> embeds a manifest resource other than compiled
-/// <c>.resx</c> strings; today only Core does, with Claude's and OpenCode's data.
+/// <c>.resx</c> strings. It has no allow-list: Core's last data, OpenCode's schemas, left in
+/// plans/00008 step 7, so any entry is a failure (<see cref="AgentForgeEmbedsNoData"/>).
 /// </para>
 /// <para>
 /// <b>(c) Shapes.</b> No AgentForge assembly constructs a <see cref="ScopeLadder"/> or a
@@ -117,6 +118,28 @@ public sealed class ProductNeutralityTests
     }
 
     /// <summary>
+    /// Decision 1(b), with no allow-list since plans/00008 step 7: an AgentForge assembly embeds
+    /// compiled <c>.resx</c> strings and nothing else. A product's data is the product's to embed,
+    /// and reaches the engines through <c>ProductDescriptor.BundledFiles</c>.
+    /// </summary>
+    [Fact]
+    public void AgentForgeEmbedsNoData()
+    {
+        string[] embedded =
+        [
+            .. AgentForgeAssemblies().SelectMany(assembly => assembly.GetManifestResourceNames()
+                .Where(resource => !resource.EndsWith(".resources", StringComparison.Ordinal))
+                .Select(resource => $"  {assembly.GetName().Name}: {resource}")),
+        ];
+
+        Assert.True(embedded.Length == 0,
+            $"{embedded.Length} manifest resource(s) in AgentForge other than compiled .resx strings. "
+            + "Embed a product's data in the product's own assembly and hand it over through "
+            + "ProductDescriptor.BundledFiles (plans/00008 decision 1(b)):\n"
+            + string.Join("\n", embedded));
+    }
+
+    /// <summary>
     /// Rewrites the allow-list from the tree as it is now. Explicit: it never runs with the suite.
     /// Run it after REMOVING sites, and read the diff before committing it.
     /// </summary>
@@ -168,18 +191,11 @@ public sealed class ProductNeutralityTests
             }
         }
 
-        // (b) Resources and (c) shapes, from the built assemblies the tests already reference.
+        // (c) Shapes, from the built assemblies the tests already reference. (b) is not counted:
+        // it has no allow-list (AgentForgeEmbedsNoData).
         foreach (Assembly assembly in AgentForgeAssemblies())
         {
             string name = assembly.GetName().Name!;
-            foreach (string resource in assembly.GetManifestResourceNames())
-            {
-                if (!resource.EndsWith(".resources", StringComparison.Ordinal))
-                {
-                    Increment(counts, $"resource\t{name}\t{resource}");
-                }
-            }
-
             foreach (string site in ShapeConstructions(assembly))
             {
                 Increment(counts, $"shape\t{name}\t{site}");
