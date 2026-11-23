@@ -106,8 +106,8 @@
       variable, and a global property on the command line still outranks it.
     -->
     <PropertyGroup>
-        <AppServicesVersion>2026.4.1113</AppServicesVersion>
-        <ScopedEditorsVersion>2026.4.1110</ScopedEditorsVersion>
+        <AppServicesVersion>2026.4.1116</AppServicesVersion>
+        <ScopedEditorsVersion>2026.4.1116</ScopedEditorsVersion>
     </PropertyGroup>
 
     <!--
@@ -166,7 +166,7 @@
          a runtime dependency).  IncludeAssets enumerates the asset types the
          generator legitimately needs at build time. -->
     <ItemGroup>
-        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.4.1031">
+        <PackageReference Include="Bennewitz.Ninja.AutoVersioning" Version="2026.4.1116">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
