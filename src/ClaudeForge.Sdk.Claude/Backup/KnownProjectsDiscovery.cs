@@ -1,7 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Backup;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Backup;
 
 /// <summary>
 /// Discovers the set of project root paths Claude Code has known across
@@ -21,27 +22,20 @@ namespace Bennewitz.Ninja.AgentForge.Core.Backup;
 /// <para>
 /// Project roots that no longer exist on disk at discovery time are
 /// silently dropped, and the count of dropped entries surfaces via
-/// <see cref="DiscoveryResult.SkippedNonExistentCount"/> so the caller
-/// (typically <see cref="BackupEngine"/>) can fold a single-line
-/// warning into the backup manifest.  No exception is thrown for a
+/// <see cref="ProductKnownProjects.SkippedNonExistentCount"/> so the backup
+/// engine, which asks through Claude Code's <see cref="ProductProjectLayout"/>, can fold a
+/// single-line warning into the backup manifest.  No exception is thrown for a
 /// missing or malformed <c>~/.claude.json</c> — the discovery degrades
 /// gracefully to "no known projects" so a corrupt config never blocks
 /// a backup.
 /// </para>
+/// <para>
+/// ⓘ In <c>AgentForge.Core</c> until plans/00008 step 8, which put it behind
+/// <see cref="ProductProjectLayout.KnownProjects"/>.
+/// </para>
 /// </summary>
-public static class KnownProjectsDiscovery
+internal static class KnownProjectsDiscovery
 {
-    /// <summary>
-    /// Outcome of a <see cref="ResolveExisting"/> call.  Carries both the
-    /// usable subset and the dropped count so callers can surface the gap
-    /// to users without holding the dropped paths themselves (no logging
-    /// of path strings — they may contain user-identifying directory
-    /// names).
-    /// </summary>
-    public sealed record DiscoveryResult(
-        IReadOnlyList<string> ExistingProjectRoots,
-        int SkippedNonExistentCount);
-
     /// <summary>
     /// Reads <paramref name="claudeJsonPath"/> (typically
     /// <see cref="Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths.ClaudeJsonPath"/>),
@@ -50,11 +44,11 @@ public static class KnownProjectsDiscovery
     /// empty result with zero skipped if the file is missing, unreadable,
     /// malformed, or has no <c>projects</c> object.
     /// </summary>
-    public static DiscoveryResult ResolveExisting(string claudeJsonPath)
+    public static ProductKnownProjects ResolveExisting(string claudeJsonPath)
     {
         if (string.IsNullOrWhiteSpace(claudeJsonPath) || !File.Exists(claudeJsonPath))
         {
-            return new DiscoveryResult(Array.Empty<string>(), 0);
+            return ProductKnownProjects.None;
         }
 
         JsonObject? root;
@@ -68,12 +62,12 @@ public static class KnownProjectsDiscovery
             // Malformed / unreadable → gracefully degrade.  A corrupted
             // ~/.claude.json should not block the rest of the backup
             // from completing.
-            return new DiscoveryResult(Array.Empty<string>(), 0);
+            return ProductKnownProjects.None;
         }
 
         if (root?["projects"] is not JsonObject projectsMap)
         {
-            return new DiscoveryResult(Array.Empty<string>(), 0);
+            return ProductKnownProjects.None;
         }
 
         List<string> existing = new();
@@ -89,7 +83,7 @@ public static class KnownProjectsDiscovery
             // Directory.Exists is the canonical "is this still a usable
             // project root?" check.  A path with permission issues will
             // also report false here — same graceful-skip behaviour the
-            // existing AddProjectClaudeData path uses.
+            // backup's own per-project capture uses.
             try
             {
                 if (Directory.Exists(path))
@@ -109,6 +103,6 @@ public static class KnownProjectsDiscovery
             }
         }
 
-        return new DiscoveryResult(existing, skipped);
+        return new ProductKnownProjects(existing, skipped);
     }
 }

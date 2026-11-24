@@ -20,6 +20,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// </remarks>
 public sealed class RestoreEngineTests : IDisposable
 {
+    /// <summary>The archive folder these tests stage projects and worktrees under.</summary>
+    private const string ProjectsFolder = NeutralTestProduct.ArchiveFolder;
+
     private string _baseDir = string.Empty;
 
     public RestoreEngineTests() => Setup();
@@ -596,7 +599,7 @@ public sealed class RestoreEngineTests : IDisposable
     {
         // The F7 repro end to end: the archive carries a project's files, the live path is
         // outside the home folder, and this machine's project list names it.
-        string projBackupDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "OutsideProject");
+        string projBackupDir = Path.Combine(_baseDir, ProjectsFolder, "projects", "OutsideProject");
         Directory.CreateDirectory(Path.Combine(projBackupDir, ".claude"));
         File.WriteAllText(Path.Combine(projBackupDir, ".claude", "settings.json"), """{"model":"restored"}""");
 
@@ -620,7 +623,7 @@ public sealed class RestoreEngineTests : IDisposable
             RestoreJournal journal = new();
 
             int count = RestoreEngine.RestoreProjects(
-                _baseDir, manifest, "20260519-120000", [livePath], journal);
+                _baseDir, ProjectsFolder, manifest, "20260519-120000", [livePath], journal);
 
             MessageAssert.Equal(1, count, "The project's file must be restored.");
             MessageAssert.Equal(0, journal.Skipped.Count,
@@ -640,7 +643,7 @@ public sealed class RestoreEngineTests : IDisposable
     {
         // The other half — remove the authorisation and the same restore must refuse.
         // Without this, the test above could be passing because the check is simply gone.
-        string projBackupDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "OutsideProject");
+        string projBackupDir = Path.Combine(_baseDir, ProjectsFolder, "projects", "OutsideProject");
         Directory.CreateDirectory(projBackupDir);
         File.WriteAllText(Path.Combine(projBackupDir, "payload.txt"), "should not land");
 
@@ -656,7 +659,8 @@ public sealed class RestoreEngineTests : IDisposable
             BackupManifest manifest = new() { Projects = { livePath } };
             RestoreJournal journal = new();
 
-            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
+            int count = RestoreEngine.RestoreProjects(
+                _baseDir, ProjectsFolder, manifest, "20260519-120000", [], journal);
 
             Assert.Equal(0, count);
             Assert.Single(journal.Skipped);
@@ -681,7 +685,7 @@ public sealed class RestoreEngineTests : IDisposable
         string open = Path.Combine(_baseDir, "OpenProject");
         Directory.CreateDirectory(open);
 
-        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(ClaudeEnvironment.Empty, [open]);
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots([], [open]);
 
         Assert.True(roots.Contains(open),
             "The host's open project must be authorised — it is the path the archive was "
@@ -689,16 +693,17 @@ public sealed class RestoreEngineTests : IDisposable
     }
 
     [Fact]
-    public void BuildAuthorisedRoots_WithNoOpenProject_StillReturnsTheMachinesOwnSources()
+    public void BuildAuthorisedRoots_WithNoOpenProjectAndNoProducts_AuthorisesNothing()
     {
         // Null is legal (a restore with no project open) and must not throw or produce a
         // set that refuses everything the machine legitimately knows.
-        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(ClaudeEnvironment.Empty, null);
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots([], null);
 
         Assert.NotNull(roots);
-        // No count assertion: this machine's ~/.claude.json is real and may hold anything,
-        // including nothing. Asserting a number here would make the test a property of the
-        // developer's home directory rather than of the code.
+        // With no products there is no other source, so nothing is authorised. Before plans/00008
+        // step 8 this read the developer's real ~/.claude.json and could assert no count; the
+        // product sources are NeutralProjectBackupTests' now.
+        Assert.Empty(roots);
     }
 
     [Fact]
@@ -706,7 +711,7 @@ public sealed class RestoreEngineTests : IDisposable
     {
         // "No project open" reaches the host as an empty string as often as a null, and a
         // blank entry in the set would be compared against every candidate path.
-        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots(ClaudeEnvironment.Empty, ["", "   "]);
+        IReadOnlyCollection<string> roots = RestoreEngine.BuildAuthorisedRoots([], ["", "   "]);
 
         Assert.False(roots.Any(string.IsNullOrWhiteSpace),
             "A blank root must never enter the authorised set.");
@@ -798,7 +803,8 @@ public sealed class RestoreEngineTests : IDisposable
         List<string> skipped = journal.Skipped;
         List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
+        int count = RestoreEngine.RestoreProjects(
+                _baseDir, ProjectsFolder, manifest, "20260519-120000", [], journal);
 
         Assert.Equal(0, count);
         Assert.Empty(skipped);
@@ -811,7 +817,7 @@ public sealed class RestoreEngineTests : IDisposable
         // tempRoot/ClaudeCode/projects/SomeProject/ exists, but the
         // manifest's matching project livePath does NOT exist on disk
         // → that project gets skipped with a "(path missing)" note.
-        string projectsDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "GhostProject");
+        string projectsDir = Path.Combine(_baseDir, ProjectsFolder, "projects", "GhostProject");
         Directory.CreateDirectory(projectsDir);
         File.WriteAllText(Path.Combine(projectsDir, "claude.json"), "{}");
 
@@ -823,7 +829,8 @@ public sealed class RestoreEngineTests : IDisposable
         List<string> skipped = journal.Skipped;
         List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
+        int count = RestoreEngine.RestoreProjects(
+                _baseDir, ProjectsFolder, manifest, "20260519-120000", [], journal);
 
         Assert.Equal(0, count);
         Assert.Single(skipped);
@@ -838,7 +845,7 @@ public sealed class RestoreEngineTests : IDisposable
         // outside the user's profile (a system path) — must be refused
         // with "(path outside user profile)".  This is the security
         // gate that stops a crafted zip from writing to C:\Windows or /etc.
-        string projectsDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "EvilProject");
+        string projectsDir = Path.Combine(_baseDir, ProjectsFolder, "projects", "EvilProject");
         Directory.CreateDirectory(projectsDir);
         File.WriteAllText(Path.Combine(projectsDir, "evil.txt"), "would-be malicious");
 
@@ -864,7 +871,8 @@ public sealed class RestoreEngineTests : IDisposable
             List<string> skipped = journal.Skipped;
             List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
+            int count = RestoreEngine.RestoreProjects(
+                _baseDir, ProjectsFolder, manifest, "20260519-120000", [], journal);
 
             Assert.Equal(0, count);
             Assert.Single(skipped);
@@ -896,7 +904,7 @@ public sealed class RestoreEngineTests : IDisposable
         // entry's directory name.  Construct a unique parent under the
         // user profile, then create "MyProject" inside it so the
         // basename-match succeeds.
-        string projectsDir = Path.Combine(_baseDir, "ClaudeCode", "projects", "MyProject");
+        string projectsDir = Path.Combine(_baseDir, ProjectsFolder, "projects", "MyProject");
         Directory.CreateDirectory(projectsDir);
         File.WriteAllText(Path.Combine(projectsDir, "claude.json"), "{\"hello\":\"world\"}");
 
@@ -910,7 +918,8 @@ public sealed class RestoreEngineTests : IDisposable
             List<string> skipped = journal.Skipped;
             List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreProjects(_baseDir, manifest, "20260519-120000", [], journal);
+            int count = RestoreEngine.RestoreProjects(
+                _baseDir, ProjectsFolder, manifest, "20260519-120000", [], journal);
 
             Assert.Equal(1, count);
             Assert.Empty(skipped);
@@ -933,7 +942,7 @@ public sealed class RestoreEngineTests : IDisposable
         List<string> skipped = journal.Skipped;
         List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
+        int count = RestoreEngine.RestoreWorktrees(_baseDir, ProjectsFolder, "20260519-120000", journal);
 
         Assert.Equal(0, count);
         Assert.Empty(skipped);
@@ -945,14 +954,14 @@ public sealed class RestoreEngineTests : IDisposable
     {
         // tempRoot/ClaudeCode/worktrees/foo/ exists but has no
         // .worktree-meta.json → skipped with "(no worktree metadata)".
-        string wtDir = Path.Combine(_baseDir, "ClaudeCode", "worktrees", "foo");
+        string wtDir = Path.Combine(_baseDir, ProjectsFolder, "worktrees", "foo");
         Directory.CreateDirectory(wtDir);
 
         RestoreJournal journal = new();
         List<string> skipped = journal.Skipped;
         List<string> failures = journal.FileFailures;
 
-        int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
+        int count = RestoreEngine.RestoreWorktrees(_baseDir, ProjectsFolder, "20260519-120000", journal);
 
         Assert.Equal(0, count);
         Assert.Single(skipped);
@@ -965,7 +974,7 @@ public sealed class RestoreEngineTests : IDisposable
     {
         // Crafted .worktree-meta.json points outside the user profile
         // → security guard kicks in.  No copy lands.
-        string wtDir = Path.Combine(_baseDir, "ClaudeCode", "worktrees", "evil-wt");
+        string wtDir = Path.Combine(_baseDir, ProjectsFolder, "worktrees", "evil-wt");
         Directory.CreateDirectory(wtDir);
         File.WriteAllText(Path.Combine(wtDir, "evil.txt"), "would-be malicious");
 
@@ -991,7 +1000,7 @@ public sealed class RestoreEngineTests : IDisposable
             List<string> skipped = journal.Skipped;
             List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
+            int count = RestoreEngine.RestoreWorktrees(_baseDir, ProjectsFolder, "20260519-120000", journal);
 
             Assert.Equal(0, count);
             Assert.Single(skipped);
@@ -1015,7 +1024,7 @@ public sealed class RestoreEngineTests : IDisposable
     [Fact]
     public void RestoreWorktrees_HappyPath_RestoresToWorktreePath()
     {
-        string wtDir = Path.Combine(_baseDir, "ClaudeCode", "worktrees", "feature-branch");
+        string wtDir = Path.Combine(_baseDir, ProjectsFolder, "worktrees", "feature-branch");
         Directory.CreateDirectory(wtDir);
         File.WriteAllText(Path.Combine(wtDir, "settings.json"), "{\"wt\":true}");
 
@@ -1029,7 +1038,7 @@ public sealed class RestoreEngineTests : IDisposable
             List<string> skipped = journal.Skipped;
             List<string> failures = journal.FileFailures;
 
-            int count = RestoreEngine.RestoreWorktrees(_baseDir, "20260519-120000", journal);
+            int count = RestoreEngine.RestoreWorktrees(_baseDir, ProjectsFolder, "20260519-120000", journal);
 
             // Count of 1 — settings.json restored.  The .worktree-meta.json
             // itself is also under wtDir so RestoreDirectory will copy it

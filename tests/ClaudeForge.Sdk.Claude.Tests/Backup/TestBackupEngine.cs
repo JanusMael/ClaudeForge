@@ -18,8 +18,9 @@ namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Backup;
 /// <para>
 /// ⚠ <b>The environment does not matter here.</b> These fixtures sandbox the profile through
 /// <c>PlatformPaths.TestUserProfileOverride</c>, which wins over the environment by design. A
-/// fixture that wants a RELOCATED home must construct its own engine with a real
-/// <see cref="ClaudeEnvironment"/>.
+/// fixture that wants a RELOCATED home must construct its own engine over a descriptor from
+/// <c>ClaudeProducts.ClaudeCodeProductFor</c> with a real <see cref="ClaudeEnvironment"/>: the
+/// engine holds no environment of its own since plans/00008 step 8.
 /// </para>
 /// <para>
 /// ⛔ <b>Test-only, never in a product assembly.</b> The source-scan guard for home bypasses
@@ -33,5 +34,5 @@ internal static class TestBackupEngine
         [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), ClaudeProducts.ClaudeDesktopProduct];
 
     /// <summary>A shared engine over the default environment, for fixtures that do not relocate it.</summary>
-    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, Products);
+    internal static BackupEngine Default { get; } = new(Products);
 }

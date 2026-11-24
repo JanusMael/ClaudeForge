@@ -47,8 +47,9 @@ class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSectio
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection right)
 class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout>
-    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection> Sections, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir> SkippedSubdirs, System.String CredentialFileName = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductValidatableFiles> ValidatableFiles = null)
+    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection> Sections, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir> SkippedSubdirs, System.String CredentialFileName = null, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductValidatableFiles> ValidatableFiles = null, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout Projects = null)
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout <Clone>$()
+    Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout Projects { get;init; }
     System.Boolean Equals(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout other)
     System.Boolean Equals(System.Object obj)
     System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection> Sections { get;init; }
@@ -58,7 +59,7 @@ class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout 
     System.Int32 GetHashCode()
     System.String CredentialFileName { get;init; }
     System.String ToString()
-    System.Void Deconstruct(out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection> Sections, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir> SkippedSubdirs, out System.String CredentialFileName, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductValidatableFiles> ValidatableFiles)
+    System.Void Deconstruct(out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductArchiveSection> Sections, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir> SkippedSubdirs, out System.String CredentialFileName, out System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductValidatableFiles> ValidatableFiles, out Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout Projects)
     static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout Empty { get; }
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout right)
@@ -80,6 +81,32 @@ class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor [s
     System.Void Deconstruct(out System.String Id, out System.String DisplayName, out System.String SchemaUrl, out System.String SchemaFileName, out System.String ArchiveFolder, out Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductBackupLayout BackupLayout)
     static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor right)
     static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor right)
+class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects>
+    .ctor(System.Collections.Generic.IReadOnlyList<System.String> ExistingProjectRoots, System.Int32 SkippedNonExistentCount)
+    Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<System.String> ExistingProjectRoots { get;init; }
+    System.Int32 GetHashCode()
+    System.Int32 SkippedNonExistentCount { get;init; }
+    System.String ToString()
+    System.Void Deconstruct(out System.Collections.Generic.IReadOnlyList<System.String> ExistingProjectRoots, out System.Int32 SkippedNonExistentCount)
+    static Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects None { get; }
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects right)
+class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout>
+    .ctor(System.Collections.Generic.IReadOnlyList<System.String> Items, System.Func<System.Collections.Generic.IReadOnlyList<System.String>, System.Collections.Generic.IReadOnlyList<System.String>> RelatedProjects, System.Func<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects> KnownProjects)
+    Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout <Clone>$()
+    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout other)
+    System.Boolean Equals(System.Object obj)
+    System.Collections.Generic.IReadOnlyList<System.String> Items { get;init; }
+    System.Func<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects> KnownProjects { get;init; }
+    System.Func<System.Collections.Generic.IReadOnlyList<System.String>, System.Collections.Generic.IReadOnlyList<System.String>> RelatedProjects { get;init; }
+    System.Int32 GetHashCode()
+    System.String ToString()
+    System.Void Deconstruct(out System.Collections.Generic.IReadOnlyList<System.String> Items, out System.Func<System.Collections.Generic.IReadOnlyList<System.String>, System.Collections.Generic.IReadOnlyList<System.String>> RelatedProjects, out System.Func<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductKnownProjects> KnownProjects)
+    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout right)
+    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout left, Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductProjectLayout right)
 class Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir>
     .ctor(System.String Name, System.String Reason, System.Boolean IncludedInFullBackup = false)
     Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductSkippedSubdir <Clone>$()

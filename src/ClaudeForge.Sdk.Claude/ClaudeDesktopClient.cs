@@ -90,9 +90,7 @@ public sealed class ClaudeDesktopClient : ClaudeConfigClientBase
         // real environment in would suggest Desktop paths respond to CLAUDE_CONFIG_DIR. They
         // do not.
         return new BackupClient(
-            new BackupEngine(
-                ClaudeEnvironment.Empty,
-                [ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), Product]),
+            new BackupEngine([ClaudeProducts.ClaudeCodeProductFor(ClaudeEnvironment.Empty), Product]),
             [Product]);
     }
 

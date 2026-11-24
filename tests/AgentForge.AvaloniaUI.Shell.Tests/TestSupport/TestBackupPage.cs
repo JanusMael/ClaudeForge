@@ -43,7 +43,7 @@ internal static class TestBackupPage
         IReadOnlyList<ProductDescriptor> chosen = products ?? DefaultProducts;
         return new BackupPageOptions
         {
-            Engine = new BackupEngine(ClaudeEnvironment.Empty, DefaultProducts),
+            Engine = new BackupEngine(DefaultProducts),
             Products = chosen,
             AgentProcessNames = AgentProcessNames,
             CredentialsPathDisplay = CredentialsPathDisplay,

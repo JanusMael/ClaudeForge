@@ -191,7 +191,7 @@ public sealed class BundledFilesThroughDescriptorTests : IDisposable
     {
         string zip = Path.Combine(_root, "backups", "backup-20300101-000000.zip");
         Directory.CreateDirectory(Path.GetDirectoryName(zip)!);
-        BackupResult result = await new BackupEngine(ClaudeEnvironment.Empty, [product]).CreateAsync(
+        BackupResult result = await new BackupEngine([product]).CreateAsync(
             new BackupRequest { DestinationZipPath = zip, Products = [product] },
             progress: null, TestContext.Current.CancellationToken);
         Assert.True(result.Succeeded, result.Message);
@@ -201,7 +201,7 @@ public sealed class BundledFilesThroughDescriptorTests : IDisposable
     private async Task<RestoreResult> RestoreFreshBackupAsync(ProductDescriptor product)
     {
         string zip = await CreateBackupAsync(product);
-        BackupEngine engine = new(ClaudeEnvironment.Empty, [product]);
+        BackupEngine engine = new([product]);
         BackupEntry entry = engine.TryReadEntry(zip)!;
         return await engine.RestoreAsync(entry, progress: null, TestContext.Current.CancellationToken);
     }

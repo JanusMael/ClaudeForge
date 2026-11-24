@@ -26,9 +26,9 @@ namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
 /// schemas. Those move with that data in later steps.
 /// </para>
 /// <para>
-/// ⚠ The engine still requires a <see cref="ClaudeEnvironment"/> until step 8, and still reads
-/// Claude's settings files to discover projects. The profile override below keeps that read inside
-/// the sandbox; it does not make any assertion here depend on Claude.
+/// ⓘ Since step 8 the engine holds no environment and discovers projects only through a product's
+/// <see cref="ProductProjectLayout"/>, which this product leaves out; its project half is
+/// <c>NeutralProjectBackupTests</c>.
 /// </para>
 /// </remarks>
 public sealed class NeutralProductBackupTests : IDisposable
@@ -46,7 +46,7 @@ public sealed class NeutralProductBackupTests : IDisposable
 
         NeutralTestProduct.Seed(_root);
         _product = NeutralTestProduct.For(_root);
-        _engine = new BackupEngine(ClaudeEnvironment.Empty, restorableProducts: [_product]);
+        _engine = new BackupEngine(restorableProducts: [_product]);
     }
 
     public void Dispose()

@@ -1,7 +1,7 @@
 class Bennewitz.Ninja.AgentForge.Core.Backup.AdditionalDirectoriesResolver
     static System.Collections.Generic.IReadOnlyList<System.String> Resolve(System.Collections.Generic.IEnumerable<System.String> settingsFilePaths)
 class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine [sealed]
-    .ctor(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment environment, System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts, Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null)
+    .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts, Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null)
     Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry TryReadEntry(System.String archivePath)
     System.Boolean Delete(Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry entry)
     System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry> List(System.String backupDirectory)
@@ -128,20 +128,6 @@ class Bennewitz.Ninja.AgentForge.Core.Backup.JsonRedactor
     const System.String RedactedMarker
     static System.Boolean IsSensitiveKey(System.String key)
     static System.String Redact(System.String json)
-class Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery
-    static Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult ResolveExisting(System.String claudeJsonPath)
-class Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult>
-    .ctor(System.Collections.Generic.IReadOnlyList<System.String> ExistingProjectRoots, System.Int32 SkippedNonExistentCount)
-    Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult <Clone>$()
-    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult other)
-    System.Boolean Equals(System.Object obj)
-    System.Collections.Generic.IReadOnlyList<System.String> ExistingProjectRoots { get;init; }
-    System.Int32 GetHashCode()
-    System.Int32 SkippedNonExistentCount { get;init; }
-    System.String ToString()
-    System.Void Deconstruct(out System.Collections.Generic.IReadOnlyList<System.String> ExistingProjectRoots, out System.Int32 SkippedNonExistentCount)
-    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult left, Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult right)
-    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult left, Bennewitz.Ninja.AgentForge.Core.Backup.KnownProjectsDiscovery+DiscoveryResult right)
 class Bennewitz.Ninja.AgentForge.Core.Backup.MsixFixResult [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Backup.MsixFixResult>
     .ctor(System.Boolean Succeeded, System.String Message)
     Bennewitz.Ninja.AgentForge.Core.Backup.MsixFixResult <Clone>$()
