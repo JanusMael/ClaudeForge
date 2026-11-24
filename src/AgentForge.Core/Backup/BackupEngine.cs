@@ -42,7 +42,6 @@ public sealed class BackupEngine
     private readonly WorktreeProbe _worktreeProbe;
     private readonly IBackupFileSystem _fs;
     private readonly IReadOnlyList<ProductDescriptor> _restorableProducts;
-    private readonly ClaudeEnvironment _env;
 
     /// <summary>
     /// Construct with custom collaborators (used by tests).
@@ -72,30 +71,28 @@ public sealed class BackupEngine
     /// Whatever set a host passes to <see cref="BackupRequest.Products"/> should be the set it
     /// passes here.
     /// </para>
-    /// </param>
-    /// <param name="environment">
-    /// The resolved Claude environment every path in this engine is relative to.
     /// <para>
-    /// ⛔ <b>Required, and first, on purpose.</b> An optional one defaulting to
-    /// <see cref="ClaudeEnvironment.Empty"/> would let a composition root silently archive the
-    /// wrong directory, which no test and no error would report. Tests that do not care pass
-    /// <see cref="ClaudeEnvironment.Empty"/> explicitly, which says so at the call site.
+    /// ⭐ <b>They are also where project discovery comes from</b>, for a backup as well as a
+    /// restore: each one's <see cref="ProductBackupLayout.Projects"/> names the projects its own
+    /// configuration knows. A product's paths are resolved by its descriptor, so this engine holds
+    /// no environment of its own (plans/00008 step 8).
     /// </para>
     /// </param>
     public BackupEngine(
-        ClaudeEnvironment environment,
         IReadOnlyList<ProductDescriptor> restorableProducts,
         WorktreeProbe? worktreeProbe = null,
         IBackupFileSystem? fileSystem = null)
     {
-        ArgumentNullException.ThrowIfNull(environment);
         ArgumentNullException.ThrowIfNull(restorableProducts);
 
         _worktreeProbe = worktreeProbe ?? new WorktreeProbe();
         _fs = fileSystem ?? RealBackupFileSystem.Instance;
         _restorableProducts = restorableProducts;
-        _env = environment;
     }
+
+    /// <summary>The project layouts of <paramref name="products"/>, skipping those with none.</summary>
+    internal static IEnumerable<ProductProjectLayout> ProjectLayouts(IEnumerable<ProductDescriptor> products) =>
+        products.Select(p => p.Backup.Projects).OfType<ProductProjectLayout>();
 
     // ═══════════════════════════════════════════════════════════════════════
     //  CREATE
@@ -116,9 +113,13 @@ public sealed class BackupEngine
         // resolve project set + worktrees.
         progress?.Report(new BackupProgress(
             0, 0, "Discovering projects…", 0, BackupProgressIds.DiscoveringProjects));
-        IReadOnlyList<string> settingsFilesForDiscovery =
-            CollectSettingsFilesForDiscovery(_env, request.ExplicitProjectDirs);
-        IReadOnlyList<string> discovered = AdditionalDirectoriesResolver.Resolve(settingsFilesForDiscovery);
+        // ⚠ From the HOST's products, not the request's: discovery ran for every backup before
+        // plans/00008 step 8 moved it behind the layout, so a backup of one product still lists the
+        // projects the host knows. Whether their files are captured is the request's call, below.
+        IReadOnlyList<string> discovered =
+        [
+            .. ProjectLayouts(_restorableProducts).SelectMany(l => l.RelatedProjects(request.ExplicitProjectDirs)),
+        ];
         IReadOnlyList<string> projects = MergeExplicitAndDiscovered(request.ExplicitProjectDirs, discovered);
 
         List<string> warnings = [];
@@ -146,8 +147,10 @@ public sealed class BackupEngine
         //     premise.
         if (request.Mode == BackupMode.Full)
         {
-            KnownProjectsDiscovery.DiscoveryResult known =
-                KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath);
+            ProductKnownProjects[] knownByProduct = [.. ProjectLayouts(_restorableProducts).Select(l => l.KnownProjects())];
+            ProductKnownProjects known = new(
+                [.. knownByProduct.SelectMany(k => k.ExistingProjectRoots)],
+                knownByProduct.Sum(k => k.SkippedNonExistentCount));
 
             if (known.ExistingProjectRoots.Count > 0)
             {
@@ -346,16 +349,19 @@ public sealed class BackupEngine
                 }
             }
 
-            // --- Claude Code's per-project and worktree data ---
+            // --- Per-project and worktree data, for each requested product that keeps some ---
             //
-            // ⚠ Still product-specific, and not from a lack of trying: these are driven by the
-            // manifest's project list and by git worktree discovery, not by a fixed archive path,
-            // so there is no section that describes them. OpenCode's equivalent — if it has one —
-            // will not be a directory-per-project either. Recognised by its archive folder, a wire
-            // string, until plans/00008 step 8 makes per-project items part of a product's layout.
-            if (request.Products.Any(p => string.Equals(
-                    p.ArchiveFolder, ExportManifest.LegacyClaudeCodeFolder, StringComparison.Ordinal)))
+            // Driven by the manifest's project list and by git worktree discovery rather than by a
+            // fixed archive path, which is why it is the product's ProductProjectLayout and not a
+            // section. Written under the product's own archive folder; for Claude Code that is the
+            // wire folder every archive since v1 has used.
+            foreach (ProductDescriptor product in request.Products)
             {
+                if (product.Backup.Projects is not { } projectLayout)
+                {
+                    continue;
+                }
+
                 foreach (string projectRoot in projects)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -366,7 +372,7 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, projectRoot, $"{ExportManifest.LegacyClaudeCodeFolder}/projects/{name}");
+                    AddProjectItems(writer, projectRoot, $"{product.ArchiveFolder}/projects/{name}", projectLayout.Items);
                 }
 
                 foreach (BackupWorktreeEntry wt in worktrees)
@@ -379,11 +385,11 @@ public sealed class BackupEngine
                         continue;
                     }
 
-                    AddProjectClaudeData(writer, wt.WorktreePath, $"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}");
+                    AddProjectItems(writer, wt.WorktreePath, $"{product.ArchiveFolder}/worktrees/{wtName}", projectLayout.Items);
                     // Stash the worktree's project-root mapping so restore can re-locate it.
                     BackupWorktreeEntry meta = new() { ProjectRoot = wt.ProjectRoot, WorktreePath = wt.WorktreePath };
                     string metaJson = JsonSerializer.Serialize(meta, BackupJsonContext.Default.BackupWorktreeEntry);
-                    writer.AddTextEntry($"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
+                    writer.AddTextEntry($"{product.ArchiveFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);
                 }
             }
 
@@ -751,9 +757,10 @@ public sealed class BackupEngine
         return false;
     }
 
-    private static void AddProjectClaudeData(ZipArchiveWriter writer, string projectRoot, string entryPrefix)
+    private static void AddProjectItems(
+        ZipArchiveWriter writer, string projectRoot, string entryPrefix, IReadOnlyList<string> items)
     {
-        foreach (string item in new[] { ".claude", ".mcp.json", "CLAUDE.md", "CLAUDE.local.md" })
+        foreach (string item in items)
         {
             string src = Path.Combine(projectRoot, item);
             if (Directory.Exists(src))
@@ -783,31 +790,6 @@ public sealed class BackupEngine
         string json = JsonSerializer.Serialize(manifest, BackupJsonContext.Default.BackupManifest);
         byte[] bytes = Encoding.UTF8.GetBytes(json);
         await es.WriteAsync(bytes.AsMemory(), ct).ConfigureAwait(false);
-    }
-
-    /// <remarks>
-    /// ⭐ <b>Internal rather than private so RESTORE can ask the same question.</b> Restore has to
-    /// decide which manifest-named paths it may write to, and the only answer that cannot drift is
-    /// "the ones this machine would itself have captured" — see
-    /// <see cref="RestoreEngine.BuildAuthorisedRoots"/>. Two parallel lists that happen to agree
-    /// today is exactly how F7 happened.
-    /// </remarks>
-    internal static IReadOnlyList<string> CollectSettingsFilesForDiscovery(
-        ClaudeEnvironment env,
-        IReadOnlyList<string> explicitProjects)
-    {
-        List<string> list =
-        [
-            PlatformPaths.UserSettingsPath(env),
-            Path.Combine(PlatformPaths.ClaudeHome(env), "settings.local.json"),
-        ];
-        foreach (string p in explicitProjects)
-        {
-            list.Add(PlatformPaths.ProjectSettingsPath(p));
-            list.Add(PlatformPaths.LocalSettingsPath(p));
-        }
-
-        return list;
     }
 
     /// <summary>
@@ -1151,7 +1133,7 @@ public sealed class BackupEngine
         CancellationToken ct,
         IReadOnlyCollection<string>? openProjectRoots = null)
     {
-        return RestoreEngine.RestoreAsync(_env, entry, _restorableProducts, progress, ct, openProjectRoots);
+        return RestoreEngine.RestoreAsync(entry, _restorableProducts, progress, ct, openProjectRoots);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

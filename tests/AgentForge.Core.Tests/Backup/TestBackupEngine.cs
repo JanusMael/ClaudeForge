@@ -46,5 +46,5 @@ internal static class TestBackupEngine
     ];
 
     /// <summary>A shared engine over the default environment, for fixtures that do not relocate it.</summary>
-    internal static BackupEngine Default { get; } = new(ClaudeEnvironment.Empty, Products);
+    internal static BackupEngine Default { get; } = new(Products);
 }

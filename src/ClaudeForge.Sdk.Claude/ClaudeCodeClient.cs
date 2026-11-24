@@ -156,6 +156,6 @@ public sealed class ClaudeCodeClient : ClaudeConfigClientBase
         // The engine is constructed here rather than shared: an engine must name the environment
         // its destinations resolve against, and this client is the thing that knows it.
         return new BackupClient(
-            new BackupEngine(_env, [Product, ClaudeProducts.ClaudeDesktopProduct]), [Product]);
+            new BackupEngine([Product, ClaudeProducts.ClaudeDesktopProduct]), [Product]);
     }
 }

@@ -1,5 +1,6 @@
 using Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Backup;
 
 namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 
@@ -114,7 +115,8 @@ public static class ClaudeProducts
                     new([], ["claude.json"], Recursive: false),
                     // settings.json / settings.local.json anywhere under the home section.
                     new(["claude-dir"], ["settings.json", "settings.local.json"], Recursive: true),
-                ]))
+                ],
+                Projects: ClaudeProjectLayout.For(env)))
         {
             BundledFiles = BundledFiles,
         };

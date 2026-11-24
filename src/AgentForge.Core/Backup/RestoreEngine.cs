@@ -50,7 +50,6 @@ internal static class RestoreEngine
     /// restored — a project no other source on this machine knows about is refused.
     /// </param>
     internal static async Task<RestoreResult> RestoreAsync(
-        ClaudeEnvironment env,
         BackupEntry entry,
         IReadOnlyList<ProductDescriptor> restorableProducts,
         IProgress<BackupProgress>? progress = null,
@@ -219,13 +218,27 @@ internal static class RestoreEngine
             // own project list says which of those the restore is allowed to write to. Read here
             // rather than inside RestoreProjects so the authorisation source is visible at the
             // call site — it is the difference between a security check and a silent scope limit.
-            IReadOnlyCollection<string> authorisedRoots = BuildAuthorisedRoots(env, openProjectRoots);
-            restored += RestoreProjects(tempRoot, entry.Manifest, stamp, authorisedRoots, journal);
+            IReadOnlyCollection<string> authorisedRoots = BuildAuthorisedRoots(products, openProjectRoots);
+            // Each product's projects live under its own archive folder. One progress step for all
+            // of them, as applySections counts it.
+            string[] projectFolders =
+            [
+                .. products.Where(p => p.Backup.Projects is not null).Select(p => p.ArchiveFolder),
+            ];
+            foreach (string folder in projectFolders)
+            {
+                restored += RestoreProjects(tempRoot, folder, entry.Manifest, stamp, authorisedRoots, journal);
+            }
+
             progress?.Report(new BackupProgress(
                 ++applyStep, applySections, "Restoring projects…", totalExtracted,
                 RestoreProgressIds.Projects));
 
-            restored += RestoreWorktrees(tempRoot, stamp, journal);
+            foreach (string folder in projectFolders)
+            {
+                restored += RestoreWorktrees(tempRoot, folder, stamp, journal);
+            }
+
             progress?.Report(new BackupProgress(
                 ++applyStep, applySections, "Restoring worktrees…", totalExtracted,
                 RestoreProgressIds.Worktrees));
@@ -342,18 +355,24 @@ internal static class RestoreEngine
     /// <c>F7</c> actually reported: a *Settings only* backup captures exactly the open project,
     /// and nothing else on the machine need ever have heard of it.
     /// </param>
+    /// <param name="products">
+    /// The products being restored. Each one's <see cref="ProductBackupLayout.Projects"/> supplies
+    /// the other two sources, read on this machine.
+    /// </param>
     /// <remarks>
     /// ⛔ <b>The first F7 fix covered only one of the three sources and would not have closed the
-    /// reported case.</b> Backup captures the explicitly-open project, the
-    /// <c>additionalDirectories</c> its settings files name, and — in Full mode — every project in
-    /// <c>~/.claude.json</c>. Authorising only the last still refuses a freshly-opened project that
-    /// Claude Code itself has never seen, which is precisely the archive the finding was written
-    /// about. Measured, not reasoned: the retest fixture was absent from a 62-entry project list.
+    /// reported case.</b> Backup captures the explicitly-open project, the related projects the
+    /// product's configuration names (Claude Code's <c>additionalDirectories</c>), and — in Full
+    /// mode — every project the product knows. Authorising only the last still refuses a
+    /// freshly-opened project that the product itself has never seen, which is precisely the
+    /// archive the finding was written about. Measured, not reasoned: the retest fixture was
+    /// absent from a 62-entry project list.
     /// </remarks>
     internal static IReadOnlyCollection<string> BuildAuthorisedRoots(
-        ClaudeEnvironment env,
+        IReadOnlyList<ProductDescriptor> products,
         IReadOnlyCollection<string>? openProjectRoots)
     {
+        ArgumentNullException.ThrowIfNull(products);
         List<string> explicitRoots = openProjectRoots?
                                      .Where(r => !string.IsNullOrWhiteSpace(r))
                                      .ToList() ?? [];
@@ -367,27 +386,28 @@ internal static class RestoreEngine
             roots.Add(r);
         }
 
-        foreach (string r in KnownProjectsDiscovery
-                             .ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots)
+        foreach (ProductProjectLayout layout in BackupEngine.ProjectLayouts(products))
         {
-            roots.Add(r);
-        }
-
-        // additionalDirectories, resolved from the live settings files — the user's own
-        // configuration, and the second thing a backup turns into a captured project.
-        try
-        {
-            foreach (string r in AdditionalDirectoriesResolver.Resolve(
-                         BackupEngine.CollectSettingsFilesForDiscovery(env, explicitRoots)))
+            foreach (string r in layout.KnownProjects().ExistingProjectRoots)
             {
                 roots.Add(r);
             }
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // An unreadable settings file narrows the authorised set; it must never fail the
-            // restore, which still has the other two sources and the home-folder allow.
-            Log.Debug(ex, "[Restore] Could not resolve additionalDirectories for authorisation.");
+
+            // The related projects, resolved from the product's live configuration — the user's
+            // own, and the second thing a backup turns into a captured project.
+            try
+            {
+                foreach (string r in layout.RelatedProjects(explicitRoots))
+                {
+                    roots.Add(r);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // An unreadable configuration file narrows the authorised set; it must never fail
+                // the restore, which still has the other two sources and the home-folder allow.
+                Log.Debug(ex, "[Restore] Could not resolve related projects for authorisation.");
+            }
         }
 
         return roots;
@@ -928,11 +948,16 @@ internal static class RestoreEngine
     }
 
     /// <summary>
-    /// Restore each project subtree the archive carries, to the live path the manifest names.
+    /// Restore each project subtree the archive carries under <paramref name="archiveFolder"/>, to
+    /// the live path the manifest names.
     /// </summary>
+    /// <param name="archiveFolder">
+    /// The product's archive folder; its projects are under <c>&lt;archiveFolder&gt;/projects/</c>.
+    /// </param>
     /// <param name="knownProjectRoots">
-    /// ⭐ <b>The authorisation set, read from THIS machine</b> — the keys of
-    /// <c>~/.claude.json</c>'s <c>projects</c> object, via <see cref="KnownProjectsDiscovery"/>.
+    /// ⭐ <b>The authorisation set, read from THIS machine</b> — see
+    /// <see cref="BuildAuthorisedRoots"/>, which asks each product's
+    /// <see cref="ProductProjectLayout"/>.
     /// <para>
     /// ⛔ It exists because <see cref="IsUnderUserProfile"/> alone was **not** the security rule
     /// it looked like — it was also, silently, a scope limit. Backup captures whatever project is
@@ -953,17 +978,17 @@ internal static class RestoreEngine
     /// it, because a defaulted one is how the scope limit stayed invisible the first time.
     /// </para>
     /// </param>
-    internal static int RestoreProjects(string tempRoot, BackupManifest manifest, string stamp,
-                                        IReadOnlyCollection<string> knownProjectRoots,
+    internal static int RestoreProjects(string tempRoot, string archiveFolder, BackupManifest manifest,
+                                        string stamp, IReadOnlyCollection<string> knownProjectRoots,
                                         RestoreJournal journal)
     {
         ArgumentNullException.ThrowIfNull(knownProjectRoots);
         ArgumentNullException.ThrowIfNull(journal);
         List<string> skipped = journal.Skipped;
         List<string> fileFailures = journal.FileFailures;
-        // Folder from the descriptor, not a literal — the write side has always used it, and a
+        // Folder from the descriptor, not a literal — the write side uses the same one, and a
         // rename on one side only would silently stop matching rather than erroring.
-        string projectsDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "projects");
+        string projectsDir = Path.Combine(tempRoot, archiveFolder, "projects");
         if (!Directory.Exists(projectsDir))
         {
             return 0;
@@ -1013,12 +1038,12 @@ internal static class RestoreEngine
     /// <c>git</c> per project, with a timeout each, in front of a destructive operation. That is a
     /// decision with a cost, so it is recorded rather than taken in passing.
     /// </remarks>
-    internal static int RestoreWorktrees(string tempRoot, string stamp, RestoreJournal journal)
+    internal static int RestoreWorktrees(string tempRoot, string archiveFolder, string stamp, RestoreJournal journal)
     {
         ArgumentNullException.ThrowIfNull(journal);
         List<string> skipped = journal.Skipped;
         List<string> fileFailures = journal.FileFailures;
-        string wtDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "worktrees");
+        string wtDir = Path.Combine(tempRoot, archiveFolder, "worktrees");
         if (!Directory.Exists(wtDir))
         {
             return 0;

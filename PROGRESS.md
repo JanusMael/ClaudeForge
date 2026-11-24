@@ -533,7 +533,43 @@ step 3. The items below are kept in order; those marked ✅ are done.
    #172–#174) were merged and folded in; `Published Version` was red by design, failing only
    `AgentForgeEmbedsNoData` and the surface baseline against the `2026.4.1119` Core.
    ✅ **Released as `packages-v2026.4.1123`** and pinned.
-   ▶ **Next: step 8**, backup and restore: `ProductBackupLayout`'s additions, then the move.
+   ✅ **Step 8, backup and restore through the layout (2026-11-24, branch `refactor/backup-layout-seam`):**
+   `ProductBackupLayout` gains `Projects`, a `ProductProjectLayout` in `AgentForge.Abstractions`:
+   the items a backup captures from each project, `RelatedProjects` (the roots the product's
+   configuration names beside the open ones) and `KnownProjects` (every project it has opened,
+   as `ProductKnownProjects`). `BackupEngine`'s constructor and `RestoreEngine.RestoreAsync` no
+   longer take a `ClaudeEnvironment`; both ask each product's layout. Project data is written to
+   and read from `<ArchiveFolder>/projects/` and `/worktrees/`, which for Claude Code is the same
+   `ClaudeCode/…` every archive has used. `KnownProjectsDiscovery` moved to
+   `ClaudeForge.Sdk.Claude.Backup`, internal, returning `ProductKnownProjects`; Claude's four items
+   and its settings-file list (`CollectSettingsFilesForDiscovery`, deleted from Core) are
+   `ClaudeProjectLayout` there, on `ClaudeCodeProductFor(env)`.
+   - **No behaviour change, by construction.** Discovery reads the HOST's products
+     (`restorableProducts`), as it read Claude's lists for every backup before; capture follows
+     the request, as the old `ClaudeCode` folder check did. Every composition root already built
+     its descriptors for the same environment it gave the engine, so dropping the engine's own
+     changes no path.
+   - **Measured:** Debug build 0 warnings; suite 3,456, 0 failed, 12 skipped, 17 new: 9 in
+     `NeutralProjectBackupTests` (capture by items, related and known projects by mode, the
+     skipped-count warning, a product with no layout, authorisation including a failing source,
+     the round trip) and 8 in `ClaudeProjectLayoutTests`, the first direct tests of
+     `KnownProjectsDiscovery`. Canaried: hardcoding Claude's items in the engine and dropping the
+     known-projects source turned 6 of the 9 red. `GoldenFixtureTests`, `BackupArchiveCompatibilityTests`
+     and `NeutralArchiveCompatibilityTests` pass (12, plus the explicit `WriteGoldens`). The surface
+     diff is the two new records and `ProductBackupLayout.Projects` in Abstractions, the
+     constructor and `KnownProjectsDiscovery` in Core. The allow-list loses 18 entries and gains
+     none. Trimmed win-x64 Release publish 0 IL diagnostics; `Smoke-PublishedBinary.ps1` booted it.
+     `package-canary.ps1` 3,456 / 0.
+   - **Test names against `main`:** 16 added, 1 renamed, 1 outcome. The rename is
+     `BuildAuthorisedRoots_WithNoOpenProject_StillReturnsTheMachinesOwnSources` →
+     `…WithNoOpenProjectAndNoProducts_AuthorisesNothing`: with no products it now reads nothing
+     from the developer's home, so it can assert the empty set it could not before. The outcome is
+     `PackageVersionLockstepTests` again, skipped in a fresh worktree.
+   - **Drift: `AdditionalDirectoriesResolver` stays in Core.** It parses Claude Code's
+     `additionalDirectories` shape but names nothing the neutrality scan sees, and the plan's
+     decision 3 does not list it; Claude's layout calls it. It is a candidate for step 10's move.
+   ▶ **Next: step 9**, memory and footprint: `IArtifactLayout`, then `ClaudeArtifactPaths` and the
+   four artifact sources move.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

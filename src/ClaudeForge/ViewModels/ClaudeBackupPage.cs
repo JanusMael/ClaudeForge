@@ -60,7 +60,7 @@ internal static class ClaudeBackupPage
         ClaudeEnvironment env,
         IReadOnlyList<ProductDescriptor> products) => new()
     {
-        Engine = new BackupEngine(env, DefaultProductsFor(env)),
+        Engine = new BackupEngine(DefaultProductsFor(env)),
         Products = products,
 
         // Claude Code's CLI and the Desktop app. Advisory only — the engine still handles

@@ -46,11 +46,16 @@ namespace Bennewitz.Ninja.AgentForge.Abstractions.Configuration;
 /// product's schema, or <see langword="null"/> to validate none. See
 /// <see cref="ProductValidatableFiles"/>.
 /// </param>
+/// <param name="Projects">
+/// What this product keeps inside the user's projects, and where it learns which projects exist, or
+/// <see langword="null"/> when it keeps nothing there. See <see cref="ProductProjectLayout"/>.
+/// </param>
 public sealed record ProductBackupLayout(
     IReadOnlyList<ProductArchiveSection> Sections,
     IReadOnlyList<ProductSkippedSubdir> SkippedSubdirs,
     string? CredentialFileName = null,
-    IReadOnlyList<ProductValidatableFiles>? ValidatableFiles = null)
+    IReadOnlyList<ProductValidatableFiles>? ValidatableFiles = null,
+    ProductProjectLayout? Projects = null)
 {
     /// <summary>A layout that contributes nothing — the default for a product with no backup support.</summary>
     public static ProductBackupLayout Empty { get; } = new([], []);

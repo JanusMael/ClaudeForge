@@ -955,7 +955,7 @@ public sealed class BackupRestoreViewModelTests
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, TestBackupPage.DefaultProducts).CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(TestBackupPage.DefaultProducts).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
                 Products = [TestBackupPage.DefaultProducts[0]],
@@ -1004,7 +1004,7 @@ public sealed class BackupRestoreViewModelTests
         string zipPath = Path.Combine(fakeHome, "backup-20300101-000000.zip");
         try
         {
-            BackupResult created = await new BackupEngine(ClaudeEnvironment.Empty, TestBackupPage.DefaultProducts).CreateAsync(new BackupRequest
+            BackupResult created = await new BackupEngine(TestBackupPage.DefaultProducts).CreateAsync(new BackupRequest
             {
                 DestinationZipPath = zipPath,
                 Products = [TestBackupPage.DefaultProducts[0]],

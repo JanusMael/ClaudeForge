@@ -47,7 +47,7 @@ public sealed class NeutralArchiveCompatibilityTests : IDisposable
         // The engine still reads Claude's settings to discover projects until plans/00008 step 8;
         // this keeps that read inside the sandbox.
         PlatformPaths.TestUserProfileOverride = _root;
-        _engine = new BackupEngine(ClaudeEnvironment.Empty, restorableProducts: [NeutralTestProduct.For(_root)]);
+        _engine = new BackupEngine(restorableProducts: [NeutralTestProduct.For(_root)]);
     }
 
     public void Dispose()

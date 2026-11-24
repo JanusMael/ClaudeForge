@@ -139,6 +139,6 @@ internal sealed class TestConfigClient : AgentConfigClientCore
     /// <inheritdoc/>
     protected override IBackupClient CreateBackupClient()
     {
-        return new BackupClient(new BackupEngine(ClaudeEnvironment.Empty, [Product]), [Product]);
+        return new BackupClient(new BackupEngine([Product]), [Product]);
     }
 }

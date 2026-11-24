@@ -103,6 +103,28 @@ internal static class NeutralTestProduct
                 ],
                 CredentialFileName: CredentialFileName));
 
+    /// <summary>What the neutral product keeps in each project: one directory and one file.</summary>
+    public static readonly IReadOnlyList<string> ProjectItems = [".neutral", "NEUTRAL.md"];
+
+    /// <summary>
+    /// <see cref="For(string)"/> with a <see cref="ProductProjectLayout"/> over
+    /// <see cref="ProjectItems"/>, and the two discovery sources a test supplies.
+    /// </summary>
+    public static ProductDescriptor WithProjects(
+        string root,
+        Func<IReadOnlyList<string>, IReadOnlyList<string>> relatedProjects,
+        Func<ProductKnownProjects> knownProjects)
+    {
+        ProductDescriptor plain = For(root);
+        return plain with
+        {
+            BackupLayout = plain.Backup with
+            {
+                Projects = new ProductProjectLayout(ProjectItems, relatedProjects, knownProjects),
+            },
+        };
+    }
+
     /// <summary>The bundled schema's overlay, named by the engines' convention.</summary>
     public const string OverlayFileName = "neutral-test-settings.overlay.json";
 

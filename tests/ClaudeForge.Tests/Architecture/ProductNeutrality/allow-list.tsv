@@ -25,18 +25,7 @@ words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	public bo
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	public const string TabMsixFixId = "msix-fix";	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	return Path.GetFileName(item).Equals(".credentials.json", StringComparison.OrdinalIgnoreCase)	1
 words	src/AgentForge.AvaloniaUI.Shell/Backup/BackupRestoreViewModel.cs	string tab = value switch { 0 => "Backup", 1 => "Restore", 2 => "MsixFix", _ => "?" };	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, projectRoot, $"{ExportManifest.LegacyClaudeCodeFolder}/projects/{name}");	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	AddProjectClaudeData(writer, wt.WorktreePath, $"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}");	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment env,	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeEnvironment environment,	1
 words	src/AgentForge.Core/Backup/BackupEngine.cs	ClaudeForgeSanitizationError: reason,	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	KnownProjectsDiscovery.ResolveExisting(PlatformPaths.ClaudeJsonPath);	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	Path.Combine(PlatformPaths.ClaudeHome(env), "settings.local.json"),	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	foreach (string item in new[] { ".claude", ".mcp.json", "CLAUDE.md", "CLAUDE.local.md" })	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	p.ArchiveFolder, ExportManifest.LegacyClaudeCodeFolder, StringComparison.Ordinal)))	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	private readonly ClaudeEnvironment _env;	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	private static void AddProjectClaudeData(ZipArchiveWriter writer, string projectRoot, string entryPrefix)	1
-words	src/AgentForge.Core/Backup/BackupEngine.cs	writer.AddTextEntry($"{ExportManifest.LegacyClaudeCodeFolder}/worktrees/{wtName}/.worktree-meta.json", metaJson);	1
 words	src/AgentForge.Core/Backup/BackupJsonContext.cs	string ClaudeForgeSanitizationError,	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	LegacyIncludesClaudeCode.HasValue || LegacyIncludesClaudeDesktop.HasValue;	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	folders.Add(LegacyClaudeCodeFolder);	1
@@ -47,9 +36,6 @@ words	src/AgentForge.Core/Backup/ExportManifest.cs	internal static readonly stri
 words	src/AgentForge.Core/Backup/ExportManifest.cs	internal static readonly string LegacyClaudeDesktopFolder = "";	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	public bool? LegacyIncludesClaudeCode { get; set; }	1
 words	src/AgentForge.Core/Backup/ExportManifest.cs	public bool? LegacyIncludesClaudeDesktop { get; set; }	1
-words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	if (string.IsNullOrWhiteSpace(claudeJsonPath) || !File.Exists(claudeJsonPath))	1
-words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	public static DiscoveryResult ResolveExisting(string claudeJsonPath)	1
-words	src/AgentForge.Core/Backup/KnownProjectsDiscovery.cs	string raw = File.ReadAllText(claudeJsonPath);	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	"Claude");	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	$"Could not merge contents from {std} into {msix}: {ex.Message}");	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	$"Junction created: {std} → {msix}. Restart Claude Desktop for the change to take effect.");	1
@@ -79,10 +65,6 @@ words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string candidate = Path.Combin
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string msix = status.VirtualisedPath!;	1
 words	src/AgentForge.Core/Backup/MsixPathProbe.cs	string? match = Directory.EnumerateDirectories(packages, "Claude_*", SearchOption.TopDirectoryOnly)	1
 words	src/AgentForge.Core/Backup/RestoreEngine.cs	$"ClaudeRestore-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Path.GetRandomFileName()[..4]}");	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	.ResolveExisting(PlatformPaths.ClaudeJsonPath).ExistingProjectRoots)	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	ClaudeEnvironment env,	2
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	string projectsDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "projects");	1
-words	src/AgentForge.Core/Backup/RestoreEngine.cs	string wtDir = Path.Combine(tempRoot, ExportManifest.LegacyClaudeCodeFolder, "worktrees");	1
 words	src/AgentForge.Core/Backup/RestoreSidecarCleanup.cs	public static Result Run(string claudeHome, Action<int>? onProgress = null)	1
 words	src/AgentForge.Core/Backup/RestoreSidecarCleanup.cs	string home = claudeHome;	1
 words	src/AgentForge.Core/Backup/TextRedactor.cs	[GeneratedRegex(@"sk-ant-[A-Za-z0-9_\-]{40,}")]	1
