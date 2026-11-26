@@ -15,8 +15,8 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 /// <b>The category set is product data.</b> This service used to iterate
 /// <c>Enum.GetValues&lt;FootprintCategory&gt;()</c> and hand-dispatch each of Claude's seven
 /// members to a <c>~/.claude</c> subpath. It now walks whatever <see cref="FootprintCatalog"/> and
-/// <see cref="FootprintRoots"/> it was handed, so a product whose footprint spans four unrelated
-/// roots is a table rather than a rewrite.
+/// <see cref="FootprintRoots"/> its <see cref="IArtifactLayout"/> supplies, so a product whose
+/// footprint spans four unrelated roots is a table rather than a rewrite.
 /// </para>
 /// <para>
 /// File-system access goes through <see cref="IBackupFileSystem"/> so tests can inject an
@@ -30,9 +30,9 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 /// via the rerun-after-delete <see cref="GetStatsAsync"/> call).
 /// </para>
 /// <para>
-/// ⚠ <b>The per-project transcript methods below are still Claude-shaped</b> — the mangled-name
-/// decode and the <c>projects/</c> walk are Claude Code's layout, not a general one. They are left
-/// as residue rather than forced into the catalog: OpenCode's equivalent is SQLite rows, and a
+/// ⚠ <b>The per-project transcript methods below are a directory walk, not a catalog entry.</b>
+/// The layout names the directory, or none; the walk and the mangled-name decode are left here as
+/// residue rather than forced into the catalog: OpenCode's equivalent is SQLite rows, and a
 /// shared abstraction over a directory walk and a database query would be a name, not a
 /// mechanism.
 /// </para>
@@ -40,70 +40,44 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 public sealed class FootprintService
 {
     private readonly IBackupFileSystem _fs;
-    private readonly Func<ClaudeArtifactPaths> _paths;
-    private readonly FootprintCatalog _catalog;
-    private readonly Func<FootprintRoots>? _roots;
+    private readonly IArtifactLayout _layout;
 
-    /// <param name="paths">
-    /// Where this profile's files live. ⛔ <b>Required, and that is the point of this type's
-    /// shape.</b> It defaulted to Claude's home, which meant a neutral caller that said nothing
-    /// got Claude's data — see the remarks on the class.
+    /// <param name="layout">
+    /// Where this product's files live, and which categories its footprint has. ⛔ <b>Required,
+    /// and that is the point of this type's shape.</b> The paths and the catalog both defaulted to
+    /// Claude's, which meant a neutral caller that said nothing got Claude's data — see the
+    /// remarks on <see cref="Layout"/>.
     /// <para>
-    /// ⛔ <b>A FACTORY, not an instance — the same call this type already makes for
-    /// <paramref name="roots"/>, for the same measured reason.</b> The paths derive from
-    /// <c>PlatformPaths.UserProfile</c>, which honours an <c>AsyncLocal</c> test override, and
-    /// this service is cached for the lifetime of a client. Taking an instance pins whichever
-    /// sandbox was current when the client first touched it, so a test that sets its override
-    /// afterwards silently reads another test's directory. ⚠ Making <c>paths</c> required was
-    /// first written taking an instance, and <c>FootprintService_ResolvesItsDefaultLazily</c>
-    /// caught exactly that.
+    /// ⛔ <b>Read on every use, never captured.</b> This service is cached for the lifetime of a
+    /// client, and the layout's paths derive from a profile root that honours an
+    /// <c>AsyncLocal</c> test override. <see cref="IArtifactLayout"/> requires its members to
+    /// resolve per read, and this type asks for them per call, so a test that sets its override
+    /// after the client was built still reads its own directory —
+    /// <c>FootprintService_ResolvesItsDefaultLazily</c> pins that.
     /// </para>
-    /// </param>
-    /// <param name="catalog">
-    /// The product's category set. ⛔ <b>Also required, for the same reason</b>: it defaulted to
-    /// <see cref="FootprintCatalog.Default"/>, Claude's seven, so a product with a different
-    /// footprint reported Claude's categories as its own.
     /// </param>
     /// <param name="fs">File-system seam; defaults to the real one. Not product-shaped.</param>
-    /// <param name="roots">
-    /// Factory for the named roots the catalog is expressed against. Defaults to the single
-    /// <c>"home"</c> root taken from <paramref name="paths"/>.
-    /// <para>
-    /// ⛔ <b>A factory, not an instance.</b> The roots derive from <c>PlatformPaths.UserProfile</c>,
-    /// which honours an <c>AsyncLocal</c> test override; capturing them would pin whichever
-    /// sandbox was current when the client was first built.
-    /// </para>
-    /// </param>
-    public FootprintService(
-        Func<ClaudeArtifactPaths> paths,
-        FootprintCatalog catalog,
-        IBackupFileSystem? fs = null,
-        Func<FootprintRoots>? roots = null)
+    public FootprintService(IArtifactLayout layout, IBackupFileSystem? fs = null)
     {
-        ArgumentNullException.ThrowIfNull(paths);
-        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(layout);
 
         _fs = fs ?? RealBackupFileSystem.Instance;
-        _paths = paths;
-        _catalog = catalog;
-        _roots = roots;
+        _layout = layout;
     }
 
-    /// <summary>The paths this instance reads — supplied at construction, never defaulted.</summary>
+    /// <summary>The layout this instance reads — supplied at construction, never defaulted.</summary>
     /// <remarks>
-    /// ⛔ <b>This used to fall back to Claude's home when nothing was supplied</b>, which is the
-    /// entry <c>NeutralLayerDefaultsTests.KnownSites</c> held. A neutral type that resolves one
-    /// product's data by omission shipped exactly that defect once: both OpenCode clients reported
-    /// <b>Claude's</b> disk footprint as their own, and a delete would have removed the other
-    /// agent's data. Requiring the argument makes it unrepresentable rather than detectable.
+    /// ⛔ <b>This used to fall back to Claude's home and categories when nothing was supplied</b>,
+    /// which is the entry <c>NeutralLayerDefaultsTests.KnownSites</c> held. A neutral type that
+    /// resolves one product's data by omission shipped exactly that defect once: both OpenCode
+    /// clients reported <b>Claude's</b> disk footprint as their own, and a delete would have
+    /// removed the other agent's data. Requiring the argument makes it unrepresentable rather than
+    /// detectable.
     /// </remarks>
-    private ClaudeArtifactPaths Paths => _paths();
+    private IArtifactLayout Layout => _layout;
 
     /// <summary>The named roots, resolved per use for the reason the constructor documents.</summary>
-    private FootprintRoots Roots =>
-        _roots is not null
-            ? _roots()
-            : FootprintRoots.Single(FootprintRoots.Home, Paths.ClaudeHome);
+    private FootprintRoots Roots => Layout.FootprintRoots;
 
     /// <summary>
     /// Compute stats for every category in this service's catalog, in one pass. Returns one row
@@ -117,7 +91,7 @@ public sealed class FootprintService
         return await Task.Run(() =>
         {
             FootprintRoots roots = Roots;
-            IReadOnlyList<FootprintCategory> categories = _catalog.All;
+            IReadOnlyList<FootprintCategory> categories = Layout.FootprintCatalog.All;
             List<FootprintCategoryStats> rows = new(categories.Count);
             foreach (FootprintCategory category in categories)
             {
@@ -155,8 +129,10 @@ public sealed class FootprintService
 
     /// <summary>
     /// Per-project breakdown of the Tier 2 Session Transcripts category.
-    /// Walks the immediate subdirectories of <c>~/.claude/projects/</c>
-    /// (one per managed project) and reports each as its own row. The
+    /// Walks the immediate subdirectories of the layout's
+    /// <see cref="IArtifactLayout.ProjectTranscriptsDirectory"/> (one per
+    /// managed project) and reports each as its own row; a layout with none
+    /// reports no rows. The
     /// caller can use <see cref="DeleteProjectTranscriptsAsync"/> to wipe
     /// a single project's transcripts without touching the others —
     /// finer-grained than <see cref="DeleteAsync"/> which wipes the whole
@@ -174,8 +150,7 @@ public sealed class FootprintService
         return await Task.Run(() =>
         {
             List<ProjectTranscriptStats> rows = new();
-            string dir = Path.Combine(Paths.ClaudeHome, "projects");
-            if (!_fs.DirectoryExists(dir))
+            if (Layout.ProjectTranscriptsDirectory is not { } dir || !_fs.DirectoryExists(dir))
             {
                 return rows;
             }
@@ -297,7 +272,12 @@ public sealed class FootprintService
                 nameof(mangledName));
         }
 
-        string projectDir = Path.Combine(Paths.ClaudeHome, "projects", mangledName);
+        if (Layout.ProjectTranscriptsDirectory is not { } transcripts)
+        {
+            return;
+        }
+
+        string projectDir = Path.Combine(transcripts, mangledName);
         if (!_fs.DirectoryExists(projectDir))
         {
             return;
@@ -446,32 +426,9 @@ public sealed class FootprintService
     }
 
     /// <summary>
-    /// Resolve the canonical anchor path for the category — used as the
-    /// "click-to-copy" / "Reveal in Explorer" destination on the row.
-    /// For multi-directory categories like
-    /// <see cref="FootprintCategory.SessionMetadata"/>, this is the parent
-    /// (<c>~/.claude</c>) so the user can see all three siblings at once.
-    /// </summary>
-    public static string ResolveCategoryPath(ClaudeEnvironment env, FootprintCategory category)
-    {
-        return ResolveCategoryPath(ClaudeArtifactPaths.DefaultFor(env), category);
-    }
-
-    /// <summary>
-    /// The same resolution against an explicitly supplied set of Claude paths.
-    /// </summary>
-    /// <remarks>
-    /// ⚠ Convenience for Claude call sites: wraps the single <c>"home"</c> root and delegates. A
-    /// product with more than one root calls the <see cref="FootprintRoots"/> overload.
-    /// </remarks>
-    public static string ResolveCategoryPath(ClaudeArtifactPaths paths, FootprintCategory category)
-    {
-        ArgumentNullException.ThrowIfNull(paths);
-        return ResolveCategoryPath(FootprintRoots.Single(FootprintRoots.Home, paths.ClaudeHome), category);
-    }
-
-    /// <summary>
-    /// The anchor path for a category against an arbitrary root set.
+    /// Resolve the canonical anchor path for the category against a root set — used as the
+    /// "click-to-copy" / "Reveal in Explorer" destination on the row. For a category spread over
+    /// several directories this is their parent, so the user can see the siblings at once.
     /// </summary>
     /// <remarks>
     /// ⚠ <b>The sub-paths are no longer here.</b> They used to be a hand-written <c>switch</c> in

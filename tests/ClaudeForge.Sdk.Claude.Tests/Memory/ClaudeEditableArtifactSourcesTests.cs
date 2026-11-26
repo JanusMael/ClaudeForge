@@ -1,8 +1,9 @@
 using Bennewitz.Ninja.AgentForge.Artifacts;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Memory;
 
 /// <summary>
 /// The editable surface's source list, and the plugin tree that shaped
@@ -132,7 +133,7 @@ public sealed class ClaudeEditableArtifactSourcesTests : IDisposable
         Write(Path.Combine(Home, "plugins", "some-plugin", "agents", "reviewer.md"));
 
         List<EditableMemoryEntry> rows =
-            [.. EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Where(e => e.DisplayName == "reviewer")];
+            [.. EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).Where(e => e.DisplayName == "reviewer")];
 
         Assert.Equal(2, rows.Count);
         Assert.Contains(rows, r => r is { Scope: EditableMemoryScope.User, IsWritable: true });

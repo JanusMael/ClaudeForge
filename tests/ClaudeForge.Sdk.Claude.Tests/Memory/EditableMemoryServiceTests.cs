@@ -2,8 +2,9 @@ using System.IO;
 using System.Linq;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Memory;
 
 /// <summary>
 /// Locks the scope-aware discovery contract for the editor pages
@@ -68,7 +69,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "agents", "reviewer.md"),
             "---\nname: reviewer\ndescription: Reviews code\n---\n\nBody.\n");
 
-        var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
+        var entries = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
 
         EditableMemoryEntry agent = entries.Single(e => e.Category == UserMemoryCategory.Subagent);
         Assert.Equal("reviewer", agent.DisplayName);
@@ -84,7 +85,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "skills", "pdf-tools", "SKILL.md"),
             "---\nname: pdf-tools\ndescription: Work with PDFs\n---\n\nBody.\n");
 
-        var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
+        var entries = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
 
         EditableMemoryEntry skill = entries.Single(e => e.Category == UserMemoryCategory.Skill);
         MessageAssert.Equal("pdf-tools", skill.DisplayName,
@@ -99,7 +100,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "commands", "summarise.md"),
             "---\ndescription: Summarise the PR\n---\n\nPrompt.\n");
 
-        var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
+        var entries = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
 
         EditableMemoryEntry cmd = entries.Single(e => e.Category == UserMemoryCategory.SlashCommand);
         Assert.Equal("summarise", cmd.DisplayName);
@@ -113,11 +114,11 @@ public sealed class EditableMemoryServiceTests : IDisposable
             "---\nname: proj-agent\n---\n\nBody.\n");
 
         // Without projectRoot → not found.
-        Assert.False(EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Any(e => e.DisplayName == "proj-agent"),
+        Assert.False(EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).Any(e => e.DisplayName == "proj-agent"),
             "Project-scope artifacts must NOT appear when no projectRoot is passed.");
 
         // With projectRoot → found, Project scope, writable.
-        EditableMemoryEntry entry = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty, _project)
+        EditableMemoryEntry entry = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), _project)
             .Single(e => e.DisplayName == "proj-agent");
         Assert.Equal(EditableMemoryScope.Project, entry.Scope);
         Assert.True(entry.IsWritable, "Project-scope artifacts are writable.");
@@ -130,7 +131,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "plugins", "some-marketplace", "cool-plugin", "skills", "widget", "SKILL.md"),
             "---\nname: widget\ndescription: A plugin skill\n---\n\nBody.\n");
 
-        EditableMemoryEntry skill = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty)
+        EditableMemoryEntry skill = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
             .Single(e => e.Category == UserMemoryCategory.Skill && e.Scope == EditableMemoryScope.Plugin);
 
         Assert.Equal("widget", skill.DisplayName);
@@ -148,7 +149,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "plugins", "marketplaces", "acme-mkt", "cool-plugin", "skills", "widget", "SKILL.md"),
             "---\nname: widget\ndescription: A plugin skill\n---\n\nBody.\n");
 
-        EditableMemoryEntry skill = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty)
+        EditableMemoryEntry skill = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
             .Single(e => e.Category == UserMemoryCategory.Skill && e.Scope == EditableMemoryScope.Plugin);
 
         MessageAssert.Equal("acme-mkt/cool-plugin", skill.Source,
@@ -161,7 +162,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "plugins", "p", "agents", "pa.md"), "---\nname: pa\n---\n\nB.\n");
         WriteFile(Path.Combine(Home, "plugins", "p", "commands", "pc.md"), "---\ndescription: d\n---\n\nB.\n");
 
-        var plugin = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty)
+        var plugin = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
             .Where(e => e.Scope == EditableMemoryScope.Plugin)
             .ToList();
 
@@ -176,7 +177,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(_project, ".claude", "agents", "proj-a.md"), "---\nname: proj-a\n---\n\nB.\n");
         WriteFile(Path.Combine(Home, "plugins", "x", "skills", "plug-s", "SKILL.md"), "---\nname: plug-s\n---\n\nB.\n");
 
-        var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty, _project);
+        var entries = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), _project);
 
         Assert.Contains(entries, e => e is { DisplayName: "user-a", Scope: EditableMemoryScope.User });
         Assert.Contains(entries, e => e is { DisplayName: "proj-a", Scope: EditableMemoryScope.Project });
@@ -187,7 +188,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
     public void Snapshot_NoClaudeDir_ReturnsEmpty_NeverThrows()
     {
         // Fresh sandbox with no ~/.claude content at all.
-        var entries = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty);
+        var entries = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
         Assert.Empty(entries);
     }
 
@@ -264,7 +265,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         // LoadDescription for the subtitle.  (Compile-time guarantee: the
         // record has no Description member; the assertion below pins Source.)
         WriteFile(Path.Combine(Home, "agents", "x.md"), "---\nname: x\ndescription: y\n---\n\nB.\n");
-        EditableMemoryEntry e = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty).Single(x => x.DisplayName == "x");
+        EditableMemoryEntry e = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).Single(x => x.DisplayName == "x");
         Assert.Equal("User", e.Source);
     }
 
@@ -279,7 +280,7 @@ public sealed class EditableMemoryServiceTests : IDisposable
         WriteFile(Path.Combine(Home, "plugins", "p", "skills", "real", "SKILL.md"),
             "---\nname: real\n---\n\nB.\n");
 
-        var skills = EditableMemoryService.Snapshot(ClaudeEnvironment.Empty)
+        var skills = EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
             .Where(e => e.Category == UserMemoryCategory.Skill)
             .Select(e => e.DisplayName)
             .ToList();

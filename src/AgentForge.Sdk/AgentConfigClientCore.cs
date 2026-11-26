@@ -1468,7 +1468,7 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     private FootprintService? _footprintService;
 
     /// <summary>
-    /// The artifact paths this client's memory and footprint surfaces read, or
+    /// Where this client's memory and footprint surfaces read their files, or
     /// <see langword="null"/> when this client has none.
     /// </summary>
     /// <remarks>
@@ -1481,29 +1481,24 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
     /// removed the other agent's data.
     /// </para>
     /// <para>
-    /// ⭐ A client that has paths says so by overriding this. A client that does not gets an empty
+    /// ⭐ A client that has files says so by overriding this. A client that does not gets an empty
     /// inventory and no footprint service, which is the honest answer rather than a wrong one.
     /// </para>
+    /// <para>
+    /// ⚠ <b>One seam where there were two.</b> The paths and the category set used to be separate
+    /// overrides because they failed separately: the right categories against another product's
+    /// root, or one product's categories against the right root. A layout carries both, so a
+    /// client cannot supply one without the other.
+    /// </para>
     /// </remarks>
-    protected virtual ClaudeArtifactPaths? ArtifactPaths => null;
+    protected virtual IArtifactLayout? ArtifactLayout => null;
 
     /// <summary>
-    /// The category set this client's footprint is expressed in, or <see langword="null"/> when
-    /// this client reports no footprint.
-    /// </summary>
-    /// <remarks>
-    /// ⚠ <b>Separate from <see cref="ArtifactPaths"/> because they failed separately.</b> The
-    /// original defect needed both: the right categories against another product's root, or one
-    /// product's categories against the right root, are each wrong in their own way.
-    /// </remarks>
-    protected virtual FootprintCatalog? FootprintCategories => null;
-
-    /// <summary>
-    /// Cached <see cref="FootprintService"/>, built from this client's own paths and catalog.
+    /// Cached <see cref="FootprintService"/>, built from this client's own layout.
     /// Tests can swap it via the protected setter.
     /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// This client declares no <see cref="ArtifactPaths"/> or no <see cref="FootprintCategories"/>.
+    /// This client declares no <see cref="ArtifactLayout"/>.
     /// ⭐ Throwing is deliberate: the alternative is returning a service pointed at some other
     /// product's files, which is precisely the defect this shape exists to prevent. A loud failure
     /// at the seam beats a quiet one over the wrong directory.
@@ -1516,21 +1511,17 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
 
     private FootprintService BuildFootprintService()
     {
-        // Checked here so a client that declares no paths fails at the seam, loudly, rather than
-        // inside a walk. The FACTORY below is what is handed on, not this instance.
-        _ = ArtifactPaths
+        // Checked here so a client that declares no layout fails at the seam, loudly, rather than
+        // inside a walk.
+        IArtifactLayout layout = ArtifactLayout
             ?? throw new InvalidOperationException(
-                $"{GetType().Name} exposes a footprint but declares no ArtifactPaths. Override it, "
+                $"{GetType().Name} exposes a footprint but declares no ArtifactLayout. Override it, "
                 + "or do not surface the footprint for this product.");
-        FootprintCatalog catalog = FootprintCategories
-            ?? throw new InvalidOperationException(
-                $"{GetType().Name} exposes a footprint but declares no FootprintCategories. "
-                + "Override it with this product's own category set.");
 
-        // ⛔ A factory, re-read on every use. This service is CACHED for the client's lifetime, so
-        // passing today's instance would pin whichever profile was current when the footprint page
-        // was first opened — and PlatformPaths.UserProfile honours an AsyncLocal override.
-        return new FootprintService(() => ArtifactPaths!, catalog);
+        // ⛔ The service is CACHED for the client's lifetime, so it holds the layout and asks it on
+        // every call: IArtifactLayout resolves its paths per read, and PlatformPaths.UserProfile
+        // honours an AsyncLocal override that a cached path would pin.
+        return new FootprintService(layout);
     }
 
     /// <inheritdoc/>
@@ -1544,10 +1535,10 @@ public abstract class AgentConfigClientCore : IAgentConfigClient
             projectRoot = _projectRoot;
         }
 
-        // ⭐ Empty, not Claude's inventory, when this client declares no paths. An inventory can
+        // ⭐ Empty, not Claude's inventory, when this client declares no layout. An inventory can
         // legitimately be empty; it can never legitimately be another product's.
-        return ArtifactPaths is { } paths
-            ? UserMemoryService.SnapshotFiles(paths, projectRoot)
+        return ArtifactLayout is { } layout
+            ? UserMemoryService.SnapshotFiles(layout, projectRoot)
             : [];
     }
 

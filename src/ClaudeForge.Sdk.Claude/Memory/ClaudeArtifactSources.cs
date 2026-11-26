@@ -1,23 +1,9 @@
 using Bennewitz.Ninja.AgentForge.Artifacts;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
-/// <summary>
-/// One artifact source plus the inventory category its entries belong to.
-/// </summary>
-/// <param name="Source">The source itself.</param>
-/// <param name="Category">Which <see cref="UserMemoryCategory"/> the entries land in.</param>
-/// <remarks>
-/// ⚠ <b><see cref="UserMemoryCategory"/> conflates kind and scope, and
-/// <see cref="ArtifactRef"/> deliberately does not.</b> Three categories —
-/// <see cref="UserMemoryCategory.PrimaryMemory"/>, <see cref="UserMemoryCategory.ProjectMemory"/>
-/// and <see cref="UserMemoryCategory.CrossToolMemory"/> — are all
-/// <see cref="ArtifactKind.Memory"/>, separated only by where they came from. So the category
-/// cannot be recovered from an entry alone; it is carried here, on the source that produces it,
-/// which is the one place that knows both halves.
-/// </remarks>
-internal sealed record CategorisedArtifactSource(IArtifactSource Source, UserMemoryCategory Category);
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
 /// <summary>
 /// Claude Code's fixed artifact locations, expressed as an ordered source list.
@@ -45,6 +31,16 @@ internal static class ClaudeArtifactSources
     // row per past restore × memory file, the same compounding noise the backup pipeline already
     // excludes (see ZipArchiveWriter.EnumerateRecursive and BackupEngine.ShouldSkipHomeFile).
     private static readonly string[] Sidecars = [".bak"];
+
+    /// <summary>
+    /// The suffix that tells the project's <c>settings.json</c> row from the user's inside the
+    /// Configuration group.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Only the project configuration source carries it.</b> The project's <c>CLAUDE.md</c>
+    /// needs none, because it already sits in a group of its own (Project memory).
+    /// </remarks>
+    internal const string ProjectNameSuffix = " (project)";
 
     /// <summary>
     /// Build the source list backing the Tier 1 inventory, in walk order.
@@ -223,7 +219,8 @@ internal static class ClaudeArtifactSources
                     new ArtifactProbe("settings.local.json", PlatformPaths.LocalSettingsPath(projectRoot)),
                     new ArtifactProbe("mcp.json", PlatformPaths.ProjectMcpPath(projectRoot)),
                 ]),
-            UserMemoryCategory.Configuration));
+            UserMemoryCategory.Configuration,
+            ProjectNameSuffix));
     }
 
     /// <summary>

@@ -1,13 +1,14 @@
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Testing;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
 
 public class FootprintServiceTests : IDisposable
 {
     private string _fakeHome = null!;
-    private string _claudeHome => Path.Combine(_fakeHome, ".claude");
+    private string _home => Path.Combine(_fakeHome, NeutralTestProduct.HomeDirectoryName);
 
     public FootprintServiceTests() => Setup();
 
@@ -15,7 +16,7 @@ public class FootprintServiceTests : IDisposable
     {
         _fakeHome = Path.Combine(Path.GetTempPath(),
             "claudeforge-fp-test-" + Path.GetRandomFileName());
-        Directory.CreateDirectory(_claudeHome);
+        Directory.CreateDirectory(_home);
         PlatformPaths.TestUserProfileOverride = _fakeHome;
     }
 
@@ -43,14 +44,14 @@ public class FootprintServiceTests : IDisposable
 
     private void WriteUnder(string relPath, string content = "x")
     {
-        string full = Path.Combine(_claudeHome, relPath);
+        string full = Path.Combine(_home, relPath);
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         File.WriteAllText(full, content);
     }
 
     private static FootprintService NewService()
     {
-        return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default);
+        return new FootprintService(NeutralTestArtifactLayout.UnderProfile());
     }
 
     // -----------------------------------------------------------------------
@@ -95,7 +96,7 @@ public class FootprintServiceTests : IDisposable
     [Fact]
     public async Task IsInStandardBackup_Matches_BackupEngineSkipDecision()
     {
-        // Mirror the only documented skip: SessionTranscripts (~/.claude/projects).
+        // Mirror the only documented skip: SessionTranscripts (<home>/projects).
         IReadOnlyList<FootprintCategoryStats> rows = await NewService().GetStatsAsync(CancellationToken.None);
         FootprintCategoryStats transcripts = rows.Single(r => r.Category == FootprintCategory.SessionTranscripts);
         Assert.False(transcripts.IsInStandardBackup,
@@ -114,9 +115,9 @@ public class FootprintServiceTests : IDisposable
         FootprintService svc = NewService();
         await svc.DeleteAsync(FootprintCategory.PromptHistory, CancellationToken.None);
 
-        Assert.False(File.Exists(Path.Combine(_claudeHome, "history.jsonl")));
+        Assert.False(File.Exists(Path.Combine(_home, "history.jsonl")));
         // Sibling category untouched.
-        Assert.True(File.Exists(Path.Combine(_claudeHome, "projects/repo/session-1.jsonl")));
+        Assert.True(File.Exists(Path.Combine(_home, "projects/repo/session-1.jsonl")));
     }
 
     [Fact]
@@ -144,8 +145,8 @@ public class FootprintServiceTests : IDisposable
     public async Task DeleteAsync_PropagatesIoFailure()
     {
         // Inject a fake IBackupFileSystem that throws on DeleteFile.
-        ThrowingDeleteFileSystem fake = new(_claudeHome);
-        FootprintService svc = new(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default, fake);
+        ThrowingDeleteFileSystem fake = new(_home);
+        FootprintService svc = new(NeutralTestArtifactLayout.UnderProfile(), fake);
         WriteUnder("history.jsonl");
 
         await Assert.ThrowsAsync<IOException>(() =>
@@ -206,11 +207,11 @@ public class FootprintServiceTests : IDisposable
     public async Task GetProjectTranscriptStats_LastWriteUtc_IsMostRecentFile()
     {
         WriteUnder("projects/-Users-brian-foo/old.jsonl");
-        string oldFile = Path.Combine(_claudeHome, "projects", "-Users-brian-foo", "old.jsonl");
+        string oldFile = Path.Combine(_home, "projects", "-Users-brian-foo", "old.jsonl");
         File.SetLastWriteTimeUtc(oldFile, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         WriteUnder("projects/-Users-brian-foo/new.jsonl", "y");
-        string newFile = Path.Combine(_claudeHome, "projects", "-Users-brian-foo", "new.jsonl");
+        string newFile = Path.Combine(_home, "projects", "-Users-brian-foo", "new.jsonl");
         File.SetLastWriteTimeUtc(newFile, new DateTime(2026, 5, 5, 12, 0, 0, DateTimeKind.Utc));
 
         ProjectTranscriptStats row = (await NewService().GetProjectTranscriptStatsAsync(CancellationToken.None)).Single();
@@ -227,10 +228,10 @@ public class FootprintServiceTests : IDisposable
 
         await NewService().DeleteProjectTranscriptsAsync("-Users-brian-foo", CancellationToken.None);
 
-        Assert.False(File.Exists(Path.Combine(_claudeHome, "projects", "-Users-brian-foo", "sess-1.jsonl")));
-        Assert.False(File.Exists(Path.Combine(_claudeHome, "projects", "-Users-brian-foo", "sess-2.jsonl")));
+        Assert.False(File.Exists(Path.Combine(_home, "projects", "-Users-brian-foo", "sess-1.jsonl")));
+        Assert.False(File.Exists(Path.Combine(_home, "projects", "-Users-brian-foo", "sess-2.jsonl")));
         // Sibling project untouched.
-        Assert.True(File.Exists(Path.Combine(_claudeHome, "projects", "-Users-brian-bar", "sess-1.jsonl")));
+        Assert.True(File.Exists(Path.Combine(_home, "projects", "-Users-brian-bar", "sess-1.jsonl")));
     }
 
     [Fact]
@@ -243,7 +244,7 @@ public class FootprintServiceTests : IDisposable
         // Directory still present even though empty — Claude Code may
         // re-use it on next session, and racing the running CLI by
         // removing it isn't a meaningful privacy win.
-        Assert.True(Directory.Exists(Path.Combine(_claudeHome, "projects", "-Users-brian-foo")));
+        Assert.True(Directory.Exists(Path.Combine(_home, "projects", "-Users-brian-foo")));
     }
 
     [Fact]
@@ -271,9 +272,9 @@ public class FootprintServiceTests : IDisposable
         await Assert.ThrowsAsync<ArgumentException>(() =>
             svc.DeleteProjectTranscriptsAsync(string.Empty, CancellationToken.None));
 
-        // Defence-in-depth assertion: nothing under ~/.claude/ outside the
+        // Defence-in-depth assertion: nothing under the home outside the
         // (non-existent) projects/<bad-name> path should have been touched.
-        Assert.True(File.Exists(Path.Combine(_claudeHome, "history.jsonl")));
+        Assert.True(File.Exists(Path.Combine(_home, "history.jsonl")));
     }
 
     [Fact]
@@ -295,11 +296,11 @@ public class FootprintServiceTests : IDisposable
 
     private sealed class ThrowingDeleteFileSystem : IBackupFileSystem
     {
-        private readonly string _claudeHome;
+        private readonly string _home;
 
-        public ThrowingDeleteFileSystem(string claudeHome)
+        public ThrowingDeleteFileSystem(string home)
         {
-            _claudeHome = claudeHome;
+            _home = home;
         }
 
         public bool FileExists(string path)

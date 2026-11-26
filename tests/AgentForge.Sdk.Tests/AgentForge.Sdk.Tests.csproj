@@ -13,6 +13,7 @@
         <!-- The product that is not Claude, for the neutral engines' tests (plans/00008 step 5).
              LINKED, like the grants above, so Core's and Sdk's tests share one definition. -->
         <Compile Include="../Shared/NeutralTestProduct.cs" Link="Shared/NeutralTestProduct.cs"/>
+        <Compile Include="../Shared/NeutralTestArtifactLayout.cs" Link="Shared/NeutralTestArtifactLayout.cs"/>
     </ItemGroup>
 
     <ItemGroup>

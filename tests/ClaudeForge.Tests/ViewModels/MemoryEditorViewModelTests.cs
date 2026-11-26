@@ -5,6 +5,7 @@ using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Hooks;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Marketplaces;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 using Bennewitz.Ninja.AgentForge.Sdk.McpServers;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
@@ -921,7 +922,7 @@ public sealed class MemoryEditorViewModelTests : IDisposable
         // ── Memory + footprint methods (delegate to the static SDK helpers) ─
         public IReadOnlyList<UserMemoryFile> SnapshotUserMemoryFiles(string? projectRoot = null)
         {
-            return UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
+            return UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), projectRoot);
         }
 
         public Task<string?> ReadMemoryFileAsync(string absolutePath, CancellationToken ct)
@@ -931,22 +932,22 @@ public sealed class MemoryEditorViewModelTests : IDisposable
 
         public Task<IReadOnlyList<FootprintCategoryStats>> GetFootprintStatsAsync(CancellationToken ct)
         {
-            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).GetStatsAsync(ct);
+            return new FootprintService(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).GetStatsAsync(ct);
         }
 
         public Task DeleteFootprintCategoryAsync(FootprintCategory category, CancellationToken ct)
         {
-            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).DeleteAsync(category, ct);
+            return new FootprintService(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).DeleteAsync(category, ct);
         }
 
         public Task<IReadOnlyList<ProjectTranscriptStats>> GetProjectTranscriptStatsAsync(CancellationToken ct)
         {
-            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).GetProjectTranscriptStatsAsync(ct);
+            return new FootprintService(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).GetProjectTranscriptStatsAsync(ct);
         }
 
         public Task DeleteProjectTranscriptsAsync(string mangledName, CancellationToken ct)
         {
-            return new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default).DeleteProjectTranscriptsAsync(mangledName, ct);
+            return new FootprintService(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty)).DeleteProjectTranscriptsAsync(mangledName, ct);
         }
 
         // ── Everything else: throw — these tests don't touch the rest of the surface. ─

@@ -1,24 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
-/// <summary>
-/// One artifact source plus the editing scope its entries belong to.
-/// </summary>
-/// <param name="Source">The source itself.</param>
-/// <param name="Scope">
-/// Which <see cref="EditableMemoryScope"/> the entries land in — and therefore whether the editor
-/// offers to save them.
-/// </param>
-/// <remarks>
-/// ⚠ <b>Not recoverable from the entry, and for the opposite reason to
-/// <see cref="CategorisedArtifactSource"/>.</b> There the tag was coarser than the entry's kind;
-/// here it is coarser than the entry's <see cref="ArtifactScope"/> — the plugin source yields one
-/// scope per installed plugin, and every one of them is
-/// <see cref="EditableMemoryScope.Plugin"/>. Reading writability off a scope id would mean parsing
-/// a string prefix, which is how a typo becomes an editable plugin file.
-/// </remarks>
-internal sealed record ScopedArtifactSource(IArtifactSource Source, EditableMemoryScope Scope);
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
 /// <summary>
 /// Where Claude Code's three editable artifact kinds live, as an ordered source list.

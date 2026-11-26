@@ -245,7 +245,6 @@ words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeCodeSettings,	1
 words	src/AgentForge.Core/Settings/ConfigFileType.cs	ClaudeDesktopConfig,	1
 words	src/AgentForge.Core/Settings/ScopeLadder.cs	"claude",	1
 words	src/AgentForge.Core/Updates/GithubReleaseChecker.cs	public const string DefaultRepository = "JanusMael/ClaudeForge";	1
-words	src/AgentForge.Sdk/AgentConfigClientCore.cs	protected virtual ClaudeArtifactPaths? ArtifactPaths => null;	1
 words	src/AgentForge.Sdk/Env/EnvAccessor.cs	get => Get(EnvVarKey.AnthropicModel);	1
 words	src/AgentForge.Sdk/Env/EnvAccessor.cs	public string? AnthropicModel	1
 words	src/AgentForge.Sdk/Env/EnvAccessor.cs	set => Set(EnvVarKey.AnthropicModel, value);	1
@@ -254,74 +253,3 @@ words	src/AgentForge.Sdk/Env/EnvVarKey.cs	public const string AnthropicModel = "
 words	src/AgentForge.Sdk/Env/EnvVarKey.cs	public const string DisableAutoMemory = "CLAUDE_CODE_DISABLE_AUTO_MEMORY";	1
 words	src/AgentForge.Sdk/Env/EnvVarKey.cs	public const string MaxOutputTokens = "CLAUDE_CODE_MAX_OUTPUT_TOKENS";	1
 words	src/AgentForge.Sdk/Env/IEnvAccessor.cs	string? AnthropicModel { get; set; }	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public ClaudeEnvironment Env { get; } = env ?? throw new ArgumentNullException(nameof(env));	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public sealed class ClaudeArtifactPaths(string userProfile, ClaudeEnvironment env)	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public static ClaudeArtifactPaths DefaultFor(ClaudeEnvironment env)	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string ClaudeHome => Env.ResolvedConfigDir ?? Path.Combine(UserProfile, ".claude");	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string ClaudeJsonPath => Path.Combine(UserProfile, ".claude.json");	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string CredentialsPath => Path.Combine(ClaudeHome, ".credentials.json");	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string UserMcpPath => Path.Combine(ClaudeHome, "mcp.json");	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactPaths.cs	public string UserSettingsPath => Path.Combine(ClaudeHome, "settings.json");	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	AddArtifactWalks(sources, paths.ClaudeHome);	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	AddMemory(sources, paths.ClaudeHome, projectRoot);	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	List<CategorisedArtifactSource> sources, ClaudeArtifactPaths paths, string? projectRoot)	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-managed-dropins", ArtifactKind.Configuration, ClaudeScopes.Managed),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-agents", ArtifactKind.Agent, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-commands", ArtifactKind.Command, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-hooks", ArtifactKind.Hook, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-plans", ArtifactKind.Plan, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("claude-user-rules", ArtifactKind.Rule, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	Walk(new ArtifactSourceIdentity("cross-tool-opencode", ArtifactKind.Memory, ClaudeScopes.CrossTool),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	[new ArtifactProbe("managed-settings.json", paths.ManagedSettingsPath)]),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	internal static class ClaudeArtifactSources	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe(".claude.json", paths.ClaudeJsonPath),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("CLAUDE", Path.Combine(home, "CLAUDE.md")),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("CLAUDE", Path.Combine(projectRoot, "CLAUDE.md")),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("mcp.json", PlatformPaths.ProjectMcpPath(projectRoot)),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("mcp.json", paths.UserMcpPath),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactProbe("settings.local.json", PlatformPaths.LocalSettingsPath(projectRoot)),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-managed-config", ArtifactKind.Configuration, ClaudeScopes.Managed),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-project-config", ArtifactKind.Configuration, ClaudeScopes.Project),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-project-memory", ArtifactKind.Memory, ClaudeScopes.Project),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-user-config", ArtifactKind.Configuration, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-user-memory", ArtifactKind.Memory, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("claude-user-skills", ArtifactKind.Skill, ClaudeScopes.User),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	new ArtifactSourceIdentity("cross-tool-probes", ArtifactKind.Memory, ClaudeScopes.CrossTool),	1
-words	src/AgentForge.Sdk/Memory/ClaudeArtifactSources.cs	stripExtension: false, namePrefix: "managed-settings.d/"),	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	AddClaudeDirectory(	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	AddClaudeDirectory(sources, paths.ClaudeHome, ClaudeScopes.User, EditableMemoryScope.User);	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	ClaudeArtifactSources.Walk(	2
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	Path.Combine(claudeDirectory, "agents"), "*.md"),	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	Path.Combine(claudeDirectory, "commands"), "*.md"),	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	Path.Combine(claudeDirectory, "skills"),	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	internal static class ClaudeEditableArtifactSources	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	new ClaudePluginArtifactSource(Path.Combine(paths.ClaudeHome, "plugins")),	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	private static void AddClaudeDirectory(	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	sources, Path.Combine(projectRoot, ".claude"), ClaudeScopes.Project, EditableMemoryScope.Project);	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	string claudeDirectory,	1
-words	src/AgentForge.Sdk/Memory/ClaudeEditableArtifactSources.cs	string prefix = $"claude-{scope.Id}";	1
-words	src/AgentForge.Sdk/Memory/ClaudePluginArtifactSource.cs	internal sealed class ClaudePluginArtifactSource(string root) : IArtifactSource	1
-words	src/AgentForge.Sdk/Memory/ClaudePluginArtifactSource.cs	public string Id => "claude-plugins";	1
-words	src/AgentForge.Sdk/Memory/ClaudePluginArtifactSource.cs	return new ArtifactRef(name, kind, ClaudeScopes.ForPlugin(PluginLabel(location)),	1
-words	src/AgentForge.Sdk/Memory/ClaudeScopes.cs	internal static class ClaudeScopes	1
-words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
-words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	ClaudeEditableArtifactSources.ForEditor(paths, projectRoot);	1
-words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	ClaudeEnvironment env, string? projectRoot = null)	1
-words	src/AgentForge.Sdk/Memory/EditableMemoryService.cs	return Snapshot(ClaudeArtifactPaths.DefaultFor(env), projectRoot);	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	: FootprintRoots.Single(FootprintRoots.Home, Paths.ClaudeHome);	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	Func<ClaudeArtifactPaths> paths,	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	private ClaudeArtifactPaths Paths => _paths();	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	private readonly Func<ClaudeArtifactPaths> _paths;	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	public static string ResolveCategoryPath(ClaudeArtifactPaths paths, FootprintCategory category)	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	public static string ResolveCategoryPath(ClaudeEnvironment env, FootprintCategory category)	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	return ResolveCategoryPath(ClaudeArtifactPaths.DefaultFor(env), category);	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	return ResolveCategoryPath(FootprintRoots.Single(FootprintRoots.Home, paths.ClaudeHome), category);	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	string dir = Path.Combine(Paths.ClaudeHome, "projects");	1
-words	src/AgentForge.Sdk/Memory/FootprintService.cs	string projectDir = Path.Combine(Paths.ClaudeHome, "projects", mangledName);	1
-words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	ClaudeArtifactPaths paths, string? projectRoot)	1
-words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	ClaudeArtifactSources.ForInventory(paths, projectRoot);	1
-words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	ClaudeEnvironment env, string? projectRoot = null)	1
-words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	return SnapshotFiles(ClaudeArtifactPaths.DefaultFor(env), projectRoot);	1
-words	src/AgentForge.Sdk/Memory/UserMemoryService.cs	return entry.Scope == ClaudeScopes.Project ? $"{entry.Name} (project)" : entry.Name;	1

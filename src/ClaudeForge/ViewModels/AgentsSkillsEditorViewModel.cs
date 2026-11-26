@@ -7,6 +7,7 @@ using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 using Bennewitz.Ninja.ScopedEditors.Messages;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -680,7 +681,7 @@ public sealed partial class AgentsSkillsEditorViewModel : ObservableObject, IDis
                 // Fast, stat-only walk on the thread pool — no file contents
                 // read here, so the lists can render immediately.
                 IReadOnlyList<EditableMemoryEntry> entries =
-                    await Task.Run(() => EditableMemoryService.Snapshot(_env, _projectRoot)).ConfigureAwait(true);
+                    await Task.Run(() => EditableMemoryService.Snapshot(ClaudeArtifactLayout.For(_env), _projectRoot)).ConfigureAwait(true);
 
                 var rows = new List<ArtifactRowViewModel>();
                 FillGrouped(AgentItems, entries, UserMemoryCategory.Subagent, rows);
