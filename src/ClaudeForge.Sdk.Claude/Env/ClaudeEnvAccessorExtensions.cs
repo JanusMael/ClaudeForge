@@ -115,11 +115,11 @@ public static class ClaudeEnvAccessorExtensions
 
     private static string? FormatBool01(bool? value)
     {
-        return value switch
+        if (value is not { } set)
         {
-            true => "1",
-            false => "0",
-            null => null,
-        };
+            return null;
+        }
+
+        return set ? "1" : "0";
     }
 }

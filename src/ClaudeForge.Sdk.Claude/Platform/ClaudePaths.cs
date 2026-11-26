@@ -278,13 +278,10 @@ public static class ClaudePaths
                     return true;
                 }
             }
-            else if (PlatformInfo.Current.IsMacOS)
+            else if (PlatformInfo.Current.IsMacOS && Directory.Exists("/Applications/Claude.app"))
             {
                 // Standard macOS app bundle location.
-                if (Directory.Exists("/Applications/Claude.app"))
-                {
-                    return true;
-                }
+                return true;
             }
 
             return false;
@@ -358,9 +355,8 @@ public static class ClaudePaths
 
         foreach (string dir in dirs)
         {
-            foreach (string ext in extensions)
+            foreach (string candidate in extensions.Select(ext => Path.Combine(dir, exe + ext)))
             {
-                string candidate = Path.Combine(dir, exe + ext);
                 if (File.Exists(candidate))
                 {
                     return candidate;
