@@ -1,6 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
 /// <summary>
 /// The precedence layers Claude Code reads artifacts from.

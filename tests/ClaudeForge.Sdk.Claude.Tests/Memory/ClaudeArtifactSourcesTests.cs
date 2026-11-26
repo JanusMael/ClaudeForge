@@ -1,8 +1,9 @@
 using Bennewitz.Ninja.AgentForge.Artifacts;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Memory;
 
 /// <summary>
 /// Claude's fixed locations, as an ordered artifact-source list.
@@ -226,7 +227,7 @@ public sealed class ClaudeArtifactSourcesTests : IDisposable
         Directory.CreateDirectory(projectRoot);
         File.WriteAllText(Path.Combine(projectRoot, "CLAUDE.md"), "# project");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), projectRoot);
 
         Assert.Single(files, f => f.Category == UserMemoryCategory.PrimaryMemory);
         Assert.Single(files, f => f.Category == UserMemoryCategory.ProjectMemory);
@@ -249,7 +250,7 @@ public sealed class ClaudeArtifactSourcesTests : IDisposable
         Write(Path.Combine("hooks", "precommit.sh"));
         Write(Path.Combine("hooks", "precommit.sh.bak"));
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
 
         Assert.Single(files, f => f.Category == UserMemoryCategory.Hook);
         Assert.DoesNotContain(files, f => f.AbsolutePath.EndsWith(".bak", StringComparison.Ordinal));
@@ -267,7 +268,7 @@ public sealed class ClaudeArtifactSourcesTests : IDisposable
 
         List<UserMemoryFile> cross =
         [
-            .. UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+            .. UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                 .Where(f => f.Category == UserMemoryCategory.CrossToolMemory),
         ];
 

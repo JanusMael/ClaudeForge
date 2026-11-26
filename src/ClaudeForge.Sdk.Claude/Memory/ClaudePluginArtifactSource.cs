@@ -1,6 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
 /// <summary>
 /// The installed-plugin tree: one depth-bounded walk yielding agents, commands and skills from

@@ -1,6 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
 /// <summary>
 /// Every path the artifact and footprint services read, resolved from one user-profile root.

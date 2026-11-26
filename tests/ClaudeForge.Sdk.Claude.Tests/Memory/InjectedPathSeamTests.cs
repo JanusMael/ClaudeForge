@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
+using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Memory;
 
 /// <summary>
 /// The seam Phase 10c created stays open: the artifact and footprint services read their roots
@@ -63,14 +65,20 @@ public sealed class InjectedPathSeamTests
     [Fact]
     public void TheArtifactSurfaceReadsNoUnexpectedProcessGlobalPath()
     {
-        string memoryDir = Path.Combine(FindRepoRoot(), "src", "AgentForge.Sdk", "Memory");
-        Assert.True(Directory.Exists(memoryDir), $"Expected the Memory folder at '{memoryDir}'.");
+        // ⚠ Both halves of the surface since plans/00008 step 9: the neutral services in the SDK,
+        // and Claude's layout, which moved beside the Claude client.
+        string root = FindRepoRoot();
+        string[] memoryDirs =
+        [
+            Path.Combine(root, "src", "AgentForge.Sdk", "Memory"),
+            Path.Combine(root, "src", "ClaudeForge.Sdk.Claude", "Memory"),
+        ];
 
         List<string> violations = [];
         int allowedSeen = 0;
         int filesScanned = 0;
 
-        foreach (string file in Directory.EnumerateFiles(memoryDir, "*.cs", SearchOption.AllDirectories))
+        foreach (string file in memoryDirs.SelectMany(EnumerateMemoryFolder))
         {
             filesScanned++;
             string name = Path.GetFileName(file);
@@ -110,6 +118,12 @@ public sealed class InjectedPathSeamTests
             + "make the injected ClaudeArtifactPaths silently ineffective — the service compiles, "
             + "the tests pass, and it reads the process profile anyway:\n  "
             + string.Join("\n  ", violations));
+    }
+
+    private static IEnumerable<string> EnumerateMemoryFolder(string memoryDir)
+    {
+        Assert.True(Directory.Exists(memoryDir), $"Expected the Memory folder at '{memoryDir}'.");
+        return Directory.EnumerateFiles(memoryDir, "*.cs", SearchOption.AllDirectories);
     }
 
     private static string FindRepoRoot()

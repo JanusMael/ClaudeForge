@@ -1,7 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Memory;
 
 public class UserMemoryServiceTests : IDisposable
 {
@@ -52,7 +53,7 @@ public class UserMemoryServiceTests : IDisposable
     [Fact]
     public void Empty_ClaudeHome_YieldsEmptyList()
     {
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
         Assert.Empty(files);
     }
 
@@ -62,7 +63,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("CLAUDE.md", "# claude\nbody");
         Write("AGENTS.md", "# agents\nbody");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
         List<UserMemoryFile> primary = files.Where(f => f.Category == UserMemoryCategory.PrimaryMemory).ToList();
         Assert.Equal(2, primary.Count);
         MessageAssert.SameElements(
@@ -76,7 +77,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("agents/code-reviewer.md", "# reviewer\nlooks at code");
         Write("agents/tdd-guide.md", "# tdd");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
         List<UserMemoryFile> subagents = files.Where(f => f.Category == UserMemoryCategory.Subagent).ToList();
         Assert.Equal(2, subagents.Count);
     }
@@ -87,7 +88,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("agents/notes.txt", "irrelevant");
         Write("agents/agent.md", "# real");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
         Assert.Single(files, f => f.Category == UserMemoryCategory.Subagent);
     }
 
@@ -99,7 +100,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("hooks/format.py", "import sys");
         Write("hooks/runner", "shebangless");
 
-        List<UserMemoryFile> hooks = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        List<UserMemoryFile> hooks = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                       .Where(f => f.Category == UserMemoryCategory.Hook)
                                                       .ToList();
         Assert.Equal(3, hooks.Count);
@@ -112,7 +113,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("rules/common/coding.md", "...");
         Write("rules/csharp/patterns.md", "...");
 
-        List<UserMemoryFile> rules = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        List<UserMemoryFile> rules = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                       .Where(f => f.Category == UserMemoryCategory.Rule)
                                                       .ToList();
         Assert.Equal(3, rules.Count);
@@ -125,7 +126,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("skills/python-patterns/extra.md", "ignored");
         Write("skills/no-skill-here/notes.md", "ignored");
 
-        List<UserMemoryFile> skills = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        List<UserMemoryFile> skills = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                        .Where(f => f.Category == UserMemoryCategory.Skill)
                                                        .ToList();
         Assert.Single(skills);
@@ -142,7 +143,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("skills/python-patterns/SKILL.md", "# python patterns");
         Write("skills/git-flow/SKILL.md", "# git flow");
 
-        List<UserMemoryFile> skills = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        List<UserMemoryFile> skills = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                        .Where(f => f.Category == UserMemoryCategory.Skill)
                                                        .OrderBy(f => f.DisplayName)
                                                        .ToList();
@@ -156,7 +157,7 @@ public class UserMemoryServiceTests : IDisposable
     public void Subtitle_FirstNonEmptyLine_StripsHeaderHash()
     {
         Write("CLAUDE.md", "\n\n# Claude Code Guide\nrest of file");
-        UserMemoryFile primary = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile primary = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                   .Single(f => f.Category == UserMemoryCategory.PrimaryMemory);
         Assert.Equal("Claude Code Guide", primary.Subtitle);
     }
@@ -178,7 +179,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("CLAUDE.md", "# Claude Code Guide\nrest of file");
         using FileStream writer = new(Path.Combine(_claudeHome, "CLAUDE.md"), FileMode.Open, FileAccess.Write, FileShare.Read);
 
-        UserMemoryFile primary = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile primary = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                   .Single(f => f.Category == UserMemoryCategory.PrimaryMemory);
 
         MessageAssert.Equal("Claude Code Guide", primary.Subtitle,
@@ -194,7 +195,7 @@ public class UserMemoryServiceTests : IDisposable
         // whose first content was a markdown HR or YAML front-matter
         // delimiter. The improved heuristic skips past it.
         Write("agents/horizontal-rule.md", "---\nAfter the rule\n");
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.Category == UserMemoryCategory.Subagent
                                                              && f.DisplayName == "horizontal-rule");
         Assert.Equal("After the rule", entry.Subtitle);
@@ -213,7 +214,7 @@ public class UserMemoryServiceTests : IDisposable
             + "---\n"
             + "# Code Reviewer\n"
             + "Body content here.");
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.DisplayName == "code-reviewer");
         Assert.Equal(
             "Reviews code for quality, security, and maintainability.",
@@ -228,7 +229,7 @@ public class UserMemoryServiceTests : IDisposable
             + "name: My Agent\n"
             + "---\n"
             + "# Body");
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.DisplayName == "named");
         Assert.Equal("My Agent", entry.Subtitle);
     }
@@ -244,7 +245,7 @@ public class UserMemoryServiceTests : IDisposable
             + "  \"description\": \"hook config\",\n"
             + "  \"key\": \"value\"\n"
             + "}");
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.Category == UserMemoryCategory.Hook
                                                              && f.DisplayName == "config");
         Assert.NotNull(entry.Subtitle);
@@ -258,7 +259,7 @@ public class UserMemoryServiceTests : IDisposable
             "```\n"
             + "Real plan content\n"
             + "```");
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.DisplayName == "fenced");
         Assert.Equal("Real plan content", entry.Subtitle);
     }
@@ -268,7 +269,7 @@ public class UserMemoryServiceTests : IDisposable
     {
         string longLine = new('a', 130);
         Write("plans/long.md", longLine);
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.DisplayName == "long");
         Assert.NotNull(entry.Subtitle);
         Assert.True(entry.Subtitle!.Length <= 121); // 120 + ellipsis char
@@ -282,7 +283,7 @@ public class UserMemoryServiceTests : IDisposable
         // has no useful subtitle. Returning null is preferable to a
         // misleading "---" or "{" rendering.
         Write("plans/empty-noise.md", "---\n***\n```\n");
-        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile entry = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
                                                 .Single(f => f.DisplayName == "empty-noise");
         Assert.Null(entry.Subtitle);
     }
@@ -294,7 +295,7 @@ public class UserMemoryServiceTests : IDisposable
         Directory.CreateDirectory(projectRoot);
         File.WriteAllText(Path.Combine(projectRoot, "CLAUDE.md"), "# project");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), projectRoot);
         Assert.Single(files, f => f.Category == UserMemoryCategory.ProjectMemory);
     }
 
@@ -302,7 +303,7 @@ public class UserMemoryServiceTests : IDisposable
     public void ProjectMemory_NoRoot_Excluded()
     {
         Write("CLAUDE.md", "# top");
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot: null);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), projectRoot: null);
         Assert.DoesNotContain(files, f => f.Category == UserMemoryCategory.ProjectMemory);
     }
 
@@ -314,7 +315,7 @@ public class UserMemoryServiceTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_fakeHome, ".gemini"));
         File.WriteAllText(Path.Combine(_fakeHome, ".gemini", "GEMINI.md"), "# gemini");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
         List<UserMemoryFile> cross = files.Where(f => f.Category == UserMemoryCategory.CrossToolMemory).ToList();
         Assert.Equal(2, cross.Count);
     }
@@ -354,7 +355,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("managed-settings.json", "{}");
         Write(Path.Combine("managed-settings.d", "10-policy.json"), "{}");
 
-        string[] names = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        string[] names = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
             .Where(f => f.Category == UserMemoryCategory.Configuration)
             .Select(f => f.DisplayName)
             .OrderBy(n => n, StringComparer.Ordinal)
@@ -374,7 +375,7 @@ public class UserMemoryServiceTests : IDisposable
         // NOT, or the rows would read as a meaningless "settings" / "mcp".
         Write("settings.json", "{}");
 
-        UserMemoryFile config = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty)
+        UserMemoryFile config = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty))
             .Single(f => f.Category == UserMemoryCategory.Configuration);
 
         Assert.Equal("settings.json", config.DisplayName);
@@ -389,7 +390,7 @@ public class UserMemoryServiceTests : IDisposable
         File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.json"), "{}");
         File.WriteAllText(Path.Combine(projectRoot, ".claude", "settings.local.json"), "{}");
 
-        string[] names = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty, projectRoot)
+        string[] names = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty), projectRoot)
             .Where(f => f.Category == UserMemoryCategory.Configuration)
             .Select(f => f.DisplayName)
             .ToArray();
@@ -407,7 +408,7 @@ public class UserMemoryServiceTests : IDisposable
         Write("settings.json", "{}");
         Write(".credentials.json", "{\"token\":\"secret\"}");
 
-        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeEnvironment.Empty);
+        IReadOnlyList<UserMemoryFile> files = UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
 
         Assert.False(
             files.Any(f => f.AbsolutePath.Contains("credentials", StringComparison.OrdinalIgnoreCase)),

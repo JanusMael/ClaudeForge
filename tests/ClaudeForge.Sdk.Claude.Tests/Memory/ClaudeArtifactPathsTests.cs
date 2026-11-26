@@ -1,7 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Sdk.Memory;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Memory;
 
-namespace Bennewitz.Ninja.AgentForge.Sdk.Tests.Memory;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Memory;
 
 /// <summary>
 /// The injected path provider: that it agrees with <see cref="PlatformPaths"/>, and that injecting
@@ -129,7 +130,7 @@ public sealed class ClaudeArtifactPathsTests : IDisposable
         Write(Path.Combine(_other, ".claude", "CLAUDE.md"), "# injected profile");
 
         IReadOnlyList<UserMemoryFile> files =
-            UserMemoryService.SnapshotFiles(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), projectRoot: null);
+            UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.Over(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty)), projectRoot: null);
 
         UserMemoryFile claudeMd = files.Single(f => f.Category == UserMemoryCategory.PrimaryMemory);
         OrdinalAssert.StartsWith(_other, claudeMd.AbsolutePath);
@@ -142,7 +143,7 @@ public sealed class ClaudeArtifactPathsTests : IDisposable
         Write(Path.Combine(_other, ".claude", "agents", "from-injected.md"));
 
         IReadOnlyList<EditableMemoryEntry> entries =
-            EditableMemoryService.Snapshot(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), projectRoot: null);
+            EditableMemoryService.Snapshot(ClaudeArtifactLayout.Over(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty)), projectRoot: null);
 
         Assert.Equal("from-injected", entries.Single().DisplayName);
     }
@@ -158,7 +159,7 @@ public sealed class ClaudeArtifactPathsTests : IDisposable
         Write(Path.Combine(_other, ".claude.json"), "{}");
 
         string[] names = [.. UserMemoryService
-            .SnapshotFiles(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), projectRoot: null)
+            .SnapshotFiles(ClaudeArtifactLayout.Over(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty)), projectRoot: null)
             .Where(f => f.Category == UserMemoryCategory.Configuration)
             .Select(f => f.DisplayName)];
 
@@ -176,7 +177,7 @@ public sealed class ClaudeArtifactPathsTests : IDisposable
         // ⚠ This must exercise an INSTANCE method. An earlier draft constructed the service and
         // then asserted through the STATIC ResolveCategoryPath wrapper, which never touches the
         // instance's field at all — it passed whether the constructor captured or not.
-        var service = new FootprintService(() => ClaudeArtifactPaths.DefaultFor(ClaudeEnvironment.Empty), FootprintCatalog.Default);
+        var service = new FootprintService(ClaudeArtifactLayout.For(ClaudeEnvironment.Empty));
 
         // Only the OTHER profile has transcripts, and the service was built while _profile was current.
         Write(Path.Combine(_other, ".claude", "projects", "proj-a", "session.jsonl"), "{}");
@@ -203,7 +204,8 @@ public sealed class ClaudeArtifactPathsTests : IDisposable
         Write(Path.Combine(_other, ".claude", "projects", "proj-a", "session.jsonl"), "{}");
 
         string resolved = FootprintService.ResolveCategoryPath(
-            new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty), FootprintCategory.SessionTranscripts);
+            ClaudeArtifactLayout.Over(new ClaudeArtifactPaths(_other, ClaudeEnvironment.Empty)).FootprintRoots,
+            FootprintCategory.SessionTranscripts);
 
         Assert.Equal(Path.Combine(_other, ".claude", "projects"), resolved);
     }
@@ -222,7 +224,7 @@ public sealed class ClaudeArtifactPathsTests : IDisposable
         Write(paths.UserSettingsPath, "{}");
 
         IReadOnlyList<UserMemoryFile> files =
-            UserMemoryService.SnapshotFiles(paths, projectRoot: null);
+            UserMemoryService.SnapshotFiles(ClaudeArtifactLayout.Over(paths), projectRoot: null);
 
         Assert.True(files.Any(f => f.DisplayName == "settings.json"), "The sandbox must not be empty.");
         Assert.False(

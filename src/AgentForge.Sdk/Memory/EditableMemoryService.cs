@@ -1,21 +1,20 @@
-using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 /// <summary>
-/// Scope-aware discovery for the three editable Claude Code artifact kinds —
-/// sub-agents, skills, and slash commands — across User, Project, and Plugin
-/// scopes.  The backing store for the Agents &amp; Skills editor page (see
+/// Scope-aware discovery for the three editable artifact kinds — sub-agents, skills, and slash
+/// commands — across the User, Project, and Plugin scopes an <see cref="IArtifactLayout"/>
+/// declares. The backing store for the Agents &amp; Skills editor page (see
 /// <c>docs/SKILLS-AGENTS-COMMANDS-PLAN.md</c>, group #2).
 ///
 /// <para>
-/// <b>Stat-only enumeration:</b> <see cref="Snapshot(ClaudeEnvironment, string)"/> reads no file
+/// <b>Stat-only enumeration:</b> <see cref="Snapshot(IArtifactLayout, string)"/> reads no file
 /// contents — it only walks directories and stats files — so it returns fast
 /// even with many plugins.  The front-matter <c>description</c> subtitle is
 /// loaded lazily by the UI via <see cref="LoadDescription"/> once a row is
-/// shown.  The plugin walk is depth-bounded and skips heavy / irrelevant
+/// shown.  A layout's plugin walk is expected to be depth-bounded and to skip heavy / irrelevant
 /// directories (<c>node_modules</c>, <c>.git</c>, …) so it never descends into
 /// a plugin's dependency tree.
 /// </para>
@@ -32,42 +31,27 @@ public static class EditableMemoryService
     private const int DescriptionScanBytes = 8192;
 
     /// <summary>
-    /// Enumerate every editable artifact across all applicable scopes.
+    /// Enumerate every editable artifact the layout declares, across all applicable scopes.
     /// Stat-only; descriptions are loaded later via <see cref="LoadDescription"/>.
     /// </summary>
+    /// <param name="layout">Where this product's files live.</param>
+    /// <param name="projectRoot">
+    /// The open project's root, or <see langword="null"/> when none is open.
+    /// </param>
     /// <remarks>
     /// ⚠ <b>Every entry in a chain, not just the winner.</b> A user <c>reviewer.md</c> and a
     /// plugin's <c>reviewer.md</c> resolve as one artifact with two declarations, and this page
     /// lists both — it is an editor over files on disk, and hiding one because another outranks it
     /// would leave the user unable to edit a file they can see in their own home directory.
-    /// Which one Claude actually runs is a separate question the resolver deliberately does not
-    /// answer; see <see cref="ClaudeScopes"/>.
+    /// Which one the agent actually runs is a separate question the resolver deliberately does not
+    /// answer.
     /// </remarks>
     public static IReadOnlyList<EditableMemoryEntry> Snapshot(
-        ClaudeEnvironment env, string? projectRoot = null)
+        IArtifactLayout layout, string? projectRoot = null)
     {
-        return Snapshot(ClaudeArtifactPaths.DefaultFor(env), projectRoot);
-    }
+        ArgumentNullException.ThrowIfNull(layout);
 
-    /// <summary>
-    /// Enumerate every editable artifact for an explicitly supplied set of paths.
-    /// </summary>
-    /// <param name="paths">Where this profile's Claude files live.</param>
-    /// <param name="projectRoot">
-    /// The open project's root, or <see langword="null"/> when none is open.
-    /// </param>
-    /// <remarks>
-    /// ⭐ The real entry point; the single-argument overload is a thin wrapper over
-    /// <see cref="ClaudeArtifactPaths.DefaultFor"/>. See <see cref="UserMemoryService.SnapshotFiles(ClaudeArtifactPaths, string)"/>
-    /// for why the static wrapper stays.
-    /// </remarks>
-    public static IReadOnlyList<EditableMemoryEntry> Snapshot(
-        ClaudeArtifactPaths paths, string? projectRoot)
-    {
-        ArgumentNullException.ThrowIfNull(paths);
-
-        IReadOnlyList<ScopedArtifactSource> sources =
-            ClaudeEditableArtifactSources.ForEditor(paths, projectRoot);
+        IReadOnlyList<ScopedArtifactSource> sources = layout.EditorSources(projectRoot);
 
         Dictionary<string, EditableMemoryScope> scopes =
             sources.ToDictionary(s => s.Source.Id, s => s.Scope, StringComparer.Ordinal);

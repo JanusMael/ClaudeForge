@@ -572,8 +572,41 @@ step 3. The items below are kept in order; those marked ✅ are done.
    to compile against `2026.4.1123`, which has no `ProductProjectLayout`. ✅ **Released as
    `packages-v2026.4.1124`** and pinned. ⓘ Tagged on 2026-11-26 under the name approved on the
    24th: the tag fixes `BuildTimestamp`, so the version is the tag's date, not the day it ran.
-   ▶ **Next: step 9**, memory and footprint: `IArtifactLayout`, then `ClaudeArtifactPaths` and the
-   four artifact sources move.
+   ✅ **Step 9, memory and footprint through the layout (2026-11-26, branch `refactor/artifact-layout-seam`):**
+   `IArtifactLayout` in `AgentForge.Sdk/Memory` declares a product's inventory sources, editor
+   sources, footprint catalog, footprint roots and per-project transcript directory (or none), each
+   read per use. `UserMemoryService.SnapshotFiles`, `EditableMemoryService.Snapshot` and
+   `FootprintService` take a layout; their `ClaudeEnvironment` and `ClaudeArtifactPaths` overloads,
+   both Claude `ResolveCategoryPath` overloads and the footprint's paths-and-catalog constructor
+   are gone. `AgentConfigClientCore` has one seam, `ArtifactLayout`, where it had `ArtifactPaths`
+   and `FootprintCategories`. `CategorisedArtifactSource` and `ScopedArtifactSource` became public
+   neutral records; the project configuration rows' `(project)` suffix is now the source's
+   `NameSuffix` rather than a test of Claude's project scope. `ClaudeArtifactPaths`,
+   `ClaudeArtifactSources`, `ClaudeEditableArtifactSources`, `ClaudePluginArtifactSource` and
+   `ClaudeScopes` moved to `ClaudeForge.Sdk.Claude.Memory`, beside the new `ClaudeArtifactLayout`.
+   - **The plan's check, as a golden.** `ClaudeArtifactLayoutGoldenTests` plants a fixture home
+     touching every inventory, editor and footprint location and compares 37 rows (path,
+     category, scope, display name, writability, size, subtitle; footprint counts and bytes per
+     category; per-project transcripts) with a file minted on `main` at `87ce3d38` through `main`'s
+     own API. They match.
+   - **Measured:** Debug build 0 warnings; suite 3,465, 0 failed, 12 skipped. 77 tests moved
+     cleanly, the Claude-layout suites, to `ClaudeForge.Sdk.Claude.Tests`; `InjectedPathSeamTests`
+     now scans both memory folders. 9 added: the golden, and 8 in `NeutralArtifactLayoutTests` on
+     `tests/Shared/NeutralTestArtifactLayout.cs`, which plants Claude's files beside its own.
+     `FootprintServiceTests` stays in Sdk.Tests on that layout. Canaried: walking Claude's
+     transcript directory, resolving against Claude's home, and dropping the suffix turned 3 of
+     the 8 red. The surface diff is exactly the members above. The allow-list loses 72 entries and
+     gains none. Trimmed win-x64 Release publish 0 IL diagnostics.
+   - **Test names against `main`:** 77 moved, 9 added, 2 outcomes: `BuildFilePathIntegrityTests`
+     before the new files were staged, and `PackageVersionLockstepTests`, skipped in a fresh
+     worktree.
+   - **Drift: the neutral layout borrows `FootprintCatalog.Default`** until step 13 moves it, as the
+     neutral test product borrows `ScopeLadder.Default`; its transcript directory follows that
+     catalog's `projects`.
+   - **Drift: `FootprintService` takes the layout, not a factory.** `IArtifactLayout` requires its
+     members to resolve per read, so the factory moved into `ClaudeArtifactLayout.For`;
+     `FootprintService_ResolvesItsDefaultLazily_NotAtConstruction` still passes.
+   ▶ **Next:** merge, release and pin; then step 10, paths, environment and probes.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

@@ -1,22 +1,19 @@
-using Bennewitz.Ninja.AgentForge.Core.Platform;
 using System.Security;
 using Bennewitz.Ninja.AgentForge.Artifacts;
 
 namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 
 /// <summary>
-/// Tier 1 user-memory file inventory. Resolves <see cref="ClaudeArtifactSources"/> — Claude's fixed
-/// locations, expressed as an ordered <see cref="IArtifactSource"/> list — and stats what they
-/// declare into an unsorted list of <see cref="UserMemoryFile"/> entries. Tolerant of missing
-/// directories, unreadable files, and broken symlinks — never throws on enumeration.
+/// Tier 1 user-memory file inventory. Resolves the inventory sources an
+/// <see cref="IArtifactLayout"/> declares — a product's locations, expressed as an ordered
+/// <see cref="IArtifactSource"/> list — and stats them into an unsorted list of
+/// <see cref="UserMemoryFile"/> entries. Tolerant of missing directories, unreadable files, and
+/// broken symlinks — never throws on enumeration.
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is a Claude-Code-specific inventory: the categories list is the
-/// CLI's set, not Claude Desktop's (Desktop has no <c>CLAUDE.md</c>-equivalent
-/// — its memory lives in IndexedDB). The <c>ClaudeDesktopClient</c>
-/// implementation of <see cref="IAgentConfigClient.SnapshotUserMemoryFiles"/>
-/// returns an empty list.
+/// A client with no layout has no inventory: <see cref="IAgentConfigClient.SnapshotUserMemoryFiles"/>
+/// returns an empty list for it rather than another product's files.
 /// </para>
 /// <para>
 /// ⭐ <b>Discovery moved out; stat-and-shape stayed.</b> <see cref="ArtifactRef"/> carries a
@@ -36,44 +33,25 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Memory;
 public static class UserMemoryService
 {
     /// <summary>
-    /// Enumerate every Tier 1 file. <paramref name="projectRoot"/> may be
-    /// <see langword="null"/> when no project is open — in that case
-    /// <see cref="UserMemoryCategory.ProjectMemory"/> contributes zero
-    /// entries.
+    /// Enumerate every Tier 1 file the layout declares.
     /// </summary>
-    public static IReadOnlyList<UserMemoryFile> SnapshotFiles(
-        ClaudeEnvironment env, string? projectRoot = null)
-    {
-        return SnapshotFiles(ClaudeArtifactPaths.DefaultFor(env), projectRoot);
-    }
-
-    /// <summary>
-    /// Enumerate every Tier 1 file for an explicitly supplied set of paths.
-    /// </summary>
-    /// <param name="paths">Where this profile's Claude files live.</param>
+    /// <param name="layout">Where this product's files live.</param>
     /// <param name="projectRoot">
-    /// The open project's root, or <see langword="null"/> when none is open.
+    /// The open project's root, or <see langword="null"/> when none is open — in that case the
+    /// layout's project sources contribute zero entries.
     /// </param>
-    /// <remarks>
-    /// ⭐ <b>This is the real entry point; the parameterless overload is a thin wrapper over
-    /// <see cref="ClaudeArtifactPaths.DefaultFor"/>.</b> Keeping the static wrapper is deliberate:
-    /// converting the whole surface to instances would rewrite the 25 existing tests that are this
-    /// extraction's faithfulness proof, and a proof you had to edit proves nothing. Same call the
-    /// scope model made in Phase 3.
-    /// </remarks>
     public static IReadOnlyList<UserMemoryFile> SnapshotFiles(
-        ClaudeArtifactPaths paths, string? projectRoot)
+        IArtifactLayout layout, string? projectRoot = null)
     {
-        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(layout);
 
-        IReadOnlyList<CategorisedArtifactSource> sources =
-            ClaudeArtifactSources.ForInventory(paths, projectRoot);
+        IReadOnlyList<CategorisedArtifactSource> sources = layout.InventorySources(projectRoot);
 
-        // SourceId → category, built from the same list that is about to be resolved, so the two
+        // SourceId → source, built from the same list that is about to be resolved, so the two
         // cannot drift. An ArtifactRef carries no category by design — see the remarks on
         // CategorisedArtifactSource for why it cannot be recovered from the entry alone.
-        Dictionary<string, UserMemoryCategory> categories =
-            sources.ToDictionary(s => s.Source.Id, s => s.Category, StringComparer.Ordinal);
+        Dictionary<string, CategorisedArtifactSource> bySource =
+            sources.ToDictionary(s => s.Source.Id, StringComparer.Ordinal);
 
         List<UserMemoryFile> results = [];
         foreach (ResolvedArtifact artifact in ArtifactResolver.Resolve(sources.Select(s => s.Source)))
@@ -84,16 +62,14 @@ public static class UserMemoryService
             // files on disk rather than a statement about which one wins.
             foreach (ArtifactRef entry in artifact.Entries)
             {
-                UserMemoryCategory category = categories[entry.SourceId];
-                UserMemoryFile? file = TryBuildEntry(entry.Location, category);
+                CategorisedArtifactSource source = bySource[entry.SourceId];
+                UserMemoryFile? file = TryBuildEntry(entry.Location, source.Category);
                 if (file is null)
                 {
                     continue;
                 }
 
-                results.Add(category == UserMemoryCategory.Configuration
-                    ? file with { DisplayName = ConfigurationDisplayName(entry) }
-                    : file);
+                results.Add(DisplayNamed(file, entry, source));
             }
         }
 
@@ -101,19 +77,22 @@ public static class UserMemoryService
     }
 
     /// <summary>
-    /// Name a configuration row: the file name as declared (extension intact, unlike
-    /// <see cref="ResolveDisplayName"/>, which would render every entry here as a bare
-    /// "settings" / "mcp"), suffixed at project scope so the two <c>settings.json</c> files are
-    /// distinguishable inside one group.
+    /// Name a row. A configuration row takes the file name as declared (extension intact, unlike
+    /// <see cref="ResolveDisplayName"/>, which would render every entry there as a bare
+    /// "settings" / "mcp"); any row then takes its source's suffix, so two same-named files from
+    /// different sources are distinguishable inside one group.
     /// </summary>
     /// <remarks>
-    /// ⭐ The suffix is now DERIVED from the entry's scope rather than hand-written at each of the
-    /// three project call sites, which is what makes it impossible for a fourth project-scope
-    /// config file to be added without it.
+    /// ⭐ The suffix is DERIVED from the source rather than hand-written per file, which is what
+    /// makes it impossible for a further file in a suffixed source to be added without it.
     /// </remarks>
-    private static string ConfigurationDisplayName(ArtifactRef entry)
+    private static UserMemoryFile DisplayNamed(
+        UserMemoryFile file, ArtifactRef entry, CategorisedArtifactSource source)
     {
-        return entry.Scope == ClaudeScopes.Project ? $"{entry.Name} (project)" : entry.Name;
+        string name = source.Category == UserMemoryCategory.Configuration ? entry.Name : file.DisplayName;
+        return source.Category == UserMemoryCategory.Configuration || source.NameSuffix.Length > 0
+            ? file with { DisplayName = name + source.NameSuffix }
+            : file;
     }
 
     /// <summary>
