@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Settings;
 
@@ -73,38 +72,6 @@ internal sealed class EnvAccessor : IEnvAccessor
         return Materialize(_client.GetScopeValue("env", scope) as JsonObject);
     }
 
-    // ── Typed convenience properties for well-known keys ──────────────
-
-    public int? MaxThinkingTokens
-    {
-        get => ParseInt(Get(EnvVarKey.MaxThinkingTokens));
-        set => Set(EnvVarKey.MaxThinkingTokens, FormatInt(value));
-    }
-
-    public int? MaxOutputTokens
-    {
-        get => ParseInt(Get(EnvVarKey.MaxOutputTokens));
-        set => Set(EnvVarKey.MaxOutputTokens, FormatInt(value));
-    }
-
-    public bool? DisableAutoMemory
-    {
-        get => ParseBool01(Get(EnvVarKey.DisableAutoMemory));
-        set => Set(EnvVarKey.DisableAutoMemory, FormatBool01(value));
-    }
-
-    public bool? DisableAutoUpdater
-    {
-        get => ParseBool01(Get(EnvVarKey.DisableAutoUpdater));
-        set => Set(EnvVarKey.DisableAutoUpdater, FormatBool01(value));
-    }
-
-    public string? AnthropicModel
-    {
-        get => Get(EnvVarKey.AnthropicModel);
-        set => Set(EnvVarKey.AnthropicModel, value);
-    }
-
     // ── Helpers ────────────────────────────────────────────────────────
 
     /// <summary>
@@ -135,54 +102,5 @@ internal sealed class EnvAccessor : IEnvAccessor
         }
 
         return dict;
-    }
-
-    /// <summary>
-    /// Parse the stored env-string as a base-10 int.  Lenient: returns
-    /// null on whitespace, missing key, or unparseable value.  Does not
-    /// throw — callers of typed convenience properties should not have
-    /// to defend against hand-edited bad values.
-    /// </summary>
-    private static int? ParseInt(string? raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            return null;
-        }
-
-        return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int n)
-            ? n
-            : null;
-    }
-
-    private static string? FormatInt(int? value)
-    {
-        return value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : null;
-    }
-
-    /// <summary>
-    /// Parse the Claude Code <c>"1"</c> / <c>"0"</c> tri-state boolean
-    /// convention.  Anything else (including <c>"true"</c> / <c>"false"</c>
-    /// — those aren't what Claude Code uses) yields null.  Strict so a
-    /// hand-edited typo doesn't masquerade as a deliberate <c>false</c>.
-    /// </summary>
-    private static bool? ParseBool01(string? raw)
-    {
-        return raw switch
-        {
-            "1" => true,
-            "0" => false,
-            var _ => null,
-        };
-    }
-
-    private static string? FormatBool01(bool? value)
-    {
-        return value switch
-        {
-            true => "1",
-            false => "0",
-            null => null,
-        };
     }
 }

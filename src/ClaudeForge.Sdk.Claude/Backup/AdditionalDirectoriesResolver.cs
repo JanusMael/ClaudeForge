@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.JsonHelpers;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Backup;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Backup;
 
 /// <summary>
 /// Parses the <c>additionalDirectories</c> setting from Claude Code settings files and

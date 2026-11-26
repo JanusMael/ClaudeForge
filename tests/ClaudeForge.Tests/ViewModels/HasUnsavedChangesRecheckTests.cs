@@ -3,6 +3,7 @@ using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AppServices.Abstractions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -223,7 +224,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_sandbox, ".claude"));
         string settingsPath = Path.Combine(_sandbox, ".claude", "settings.json");
 
-        PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
+        ClaudePaths.TestSuppressClaudeCodeBinaryProbe = true;
 
         // ── leg 1: no products detected, load, then place Code settings ──
         MainWindowViewModel vm = new(ClaudeEnvironment.Empty, new SchemaRegistry(), new NullDialogService());
@@ -249,7 +250,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
             TestCleanupHelpers.DeleteFileWithRetry(settingsPath);
             await vm.ReloadCommand.ExecuteAsync(null);
 
-            if (!PlatformPaths.IsDesktopInstalled)
+            if (!ClaudePaths.IsDesktopInstalled)
             {
                 Assert.True(vm.ShowInstallBanner,
                     "After removing the only detected product, ShowInstallBanner must return " +
@@ -260,7 +261,7 @@ public sealed class HasUnsavedChangesRecheckTests : IDisposable
         finally
         {
             vm.Dispose();
-            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
+            ClaudePaths.TestSuppressClaudeCodeBinaryProbe = false;
         }
     }
 

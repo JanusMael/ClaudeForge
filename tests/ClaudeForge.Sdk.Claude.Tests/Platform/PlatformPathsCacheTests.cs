@@ -1,16 +1,18 @@
 using System.Runtime.InteropServices;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Platform;
 
 /// <summary>
 /// Covers the process-lifetime cache layered onto
-/// <see cref="PlatformPaths.TryFindClaudeCodeBinary"/> and
-/// <see cref="PlatformPaths.IsClaudeCodeOnPath"/>. Two contracts:
+/// <see cref="ClaudePaths.TryFindClaudeCodeBinary"/> and
+/// <see cref="ClaudePaths.IsClaudeCodeOnPath"/>. Two contracts:
 ///
 /// 1. After a first probe, removing the binary on disk does NOT change the
 ///    next probe's result — the cache holds the prior answer until
-///    <see cref="PlatformPaths.InvalidatePathCache"/> is called.
+///    <see cref="ClaudePaths.InvalidatePathCache"/> is called.
 ///
 /// 2. After explicit invalidation, the next probe re-runs and reflects the
 ///    new disk state.
@@ -35,14 +37,14 @@ public sealed class PlatformPathsCacheTests : IDisposable
         _originalPath = Environment.GetEnvironmentVariable("PATH");
         Environment.SetEnvironmentVariable("PATH", string.Empty);
 
-        PlatformPaths.InvalidatePathCache();
+        ClaudePaths.InvalidatePathCache();
     }
 
     private void Cleanup()
     {
         PlatformPaths.TestUserProfileOverride = null;
         Environment.SetEnvironmentVariable("PATH", _originalPath);
-        PlatformPaths.InvalidatePathCache();
+        ClaudePaths.InvalidatePathCache();
         if (Directory.Exists(_sandbox))
         {
             Directory.Delete(_sandbox, recursive: true);
@@ -68,7 +70,7 @@ public sealed class PlatformPathsCacheTests : IDisposable
         File.WriteAllText(binaryPath, string.Empty);
 
         // First call — primes the cache and returns the located binary.
-        PlatformPaths.ClaudeCodeLocation? first = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? first = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         Assert.NotNull(first);
         Assert.Equal(binaryPath, first!.BinaryPath);
 
@@ -77,14 +79,14 @@ public sealed class PlatformPathsCacheTests : IDisposable
 
         // Second call WITHOUT invalidation — must still return the cached
         // location. (Process-lifetime cache contract.)
-        PlatformPaths.ClaudeCodeLocation? secondCached = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? secondCached = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         MessageAssert.NotNull(secondCached,
             "Cache should still return the prior location even though the file is gone.");
         Assert.Equal(binaryPath, secondCached!.BinaryPath);
 
         // After invalidation, re-probe sees the empty disk.
-        PlatformPaths.InvalidatePathCache();
-        PlatformPaths.ClaudeCodeLocation? afterInvalidate = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.InvalidatePathCache();
+        ClaudePaths.ClaudeCodeLocation? afterInvalidate = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         MessageAssert.Null(afterInvalidate,
             "Post-invalidation probe should reflect the now-empty sandbox.");
     }
@@ -93,7 +95,7 @@ public sealed class PlatformPathsCacheTests : IDisposable
     public void IsClaudeCodeOnPath_CachesNegativeResult()
     {
         // PATH is empty (set by Init), so the bare-name lookup will miss.
-        Assert.False(PlatformPaths.IsClaudeCodeOnPath,
+        Assert.False(ClaudePaths.IsClaudeCodeOnPath,
             "Sanity: empty PATH means claude is not on PATH.");
 
         // Now create a `claude` binary in a directory and prepend that
@@ -108,12 +110,12 @@ public sealed class PlatformPathsCacheTests : IDisposable
         File.WriteAllText(Path.Combine(pathDir, binaryName), string.Empty);
         Environment.SetEnvironmentVariable("PATH", pathDir);
 
-        Assert.False(PlatformPaths.IsClaudeCodeOnPath,
+        Assert.False(ClaudePaths.IsClaudeCodeOnPath,
             "Negative cache must be honoured until InvalidatePathCache is called.");
 
-        PlatformPaths.InvalidatePathCache();
+        ClaudePaths.InvalidatePathCache();
 
-        Assert.True(PlatformPaths.IsClaudeCodeOnPath,
+        Assert.True(ClaudePaths.IsClaudeCodeOnPath,
             "After invalidation, the next probe should see the binary on PATH.");
     }
 }

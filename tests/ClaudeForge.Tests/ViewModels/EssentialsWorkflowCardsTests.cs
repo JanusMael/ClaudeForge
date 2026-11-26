@@ -2,7 +2,6 @@ using System.Collections;
 using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
-using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using Bennewitz.Ninja.ClaudeForge.Localization;

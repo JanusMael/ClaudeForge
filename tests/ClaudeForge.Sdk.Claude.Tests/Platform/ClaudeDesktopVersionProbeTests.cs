@@ -1,6 +1,8 @@
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Platform;
 
 /// <summary>
 /// smoke-test the composed Claude Desktop version probe.

@@ -15,6 +15,7 @@ using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -31,7 +32,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
     private readonly IEnvironmentProvider _environmentProvider;
     private readonly IShareService? _shareService;
     private readonly Func<string?> _logPathProvider;
-    private readonly PlatformPaths.ClaudeCodeLocation? _claudeCodeLocation;
+    private readonly ClaudePaths.ClaudeCodeLocation? _claudeCodeLocation;
 
     /// <summary>
     /// The resolved Claude environment. ⓘ Used only on the Claude Code side: the Desktop arm of
@@ -118,11 +119,11 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
     /// </summary>
     public bool IsProductInstalled => Product switch
     {
-        // Binary presence, not PlatformPaths.IsClaudeCodeInstalled — that also
+        // Binary presence, not ClaudePaths.IsClaudeCodeInstalled — that also
         // returns true when ~/.claude/settings.json exists from a prior install,
         // which would keep config buttons enabled when the CLI is not reachable.
         AboutProduct.ClaudeCode => _claudeCodeLocation is not null,
-        AboutProduct.ClaudeDesktop => PlatformPaths.IsDesktopInstalled,
+        AboutProduct.ClaudeDesktop => ClaudePaths.IsDesktopInstalled,
         var _ => false,
     };
 
@@ -197,7 +198,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
         // IsClaudeCodeOnPath / ShowClaudeCodePathWarning and is forwarded to
         // LoadVersionsAsync so the version probe uses the exact binary we
         // located rather than depending on a PATH lookup the user may not have.
-        _claudeCodeLocation = PlatformPaths.TryFindClaudeCodeBinary(env);
+        _claudeCodeLocation = ClaudePaths.TryFindClaudeCodeBinary(env);
 
         // Seed install panels only for the products that are not currently
         // detected — when a product is installed we hide its entire row, so
@@ -216,7 +217,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
             ClaudeCodeInstallPanel = InstallCommandViewModel.ForClaudeCode(_shellLauncher);
         }
 
-        if (!PlatformPaths.IsDesktopInstalled)
+        if (!ClaudePaths.IsDesktopInstalled)
         {
             ClaudeDesktopInstallPanel = InstallCommandViewModel.ForClaudeDesktop();
         }
@@ -463,7 +464,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
             // honest thing to do — and the "already present" branch can
             // genuinely benefit if the user externally tweaked PATH and we
             // had a stale negative cache entry.
-            PlatformPaths.InvalidatePathCache();
+            ClaudePaths.InvalidatePathCache();
         }
     }
 
@@ -721,7 +722,7 @@ public partial class AboutEditorViewModel : ObservableObject, INavigablePage
             ClaudeDesktopVersion =
                 ClaudeDesktopVersionProbe.TryGetVersion()
                 ?? ProductVersionProbe.TryGetClaudeDesktopVersion()
-                ?? (PlatformPaths.IsDesktopInstalled ? "installed (version unknown)" : null);
+                ?? (ClaudePaths.IsDesktopInstalled ? "installed (version unknown)" : null);
         }
         catch (Exception ex)
         {

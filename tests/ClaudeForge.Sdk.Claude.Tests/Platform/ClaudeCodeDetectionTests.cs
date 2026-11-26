@@ -1,10 +1,12 @@
 using System.Runtime.InteropServices;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Platform;
 
 /// <summary>
-/// Covers <see cref="PlatformPaths.TryFindClaudeCodeBinary"/>, the canonical-
+/// Covers <see cref="ClaudePaths.TryFindClaudeCodeBinary"/>, the canonical-
 /// directory fallback that catches the Windows-ARM64-npm-global scenario
 /// where <c>%APPDATA%\npm\claude.cmd</c> exists but is not on PATH.
 /// </summary>
@@ -36,7 +38,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         // for process lifetime. Without invalidation between tests, a hit
         // from a real-machine PATH that leaked through the first test, or
         // a per-test cached negative, would survive into sibling tests.
-        PlatformPaths.InvalidatePathCache();
+        ClaudePaths.InvalidatePathCache();
     }
 
     private void Cleanup()
@@ -45,7 +47,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         Environment.SetEnvironmentVariable("PATH", _originalPath);
         // Same reason as Init — clear so the next test class doesn't see a
         // cached value derived from this test's sandbox PATH/sandbox files.
-        PlatformPaths.InvalidatePathCache();
+        ClaudePaths.InvalidatePathCache();
         if (Directory.Exists(_sandbox))
         {
             Directory.Delete(_sandbox, recursive: true);
@@ -61,7 +63,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
     [Fact]
     public void TryFindClaudeCodeBinary_NoPath_NoFiles_ReturnsNull()
     {
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
         Assert.Null(result);
     }
 
@@ -78,7 +80,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(localDir, fileName);
         File.WriteAllText(binary, string.Empty);
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -101,7 +103,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(npmDir, "claude.cmd");
         File.WriteAllText(binary, "@echo claude 1.0.0");
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -132,7 +134,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
 
         try
         {
-            PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+            ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
             Assert.NotNull(result);
             Assert.True(result!.IsOnPath);
@@ -157,7 +159,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
     [Fact]
     public void IsClaudeCodeOnPath_ReturnsFalseWhenPathEmpty()
     {
-        Assert.False(PlatformPaths.IsClaudeCodeOnPath);
+        Assert.False(ClaudePaths.IsClaudeCodeOnPath);
     }
 
     [Fact]
@@ -170,13 +172,13 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
             : "claude";
         File.WriteAllText(Path.Combine(localDir, fileName), string.Empty);
 
-        Assert.True(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
+        Assert.True(ClaudePaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
     }
 
     [Fact]
     public void IsClaudeCodeInstalled_FalseOnEmptySandbox()
     {
-        Assert.False(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
+        Assert.False(ClaudePaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
     }
 
     // ── Extended candidate-path coverage (2026-05-19 COVERAGE-B3 #3) ──
@@ -205,7 +207,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(npmDir, "claude.ps1");
         File.WriteAllText(binary, "# claude ps1 shim");
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -228,7 +230,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(programsDir, "claude.exe");
         File.WriteAllText(binary, string.Empty);
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -249,7 +251,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(localBin, "claude");
         File.WriteAllText(binary, "#!/usr/bin/env node\n");
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -270,7 +272,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(npmGlobalBin, "claude");
         File.WriteAllText(binary, "#!/usr/bin/env node\n");
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -291,7 +293,7 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
         string binary = Path.Combine(voltaBin, "claude");
         File.WriteAllText(binary, "#!/usr/bin/env node\n");
 
-        PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+        ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(binary, result!.BinaryPath);
@@ -318,25 +320,25 @@ public sealed class ClaudeCodeDetectionTests : IDisposable
 
         try
         {
-            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
+            ClaudePaths.TestSuppressClaudeCodeBinaryProbe = true;
 
-            Assert.Null(PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty));
-            Assert.False(PlatformPaths.IsClaudeCodeOnPath);
-            Assert.False(PlatformPaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
+            Assert.Null(ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty));
+            Assert.False(ClaudePaths.IsClaudeCodeOnPath);
+            Assert.False(ClaudePaths.IsClaudeCodeInstalled(ClaudeEnvironment.Empty));
 
             // The suppressed calls must not have stored a negative result in
             // the process-lifetime caches: clearing the switch on its own,
             // without InvalidatePathCache, has to reveal the binary again.
-            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
+            ClaudePaths.TestSuppressClaudeCodeBinaryProbe = false;
 
-            PlatformPaths.ClaudeCodeLocation? result = PlatformPaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
+            ClaudePaths.ClaudeCodeLocation? result = ClaudePaths.TryFindClaudeCodeBinary(ClaudeEnvironment.Empty);
             Assert.NotNull(result);
             Assert.True(result!.IsOnPath);
-            Assert.True(PlatformPaths.IsClaudeCodeOnPath);
+            Assert.True(ClaudePaths.IsClaudeCodeOnPath);
         }
         finally
         {
-            PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false;
+            ClaudePaths.TestSuppressClaudeCodeBinaryProbe = false;
             // Restore empty PATH so subsequent tests in this class see
             // the sandboxed baseline.
             Environment.SetEnvironmentVariable("PATH", string.Empty);

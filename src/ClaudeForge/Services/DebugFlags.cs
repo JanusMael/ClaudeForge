@@ -17,8 +17,8 @@ namespace Bennewitz.Ninja.ClaudeForge.Services;
 /// </para>
 /// <code>
 /// ShowInstallBanner = DebugFlags.ShowInstallBanner
-///                  || (!PlatformPaths.IsClaudeCodeInstalled
-///                      &amp;&amp; !PlatformPaths.IsDesktopInstalled);
+///                  || (!ClaudePaths.IsClaudeCodeInstalled
+///                      &amp;&amp; !ClaudePaths.IsDesktopInstalled);
 /// </code>
 /// <para>
 /// <strong>Why static:</strong> Avalonia construction order makes injecting

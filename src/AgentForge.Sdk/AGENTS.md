@@ -44,7 +44,6 @@ phase rather than left undocumented:
 | Residue | Why it is still here |
 |---|---|
 | `Memory/` — `UserMemoryCategory`, `EditableMemoryScope`, `FootprintCategory` | Closed enums naming Claude's artifact kinds, editing scopes and footprint dirs. ⚠ **Phase 10b did NOT convert the first two, deliberately** — it moved *discovery* behind `IArtifactSource` instead, and the enums survive as this product's row-shape tags. `UserMemoryCategory` conflates kind and scope (`PrimaryMemory` / `ProjectMemory` / `CrossToolMemory` are all `ArtifactKind.Memory`), so it cannot be recovered from an entry and is carried on the source that produces it; `EditableMemoryScope` survives because a plugin's identity now rides on `ArtifactScope.DisplayName` rather than needing an enum value per plugin. Converting them would rewrite tests that are the faithfulness proof. `FootprintCategory` is untouched. ⭐ **Phase 10c did inject the ROOT**, and plans/00008 step 9 put it behind `IArtifactLayout`, so all three services now read the product's layout rather than a process-global static — the enums are row-shape tags, not baked-in locations. |
-| `Env/EnvVarKey` | Convenience properties for `CLAUDE_CODE_*` keys. The generic dictionary surface around them is neutral. |
 
 ## §2 What the SDK does NOT have
 

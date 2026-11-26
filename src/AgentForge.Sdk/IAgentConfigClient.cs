@@ -139,11 +139,10 @@ public interface IAgentConfigClient : IDisposable
     IMcpServersAccessor McpServers { get; }
 
     /// <summary>
-    /// Environment-variable accessor — typed reads / writes for the
-    /// <c>env</c> map under settings.json.  Includes convenience
-    /// properties for the well-known high-importance keys defined in
-    /// <see cref="EnvVarKey"/> (<c>MAX_THINKING_TOKENS</c>,
-    /// <c>CLAUDE_CODE_MAX_OUTPUT_TOKENS</c>, etc.).  The OS-level env
+    /// Environment-variable accessor — reads / writes for the
+    /// <c>env</c> map under settings.json.  A product adds typed
+    /// properties for its own well-known keys as extensions over this
+    /// surface (see <see cref="IEnvAccessor"/>).  The OS-level env
     /// var surface (Windows registry, shell profiles) is owned by the
     /// GUI's <c>EnvironmentEditorViewModel</c> + <c>IEnvironmentProvider</c>;
     /// this accessor stays focused on the persisted-config slice so

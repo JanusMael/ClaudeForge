@@ -462,27 +462,27 @@ public void Dispose()   // ...and Dispose is clean-up (the class implements IDis
 
 Live example: `tests/ClaudeForge.Tests/ViewModels/HasUnsavedChangesRecheckTests.cs`.
 
-### `PlatformPaths.TestSuppressClaudeCodeBinaryProbe` switch
+### `ClaudePaths.TestSuppressClaudeCodeBinaryProbe` switch
 
-`TestUserProfileOverride` does not reach `PlatformPaths.TryFindClaudeCodeBinary`: its PATH
+`PlatformPaths.TestUserProfileOverride` does not reach `ClaudePaths.TryFindClaudeCodeBinary`: its PATH
 probe reads the real process environment, and the Unix system-wide entries in
 `CanonicalClaudeCodeCandidates` are absolute paths. A test that needs the "Claude Code not
 detected" state on a machine with the CLI installed (anything asserting on
-`MainWindowViewModel.ShowInstallBanner`, or on `PlatformPaths.IsClaudeCodeInstalled` falling
+`MainWindowViewModel.ShowInstallBanner`, or on `ClaudePaths.IsClaudeCodeInstalled` falling
 through to its `settings.json` check) sets the switch for the duration of the test:
 
 ```csharp
-PlatformPaths.TestSuppressClaudeCodeBinaryProbe = true;
+ClaudePaths.TestSuppressClaudeCodeBinaryProbe = true;
 try { /* assertions */ }
-finally { PlatformPaths.TestSuppressClaudeCodeBinaryProbe = false; }
+finally { ClaudePaths.TestSuppressClaudeCodeBinaryProbe = false; }
 ```
 
 It is checked before the process-lifetime caches, so `InvalidatePathCache()` is not needed
-afterwards. `internal`, `AsyncLocal`-backed, exposed to both test projects via
-`InternalsVisibleTo`. Live example: `InstallBanner_AutoClearsDismissedFlag_WhenProductAppears`
+afterwards. `internal`, `AsyncLocal`-backed, in `ClaudeForge.Sdk.Claude` since plans/00008
+step 10, and reachable from every test project through the shared `InternalsVisibleTo` list. Live example: `InstallBanner_AutoClearsDismissedFlag_WhenProductAppears`
 in `tests/ClaudeForge.Tests/ViewModels/HasUnsavedChangesRecheckTests.cs`; the switch's own
 contract test is `TryFindClaudeCodeBinary_ProbeSuppressed_ReportsNotFoundWithoutCachingTheMiss`
-in `tests/AgentForge.Core.Tests/Platform/ClaudeCodeDetectionTests.cs`.
+in `tests/ClaudeForge.Sdk.Claude.Tests/Platform/ClaudeCodeDetectionTests.cs`.
 
 ### `MainWindowViewModel.GetClaudeCodeWorkspaceForTesting()` test seam
 

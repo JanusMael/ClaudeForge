@@ -1,4 +1,4 @@
-namespace Bennewitz.Ninja.AgentForge.Sdk.Env;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Env;
 
 /// <summary>
 /// Well-known environment-variable keys that Claude Code recognises but
@@ -9,7 +9,7 @@ namespace Bennewitz.Ninja.AgentForge.Sdk.Env;
 /// shell configuration)").
 /// <para>
 /// These constants are the single source of truth for the keys used by
-/// <see cref="IEnvAccessor"/>'s typed convenience properties, the
+/// <see cref="ClaudeEnvAccessorExtensions"/>' typed convenience properties, the
 /// Essentials page's pinned cards, and the suggested-env-vars list in
 /// the existing Environment editor.  Adding a new key here is the
 /// primary onboarding step for promoting an env var into the

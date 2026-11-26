@@ -23,7 +23,6 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
 using Bennewitz.Ninja.AppServices.Abstractions.Dialogs;
-using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.AgentForge.Sdk.Internal;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels.Editors;
@@ -43,6 +42,8 @@ using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Navigation;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Save;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Search;
 using Bennewitz.Ninja.ClaudeForge.Adapters;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Env;
 
 // SDK clients live alongside the legacy SettingsWorkspace
 // during the editor migration. Aliases disambiguate types that exist in both
@@ -4104,7 +4105,7 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         //
         // The --showInstallBanner debug flag forces the banner on unconditionally
         // (useful for UI testing the banner on a machine with Claude installed).
-        bool neitherInstalled = !PlatformPaths.IsClaudeCodeInstalled(_env) && !PlatformPaths.IsDesktopInstalled;
+        bool neitherInstalled = !ClaudePaths.IsClaudeCodeInstalled(_env) && !ClaudePaths.IsDesktopInstalled;
         if (!neitherInstalled)
         {
             _bannerDismissedByUser = false; // product detected — reset so banner can re-show later

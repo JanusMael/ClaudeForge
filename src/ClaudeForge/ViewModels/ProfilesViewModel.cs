@@ -8,6 +8,7 @@ using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 
@@ -116,7 +117,7 @@ public partial class ProfilesViewModel : ObservableObject, INavigablePage
     [ObservableProperty] private bool _isDesktopBusy;
 
     /// <summary>True when Claude Desktop appears to be installed on this machine.</summary>
-    public bool DesktopAvailable => PlatformPaths.IsDesktopInstalled;
+    public bool DesktopAvailable => ClaudePaths.IsDesktopInstalled;
 
     // -----------------------------------------------------------------------
     //  Commands — shared

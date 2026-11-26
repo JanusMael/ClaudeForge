@@ -3,6 +3,7 @@ using Bennewitz.Ninja.AgentForge.Core.Profile;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AppServices.Abstractions;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
@@ -100,7 +101,7 @@ public sealed class ProfilesViewModelTests : IDisposable
         // The sandbox doesn't put a Desktop config there, so on a fresh
         // override DesktopAvailable should be false. Only assertion: the
         // property is non-null and matches PlatformPaths' decision.
-        Assert.Equal(PlatformPaths.IsDesktopInstalled, vm.DesktopAvailable);
+        Assert.Equal(ClaudePaths.IsDesktopInstalled, vm.DesktopAvailable);
     }
 
     // ── Refresh — empty state ─────────────────────────────────────────────
