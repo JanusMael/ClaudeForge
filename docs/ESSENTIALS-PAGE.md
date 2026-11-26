@@ -40,13 +40,16 @@ The **Model** card is a free-form AutoCompleteBox (catalog suggestions, any cust
 ### Layer 1 — SDK: `IEnvAccessor`
 
 ```
-src/ClaudeForge.Sdk/Env/
-├── IEnvAccessor.cs       (interface)
-├── EnvAccessor.cs        (impl over ClaudeConfigClientCore.GetScopeValue("env"))
-└── EnvVarKey.cs          (well-known key constants)
+src/AgentForge.Sdk/Env/
+├── IEnvAccessor.cs       (interface: the generic dictionary surface)
+└── EnvAccessor.cs        (impl over AgentConfigClientCore.GetScopeValue("env"))
+
+src/ClaudeForge.Sdk.Claude/Env/
+├── EnvVarKey.cs                     (Claude Code's well-known key constants)
+└── ClaudeEnvAccessorExtensions.cs   (the typed properties, as extensions on IEnvAccessor)
 ```
 
-Mirrors the shape of `IPermissionsAccessor` / `IHooksAccessor`: typed convenience properties for the well-known high-importance keys (`MaxThinkingTokens` / `MaxOutputTokens` / `DisableAutoMemory` / `DisableAutoUpdater` / `AnthropicModel`) plus a generic dictionary surface for arbitrary env vars. Reads are lenient (returns `null` on parse failure rather than throwing); writes route through the standard `SetValue` / `RemoveValue` path so the workspace lock and `Changed` event are honoured uniformly.
+Mirrors the shape of `IPermissionsAccessor` / `IHooksAccessor`: typed convenience properties for the well-known high-importance keys (`MaxThinkingTokens` / `MaxOutputTokens` / `DisableAutoMemory` / `DisableAutoUpdater` / `AnthropicModel`) plus a generic dictionary surface for arbitrary env vars. Since plans/00008 step 10 the two halves live apart: the dictionary surface is neutral, and the typed properties are C# extension properties beside Claude's key constants, so `client.Env.MaxThinkingTokens` reads as before with `Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Env` imported. Reads are lenient (returns `null` on parse failure rather than throwing); writes route through the standard `SetValue` / `RemoveValue` path so the workspace lock and `Changed` event are honoured uniformly.
 
 The OS-level env-var surface (Windows registry, shell profiles) is intentionally NOT inside the SDK — that's owned by `EnvironmentEditorViewModel` + `IEnvironmentProvider` in the GUI assembly. Keeping the SDK accessor focused on the persisted-config slice means non-GUI consumers (the MCP server, future CLI dump) can use it cleanly without dragging in `Environment.GetEnvironmentVariable` and its registry-walking platform constraints.
 

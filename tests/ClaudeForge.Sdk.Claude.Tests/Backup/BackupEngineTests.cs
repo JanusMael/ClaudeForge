@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.AgentForge.Core.Backup;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 using Bennewitz.Ninja.AgentForge.Core.Schema;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Backup;
 
 // Interlocked + Thread for the parallel-precompute test
 

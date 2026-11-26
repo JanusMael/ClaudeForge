@@ -3,12 +3,12 @@ using System.Collections;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.ScopedEditors.Abstractions;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Services;
 using Bennewitz.Ninja.ClaudeForge.ViewModels;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Env;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 

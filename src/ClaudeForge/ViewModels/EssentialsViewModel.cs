@@ -9,13 +9,13 @@ using System.Text.Json.Nodes;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Catalog;
 using Bennewitz.Ninja.ClaudeForge.Localization;
 using Bennewitz.Ninja.AgentForge.Sdk;
-using Bennewitz.Ninja.AgentForge.Sdk.Env;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Models;
 using Bennewitz.Ninja.AppServices.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
 using Bennewitz.Ninja.AgentForge.AvaloniaUI.Shell.Essentials;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Env;
 
 namespace Bennewitz.Ninja.ClaudeForge.ViewModels;
 

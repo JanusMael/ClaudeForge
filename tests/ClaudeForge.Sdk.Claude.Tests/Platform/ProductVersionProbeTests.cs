@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Bennewitz.Ninja.AgentForge.Core.Platform;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Platform;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
+
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Platform;
 
 /// <summary>
 /// Covers the timeout-and-kill behaviour of <see cref="ProductVersionProbe.TryGetClaudeCodeVersionAsync"/>:

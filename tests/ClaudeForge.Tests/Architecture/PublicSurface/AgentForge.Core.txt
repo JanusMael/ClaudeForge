@@ -1,5 +1,3 @@
-class Bennewitz.Ninja.AgentForge.Core.Backup.AdditionalDirectoriesResolver
-    static System.Collections.Generic.IReadOnlyList<System.String> Resolve(System.Collections.Generic.IEnumerable<System.String> settingsFilePaths)
 class Bennewitz.Ninja.AgentForge.Core.Backup.BackupEngine [sealed]
     .ctor(System.Collections.Generic.IReadOnlyList<Bennewitz.Ninja.AgentForge.Abstractions.Configuration.ProductDescriptor> restorableProducts, Bennewitz.Ninja.AgentForge.Core.Backup.WorktreeProbe worktreeProbe = null, Bennewitz.Ninja.AgentForge.Core.Backup.IBackupFileSystem fileSystem = null)
     Bennewitz.Ninja.AgentForge.Core.Backup.BackupEntry TryReadEntry(System.String archivePath)
@@ -286,15 +284,6 @@ class Bennewitz.Ninja.AgentForge.Core.FileIO.LegacySerializingWriter [sealed] im
     System.String Render(System.String originalText, System.Text.Json.Nodes.JsonObject baselineRoot, System.Text.Json.Nodes.JsonObject root, System.String headerComment)
 class Bennewitz.Ninja.AgentForge.Core.JsonHelpers.JsonNodeExtensions
     static System.String AsStringOrNull(System.Text.Json.Nodes.JsonNode node)
-class Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeDesktopVersionProbe
-    static System.String TryExtractWindowsAppsVersion(System.Collections.Generic.IEnumerable<System.String> folderNames)
-    static System.String TryGetVersion()
-    static System.String TryGetVersionFromAppModelRegistry()
-    static System.String TryGetVersionFromExe()
-    static System.String TryGetVersionFromRegistry()
-    static System.String TryGetVersionFromSquirrel()
-    static System.String TryGetVersionFromWindowsApps()
-    static System.Void ResetCache()
 class Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment>
     .ctor(System.String ConfigDir = null)
     Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment <Clone>$()
@@ -331,10 +320,6 @@ class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformInfo
     static System.Void OverrideForDebug(Bennewitz.Ninja.AgentForge.Core.Platform.IPlatformInfo info)
     static System.Void ResetForTesting()
 class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths
-    static Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation TryFindClaudeCodeBinary(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
-    static System.Boolean IsClaudeCodeInstalled(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
-    static System.Boolean IsClaudeCodeOnPath { get; }
-    static System.Boolean IsDesktopInstalled { get; }
     static System.Collections.Generic.IReadOnlyList<System.String> DiscoverDesktopProfiles()
     static System.Collections.Generic.IReadOnlyList<System.String> DiscoverProfiles(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String AppLogsDirectory { get; }
@@ -366,23 +351,6 @@ class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths
     static System.String UserMcpPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
     static System.String UserProfile { get; }
     static System.String UserSettingsPath(Bennewitz.Ninja.AgentForge.Core.Platform.ClaudeEnvironment env)
-    static System.Void InvalidatePathCache()
-class Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation [sealed] implements System.IEquatable<Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation>
-    .ctor(System.String BinaryPath, System.Boolean IsOnPath)
-    Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation <Clone>$()
-    System.Boolean Equals(Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation other)
-    System.Boolean Equals(System.Object obj)
-    System.Boolean IsOnPath { get;init; }
-    System.Int32 GetHashCode()
-    System.String BinaryPath { get;init; }
-    System.String ToString()
-    System.Void Deconstruct(out System.String BinaryPath, out System.Boolean IsOnPath)
-    static System.Boolean op_Equality(Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation left, Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation right)
-    static System.Boolean op_Inequality(Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation left, Bennewitz.Ninja.AgentForge.Core.Platform.PlatformPaths+ClaudeCodeLocation right)
-class Bennewitz.Ninja.AgentForge.Core.Platform.ProductVersionProbe
-    static System.String GetPlatformInfo()
-    static System.String TryGetClaudeDesktopVersion()
-    static System.Threading.Tasks.Task<System.String> TryGetClaudeCodeVersionAsync(System.String explicitBinaryPath = null)
 class Bennewitz.Ninja.AgentForge.Core.Platform.RuntimePlatformInfo [sealed] implements Bennewitz.Ninja.AgentForge.Core.Platform.IPlatformInfo
     System.Boolean IsLinux { get; }
     System.Boolean IsMacOS { get; }

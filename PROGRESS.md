@@ -609,7 +609,45 @@ step 3. The items below are kept in order; those marked ✅ are done.
    ✅ **Merged as #179** (`56d64ead`, 2026-11-26); `Published Version` was red by design, failing
    to compile against `2026.4.1124`, which has no `IArtifactLayout`. ✅ **Released as
    `packages-v2026.4.1126`** and pinned.
-   ▶ **Next: step 10**, paths, environment and probes.
+   ✅ **Step 10, install detection, version probes and env keys (2026-11-26, branch
+   `refactor/claude-paths-env-probes`):** `ClaudePaths` in `ClaudeForge.Sdk.Claude/Platform` now
+   finds the Claude Code binary and the Claude Desktop install: `TryFindClaudeCodeBinary` with
+   `ClaudeCodeLocation`, `IsClaudeCodeOnPath`, `IsClaudeCodeInstalled`, `IsDesktopInstalled`,
+   `InvalidatePathCache`, the PATH cache and `TestSuppressClaudeCodeBinaryProbe`, all cut from
+   Core's `PlatformPaths`. `ProductVersionProbe` and `ClaudeDesktopVersionProbe` moved beside it,
+   and `AdditionalDirectoriesResolver` (step 8's drift) moved to `ClaudeForge.Sdk.Claude/Backup`.
+   `IEnvAccessor` keeps only its dictionary surface; `EnvVarKey` and the five typed properties are
+   Claude's, in `ClaudeForge.Sdk.Claude/Env`, the properties as C# extension properties
+   (`ClaudeEnvAccessorExtensions`), so `client.Env.MaxThinkingTokens` reads as before with that
+   namespace imported.
+   - **The plan's check:** `ClaudeCodeDetectionTests` and the Essentials env tests
+     (`EssentialsViewModelTests`, `EssentialsCardOptionsTests`, and `EnvAccessorTests`' typed
+     half) pass with only their namespaces and usings changed. The typed half of
+     `EnvAccessorTests` opens a `ClaudeCodeClient` where it opened Sdk.Tests' `TestConfigClient`;
+     the generic half stayed in Sdk.Tests under the same class name.
+   - **Measured:** Debug build 0 warnings; suite 3,465, 0 failed, 12 skipped. 53 tests moved
+     cleanly to `ClaudeForge.Sdk.Claude.Tests`, none added or removed. Canaried on Windows: reading
+     `"1"` as false, writing `MaxOutputTokens` under the thinking key, ignoring the probe-suppress
+     switch and not expanding `~` each turned the moved tests red; dropping the Volta candidate
+     did not, because that test is Unix-only and skips here, so CI's Linux and macOS jobs are its
+     cover. The surface diff is removals only, the members above. The allow-list loses 75 entries
+     and gains none. Trimmed win-x64 Release publish 0 IL diagnostics;
+     `Smoke-PublishedBinary.ps1` booted it. `package-canary.ps1` 3,465 / 0.
+   - **Test names against `main`:** 53 moved, 1 outcome: `PackageVersionLockstepTests`, skipped in
+     a fresh worktree.
+   - **Drift: `PlatformPaths`' Claude config paths and `ClaudeEnvironment` stay in Core until
+     step 11.** `ProfileEngine` and `ConfigFileDiscoverer` read `ClaudeHome`, the profile and
+     Desktop paths, the managed-settings root and `ClaudeEnvironment` from Core, and decision 2
+     forbids moving a type before its neutral callers stop needing it. Step 11 moves both engines
+     whole, which is the point at which "once nothing neutral takes it" is true; the path members
+     and `ClaudeEnvironment` leave in that pull request, as `ClaudePaths` members.
+   - **Drift: `MsixPathProbe`, `MsixStatus` and `MsixFixResult` stay in Core until step 12.**
+     Shell's `BackupRestoreViewModel` probes and fixes the MSIX path itself; step 12 hands that tab
+     to ClaudeForge, after which nothing neutral reads them.
+   - **Drift: `docs/EXTRACTION-VERIFICATION.md` still cites the old locations.** It is a dated
+     measurement (2026-11-10) and was left as written, as step 9 left it.
+   ▶ **Next:** merge, then ask before releasing `packages-v2026.4.MMDD` (not 1126) and pinning; then
+   step 11, which now also carries the path members and `ClaudeEnvironment`.
    - **Drift: step 4's project is `AgentForge.AvaloniaUI.Shell.Tests`.** `plans/00010` step R
      renamed `AgentForge.Avalonia.Shell` to `AgentForge.AvaloniaUI.Shell` (2026-11-10); the frozen
      plan keeps the old name.

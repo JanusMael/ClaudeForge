@@ -25,6 +25,8 @@ name turned out wrong, and every one made after reading the code held.
 | `Marketplaces/`, `Plugins/` | Claude's marketplace registry and the `plugin@marketplace` reference form, including the schema's array-of-strings component-selection variant. |
 | `Models/` | The model ↔ effort-level ↔ auto-mode relationships and the nearest-analog coercion rule. The *relationships* are the product knowledge; a list of ids would not be. |
 | `Permissions/` | Allow/Deny/Ask over Claude's rule syntax (`Bash(git commit:*)`, `mcp__server__tool`, `WebFetch(domain:...)`) evaluated **first-match**. OpenCode uses per-tool glob keys evaluated **last-match** — see §3. |
+| `Env/` | Claude Code's well-known `env` keys (`EnvVarKey`) and their typed properties, as C# extension properties over the neutral `IEnvAccessor`. The dictionary surface they read through stays in `AgentForge.Sdk`. Moved in plans/00008 step 10. |
+| `Platform/` | Where Claude Code and Claude Desktop are installed (`ClaudePaths`) and which versions they are (`ProductVersionProbe`, `ClaudeDesktopVersionProbe`): binary names, install folders, registry keys and the MSIX package prefix. Moved in plans/00008 step 10; Claude's config paths are still on Core's `PlatformPaths` until step 11. |
 
 A shared permission *vocabulary* (the concepts, not the syntax) is Phase 6, and
 it is much smaller than early drafts assumed. Do not pre-generalize toward it.

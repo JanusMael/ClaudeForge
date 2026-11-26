@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Serilog;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Platform;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
 
 /// <summary>Probes installed product versions without blocking the UI thread.</summary>
 public static partial class ProductVersionProbe

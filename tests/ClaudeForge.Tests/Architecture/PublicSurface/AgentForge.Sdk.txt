@@ -191,21 +191,9 @@ class Bennewitz.Ninja.AgentForge.Sdk.Dialogs.SdkDialogs
     static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage SaveFailed(System.String targetPath, System.String errorMessage)
     static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage SaveSucceeded(System.Collections.Generic.IReadOnlyList<System.String> writtenPaths)
     static Bennewitz.Ninja.AppServices.Abstractions.Dialogs.DialogMessage SchemaValidationFailed(System.String fieldDescription, System.String validationMessage, System.String docsUrl = null)
-class Bennewitz.Ninja.AgentForge.Sdk.Env.EnvVarKey
-    const System.String AnthropicModel
-    const System.String DisableAutoMemory
-    const System.String DisableAutoUpdater
-    const System.String MaxOutputTokens
-    const System.String MaxThinkingTokens
-    static System.Collections.Generic.IReadOnlyList<System.String> AllWellKnown { get; }
 interface Bennewitz.Ninja.AgentForge.Sdk.Env.IEnvAccessor
     System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> All { get; }
     System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> AllAt(Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
-    System.Nullable<System.Boolean> DisableAutoMemory { get;set; }
-    System.Nullable<System.Boolean> DisableAutoUpdater { get;set; }
-    System.Nullable<System.Int32> MaxOutputTokens { get;set; }
-    System.Nullable<System.Int32> MaxThinkingTokens { get;set; }
-    System.String AnthropicModel { get;set; }
     System.String Get(System.String varName)
     System.String GetAt(System.String varName, Bennewitz.Ninja.AgentForge.Core.Settings.ConfigScope scope)
     System.Void Set(System.String varName, System.String value)

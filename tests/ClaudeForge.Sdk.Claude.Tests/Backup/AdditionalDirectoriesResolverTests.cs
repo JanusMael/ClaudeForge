@@ -1,6 +1,6 @@
-using Bennewitz.Ninja.AgentForge.Core.Backup;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Backup;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Tests.Backup;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Tests.Backup;
 
 /// <summary>
 /// Covers every shape of the <c>additionalDirectories</c> setting we must accept,

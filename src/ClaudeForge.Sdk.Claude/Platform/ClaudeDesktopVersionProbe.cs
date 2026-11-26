@@ -5,7 +5,7 @@ using System.Security;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
-namespace Bennewitz.Ninja.AgentForge.Core.Platform;
+namespace Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Platform;
 
 /// <summary>
 /// Best-effort probes for the installed Claude Desktop version. Tries the

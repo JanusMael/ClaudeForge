@@ -7,7 +7,7 @@ using Bennewitz.Ninja.AgentForge.Core.Settings;
 using Bennewitz.Ninja.ClaudeForge.Sdk.Claude;
 using Bennewitz.Ninja.ClaudeForge.Tests.TestSupport;
 using System.Text.Json.Nodes;
-using Bennewitz.Ninja.AgentForge.Sdk.Env;
+using Bennewitz.Ninja.ClaudeForge.Sdk.Claude.Env;
 
 namespace Bennewitz.Ninja.ClaudeForge.Tests.ViewModels;
 
